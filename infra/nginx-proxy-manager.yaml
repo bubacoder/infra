@@ -1,0 +1,17 @@
+# This project comes as a pre-built docker image that enables you to easily forward to your websites running at home or otherwise, including free SSL, without having to know too much about Nginx or Letsencrypt.
+#
+# https://nginxproxymanager.com/
+# https://github.com/NginxProxyManager/nginx-proxy-manager
+---
+version: '3.5'
+services:
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:latest
+    ports:
+      - 980:80
+      - 981:81
+      - 9443:443
+    volumes:
+      - ${CONTAINERDATA}/nginx-proxy-manager/data:/data
+      - ${CONTAINERDATA}/nginx-proxy-manager/letsencrypt:/etc/letsencrypt
+    restart: unless-stopped

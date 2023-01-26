@@ -1,0 +1,20 @@
+# Heimdall is a way to organise all those links to your most used web sites and web applications in a simple way. Simplicity is the key to Heimdall.
+# Why not use it as your browser start page? It even has the ability to include a search bar using either Google, Bing or DuckDuckGo.
+#
+# https://hub.docker.com/r/linuxserver/heimdall
+---
+version: "3.5"
+services:
+  heimdall:
+    image: lscr.io/linuxserver/heimdall:latest
+    container_name: heimdall
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${CONTAINERDATA}/hemidall:/config
+    ports:
+      - 80:80
+      - 443:443
+    restart: unless-stopped

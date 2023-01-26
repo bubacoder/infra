@@ -1,0 +1,18 @@
+# https://filebrowser.org/installation
+---
+version: "3.5"
+services:
+  filebrowser:
+    image: filebrowser/filebrowser:s6
+    container_name: filebrowser
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${ALLSTORAGE}:/srv
+      - ${CONTAINERDATA}/filebrowser/filebrowser.db:/database/filebrowser.db
+      - ${CONTAINERDATA}/filebrowser/settings.json:/config/settings.json
+    ports:
+      - 9030:80 # Web UI
+    restart: unless-stopped

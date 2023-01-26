@@ -1,0 +1,21 @@
+# Prowlarr is a indexer manager/proxy built on the popular arr .net/reactjs base stack to integrate with your various PVR apps.
+# Prowlarr supports both Torrent Trackers and Usenet Indexers. It integrates seamlessly with Sonarr, Radarr, Lidarr, and Readarr offering complete management 
+# of your indexers with no per app Indexer setup required (we do it all).
+#
+# https://hub.docker.com/r/linuxserver/prowlarr
+# https://github.com/Prowlarr/Prowlarr
+---
+version: "3.5"
+services:
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${CONTAINERDATA}/prowlarr:/config
+    ports:
+      - 9696:9696
+    restart: unless-stopped

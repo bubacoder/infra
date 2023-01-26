@@ -1,0 +1,27 @@
+# Code-server is VS Code running on a remote server, accessible through the browser.
+#
+# https://hub.docker.com/r/linuxserver/code-server
+# https://github.com/coder/code-server
+# https://github.com/coder/code-server/blob/main/docs/FAQ.md
+---
+version: "2.1"
+services:
+  code-server:
+    image: lscr.io/linuxserver/code-server:latest
+    container_name: code-server
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TIMEZONE}
+      - PASSWORD=password #optional
+      - HASHED_PASSWORD= #optional
+      - SUDO_PASSWORD=password #optional
+      - SUDO_PASSWORD_HASH= #optional
+      - PROXY_DOMAIN=code-server.my.domain #optional
+      - DEFAULT_WORKSPACE=/config/workspace #optional
+    volumes:
+      - ${CONTAINERDATA}/code-server:/config
+      - /root/docker-config/:/config/docker-config
+    ports:
+      - 8444:8443
+    restart: unless-stopped

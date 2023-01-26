@@ -1,0 +1,22 @@
+# https://hub.docker.com/r/linuxserver/syncthing
+---
+version: "3.5"
+services:
+  syncthing:
+    image: lscr.io/linuxserver/syncthing:latest
+    container_name: syncthing
+    hostname: nest
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${CONTAINERDATA}/syncthing:/config
+      - ${ALLSTORAGE}:/storage
+      #- /path/to/data2:/data2
+    ports:
+      - 8384:8384 # Web UI
+      - 22000:22000/tcp
+      - 22000:22000/udp
+      - 21027:21027/udp
+    restart: unless-stopped

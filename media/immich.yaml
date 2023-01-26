@@ -1,0 +1,8 @@
+# Self-hosted photo and video backup solution directly from your mobile phone.
+#
+# https://immich.app/
+# https://github.com/immich-app/immich
+---
+
+# https://immich.app/docs/install/docker-compose
+# The TensorFlow version used by Immich doesn't run on older CPU architectures. It requires a CPU with AVX and AVX2 instruction sets. 

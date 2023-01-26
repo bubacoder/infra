@@ -1,0 +1,21 @@
+# Sabnzbd makes Usenet as simple and streamlined as possible by automating everything we can. All you have to do is add an .nzb. SABnzbd takes over from there, where it will be automatically downloaded, verified, repaired, extracted and filed away with zero human interaction.
+#
+# https://sabnzbd.org/
+# https://github.com/linuxserver/docker-sabnzbd
+---
+version: "2.1"
+services:
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+    volumes:
+      - /path/to/data:/config
+      - /path/to/downloads:/downloads #optional
+      - /path/to/incomplete/downloads:/incomplete-downloads #optional
+    ports:
+      - 8080:8080
+    restart: unless-stopped
