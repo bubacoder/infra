@@ -14,9 +14,9 @@ services:
       #- JELLYFIN_PublishedServerUrl=192.168.0.5 #optional
     volumes:
       - ${CONTAINERDATA}/jellyfin:/config
-      - ${MEDIA}/sorozat:/data/tvshows
-      - ${MEDIA}/mese:/data/movies
-      - ${MEDIA}/music:/data/audio
+      - ${SERIES}:/data/tvshows
+      - ${MOVIES}:/data/movies
+      - ${MUSIC}:/data/audio
     ports:
       - 8096:8096 # Web UI
       - 8920:8920 #optional

@@ -9,13 +9,13 @@ services:
     image: lscr.io/linuxserver/sabnzbd:latest
     container_name: sabnzbd
     environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Europe/London
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TIMEZONE}
     volumes:
-      - /path/to/data:/config
-      - /path/to/downloads:/downloads #optional
-      - /path/to/incomplete/downloads:/incomplete-downloads #optional
+      - ${CONTAINERDATA}/sabnzbd:/config
+      - ${DOWNLOADS}/sabnzbd:/downloads #optional
+      - ${DOWNLOADS}/sabnzbd-incomplete:/incomplete-downloads #optional
     ports:
       - 8080:8080
     restart: unless-stopped

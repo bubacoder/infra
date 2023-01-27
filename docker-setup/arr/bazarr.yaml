@@ -14,9 +14,9 @@ services:
       - PGID=${PGID}
       - TZ=${TIMEZONE}
     volumes:
-      - /path/to/bazarr/config:/config
-      - /path/to/movies:/movies #optional
-      - /path/to/tv:/tv #optional
+      - ${CONTAINERDATA}/bazarr/config:/config
+      - ${MOVIES}:/movies #optional
+      - ${SERIES}:/tv #optional
     ports:
       - 6767:6767
     restart: unless-stopped

@@ -11,7 +11,8 @@ DOWNLOADS=/mnt/drive2/download
 MEDIA=/mnt/drive2/media
 FAMILYMEDIA=/mnt/drive1/family-media
 
+SERIES=${MEDIA}/sorozat
+MOVIES=${MEDIA}/film
+MUSIC=${MEDIA}/music
 
-#SERIES=${MEDIA}/sorozat
 #${MEDIA}/mese
-#${MEDIA}/music

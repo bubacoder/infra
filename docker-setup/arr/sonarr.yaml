@@ -15,7 +15,7 @@ services:
       - TZ=${TIMEZONE}
     volumes:
       - ${CONTAINERDATA}/sonarr:/config
-      - ${MEDIA}/sorozat:/tv #optional
+      - ${SERIES}:/tv #optional
       - ${DOWNLOADS}:/downloads #optional
     ports:
       - 8989:8989
