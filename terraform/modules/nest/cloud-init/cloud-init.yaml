@@ -1,0 +1,12 @@
+#cloud-config
+#mounts: # REMOVED It’s a race condition between volume attaching and cloud-init script.
+# - [ /dev/sdc1, /storage, "ext4", "discard,errors=remount-ro", "0", "1" ]
+package_upgrade: true
+packages:
+  - mc
+  - links
+  - net-tools
+  - util-linux
+runcmd:
+  - #./docker-setup.sh
+  - #./docker-run.sh
