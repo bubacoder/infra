@@ -21,7 +21,7 @@ services:
       - DEFAULT_WORKSPACE=/config/workspace #optional
     volumes:
       - ${CONTAINERDATA}/code-server:/config
-      - /root/docker-config/:/config/docker-config
+      - /home/buba/repos:/config/repos
     ports:
       - 8444:8443
     restart: unless-stopped

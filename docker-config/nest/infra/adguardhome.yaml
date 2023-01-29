@@ -1,4 +1,5 @@
 # https://hub.docker.com/r/adguard/adguardhome
+# "Error response from daemon: driver Error starting userland proxy: listen tcp4 0.0.0.0:53: bind: address already in use" -> disable DNSStubListener
 ---
 version: "3.5"
 services:

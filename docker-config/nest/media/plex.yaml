@@ -13,6 +13,7 @@ services:
       #- PLEX_CLAIM= #optional
     volumes:
       - /path/to/library:/config
-      - /path/to/tvseries:/tv
-      - /path/to/movies:/movies
+      - ${MEDIA}:/media
+      #- /path/to/tvseries:/tv
+      #- /path/to/movies:/movies
     restart: unless-stopped

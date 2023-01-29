@@ -13,7 +13,8 @@ services:
       - TZ=${TIMEZONE}
     volumes:
       - ${CONTAINERDATA}/radarr:/config
-      - ${MOVIES}:/movies #optional
+      - ${MEDIA}:/media
+      #- ${MOVIES}:/movies #optional
       - ${DOWNLOADS}:/downloads #optional
     ports:
       - 7878:7878

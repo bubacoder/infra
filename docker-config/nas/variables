@@ -1,0 +1,12 @@
+# Docker-compose environment variables
+
+PUID=1000
+PGID=1000
+TIMEZONE=Etc/UTC
+
+ALLSTORAGE=/mnt
+CONTAINERDATA=/storage/container-data
+DOWNLOADS=/mnt/drive2/download
+
+MEDIA=/mnt/drive2/media
+FAMILYMEDIA=/mnt/drive1/family-media

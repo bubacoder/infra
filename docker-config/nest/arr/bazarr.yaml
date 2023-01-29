@@ -15,8 +15,9 @@ services:
       - TZ=${TIMEZONE}
     volumes:
       - ${CONTAINERDATA}/bazarr/config:/config
-      - ${MOVIES}:/movies #optional
-      - ${SERIES}:/tv #optional
+      - ${MEDIA}:/media
+      #- ${MOVIES}:/movies #optional
+      #- ${SERIES}:/tv #optional
     ports:
       - 6767:6767
     restart: unless-stopped

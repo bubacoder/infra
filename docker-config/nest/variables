@@ -4,15 +4,16 @@ PUID=1000
 PGID=1000
 TIMEZONE=Etc/UTC
 
+CONTAINERDATA=/home/buba/container-data
+
 ALLSTORAGE=/mnt
-CONTAINERDATA=/storage/container-data
-DOWNLOADS=/mnt/drive2/download
+DOWNLOADS=/mnt/download
 
-MEDIA=/mnt/drive2/media
-FAMILYMEDIA=/mnt/drive1/family-media
-
+MEDIA=/mnt/media
 SERIES=${MEDIA}/sorozat
 MOVIES=${MEDIA}/film
 MUSIC=${MEDIA}/music
+
+FAMILYMEDIA=/mnt/family-media
 
 #${MEDIA}/mese
