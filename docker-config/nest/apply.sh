@@ -18,6 +18,7 @@ up arr sonarr
 up arr bazarr
 up arr prowlarr
 up arr jellyseerr
+up arr flaresolverr
 #up arr jackett
 
 up fileshare transmission
