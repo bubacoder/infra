@@ -16,8 +16,6 @@ services:
     volumes:
       - ${CONTAINERDATA}/bazarr/config:/config
       - ${MEDIA}:/media
-      #- ${MOVIES}:/movies #optional
-      #- ${SERIES}:/tv #optional
     ports:
       - 6767:6767
     restart: unless-stopped

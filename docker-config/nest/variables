@@ -9,11 +9,11 @@ CONTAINERDATA=/home/buba/container-data
 ALLSTORAGE=/mnt
 DOWNLOADS=/mnt/download
 
-MEDIA=/mnt/media
-SERIES=${MEDIA}/sorozat
-MOVIES=${MEDIA}/film
-MUSIC=${MEDIA}/music
+MEDIA=/mnt/nas/media
+#SERIES=${MEDIA}/sorozat
+#MOVIES=${MEDIA}/film
+#MUSIC=${MEDIA}/music
 
-FAMILYMEDIA=/mnt/family-media
+FAMILYMEDIA=/mnt/nas/family-media
 
 #${MEDIA}/mese

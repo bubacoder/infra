@@ -14,7 +14,6 @@ services:
     volumes:
       - ${CONTAINERDATA}/radarr:/config
       - ${MEDIA}:/media
-      #- ${MOVIES}:/movies #optional
       - ${DOWNLOADS}:/downloads #optional
     ports:
       - 7878:7878

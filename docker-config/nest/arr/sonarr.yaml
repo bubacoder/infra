@@ -16,7 +16,6 @@ services:
     volumes:
       - ${CONTAINERDATA}/sonarr:/config
       - ${MEDIA}:/media
-      #- ${SERIES}:/tv #optional
       - ${DOWNLOADS}:/downloads #optional
     ports:
       - 8989:8989
