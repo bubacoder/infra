@@ -1,0 +1,15 @@
+# Uptime Kuma is an easy-to-use self-hosted monitoring tool.
+#
+# https://uptime.kuma.pet/
+# https://github.com/louislam/uptime-kuma
+---
+version: "3.5"
+services:
+  uptime-kuma:
+    container_name: uptime-kuma
+    image: louislam/uptime-kuma:1
+    ports:
+        - 3001:3001
+    volumes:
+        - ${CONTAINERDATA}/uptime-kuma:/app/data
+    restart: unless-stopped

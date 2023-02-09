@@ -4,8 +4,8 @@
 
 up infra portainer
 up infra adguardhome
-
 up infra unifi-controller
+up infra uptime-kuma
 #up infra wireguard
 #up infra nginx-proxy-manager
 
@@ -33,3 +33,5 @@ up storage code-server
 up storage syncthing
 #up storage google-drive
 up storage filebrowser
+#up storage kopia
+up storage scrutiny
