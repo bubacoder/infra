@@ -1,21 +1,55 @@
 # Hard Drive S.M.A.R.T Monitoring, Historical Trends & Real World Failure Thresholds
 #
 # https://github.com/AnalogJ/scrutiny
+#
+# In addition to the Omnibus image (available under the latest tag) you can deploy in Hub/Spoke mode
+# https://github.com/AnalogJ/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml
 ---
-version: "3.5"
+version: '3.5'
 services:
-  scrutiny:
-    container_name: scrutiny
-    image: ghcr.io/analogj/scrutiny:master-omnibus
+  scrutiny-influxdb:
+    image: influxdb:2.2
+    ports:
+      - 8086:8086
+    volumes:
+      - ${CONTAINERDATA}/scrutiny/influxdb:/var/lib/influxdb2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+    restart: unless-stopped
+
+  scrutiny-web:
+    image: 'ghcr.io/analogj/scrutiny:master-web'
+    ports:
+      - 8085:8080
+    volumes:
+      - ${CONTAINERDATA}/scrutiny/config:/opt/scrutiny/config
+    environment:
+      SCRUTINY_WEB_INFLUXDB_HOST: 'scrutiny-influxdb'
+    depends_on:
+      scrutiny-influxdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 10s
+    restart: unless-stopped
+
+  scrutiny-collector:
+    image: 'ghcr.io/analogj/scrutiny:master-collector'
     cap_add:
       - SYS_RAWIO
-    ports:
-      - 8085:8080 # webapp
-      - 8086:8086 # influxDB admin
     volumes:
-      - /run/udev:/run/udev:ro
-      - ${CONTAINERDATA}/scrutiny/config:/opt/scrutiny/config
-      - ${CONTAINERDATA}/scrutiny/influxdb
+      - '/run/udev:/run/udev:ro'
+    environment:
+      COLLECTOR_API_ENDPOINT: 'http://${MAINNODE}:8085'
+    depends_on:
+      scrutiny-web:
+        condition: service_healthy
     devices:
       - /dev/sda
       #- /dev/sdb

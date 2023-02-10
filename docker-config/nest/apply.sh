@@ -33,5 +33,5 @@ up storage code-server
 up storage syncthing
 #up storage google-drive
 up storage filebrowser
-#up storage kopia
+up storage kopia
 up storage scrutiny

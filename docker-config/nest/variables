@@ -5,6 +5,7 @@ PGID=1000
 TIMEZONE=Etc/UTC
 
 CONTAINERDATA=/home/buba/container-data
+MAINNODE=nest
 
 ALLSTORAGE=/mnt
 DOWNLOADS=/mnt/download

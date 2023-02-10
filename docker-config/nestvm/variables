@@ -1,3 +1,0 @@
-#Docker-compose environment variables
-CONTAINERDATA=/storage/container-data
-DOWNLOADS=/storage/download

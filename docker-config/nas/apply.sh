@@ -2,9 +2,8 @@
 
 . ../common.sh
 
-
-up infra portainer
-up infra portainer_agent
+#up infra portainer
+up infra portainer-agent
 up fileshare transmission
 up storage samba
-up storage scrutiny
+up storage scrutiny-collector
