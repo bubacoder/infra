@@ -15,9 +15,6 @@ services:
       - '/run/udev:/run/udev:ro'
     environment:
       COLLECTOR_API_ENDPOINT: 'http://${MAINNODE}:8085'
-    depends_on:
-      web:
-        condition: service_healthy
     devices:
       - "/dev/sda"
       - "/dev/sdb"
