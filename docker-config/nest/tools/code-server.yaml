@@ -13,7 +13,7 @@ services:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TIMEZONE}
-      - PASSWORD=password #optional
+      - PASSWORD=${ADMIN_PASSWORD} #optional
       - HASHED_PASSWORD= #optional
       - SUDO_PASSWORD=password #optional
       - SUDO_PASSWORD_HASH= #optional

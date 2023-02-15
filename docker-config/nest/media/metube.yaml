@@ -1,0 +1,18 @@
+# Web GUI for youtube-dl (using the yt-dlp fork) with playlist support. Allows you to download videos from YouTube and dozens of other sites
+#
+# https://github.com/alexta69/metube
+# https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md
+---
+version: "3.5"
+services:
+  metube:
+    image: alexta69/metube
+    container_name: metube
+    environment:
+      - UID=${PUID}
+      - GID=${PGID}
+    ports:
+      - 8081:8081
+    volumes:
+      - ${DOWNLOADS}/youtube:/downloads
+    restart: unless-stopped

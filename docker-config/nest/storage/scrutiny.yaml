@@ -44,9 +44,10 @@ services:
     cap_add:
       - SYS_RAWIO
     volumes:
-      - '/run/udev:/run/udev:ro'
+      - /run/udev:/run/udev:ro
     environment:
       COLLECTOR_API_ENDPOINT: 'http://${MAINNODE}:8085'
+      COLLECTOR_CRON_SCHEDULE: '0 0 * * *'
     depends_on:
       scrutiny-web:
         condition: service_healthy

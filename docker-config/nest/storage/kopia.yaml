@@ -1,0 +1,63 @@
+# Encrypted, Compressed, and Deduplicated Backups Using the Cloud Storage You Pick
+# Cross-platform backup tool for Windows, macOS & Linux with fast, incremental backups, client-side end-to-end encryption, compression and data deduplication. CLI and GUI included.
+#
+# https://kopia.io/
+# https://github.com/kopia/kopia
+# https://github.com/kopia/kopia/tree/master/tools/docker
+---
+services:
+  kopia:
+      image: kopia/kopia:latest
+      container_name: kopia
+      user: "0:0"
+      privileged: true
+      cap_add:
+        - SYS_ADMIN
+      security_opt:
+        - apparmor:unconfined
+      devices:
+        - /dev/fuse:/dev/fuse:rwm
+      command:
+        - server
+        - start
+        - --disable-csrf-token-checks
+        #- --tls-cert-file=/data/home/XXX/ssl-certs/fullchain.pem
+        #- --tls-key-file=/data/home/XXX/ssl-certs/privkey.pem
+        - --insecure
+        - --address=0.0.0.0:51515
+        - --server-username=${ADMIN_USER}
+        - --server-password=${ADMIN_PASSWORD}
+      ports:
+        - 51515:51515
+      environment:
+        USER: ${ADMIN_USER}
+        KOPIA_PASSWORD: ${ADMIN_PASSWORD}
+        TZ: $TIMEZONE
+      volumes:
+        #- /mnt/kopia:/tmp:shared
+        - ${CONTAINERDATA}/kopia/config:/app/config
+        - ${CONTAINERDATA}/kopia/cache:/app/cache
+        - ${CONTAINERDATA}/kopia/logs:/app/logs
+        - /:/local-data:ro
+        - /home/buba/backup:/local-repo
+      restart: "unless-stopped"
+
+### IF you would like to assign hostname and domain name to your server.
+#      hostname: "XXX"
+#      domainname: "XXX"
+
+### If you want to assign ip to your container with an existing Docker Network.
+### Existing networks name is "Docker" in below example. Just change it with your own.
+#      networks:
+#        Docker:
+#          ipv4_address: aaa.bbb.ccc.ddd
+
+#### If you would like to assign DNS Server
+#      dns:
+#        - 8.8.8.8
+#
+
+### Existing Networks should be defined as external.
+#networks:
+#  Docker:
+#    external: true
