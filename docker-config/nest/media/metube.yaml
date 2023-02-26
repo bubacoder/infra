@@ -8,11 +8,20 @@ services:
   metube:
     image: alexta69/metube
     container_name: metube
+    restart: "unless-stopped"
     environment:
       - UID=${PUID}
       - GID=${PGID}
-    ports:
-      - 8081:8081
     volumes:
       - ${DOWNLOADS}/youtube:/downloads
-    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.metube.entrypoints=websecure
+      - traefik.http.routers.metube.rule=Host(`metube.${MYDOMAIN}`)
+      - traefik.http.services.metube.loadbalancer.server.port=8081
+
+networks:
+  proxy:
+    external: true

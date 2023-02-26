@@ -6,9 +6,9 @@
 # https://github.com/kopia/kopia/tree/master/tools/docker
 ---
 services:
-  kopia:
+  kopia-b2:
     image: kopia/kopia:latest
-    container_name: kopia
+    container_name: kopia-b2
     restart: "unless-stopped"
     user: "0:0"
     privileged: true
@@ -28,22 +28,20 @@ services:
       - --server-password=${ADMIN_PASSWORD}
     environment:
       USER: ${ADMIN_USER}
-      KOPIA_PASSWORD: ${ADMIN_PASSWORD}
+      KOPIA_PASSWORD: ${KOPIA_B2_REPOSOTORY_PASSWORD}
       TZ: $TIMEZONE
     volumes:
-      #- /mnt/kopia:/tmp:shared
-      - ${CONTAINERDATA}/kopia/config:/app/config
-      - ${CONTAINERDATA}/kopia/cache:/app/cache
-      - ${CONTAINERDATA}/kopia/logs:/app/logs
-      - /:/local-data:ro
-      - /home/buba/backup:/local-repo
+      - ${CONTAINERDATA}/kopia-b2/config:/app/config
+      - ${CONTAINERDATA}/kopia-b2/cache:/app/cache
+      - ${CONTAINERDATA}/kopia-b2/logs:/app/logs
+      - /mnt/nas/family-media:/mnt/family-media:ro
     networks:
       - proxy
     labels:
       - traefik.enable=true
-      - traefik.http.routers.kopia.entrypoints=websecure
-      - traefik.http.routers.kopia.rule=Host(`kopia.${MYDOMAIN}`)
-      - traefik.http.services.kopia.loadbalancer.server.port=80
+      - traefik.http.routers.kopia-b2.entrypoints=websecure
+      - traefik.http.routers.kopia-b2.rule=Host(`kopia-b2.${MYDOMAIN}`)
+      - traefik.http.services.kopia-b2.loadbalancer.server.port=80
 
 networks:
   proxy:

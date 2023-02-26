@@ -9,6 +9,8 @@ version: '3.5'
 services:
   scrutiny-influxdb:
     image: influxdb:2.2
+    container_name: scrutiny-influxdb
+    restart: unless-stopped
     ports:
       - 8086:8086
     volumes:
@@ -18,10 +20,11 @@ services:
       interval: 15s
       timeout: 10s
       retries: 20
-    restart: unless-stopped
 
   scrutiny-web:
     image: 'ghcr.io/analogj/scrutiny:master-web'
+    container_name: scrutiny-web
+    restart: unless-stopped
     ports:
       - 8085:8080
     volumes:
@@ -37,10 +40,11 @@ services:
       timeout: 10s
       retries: 20
       start_period: 10s
-    restart: unless-stopped
 
   scrutiny-collector:
     image: 'ghcr.io/analogj/scrutiny:master-collector'
+    container_name: scrutiny-collector
+    restart: unless-stopped
     cap_add:
       - SYS_RAWIO
     volumes:
@@ -54,4 +58,3 @@ services:
     devices:
       - /dev/sda
       #- /dev/sdb
-    restart: unless-stopped

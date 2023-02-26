@@ -9,6 +9,7 @@ services:
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -18,4 +19,3 @@ services:
       - ${MEDIA}:/media
     ports:
       - 6767:6767
-    restart: unless-stopped

@@ -15,3 +15,5 @@ apt-cache policy docker-ce
 
 sudo apt install -y docker-ce docker-compose-plugin
 usermod -aG docker $USER
+
+sudo docker network create proxy

@@ -9,6 +9,7 @@ services:
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -19,4 +20,3 @@ services:
       - ${DOWNLOADS}:/downloads #optional
     ports:
       - 8989:8989
-    restart: unless-stopped

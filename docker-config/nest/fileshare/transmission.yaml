@@ -8,6 +8,7 @@ services:
   transmission:
     image: lscr.io/linuxserver/transmission:latest
     container_name: transmission
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -26,4 +27,3 @@ services:
       - 9091:9091 # Web UI / API
       - 51413:51413
       - 51413:51413/udp
-    restart: unless-stopped

@@ -10,6 +10,7 @@ services:
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -18,4 +19,3 @@ services:
       - ${CONTAINERDATA}/prowlarr:/config
     ports:
       - 9696:9696
-    restart: unless-stopped

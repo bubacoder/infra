@@ -9,6 +9,7 @@ services:
   jackett:
     image: lscr.io/linuxserver/jackett:latest
     container_name: jackett
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -20,4 +21,3 @@ services:
       - ${DOWNLOADS}:/downloads
     ports:
       - 9117:9117
-    restart: unless-stopped

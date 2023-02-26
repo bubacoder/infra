@@ -5,6 +5,7 @@ services:
   filebrowser:
     image: filebrowser/filebrowser:s6
     container_name: filebrowser
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -13,6 +14,17 @@ services:
       - ${ALLSTORAGE}:/srv
       - ${CONTAINERDATA}/filebrowser/filebrowser.db:/database/filebrowser.db
       - ${CONTAINERDATA}/filebrowser/settings.json:/config/settings.json
-    ports:
-      - 9030:80 # Web UI
-    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.filebrowser.entrypoints=websecure
+      # - traefik.http.routers.filebrowser.rule=Host(`filebrowser.${MYDOMAIN}`)
+      - traefik.http.services.filebrowser.loadbalancer.server.port=80
+
+      # Part for local lan services only
+      # - traefik.http.routers.nginx.middlewares=local-ipwhitelist@file
+
+networks:
+  proxy:
+    external: true

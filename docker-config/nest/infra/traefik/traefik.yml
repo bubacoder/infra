@@ -1,0 +1,85 @@
+# https://blog.lrvt.de/nginx-proxy-manager-versus-traefik/
+
+# Traefik global configuration
+global:
+  checkNewVersion: true
+  sendAnonymousUsage: false
+
+# Enable traefik ui dashboard
+api:
+  dashboard: true
+  insecure: true  # Enables the web UI and API over HTTP (without HTTPS)
+
+log:
+  filePath: /logs/traefik.log # Sets the path where Traefik will write logs
+  level: DEBUG # By default, the level is set to ERROR. Alternative logging levels are DEBUG, PANIC, FATAL, ERROR, WARN, and INFO.
+
+# providers:
+#   docker:
+#     exposedByDefault: false # Tells Traefik not to expose containers to the outside world unless explicitly instructed to do so
+
+providers:
+  providersThrottleDuration: 2s
+
+  # File provider for connecting things that are outside of docker / defining middleware
+  file:
+    filename: /etc/traefik/fileConfig.yml
+    watch: true
+
+  # Docker provider for connecting all apps that are inside of the docker network
+  docker:
+    watch: true
+    network: proxy
+    # Default host rule to containername.domain.example
+    defaultRule: "Host(`{{ index .Labels \"com.docker.compose.service\"}}.example.com`)"
+    swarmModeRefreshSeconds: 15s
+    exposedByDefault: false  # Tells Traefik not to expose containers to the outside world unless explicitly instructed to do so
+
+entryPoints:
+  web:
+    address: :80 # Configures the HTTP entrypoint to listen on port 80
+    # http:
+    #   redirections:
+    #     entryPoint:
+    #       to: websecure # Redirects all HTTP traffic to the HTTPS entrypoint
+    #       scheme: https
+  websecure:
+    address: :443 # Configures the HTTPS entrypoint to listen on port 443
+    http:
+      # tls:
+      #   minVersion: VersionTLS12 # Enforces TLS 1.2 or better
+      #   certResolver: letsencrypt # Configures the HTTPS entrypoint to use certificates obtained from the Let's Encrypt CA
+      tls:
+        # minVersion: VersionTLS12 # Enforces TLS 1.2 or better
+        certResolver: letsencrypt # Configures the HTTPS entrypoint to use certificates obtained from the Let's Encrypt CA
+        # Generate a wildcard domain certificate
+        domains:
+          - main: example.com
+            sans:
+              - '*.example.com'
+
+# https://doc.traefik.io/traefik/user-guides/docker-compose/acme-dns/
+# https://go-acme.github.io/lego/dns/ovh/
+# https://medium.com/nephely/configure-traefik-for-the-dns-01-challenge-with-ovh-as-dns-provider-c737670c0434
+
+# certificatesResolvers:
+#   letsencrypt:
+#     acme:
+#       dnsChallenge:
+#         provider: ovh # Configures OVH as the DNS provider to use for the ACME DNS challenge
+#       email: bubacoder@gmail.com # Sets the email address to use when registering with the Let's Encrypt CA
+#       storage: /letsencrypt/acme.json # Sets the path where Traefik will store ACME data (such as obtained certificates) 
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: bubacoder@gmail.com # Sets the email address to use when registering with the Let's Encrypt CA
+      storage: /letsencrypt/acme.json # Sets the path where Traefik will store ACME data (such as obtained certificates) 
+      dnsChallenge:
+        provider: ovh # Configures OVH as the DNS provider to use for the ACME DNS challenge
+        delayBeforeCheck: 10 # Specifies the number of seconds to wait before checking if the DNS propagation is completed
+        resolvers:
+          - "1.1.1.1:53" # Specifies a list of DNS resolvers to use for the DNS queries
+          - "8.8.8.8:53"
+#       tlsChallenge: # Configures TLS-SNI-01 challenge to support wildcard certificates
+#         keyType: EC256

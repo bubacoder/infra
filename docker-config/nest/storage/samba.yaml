@@ -6,6 +6,7 @@ services:
   samba:
     build: .
     image: servercontainers/samba
+    restart: unless-stopped
     network_mode: host
     # uncomment to solve bug: https://github.com/ServerContainers/samba/issues/50 - wsdd2 only - not needed for samba
     #cap_add:
@@ -61,4 +62,3 @@ services:
       #- ./shares/public:/shares/public
       #- ./shares/homes:/shares/homes
       #- ./shares/timemachine:/shares/timemachine
-    restart: unless-stopped

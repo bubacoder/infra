@@ -1,0 +1,24 @@
+# SpeedTest by OpenSpeedTest™ is a Free and Open-Source HTML5 Network Performance Estimation Tool
+#
+# https://hub.docker.com/r/openspeedtest/latest
+# https://blog.lrvt.de/nginx-proxy-manager-versus-traefik/
+---
+version: "3"
+services:
+  openspeedtest:
+    image: openspeedtest/latest:latest
+    container_name: openspeedtest
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.openspeedtest.rule=Host(`openspeedtest.${MYDOMAIN}`)
+      - traefik.http.services.openspeedtest.loadbalancer.server.port=3000
+      - traefik.http.middlewares.limit.buffering.maxRequestBodyBytes=10000000000
+      # - traefik.http.middlewares.test-compress.compress=true
+      # - traefik.http.routers.openspeedtest.middlewares=limit
+
+networks:
+  proxy:
+    external: true

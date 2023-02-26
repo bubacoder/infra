@@ -4,24 +4,33 @@
 # https://github.com/coder/code-server
 # https://github.com/coder/code-server/blob/main/docs/FAQ.md
 ---
-version: "2.1"
+version: "3.5"
 services:
   code-server:
     image: lscr.io/linuxserver/code-server:latest
     container_name: code-server
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TIMEZONE}
       - PASSWORD=${ADMIN_PASSWORD} #optional
       - HASHED_PASSWORD= #optional
-      - SUDO_PASSWORD=password #optional
+      - SUDO_PASSWORD=${ADMIN_PASSWORD} #optional
       - SUDO_PASSWORD_HASH= #optional
-      - PROXY_DOMAIN=code-server.my.domain #optional
+      - PROXY_DOMAIN=code.${MYDOMAIN} #optional
       - DEFAULT_WORKSPACE=/config/workspace #optional
     volumes:
       - ${CONTAINERDATA}/code-server:/config
       - /home/buba/repos:/config/repos
-    ports:
-      - 8444:8443
-    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.code.entrypoints=websecure
+      - traefik.http.routers.code.rule=Host(`code.${MYDOMAIN}`)
+      - traefik.http.services.code.loadbalancer.server.port=8443
+
+networks:
+  proxy:
+    external: true

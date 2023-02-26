@@ -7,6 +7,7 @@ services:
   radarr:
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -17,4 +18,3 @@ services:
       - ${DOWNLOADS}:/downloads #optional
     ports:
       - 7878:7878
-    restart: unless-stopped

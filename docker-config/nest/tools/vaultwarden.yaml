@@ -1,0 +1,26 @@
+# Unofficial Bitwarden compatible server written in Rust
+#
+# https://github.com/dani-garcia/vaultwarden
+# https://github.com/dani-garcia/vaultwarden/wiki
+# https://bitwarden.com/
+# https://bitwarden.com/browser-start/
+---
+version: "3.5"
+services:
+  server:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: unless-stopped
+    volumes:
+      - ${CONTAINERDATA}/vaultwarden:/data
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.vault.entrypoints=websecure
+      - traefik.http.routers.vault.rule=Host(`vault.${MYDOMAIN}`)
+      - traefik.http.services.vault.loadbalancer.server.port=80
+
+networks:
+  proxy:
+    external: true

@@ -8,13 +8,21 @@ services:
   heimdall:
     image: lscr.io/linuxserver/heimdall:latest
     container_name: heimdall
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TIMEZONE}
     volumes:
       - ${CONTAINERDATA}/hemidall:/config
-    ports:
-      - 80:80
-      - 443:443
-    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.heimdall.entrypoints=websecure
+      - traefik.http.routers.heimdall.rule=Host(`heimdall.${MYDOMAIN}`)
+      - traefik.http.services.heimdall.loadbalancer.server.port=80
+
+networks:
+  proxy:
+    external: true

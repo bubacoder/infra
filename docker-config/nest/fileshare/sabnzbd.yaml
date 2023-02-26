@@ -8,6 +8,7 @@ services:
   sabnzbd:
     image: lscr.io/linuxserver/sabnzbd:latest
     container_name: sabnzbd
+    restart: unless-stopped
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
@@ -18,4 +19,3 @@ services:
       - ${DOWNLOADS}/sabnzbd-incomplete:/incomplete-downloads #optional
     ports:
       - 8080:8080
-    restart: unless-stopped

@@ -9,6 +9,7 @@ services:
   jellyseerr:
     image: fallenbagel/jellyseerr:latest
     container_name: jellyseerr
+    restart: unless-stopped
     environment:
       - LOG_LEVEL=debug
       - TZ=${TIMEZONE}
@@ -16,4 +17,3 @@ services:
       - 5055:5055
     volumes:
       - ${CONTAINERDATA}/jellyseerr:/app/config
-    restart: unless-stopped
