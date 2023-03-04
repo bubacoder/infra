@@ -12,11 +12,12 @@ services:
     cap_add:
       - SYS_RAWIO
     volumes:
-      - '/run/udev:/run/udev:ro'
+      - /run/udev:/run/udev:ro
     environment:
-      COLLECTOR_API_ENDPOINT: 'http://${MAINNODE}:8085'
+      COLLECTOR_API_ENDPOINT: 'http://${MAIN_NODE}:8085'
     devices:
-      - "/dev/sda"
-      - "/dev/sdb"
-      - "/dev/sdc"
-      - "/dev/sdd"
+      - /dev/sda
+      - /dev/sdb
+      #- /dev/sdc
+      #- /dev/sdd
+    restart: unless-stopped
