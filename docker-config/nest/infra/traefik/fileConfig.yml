@@ -1,53 +1,33 @@
 http:
 
-  ## EXTERNAL ROUTING EXAMPLE - Only use if you want to proxy something manually ##
   routers:
     router:
       entryPoints:
-        - https
-        - http
+        - websecure
       rule: 'Host(`router.example.com`)'
       service: router
       middlewares:
         - "local-ipwhitelist@file"
+    transmission:
+      entryPoints:
+        - websecure
+      rule: 'Host(`transmission.example.com`)'
+      service: transmission
+      middlewares:
+        - "local-ipwhitelist@file"
 
-  #  homeassistant:
-  #    entryPoints:
-  #      - https
-  #      - http
-  #    rule: 'Host(`ha.example.com`)'
-  #    service: homeassistant
-  #    middlewares:
-  #      - "local-ipwhitelist@file"
-
-  #  pve:
-  #    entryPoints:
-  #      - https
-  #      - http
-  #    rule: 'Host(`pve.example.com`)'
-  #    service: pve
-  #    middlewares:
-  #      - "local-ipwhitelist@file"
-
-  ## SERVICES EXAMPLE ##
   services:
     router:
       loadBalancer:
         serversTransport: insecureTransport
         servers:
           - url: http://192.168.1.1:80
+    transmission:
+      loadBalancer:
+        serversTransport: insecureTransport
+        servers:
+          - url: http://nas:9091
 
-  #  homeassistant:
-  #    loadBalancer:
-  #      serversTransport: insecureTransport
-  #      servers:
-  #        - url: http://192.168.1.10:8123
-
-  #  pve:
-  #    loadBalancer:
-  #      serversTransport: insecureTransport
-  #      servers:
-  #        - url: https://192.168.1.20:8006
 
   # allow self-signed certificates for proxied web services
   serversTransports:

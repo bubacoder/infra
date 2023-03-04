@@ -14,7 +14,7 @@ services:
       - PGID=${PGID}
       - TZ=${TIMEZONE}
     volumes:
-      - ${CONTAINERDATA}/sabnzbd:/config
+      - ${DOCKER_VOLUMES}/sabnzbd:/config
       - ${DOWNLOADS}/sabnzbd:/downloads #optional
       - ${DOWNLOADS}/sabnzbd-incomplete:/incomplete-downloads #optional
     ports:

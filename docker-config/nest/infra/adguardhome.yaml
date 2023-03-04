@@ -11,8 +11,8 @@ services:
     container_name: adguardhome
     restart: unless-stopped
     volumes:
-      - ${CONTAINERDATA}/adguardhome/work:/opt/adguardhome/work
-      - ${CONTAINERDATA}/adguardhome/conf:/opt/adguardhome/conf
+      - ${DOCKER_VOLUMES}/adguardhome/work:/opt/adguardhome/work
+      - ${DOCKER_VOLUMES}/adguardhome/conf:/opt/adguardhome/conf
     ports:
       - 53:53/tcp # plain DNS
       - 53:53/udp # plain DNS
@@ -28,3 +28,13 @@ services:
       #- 8853:8853/udp # add if you are going to run AdGuard Home as a DNS-over-QUIC server. You may only leave one or two of these
       #- 5443:5443/tcp # add if you are going to run AdGuard Home as a DNSCrypt server
       #- 5443:5443/udp # add if you are going to run AdGuard Home as a DNSCrypt server
+    labels:
+      - homepage.group=Infra
+      - homepage.name=AdGuard Home
+      - homepage.icon=adguard-home.png
+      - homepage.href=https://adguardhome.${MYDOMAIN}/
+      - homepage.description=Blocking ads and tracking
+      - homepage.widget.type=adguard
+      - homepage.widget.url=http://nest:3000
+      - homepage.widget.username=buba
+      - homepage.widget.password=SomeSecureValueGoesHere

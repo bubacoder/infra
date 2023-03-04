@@ -16,6 +16,11 @@ services:
       - PGID=${PGID}
       - TZ=${TIMEZONE}
     volumes:
-      - ${CONTAINERDATA}/prowlarr:/config
+      - ${DOCKER_VOLUMES}/prowlarr:/config
     ports:
       - 9696:9696
+    labels:
+      - homepage.group=Arr
+      - homepage.name=Prowlarr
+      - homepage.icon=prowlarr.png
+      - homepage.href=http://prowlarr.${MYDOMAIN}/

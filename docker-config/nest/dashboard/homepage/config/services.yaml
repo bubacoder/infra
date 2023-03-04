@@ -1,0 +1,15 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/en/configs/services
+
+- Infra:
+    - Router:
+        href: https://router.example.com/
+        description: OpenWRT LuCi
+        icon: router.png
+
+- Arr:
+    - Transmission @ NAS:
+        href: https://transmission.example.com/
+        description: BitTorrent client
+        icon: transmission.png

@@ -31,17 +31,22 @@ services:
       KOPIA_PASSWORD: ${KOPIA_B2_REPOSOTORY_PASSWORD}
       TZ: $TIMEZONE
     volumes:
-      - ${CONTAINERDATA}/kopia-b2/config:/app/config
-      - ${CONTAINERDATA}/kopia-b2/cache:/app/cache
-      - ${CONTAINERDATA}/kopia-b2/logs:/app/logs
+      - ${DOCKER_VOLUMES}/kopia-b2/config:/app/config
+      - ${DOCKER_VOLUMES}/kopia-b2/cache:/app/cache
+      - ${DOCKER_VOLUMES}/kopia-b2/logs:/app/logs
       - /mnt/nas/family-media:/mnt/family-media:ro
     networks:
       - proxy
     labels:
       - traefik.enable=true
       - traefik.http.routers.kopia-b2.entrypoints=websecure
-      - traefik.http.routers.kopia-b2.rule=Host(`kopia-b2.${MYDOMAIN}`)
+      - traefik.http.routers.kopia-b2.middlewares=local-ipwhitelist@file
       - traefik.http.services.kopia-b2.loadbalancer.server.port=80
+      - homepage.group=Storage
+      - homepage.name=Kopia - B2
+      - homepage.icon=kopia.png
+      - homepage.href=https://kopia-b2.${MYDOMAIN}/
+      - homepage.description=Backups Using the Cloud Storage You Pick
 
 networks:
   proxy:

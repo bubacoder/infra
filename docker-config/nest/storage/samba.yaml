@@ -6,6 +6,7 @@ services:
   samba:
     build: .
     image: servercontainers/samba
+    container_name: samba
     restart: unless-stopped
     network_mode: host
     # uncomment to solve bug: https://github.com/ServerContainers/samba/issues/50 - wsdd2 only - not needed for samba
@@ -24,7 +25,7 @@ services:
 
       GROUP_family: 1500
 
-      ACCOUNT_buba: asdffdsa
+      ACCOUNT_buba: ${ADMIN_PASSWORD}
       UID_buba: 1000
       GROUPS_buba: family
 
@@ -53,12 +54,5 @@ services:
     volumes:
       - /etc/avahi/services/:/external/avahi
 
-      # avoid loops when mounting folders to /shares (I'd recommend explicit mapping for each share)
       - /mnt:/shares/mnt
       - /root/docker-config:/shares/config
-
-      #- ./shares/alice-hidden:/shares/alice-hidden
-      #- ./shares/bob:/shares/bob
-      #- ./shares/public:/shares/public
-      #- ./shares/homes:/shares/homes
-      #- ./shares/timemachine:/shares/timemachine

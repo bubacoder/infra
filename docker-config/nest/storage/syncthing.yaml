@@ -14,7 +14,7 @@ services:
       - PGID=${PGID}
       - TZ=${TIMEZONE}
     volumes:
-      - ${CONTAINERDATA}/syncthing:/config
+      - ${DOCKER_VOLUMES}/syncthing:/config
       - ${ALLSTORAGE}:/storage
     ports:
       - 8384:8384 # Web UI

@@ -8,15 +8,21 @@ services:
   homeassistant:
     image: lscr.io/linuxserver/homeassistant:latest
     container_name: homeassistant
+    restart: unless-stopped
     network_mode: host # Warning: "Published ports are discarded when using host network mode"
     environment:
       - PUID=${PUID}
       - PGID=${PGID}
       - TZ=${TIMEZONE}
     volumes:
-      - ${CONTAINERDATA}/homeassistant:/config
+      - ${DOCKER_VOLUMES}/homeassistant:/config
     ports:
       - 8123:8123 # Web UI
     #devices:
     #  - /path/to/device:/path/to/device #optional
-    restart: unless-stopped
+    labels:
+      - homepage.group=Infra
+      - homepage.name=HomeAssistant
+      - homepage.icon=home-assistant.png
+      - homepage.href=https://homeassistant.${MYDOMAIN}/
+      - homepage.description=Open source home automation

@@ -1,0 +1,31 @@
+# A highly customizable homepage (or startpage / application dashboard) with Docker and service API integrations.
+# 
+# https://gethomepage.dev/
+# https://github.com/benphelps/homepage
+---
+version: "3.5"
+services:
+  homepage:
+    image: ghcr.io/benphelps/homepage:latest
+    container_name: homepage
+    restart: unless-stopped
+    # TODO improve with: https://gethomepage.dev/en/installation/docker/
+    # environment:
+    #   - PUID=${PUID}
+    #   - PGID=${PGID}
+    volumes:
+      - ./homepage/config:/app/config
+      - ./homepage/icons:/app/public/icons
+      - ${DOCKER_VOLUMES}/homepage/logs:/app/config/logs
+      - /var/run/docker.sock:/var/run/docker.sock:ro # (optional) For docker integrations
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.homepage.entrypoints=websecure
+      - traefik.http.routers.homepage.middlewares=local-ipwhitelist@file
+      - traefik.http.services.homepage.loadbalancer.server.port=3000
+
+networks:
+  proxy:
+    external: true

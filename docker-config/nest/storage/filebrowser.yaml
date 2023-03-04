@@ -1,4 +1,7 @@
-# https://filebrowser.org/installation
+# Filebrowser provides a file managing interface within a specified directory and it can be used to upload, delete, preview, rename and edit your files.
+#
+# https://filebrowser.org/
+# https://github.com/filebrowser/filebrowser
 ---
 version: "3.5"
 services:
@@ -12,18 +15,20 @@ services:
       - TZ=${TIMEZONE}
     volumes:
       - ${ALLSTORAGE}:/srv
-      - ${CONTAINERDATA}/filebrowser/filebrowser.db:/database/filebrowser.db
-      - ${CONTAINERDATA}/filebrowser/settings.json:/config/settings.json
+      - ${DOCKER_VOLUMES}/filebrowser/filebrowser.db:/database/filebrowser.db
+      - ${DOCKER_VOLUMES}/filebrowser/settings.json:/config/settings.json
     networks:
       - proxy
     labels:
       - traefik.enable=true
       - traefik.http.routers.filebrowser.entrypoints=websecure
-      # - traefik.http.routers.filebrowser.rule=Host(`filebrowser.${MYDOMAIN}`)
+      - traefik.http.routers.filebrowser.middlewares=local-ipwhitelist@file
       - traefik.http.services.filebrowser.loadbalancer.server.port=80
-
-      # Part for local lan services only
-      # - traefik.http.routers.nginx.middlewares=local-ipwhitelist@file
+      - homepage.group=Storage
+      - homepage.name=Filebrowser
+      - homepage.icon=filebrowser.png
+      - homepage.href=https://filebrowser.${MYDOMAIN}/
+      - homepage.description=File Management
 
 networks:
   proxy:

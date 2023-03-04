@@ -1,0 +1,18 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/en/configs/bookmarks
+
+- Media:
+    - Work Music:
+        - abbr: WM
+          href: https://www.youtube.com/watch?v=RgVIUkscEik
+
+- Tech:
+    - Homepage Setup:
+        - abbr: HS
+          href: https://gethomepage.dev/en/installation/docker/
+
+# - Entertainment:
+#     - YouTube:
+#         - abbr: YT
+#           href: https://youtube.com/

@@ -1,0 +1,28 @@
+# CyberChef is the Cyber Swiss Army Knife web app for encryption, encoding, compression and data analysis.
+# 
+# https://github.com/mpepping/docker-cyberchef/
+# https://hub.docker.com/r/mpepping/cyberchef/
+# https://github.com/gchq/CyberChef/
+---
+version: "3.5"
+services:
+  cyberchef:
+    image: mpepping/cyberchef
+    container_name: cyberchef
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.cyberchef.entrypoints=websecure
+      - traefik.http.routers.cyberchef.middlewares=local-ipwhitelist@file
+      - traefik.http.services.cyberchef.loadbalancer.server.port=8000
+      - homepage.group=Tools
+      - homepage.name=Cyberchef
+      - homepage.icon=cyberchef.png
+      - homepage.href=https://cyberchef.${MYDOMAIN}/
+      - homepage.description=Swiss Army Knife web app for data analysis
+
+networks:
+  proxy:
+    external: true

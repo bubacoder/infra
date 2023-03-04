@@ -15,7 +15,13 @@ services:
       - PGID=${PGID}
       - TZ=${TIMEZONE}
     volumes:
-      - ${CONTAINERDATA}/bazarr/config:/config
+      - ${DOCKER_VOLUMES}/bazarr/config:/config
       - ${MEDIA}:/media
     ports:
       - 6767:6767
+    labels:
+      - homepage.group=Arr
+      - homepage.name=Bazarr
+      - homepage.icon=bazarr.png
+      - homepage.href=http://bazarr.${MYDOMAIN}/
+      - homepage.description=Manage and download subtitles

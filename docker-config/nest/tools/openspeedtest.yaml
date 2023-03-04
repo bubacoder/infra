@@ -13,11 +13,15 @@ services:
       - proxy
     labels:
       - traefik.enable=true
-      - traefik.http.routers.openspeedtest.rule=Host(`openspeedtest.${MYDOMAIN}`)
       - traefik.http.services.openspeedtest.loadbalancer.server.port=3000
       - traefik.http.middlewares.limit.buffering.maxRequestBodyBytes=10000000000
       # - traefik.http.middlewares.test-compress.compress=true
       # - traefik.http.routers.openspeedtest.middlewares=limit
+      - homepage.group=Tools
+      - homepage.name=OpenSpeedTest
+      - homepage.icon=openspeedtest.png
+      - homepage.href=https://openspeedtest.${MYDOMAIN}/
+      - homepage.description=Network Performance Estimation
 
 networks:
   proxy:

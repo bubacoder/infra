@@ -1,4 +1,4 @@
-# Making Docker and Kubernetes management easy.
+# Making Docker and Kubernetes management easy
 #
 # https://github.com/portainer/portainer
 ---
@@ -10,7 +10,7 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ${CONTAINERDATA}/portainer:/data
+      - ${DOCKER_VOLUMES}/portainer:/data
     # ports:
     #   - 9000:9000
     networks:
@@ -18,8 +18,18 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.portainer.entrypoints=websecure
-      - traefik.http.routers.portainer.rule=Host(`portainer.${MYDOMAIN}`)
+      - traefik.http.routers.portainer.middlewares=local-ipwhitelist@file
       - traefik.http.services.portainer.loadbalancer.server.port=9000
+      - homepage.group=Infra
+      - homepage.name=Portainer
+      - homepage.icon=portainer.png
+      - homepage.href=https://portainer.${MYDOMAIN}/
+      - homepage.description=Docker and Kubernetes management
+      - homepage.widget.type=portainer
+      - homepage.widget.url=https://portainer.${MYDOMAIN} # https://portainer.host.or.ip:9443
+      - homepage.widget.env=2
+      # In order to generate an API key, please follow the steps outlined here https://docs.portainer.io/api/access
+      - homepage.widget.key=SomeSecureValueGoesHere
 
 networks:
   proxy:

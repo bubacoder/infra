@@ -17,3 +17,9 @@ services:
       - TZ=${TIMEZONE}
     ports:
       - 8191:8191
+    labels:
+      - homepage.group=Arr
+      - homepage.name=Flaresolverr
+      - homepage.icon=cloudflare.png
+      - homepage.href=http://flaresolverr.${MYDOMAIN}/
+      - homepage.description=Bypass Cloudflare protection

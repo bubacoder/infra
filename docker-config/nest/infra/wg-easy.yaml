@@ -1,0 +1,45 @@
+# WireGuard® is an extremely simple yet fast and modern VPN that utilizes state-of-the-art cryptography. It aims to be faster, simpler, leaner, and more useful than IPsec, while avoiding the massive headache. 
+# It intends to be considerably more performant than OpenVPN. WireGuard is designed as a general purpose VPN for running on embedded interfaces and super computers alike, fit for many different circumstances.
+# Initially released for the Linux kernel, it is now cross-platform (Windows, macOS, BSD, iOS, Android) and widely deployable. It is currently under heavy development,
+# but already it might be regarded as the most secure, easiest to use, and simplest VPN solution in the industry.
+#
+# https://www.wireguard.com/
+# https://github.com/WeeJeWel/wg-easy
+---
+version: "3.5"
+
+services:
+  wg-easy:
+    image: docker.io/weejewel/wg-easy:latest
+    container_name: wg-easy
+    hostname: wireguard-easy
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - WG_HOST=vpn.${MYDOMAIN}
+      - PASSWORD=${ADMIN_PASSWORD}
+      - WG_DEFAULT_DNS=1.1.1.1,8.8.8.8 # DNS server clients will use.
+      - WG_DEFAULT_ADDRESS=10.8.0.x # Clients IP address range.
+    ports:
+      - 51820:51820/udp # VPN
+      - 51821:51821/tcp # WEBGUI
+    volumes:
+      - ${DOCKER_VOLUMES}/wg-easy:/etc/wireguard
+    networks:
+     - proxy
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.wireguard.rule=Host(`vpn.${MYDOMAIN}`)
+      - traefik.http.services.wireguard.loadbalancer.server.port=51821
+      - traefik.http.routers.wireguard.middlewares=local-ipwhitelist@file
+      - homepage.group=Infra
+      - homepage.name=Wireguard-easy
+      - homepage.icon=wireguard.png
+      - homepage.href=https://vpn.${MYDOMAIN}/
+      - homepage.description=VPN Service
+
+networks:
+ proxy:
+   external: true

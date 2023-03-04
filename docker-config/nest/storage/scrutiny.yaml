@@ -14,7 +14,7 @@ services:
     ports:
       - 8086:8086
     volumes:
-      - ${CONTAINERDATA}/scrutiny/influxdb:/var/lib/influxdb2
+      - ${DOCKER_VOLUMES}/scrutiny/influxdb:/var/lib/influxdb2
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
       interval: 15s
@@ -28,7 +28,7 @@ services:
     ports:
       - 8085:8080
     volumes:
-      - ${CONTAINERDATA}/scrutiny/config:/opt/scrutiny/config
+      - ${DOCKER_VOLUMES}/scrutiny/config:/opt/scrutiny/config
     environment:
       SCRUTINY_WEB_INFLUXDB_HOST: 'scrutiny-influxdb'
     depends_on:
@@ -40,6 +40,12 @@ services:
       timeout: 10s
       retries: 20
       start_period: 10s
+    labels:
+      - homepage.group=Storage
+      - homepage.name=Scrutiny
+      - homepage.icon=scrutiny.png
+      - homepage.href=https://scrutiny.${MYDOMAIN}/
+      - homepage.description=Hard Drive S.M.A.R.T Monitoring
 
   scrutiny-collector:
     image: 'ghcr.io/analogj/scrutiny:master-collector'
@@ -50,7 +56,7 @@ services:
     volumes:
       - /run/udev:/run/udev:ro
     environment:
-      COLLECTOR_API_ENDPOINT: 'http://${MAINNODE}:8085'
+      COLLECTOR_API_ENDPOINT: 'http://${MAIN_NODE}:8085'
       COLLECTOR_CRON_SCHEDULE: '0 0 * * *'
     depends_on:
       scrutiny-web:

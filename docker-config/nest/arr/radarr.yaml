@@ -13,8 +13,14 @@ services:
       - PGID=${PGID}
       - TZ=${TIMEZONE}
     volumes:
-      - ${CONTAINERDATA}/radarr:/config
+      - ${DOCKER_VOLUMES}/radarr:/config
       - ${MEDIA}:/media
       - ${DOWNLOADS}:/downloads #optional
     ports:
       - 7878:7878
+    labels:
+      - homepage.group=Arr
+      - homepage.name=Radarr
+      - homepage.icon=radarr.png
+      - homepage.href=http://radarr.${MYDOMAIN}/
+      - homepage.description=Download movies

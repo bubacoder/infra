@@ -5,17 +5,17 @@
 # docker network create proxy
 
 up infra traefik
-#down infra nginx-proxy-manager
-
+up infra authelia
 up infra portainer
 up infra adguardhome
-up infra unifi-controller
 up infra uptime-kuma
-#up infra wireguard
+up infra unifi-controller
+up infra wg-easy
 
 up homeaut homeassistant
 
 up dashboard hemidall
+up dashboard homepage
 
 up arr radarr
 up arr sonarr
@@ -44,3 +44,4 @@ up storage scrutiny
 up tools code-server
 up tools vaultwarden
 up tools openspeedtest
+up tools cyberchef

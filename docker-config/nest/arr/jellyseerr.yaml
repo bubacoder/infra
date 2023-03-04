@@ -16,4 +16,10 @@ services:
     ports:
       - 5055:5055
     volumes:
-      - ${CONTAINERDATA}/jellyseerr:/app/config
+      - ${DOCKER_VOLUMES}/jellyseerr:/app/config
+    labels:
+      - homepage.group=Arr
+      - homepage.name=Jellyseerr
+      - homepage.icon=jellyseerr.png
+      - homepage.href=http://jellyseerr.${MYDOMAIN}/
+      - homepage.description=Manage media requests

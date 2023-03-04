@@ -14,13 +14,13 @@ services:
       - PGID=${PGID}
       - TZ=${TIMEZONE}
     volumes:
-      - ${CONTAINERDATA}/hemidall:/config
+      - ${DOCKER_VOLUMES}/hemidall:/config
     networks:
       - proxy
     labels:
       - traefik.enable=true
       - traefik.http.routers.heimdall.entrypoints=websecure
-      - traefik.http.routers.heimdall.rule=Host(`heimdall.${MYDOMAIN}`)
+      - traefik.http.routers.heimdall.middlewares=local-ipwhitelist@file
       - traefik.http.services.heimdall.loadbalancer.server.port=80
 
 networks:

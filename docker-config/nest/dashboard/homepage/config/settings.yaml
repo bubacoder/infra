@@ -1,0 +1,47 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/en/configs/settings
+
+providers:
+  openweathermap: openweathermapapikey
+  weatherapi: weatherapiapikey
+
+quicklaunch:
+    searchDescriptions: true
+    hideInternetSearch: true
+
+# layout:
+#   Infra:
+#     style: column
+#   Tools:
+#     style: column
+#   Fileshare:
+#     style: column
+#   Storage:
+#     style: column
+#   Media:
+#     style: column
+#   Arr:
+#     style: column
+
+layout:
+  Infra:
+    # icon: router.png
+    style: row
+    columns: 4
+  Tools:
+    style: row
+    columns: 4
+  Fileshare:
+    style: row
+    columns: 4
+  Storage:
+    style: row
+    columns: 4
+  Media:
+    # icon: jellyfin.png
+    style: row
+    columns: 4
+  Arr:
+    style: row
+    columns: 4

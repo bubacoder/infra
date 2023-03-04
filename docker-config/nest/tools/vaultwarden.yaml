@@ -2,6 +2,7 @@
 #
 # https://github.com/dani-garcia/vaultwarden
 # https://github.com/dani-garcia/vaultwarden/wiki
+# https://github.com/dani-garcia/vaultwarden/wiki/Importing-data-from-Keepass-or-KeepassX
 # https://bitwarden.com/
 # https://bitwarden.com/browser-start/
 ---
@@ -12,7 +13,7 @@ services:
     container_name: vaultwarden
     restart: unless-stopped
     volumes:
-      - ${CONTAINERDATA}/vaultwarden:/data
+      - ${DOCKER_VOLUMES}/vaultwarden:/data
     networks:
       - proxy
     labels:
@@ -20,6 +21,11 @@ services:
       - traefik.http.routers.vault.entrypoints=websecure
       - traefik.http.routers.vault.rule=Host(`vault.${MYDOMAIN}`)
       - traefik.http.services.vault.loadbalancer.server.port=80
+      - homepage.group=Tools
+      - homepage.name=Vaultwarden
+      - homepage.icon=vaultwarden.png
+      - homepage.href=https://vault.${MYDOMAIN}/
+      - homepage.description=Password Manager
 
 networks:
   proxy:

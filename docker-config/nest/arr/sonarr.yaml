@@ -15,8 +15,14 @@ services:
       - PGID=${PGID}
       - TZ=${TIMEZONE}
     volumes:
-      - ${CONTAINERDATA}/sonarr:/config
+      - ${DOCKER_VOLUMES}/sonarr:/config
       - ${MEDIA}:/media
       - ${DOWNLOADS}:/downloads #optional
     ports:
       - 8989:8989
+    labels:
+      - homepage.group=Arr
+      - homepage.name=Sonarr
+      - homepage.icon=sonarr.png
+      - homepage.href=http://sonarr.${MYDOMAIN}/
+      - homepage.description=Download series

@@ -19,8 +19,12 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.metube.entrypoints=websecure
-      - traefik.http.routers.metube.rule=Host(`metube.${MYDOMAIN}`)
       - traefik.http.services.metube.loadbalancer.server.port=8081
+      - homepage.group=Media
+      - homepage.name=Metube
+      - homepage.icon=metube.png
+      - homepage.href=https://metube.${MYDOMAIN}/
+      - homepage.description=Video downloader
 
 networks:
   proxy:
