@@ -4,25 +4,27 @@
 # https://hub.docker.com/r/linuxserver/homeassistant
 ---
 version: "3.5"
+name: homeassistant
 services:
   homeassistant:
     image: lscr.io/linuxserver/homeassistant:latest
     container_name: homeassistant
     restart: unless-stopped
-    network_mode: host # Warning: "Published ports are discarded when using host network mode"
+    network_mode: host
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TIMEZONE}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TIMEZONE}
     volumes:
       - ${DOCKER_VOLUMES}/homeassistant:/config
     ports:
+      # Warning: "Published ports are discarded when using host network mode"
       - 8123:8123 # Web UI
     #devices:
     #  - /path/to/device:/path/to/device #optional
     labels:
-      - homepage.group=Infra
-      - homepage.name=HomeAssistant
-      - homepage.icon=home-assistant.png
-      - homepage.href=https://homeassistant.${MYDOMAIN}/
-      - homepage.description=Open source home automation
+      homepage.group: Infra
+      homepage.name: HomeAssistant
+      homepage.icon: home-assistant.png
+      homepage.href: https://homeassistant.${MYDOMAIN}/
+      homepage.description: Open source home automation

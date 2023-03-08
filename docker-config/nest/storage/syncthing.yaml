@@ -3,6 +3,7 @@
 # https://hub.docker.com/r/linuxserver/syncthing
 ---
 version: "3.5"
+name: syncthing
 services:
   syncthing:
     image: lscr.io/linuxserver/syncthing:latest
@@ -10,9 +11,9 @@ services:
     restart: unless-stopped
     hostname: nest
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TIMEZONE}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TIMEZONE}
     volumes:
       - ${DOCKER_VOLUMES}/syncthing:/config
       - ${ALLSTORAGE}:/storage

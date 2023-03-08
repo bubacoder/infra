@@ -6,21 +6,33 @@
 # https://github.com/Prowlarr/Prowlarr
 ---
 version: "3.5"
+name: prowlarr
 services:
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
     restart: unless-stopped
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TIMEZONE}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TIMEZONE}
     volumes:
       - ${DOCKER_VOLUMES}/prowlarr:/config
     ports:
-      - 9696:9696
+      - 9696:9696 # TODO remove
+    networks:
+      - proxy
     labels:
-      - homepage.group=Arr
-      - homepage.name=Prowlarr
-      - homepage.icon=prowlarr.png
-      - homepage.href=http://prowlarr.${MYDOMAIN}/
+      traefik.enable: true
+      traefik.http.routers.prowlarr.entrypoints: websecure
+      traefik.http.routers.prowlarr.middlewares: local-ipwhitelist@file
+      traefik.http.services.prowlarr.loadbalancer.server.port: 9696
+      homepage.group: Arr
+      homepage.name: Prowlarr
+      homepage.icon: prowlarr.png
+      homepage.href: https://prowlarr.${MYDOMAIN}/
+      homepage.description: Arr indexer manager
+
+networks:
+  proxy:
+    external: true

@@ -4,27 +4,28 @@
 # https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md
 ---
 version: "3.5"
+name: metube
 services:
   metube:
     image: alexta69/metube
     container_name: metube
     restart: "unless-stopped"
     environment:
-      - UID=${PUID}
-      - GID=${PGID}
+      UID: ${PUID}
+      GID: ${PGID}
     volumes:
       - ${DOWNLOADS}/youtube:/downloads
     networks:
       - proxy
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.metube.entrypoints=websecure
-      - traefik.http.services.metube.loadbalancer.server.port=8081
-      - homepage.group=Media
-      - homepage.name=Metube
-      - homepage.icon=metube.png
-      - homepage.href=https://metube.${MYDOMAIN}/
-      - homepage.description=Video downloader
+      traefik.enable: true
+      traefik.http.routers.metube.entrypoints: websecure
+      traefik.http.services.metube.loadbalancer.server.port: 8081
+      homepage.group: Media
+      homepage.name: Metube
+      homepage.icon: metube.png
+      homepage.href: https://metube.${MYDOMAIN}/
+      homepage.description: Video downloader
 
 networks:
   proxy:

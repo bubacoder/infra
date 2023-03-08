@@ -22,7 +22,7 @@ services:
     ports:
       - 9117:9117
     labels:
-      - homepage.group=Arr
-      - homepage.name=Jackett
-      - homepage.icon=jackett.png
-      - homepage.href=http://jackett.${MYDOMAIN}/
+      homepage.group: Arr
+      homepage.name: Jackett
+      homepage.icon: jackett.png
+      homepage.href: http://jackett.${MYDOMAIN}/

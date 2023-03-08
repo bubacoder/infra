@@ -7,6 +7,7 @@
 # https://bitwarden.com/browser-start/
 ---
 version: "3.5"
+name: vaultwarden
 services:
   server:
     image: vaultwarden/server:latest
@@ -17,15 +18,15 @@ services:
     networks:
       - proxy
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.vault.entrypoints=websecure
-      - traefik.http.routers.vault.rule=Host(`vault.${MYDOMAIN}`)
-      - traefik.http.services.vault.loadbalancer.server.port=80
-      - homepage.group=Tools
-      - homepage.name=Vaultwarden
-      - homepage.icon=vaultwarden.png
-      - homepage.href=https://vault.${MYDOMAIN}/
-      - homepage.description=Password Manager
+      traefik.enable: true
+      traefik.http.routers.vault.entrypoints: websecure
+      traefik.http.routers.vault.rule: Host(`vault.${MYDOMAIN}`)
+      traefik.http.services.vault.loadbalancer.server.port: 80
+      homepage.group: Tools
+      homepage.name: Vaultwarden
+      homepage.icon: vaultwarden.png
+      homepage.href: https://vault.${MYDOMAIN}/
+      homepage.description: Password Manager
 
 networks:
   proxy:

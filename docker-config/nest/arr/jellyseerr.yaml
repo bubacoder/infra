@@ -4,22 +4,33 @@
 # https://github.com/Fallenbagel/jellyseerr
 # https://hub.docker.com/r/fallenbagel/jellyseerr
 ---
-version: '3'
+version: "3.5"
+name: jellyseerr
 services:
   jellyseerr:
     image: fallenbagel/jellyseerr:latest
     container_name: jellyseerr
     restart: unless-stopped
     environment:
-      - LOG_LEVEL=debug
-      - TZ=${TIMEZONE}
-    ports:
-      - 5055:5055
+      LOG_LEVEL: debug
+      TZ: ${TIMEZONE}
     volumes:
       - ${DOCKER_VOLUMES}/jellyseerr:/app/config
+    ports:
+      - 5055:5055 # TODO remove
+    networks:
+      - proxy
     labels:
-      - homepage.group=Arr
-      - homepage.name=Jellyseerr
-      - homepage.icon=jellyseerr.png
-      - homepage.href=http://jellyseerr.${MYDOMAIN}/
-      - homepage.description=Manage media requests
+      traefik.enable: true
+      traefik.http.routers.jellyseerr.entrypoints: websecure
+      traefik.http.routers.jellyseerr.middlewares: local-ipwhitelist@file
+      traefik.http.services.jellyseerr.loadbalancer.server.port: 5055
+      homepage.group: Arr
+      homepage.name: Jellyseerr
+      homepage.icon: jellyseerr.png
+      homepage.href: https://jellyseerr.${MYDOMAIN}/
+      homepage.description: Manage media requests
+
+networks:
+  proxy:
+    external: true

@@ -5,6 +5,7 @@
 # https://github.com/gchq/CyberChef/
 ---
 version: "3.5"
+name: cyberchef
 services:
   cyberchef:
     image: mpepping/cyberchef
@@ -13,15 +14,15 @@ services:
     networks:
       - proxy
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.cyberchef.entrypoints=websecure
-      - traefik.http.routers.cyberchef.middlewares=local-ipwhitelist@file
-      - traefik.http.services.cyberchef.loadbalancer.server.port=8000
-      - homepage.group=Tools
-      - homepage.name=Cyberchef
-      - homepage.icon=cyberchef.png
-      - homepage.href=https://cyberchef.${MYDOMAIN}/
-      - homepage.description=Swiss Army Knife web app for data analysis
+      traefik.enable: true
+      traefik.http.routers.cyberchef.entrypoints: websecure
+      traefik.http.routers.cyberchef.middlewares: local-ipwhitelist@file
+      traefik.http.services.cyberchef.loadbalancer.server.port: 8000
+      homepage.group: Tools
+      homepage.name: Cyberchef
+      homepage.icon: cyberchef.png
+      homepage.href: https://cyberchef.${MYDOMAIN}/
+      homepage.description: Swiss Army Knife web app for data analysis
 
 networks:
   proxy:

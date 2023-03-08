@@ -5,37 +5,38 @@
 # https://github.com/coder/code-server/blob/main/docs/FAQ.md
 ---
 version: "3.5"
+name: code-server
 services:
   code-server:
     image: lscr.io/linuxserver/code-server:latest
     container_name: code-server
     restart: unless-stopped
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TIMEZONE}
-      - PASSWORD=${ADMIN_PASSWORD} #optional
-      - HASHED_PASSWORD= #optional
-      - SUDO_PASSWORD=${ADMIN_PASSWORD} #optional
-      - SUDO_PASSWORD_HASH= #optional
-      - PROXY_DOMAIN=code.${MYDOMAIN} #optional
-      - DEFAULT_WORKSPACE=/config/workspace #optional
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TIMEZONE}
+      PASSWORD: ${ADMIN_PASSWORD} #optional
+      HASHED_PASSWORD:  #optional
+      SUDO_PASSWORD: ${ADMIN_PASSWORD} #optional
+      SUDO_PASSWORD_HASH:  #optional
+      PROXY_DOMAIN: code.${MYDOMAIN} #optional
+      DEFAULT_WORKSPACE: /config/workspace #optional
     volumes:
       - ${DOCKER_VOLUMES}/code-server:/config
       - /home/buba/repos:/config/repos
     networks:
       - proxy
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.code.entrypoints=websecure
-      - traefik.http.routers.code.rule=Host(`code.${MYDOMAIN}`) #TODO
-      - traefik.http.routers.code.middlewares=local-ipwhitelist@file
-      - traefik.http.services.code.loadbalancer.server.port=8443
-      - homepage.group=Tools
-      - homepage.name=Code-Server
-      - homepage.icon=code.png
-      - homepage.href=https://code.${MYDOMAIN}/
-      - homepage.description=Visual Studio Code
+      traefik.enable: true
+      traefik.http.routers.code.entrypoints: websecure
+      traefik.http.routers.code.rule: Host(`code.${MYDOMAIN}`)
+      traefik.http.routers.code.middlewares: local-ipwhitelist@file
+      traefik.http.services.code.loadbalancer.server.port: 8443
+      homepage.group: Tools
+      homepage.name: Code-Server
+      homepage.icon: code.png
+      homepage.href: https://code.${MYDOMAIN}/
+      homepage.description: Visual Studio Code
 
 networks:
   proxy:

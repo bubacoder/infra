@@ -2,8 +2,12 @@
 # 
 # https://gethomepage.dev/
 # https://github.com/benphelps/homepage
+#
+# Dashboard Icons:
+# https://github.com/walkxcode/dashboard-icons/tree/main
 ---
 version: "3.5"
+name: homepage
 services:
   homepage:
     image: ghcr.io/benphelps/homepage:latest
@@ -11,8 +15,8 @@ services:
     restart: unless-stopped
     # TODO improve with: https://gethomepage.dev/en/installation/docker/
     # environment:
-    #   - PUID=${PUID}
-    #   - PGID=${PGID}
+    #  PUID: ${PUID}
+    #  PGID: ${PGID}
     volumes:
       - ./homepage/config:/app/config
       - ./homepage/icons:/app/public/icons
@@ -21,10 +25,11 @@ services:
     networks:
       - proxy
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.homepage.entrypoints=websecure
-      - traefik.http.routers.homepage.middlewares=local-ipwhitelist@file
-      - traefik.http.services.homepage.loadbalancer.server.port=3000
+      traefik.enable: true
+      traefik.http.routers.homepage.entrypoints: websecure
+      traefik.http.routers.homepage.rule: Host(`home.${MYDOMAIN}`, `homepage.${MYDOMAIN}`)
+      traefik.http.routers.homepage.middlewares: local-ipwhitelist@file
+      traefik.http.services.homepage.loadbalancer.server.port: 3000
 
 networks:
   proxy:

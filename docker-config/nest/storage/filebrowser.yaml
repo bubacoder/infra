@@ -4,15 +4,16 @@
 # https://github.com/filebrowser/filebrowser
 ---
 version: "3.5"
+name: filebrowser
 services:
   filebrowser:
     image: filebrowser/filebrowser:s6
     container_name: filebrowser
     restart: unless-stopped
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TIMEZONE}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TIMEZONE}
     volumes:
       - ${ALLSTORAGE}:/srv
       - ${DOCKER_VOLUMES}/filebrowser/filebrowser.db:/database/filebrowser.db
@@ -20,15 +21,15 @@ services:
     networks:
       - proxy
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.filebrowser.entrypoints=websecure
-      - traefik.http.routers.filebrowser.middlewares=local-ipwhitelist@file
-      - traefik.http.services.filebrowser.loadbalancer.server.port=80
-      - homepage.group=Storage
-      - homepage.name=Filebrowser
-      - homepage.icon=filebrowser.png
-      - homepage.href=https://filebrowser.${MYDOMAIN}/
-      - homepage.description=File Management
+      traefik.enable: true
+      traefik.http.routers.filebrowser.entrypoints: websecure
+      traefik.http.routers.filebrowser.middlewares: local-ipwhitelist@file
+      traefik.http.services.filebrowser.loadbalancer.server.port: 80
+      homepage.group: Storage
+      homepage.name: Filebrowser
+      homepage.icon: filebrowser.png
+      homepage.href: https://filebrowser.${MYDOMAIN}/
+      homepage.description: File Management
 
 networks:
   proxy:

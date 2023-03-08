@@ -3,7 +3,8 @@
 # https://hub.docker.com/r/openspeedtest/latest
 # https://blog.lrvt.de/nginx-proxy-manager-versus-traefik/
 ---
-version: "3"
+version: "3.5"
+name: openspeedtest
 services:
   openspeedtest:
     image: openspeedtest/latest:latest
@@ -12,16 +13,16 @@ services:
     networks:
       - proxy
     labels:
-      - traefik.enable=true
-      - traefik.http.services.openspeedtest.loadbalancer.server.port=3000
-      - traefik.http.middlewares.limit.buffering.maxRequestBodyBytes=10000000000
-      # - traefik.http.middlewares.test-compress.compress=true
-      # - traefik.http.routers.openspeedtest.middlewares=limit
-      - homepage.group=Tools
-      - homepage.name=OpenSpeedTest
-      - homepage.icon=openspeedtest.png
-      - homepage.href=https://openspeedtest.${MYDOMAIN}/
-      - homepage.description=Network Performance Estimation
+      traefik.enable: true
+      traefik.http.services.openspeedtest.loadbalancer.server.port: 3000
+      traefik.http.middlewares.limit.buffering.maxRequestBodyBytes: 10000000000
+      # traefik.http.middlewares.test-compress.compress: true
+      # traefik.http.routers.openspeedtest.middlewares: limit
+      homepage.group: Tools
+      homepage.name: OpenSpeedTest
+      homepage.icon: openspeedtest.png
+      homepage.href: https://openspeedtest.${MYDOMAIN}/
+      homepage.description: Network Performance Estimation
 
 networks:
   proxy:

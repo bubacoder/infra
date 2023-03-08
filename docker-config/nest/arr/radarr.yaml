@@ -3,24 +3,35 @@
 # https://hub.docker.com/r/linuxserver/radarr
 ---
 version: "3.5"
+name: radarr
 services:
   radarr:
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
     restart: unless-stopped
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TIMEZONE}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TIMEZONE}
     volumes:
       - ${DOCKER_VOLUMES}/radarr:/config
       - ${MEDIA}:/media
       - ${DOWNLOADS}:/downloads #optional
     ports:
-      - 7878:7878
+      - 7878:7878 # TODO remove
+    networks:
+      - proxy
     labels:
-      - homepage.group=Arr
-      - homepage.name=Radarr
-      - homepage.icon=radarr.png
-      - homepage.href=http://radarr.${MYDOMAIN}/
-      - homepage.description=Download movies
+      traefik.enable: true
+      traefik.http.routers.radarr.entrypoints: websecure
+      traefik.http.routers.radarr.middlewares: local-ipwhitelist@file
+      traefik.http.services.radarr.loadbalancer.server.port: 7878
+      homepage.group: Arr
+      homepage.name: Radarr
+      homepage.icon: radarr.png
+      homepage.href: https://radarr.${MYDOMAIN}/
+      homepage.description: Download movies
+
+networks:
+  proxy:
+    external: true

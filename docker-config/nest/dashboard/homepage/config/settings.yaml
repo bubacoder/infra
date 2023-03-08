@@ -2,9 +2,9 @@
 # For configuration options and examples, please see:
 # https://gethomepage.dev/en/configs/settings
 
-providers:
-  openweathermap: openweathermapapikey
-  weatherapi: weatherapiapikey
+# providers:
+#   openweathermap: openweathermapapikey
+#   weatherapi: weatherapiapikey
 
 quicklaunch:
     searchDescriptions: true
@@ -26,7 +26,6 @@ quicklaunch:
 
 layout:
   Infra:
-    # icon: router.png
     style: row
     columns: 4
   Tools:
@@ -39,7 +38,6 @@ layout:
     style: row
     columns: 4
   Media:
-    # icon: jellyfin.png
     style: row
     columns: 4
   Arr:

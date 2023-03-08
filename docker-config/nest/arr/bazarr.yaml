@@ -5,23 +5,34 @@
 # https://hub.docker.com/r/linuxserver/bazarr
 ---
 version: "3.5"
+name: bazarr
 services:
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
     restart: unless-stopped
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TIMEZONE}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TIMEZONE}
     volumes:
       - ${DOCKER_VOLUMES}/bazarr/config:/config
       - ${MEDIA}:/media
     ports:
-      - 6767:6767
+      - 6767:6767 # TODO remove
+    networks:
+      - proxy
     labels:
-      - homepage.group=Arr
-      - homepage.name=Bazarr
-      - homepage.icon=bazarr.png
-      - homepage.href=http://bazarr.${MYDOMAIN}/
-      - homepage.description=Manage and download subtitles
+      traefik.enable: true
+      traefik.http.routers.bazarr.entrypoints: websecure
+      traefik.http.routers.bazarr.middlewares: local-ipwhitelist@file
+      traefik.http.services.bazarr.loadbalancer.server.port: 6767
+      homepage.group: Arr
+      homepage.name: Bazarr
+      homepage.icon: bazarr.png
+      homepage.href: https://bazarr.${MYDOMAIN}/
+      homepage.description: Manage and download subtitles
+
+networks:
+  proxy:
+    external: true

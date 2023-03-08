@@ -3,16 +3,16 @@
 # https://sabnzbd.org/
 # https://github.com/linuxserver/docker-sabnzbd
 ---
-version: "2.1"
+version: "3.5"
 services:
   sabnzbd:
     image: lscr.io/linuxserver/sabnzbd:latest
     container_name: sabnzbd
     restart: unless-stopped
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TIMEZONE}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TIMEZONE}
     volumes:
       - ${DOCKER_VOLUMES}/sabnzbd:/config
       - ${DOWNLOADS}/sabnzbd:/downloads #optional

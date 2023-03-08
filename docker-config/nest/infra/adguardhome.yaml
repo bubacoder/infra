@@ -5,6 +5,7 @@
 # https://hub.docker.com/r/adguard/adguardhome
 ---
 version: "3.5"
+name: adguardhome
 services:
   adguardhome:
     image: adguard/adguardhome
@@ -28,13 +29,23 @@ services:
       #- 8853:8853/udp # add if you are going to run AdGuard Home as a DNS-over-QUIC server. You may only leave one or two of these
       #- 5443:5443/tcp # add if you are going to run AdGuard Home as a DNSCrypt server
       #- 5443:5443/udp # add if you are going to run AdGuard Home as a DNSCrypt server
+    networks:
+      - proxy
     labels:
-      - homepage.group=Infra
-      - homepage.name=AdGuard Home
-      - homepage.icon=adguard-home.png
-      - homepage.href=https://adguardhome.${MYDOMAIN}/
-      - homepage.description=Blocking ads and tracking
-      - homepage.widget.type=adguard
-      - homepage.widget.url=http://nest:3000
-      - homepage.widget.username=buba
-      - homepage.widget.password=SomeSecureValueGoesHere
+      traefik.enable: true
+      traefik.http.routers.adguardhome.entrypoints: websecure
+      traefik.http.routers.adguardhome.middlewares: local-ipwhitelist@file
+      traefik.http.services.adguardhome.loadbalancer.server.port: 3000
+      homepage.group: Infra
+      homepage.name: AdGuard Home
+      homepage.icon: adguard-home.png
+      homepage.href: https://adguardhome.${MYDOMAIN}/
+      homepage.description: Blocking ads and tracking
+      homepage.widget.type: adguard
+      homepage.widget.url: https://adguardhome.${MYDOMAIN}
+      homepage.widget.username: ${ADMIN_USER}
+      homepage.widget.password: ${ADMIN_PASSWORD}
+
+networks:
+  proxy:
+    external: true

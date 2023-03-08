@@ -12,10 +12,10 @@ up infra uptime-kuma
 up infra unifi-controller
 up infra wg-easy
 
-up homeaut homeassistant
-
 up dashboard hemidall
 up dashboard homepage
+
+up smarthome homeassistant
 
 up arr radarr
 up arr sonarr

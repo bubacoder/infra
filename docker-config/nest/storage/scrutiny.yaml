@@ -5,7 +5,8 @@
 # In addition to the Omnibus image (available under the latest tag) you can deploy in Hub/Spoke mode
 # https://github.com/AnalogJ/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml
 ---
-version: '3.5'
+version: "3.5"
+name: scrutiny
 services:
   scrutiny-influxdb:
     image: influxdb:2.2
@@ -41,11 +42,11 @@ services:
       retries: 20
       start_period: 10s
     labels:
-      - homepage.group=Storage
-      - homepage.name=Scrutiny
-      - homepage.icon=scrutiny.png
-      - homepage.href=https://scrutiny.${MYDOMAIN}/
-      - homepage.description=Hard Drive S.M.A.R.T Monitoring
+      homepage.group: Storage
+      homepage.name: Scrutiny
+      homepage.icon: scrutiny.png
+      homepage.href: https://scrutiny.${MYDOMAIN}/
+      homepage.description: Hard Drive S.M.A.R.T Monitoring
 
   scrutiny-collector:
     image: 'ghcr.io/analogj/scrutiny:master-collector'
@@ -56,7 +57,7 @@ services:
     volumes:
       - /run/udev:/run/udev:ro
     environment:
-      COLLECTOR_API_ENDPOINT: 'http://${MAIN_NODE}:8085'
+      COLLECTOR_API_ENDPOINT: 'http://localhost:8080'
       COLLECTOR_CRON_SCHEDULE: '0 0 * * *'
     depends_on:
       scrutiny-web:

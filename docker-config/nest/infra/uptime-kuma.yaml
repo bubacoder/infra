@@ -4,6 +4,7 @@
 # https://github.com/louislam/uptime-kuma
 ---
 version: "3.5"
+name: uptime-kuma
 services:
   uptime-kuma:
     image: louislam/uptime-kuma:1
@@ -14,14 +15,14 @@ services:
     networks:
       - proxy
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.uptime-kuma.entrypoints=websecure
-      - traefik.http.services.uptime-kuma.loadbalancer.server.port=3001
-      - homepage.group=Infra
-      - homepage.name=Uptime Kuma
-      - homepage.icon=uptime-kuma.png
-      - homepage.href=https://uptime-kuma.${MYDOMAIN}/
-      - homepage.description=Monitoring tool
+      traefik.enable: true
+      traefik.http.routers.uptime-kuma.entrypoints: websecure
+      traefik.http.services.uptime-kuma.loadbalancer.server.port: 3001
+      homepage.group: Infra
+      homepage.name: Uptime Kuma
+      homepage.icon: uptime-kuma.png
+      homepage.href: https://uptime-kuma.${MYDOMAIN}/
+      homepage.description: Monitoring tool
 
 networks:
   proxy:

@@ -5,24 +5,35 @@
 # https://hub.docker.com/r/linuxserver/sonarr
 ---
 version: "3.5"
+name: sonarr
 services:
   sonarr:
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
     restart: unless-stopped
     environment:
-      - PUID=${PUID}
-      - PGID=${PGID}
-      - TZ=${TIMEZONE}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TIMEZONE}
     volumes:
       - ${DOCKER_VOLUMES}/sonarr:/config
       - ${MEDIA}:/media
       - ${DOWNLOADS}:/downloads #optional
     ports:
-      - 8989:8989
+      - 8989:8989 # TODO remove
+    networks:
+      - proxy
     labels:
-      - homepage.group=Arr
-      - homepage.name=Sonarr
-      - homepage.icon=sonarr.png
-      - homepage.href=http://sonarr.${MYDOMAIN}/
-      - homepage.description=Download series
+      traefik.enable: true
+      traefik.http.routers.sonarr.entrypoints: websecure
+      traefik.http.routers.sonarr.middlewares: local-ipwhitelist@file
+      traefik.http.services.sonarr.loadbalancer.server.port: 8989
+      homepage.group: Arr
+      homepage.name: Sonarr
+      homepage.icon: sonarr.png
+      homepage.href: https://sonarr.${MYDOMAIN}/
+      homepage.description: Download series
+
+networks:
+  proxy:
+    external: true

@@ -4,6 +4,7 @@
 # https://github.com/FlareSolverr/FlareSolverr
 ---
 version: "3.5"
+name: flaresolverr
 services:
   flaresolverr:
     # DockerHub mirror flaresolverr/flaresolverr:latest
@@ -11,15 +12,25 @@ services:
     container_name: flaresolverr
     restart: unless-stopped
     environment:
-      - LOG_LEVEL=${LOG_LEVEL:-info}
-      - LOG_HTML=${LOG_HTML:-false}
-      - CAPTCHA_SOLVER=${CAPTCHA_SOLVER:-none}
-      - TZ=${TIMEZONE}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_HTML: ${LOG_HTML:-false}
+      CAPTCHA_SOLVER: ${CAPTCHA_SOLVER:-none}
+      TZ: ${TIMEZONE}
     ports:
-      - 8191:8191
+      - 8191:8191 # TODO remove
+    networks:
+      - proxy
     labels:
-      - homepage.group=Arr
-      - homepage.name=Flaresolverr
-      - homepage.icon=cloudflare.png
-      - homepage.href=http://flaresolverr.${MYDOMAIN}/
-      - homepage.description=Bypass Cloudflare protection
+      traefik.enable: true
+      traefik.http.routers.flaresolverr.entrypoints: websecure
+      traefik.http.routers.flaresolverr.middlewares: local-ipwhitelist@file
+      traefik.http.services.flaresolverr.loadbalancer.server.port: 8191
+      homepage.group: Arr
+      homepage.name: Flaresolverr
+      homepage.icon: cloudflare.png
+      homepage.href: https://flaresolverr.${MYDOMAIN}/
+      homepage.description: Bypass Cloudflare protection
+
+networks:
+  proxy:
+    external: true

@@ -7,7 +7,7 @@
 # https://github.com/WeeJeWel/wg-easy
 ---
 version: "3.5"
-
+name: wg-easy
 services:
   wg-easy:
     image: docker.io/weejewel/wg-easy:latest
@@ -18,27 +18,31 @@ services:
       - NET_ADMIN
       - SYS_MODULE
     environment:
-      - WG_HOST=vpn.${MYDOMAIN}
-      - PASSWORD=${ADMIN_PASSWORD}
-      - WG_DEFAULT_DNS=1.1.1.1,8.8.8.8 # DNS server clients will use.
-      - WG_DEFAULT_ADDRESS=10.8.0.x # Clients IP address range.
+      WG_HOST: vpn.${MYDOMAIN} # The public hostname of your VPN server
+      PASSWORD: ${ADMIN_PASSWORD} # When set, requires a password when logging in to the Web UI
+      #WG_DEFAULT_DNS: 1.1.1.1,8.8.8.8 # DNS server clients will use
+      WG_DEFAULT_DNS: ${MAIN_NODE_IP} # DNS server clients will use
+      WG_DEFAULT_ADDRESS: 10.8.0.x # Clients IP address range      
+      #WG_ALLOWED_IPS: "0.0.0.0/0,::/0" # Allowed IPs clients will use
+      WG_ALLOWED_IPS: "192.168.0.0/16,1.2.3.4/32" # Allowed IPs clients will use
     ports:
       - 51820:51820/udp # VPN
-      - 51821:51821/tcp # WEBGUI
+      #- 51821:51821/tcp # WEBGUI
     volumes:
       - ${DOCKER_VOLUMES}/wg-easy:/etc/wireguard
     networks:
      - proxy
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.wireguard.rule=Host(`vpn.${MYDOMAIN}`)
-      - traefik.http.services.wireguard.loadbalancer.server.port=51821
-      - traefik.http.routers.wireguard.middlewares=local-ipwhitelist@file
-      - homepage.group=Infra
-      - homepage.name=Wireguard-easy
-      - homepage.icon=wireguard.png
-      - homepage.href=https://vpn.${MYDOMAIN}/
-      - homepage.description=VPN Service
+      traefik.enable: true
+      traefik.http.routers.wireguard.entrypoints: websecure
+      traefik.http.routers.wireguard.rule: Host(`vpn.${MYDOMAIN}`)
+      traefik.http.services.wireguard.loadbalancer.server.port: 51821
+      traefik.http.routers.wireguard.middlewares: local-ipwhitelist@file
+      homepage.group: Infra
+      homepage.name: WireGuard Easy
+      homepage.icon: wireguard.png
+      homepage.href: https://vpn.${MYDOMAIN}/
+      homepage.description: VPN Service
 
 networks:
  proxy:
