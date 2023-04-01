@@ -12,8 +12,8 @@ services:
     image: influxdb:2.2
     container_name: scrutiny-influxdb
     restart: unless-stopped
-    ports:
-      - 8086:8086
+    networks:
+      - proxy
     volumes:
       - ${DOCKER_VOLUMES}/scrutiny/influxdb:/var/lib/influxdb2
     healthcheck:
@@ -28,6 +28,8 @@ services:
     restart: unless-stopped
     ports:
       - 8085:8080
+    networks:
+     - proxy
     volumes:
       - ${DOCKER_VOLUMES}/scrutiny/config:/opt/scrutiny/config
     environment:
@@ -42,6 +44,11 @@ services:
       retries: 20
       start_period: 10s
     labels:
+      traefik.enable: true
+      traefik.http.routers.scrutiny.entrypoints: websecure
+      traefik.http.routers.scrutiny.rule: Host(`scrutiny.${MYDOMAIN}`)
+      traefik.http.services.scrutiny.loadbalancer.server.port: 8080
+      traefik.http.routers.scrutiny.middlewares: https-local@file
       homepage.group: Storage
       homepage.name: Scrutiny
       homepage.icon: scrutiny.png
@@ -54,6 +61,8 @@ services:
     restart: unless-stopped
     cap_add:
       - SYS_RAWIO
+    networks:
+     - proxy
     volumes:
       - /run/udev:/run/udev:ro
     environment:
@@ -65,3 +74,7 @@ services:
     devices:
       - /dev/sda
       #- /dev/sdb
+
+networks:
+ proxy:
+   external: true

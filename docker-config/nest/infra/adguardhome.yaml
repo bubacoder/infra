@@ -34,7 +34,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.adguardhome.entrypoints: websecure
-      traefik.http.routers.adguardhome.middlewares: local-ipwhitelist@file
+      traefik.http.routers.adguardhome.middlewares: https-local@file
       traefik.http.services.adguardhome.loadbalancer.server.port: 3000
       homepage.group: Infra
       homepage.name: AdGuard Home

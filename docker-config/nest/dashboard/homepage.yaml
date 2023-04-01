@@ -28,7 +28,7 @@ services:
       traefik.enable: true
       traefik.http.routers.homepage.entrypoints: websecure
       traefik.http.routers.homepage.rule: Host(`home.${MYDOMAIN}`, `homepage.${MYDOMAIN}`)
-      traefik.http.routers.homepage.middlewares: local-ipwhitelist@file
+      traefik.http.routers.homepage.middlewares: https-local@file
       traefik.http.services.homepage.loadbalancer.server.port: 3000
 
 networks:

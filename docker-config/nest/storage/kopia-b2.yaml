@@ -25,30 +25,39 @@ services:
       - start
       - --disable-csrf-token-checks
       - --insecure
+      - --without-password
       - --address=0.0.0.0:80
-      - --server-username=${ADMIN_USER}
-      - --server-password=${ADMIN_PASSWORD}
     environment:
       USER: ${ADMIN_USER}
       KOPIA_PASSWORD: ${KOPIA_B2_REPOSOTORY_PASSWORD}
       TZ: ${TIMEZONE}
+
     volumes:
       - ${DOCKER_VOLUMES}/kopia-b2/config:/app/config
       - ${DOCKER_VOLUMES}/kopia-b2/cache:/app/cache
       - ${DOCKER_VOLUMES}/kopia-b2/logs:/app/logs
-      - /mnt/nas/family-media:/mnt/family-media:ro
+
+      # NAS
+      # - /mnt/nas/family-media:/mnt/family-media:ro
+      - /mnt/nas/family-media:/sources/nas/family-media:ro
+
+      # Nest
+      - /etc:/sources/nest/etc:ro
+      - ${DOCKER_VOLUMES}:/sources/nest/docker-volumes:ro
+
     networks:
-      - proxy
+      - proxy     
+
     labels:
       traefik.enable: true
       traefik.http.routers.kopia-b2.entrypoints: websecure
-      traefik.http.routers.kopia-b2.middlewares: local-ipwhitelist@file
+      traefik.http.routers.kopia-b2.middlewares: https-local-auth@file
       traefik.http.services.kopia-b2.loadbalancer.server.port: 80
       homepage.group: Storage
       homepage.name: Kopia - B2
       homepage.icon: kopia.png
       homepage.href: https://kopia-b2.${MYDOMAIN}/
-      homepage.description: Backups Using the Cloud Storage You Pick
+      homepage.description: "[SSO] Backups Using the Cloud Storage You Pick"
 
 networks:
   proxy:

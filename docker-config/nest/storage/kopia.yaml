@@ -25,15 +25,13 @@ services:
       - start
       - --disable-csrf-token-checks
       - --insecure
+      - --without-password
       - --address=0.0.0.0:80
-      - --server-username=${ADMIN_USER}
-      - --server-password=${ADMIN_PASSWORD}
     environment:
       USER: ${ADMIN_USER}
       KOPIA_PASSWORD: ${ADMIN_PASSWORD}
       TZ: ${TIMEZONE}
     volumes:
-      #- /mnt/kopia:/tmp:shared
       - ${DOCKER_VOLUMES}/kopia/config:/app/config
       - ${DOCKER_VOLUMES}/kopia/cache:/app/cache
       - ${DOCKER_VOLUMES}/kopia/logs:/app/logs
@@ -44,13 +42,13 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.kopia.entrypoints: websecure
-      traefik.http.routers.kopia.middlewares: local-ipwhitelist@file
+      traefik.http.routers.kopia.middlewares: https-local-auth@file
       traefik.http.services.kopia.loadbalancer.server.port: 80
       homepage.group: Storage
       homepage.name: Kopia - Local
       homepage.icon: kopia.png
       homepage.href: https://kopia.${MYDOMAIN}/
-      homepage.description: Backups Using the Cloud Storage You Pick
+      homepage.description: "[SSO] Backups Using the Cloud Storage You Pick"
 
 networks:
   proxy:

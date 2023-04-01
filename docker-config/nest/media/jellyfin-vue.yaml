@@ -1,0 +1,28 @@
+# This is an experimental web client for Jellyfin based on Vue.js. 
+# 
+# https://github.com/jellyfin/jellyfin-vue
+# https://hub.docker.com/r/jellyfin/jellyfin-vue
+---
+version: "3.5"
+name: jellyfin-vue
+services:
+  jellyfin-vue:
+    image: jellyfin/jellyfin-vue:unstable
+    container_name: jellyfin-vue
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.jellyfin-vue.entrypoints: websecure
+      traefik.http.routers.jellyfin-vue.middlewares: https-local@file
+      traefik.http.services.jellyfin-vue.loadbalancer.server.port: 80
+      homepage.group: Media
+      homepage.name: Jellyfin-vue
+      homepage.icon: jellyfin.png
+      homepage.href: https://jellyfin-vue.${MYDOMAIN}/
+      homepage.description: Media Management
+
+networks:
+  proxy:
+    external: true

@@ -15,8 +15,8 @@ services:
       PUID: ${PUID}
       PGID: ${PGID}
       TZ: ${TIMEZONE}
-      PASSWORD: ${ADMIN_PASSWORD} #optional
-      HASHED_PASSWORD:  #optional
+      PASSWORD: #optional
+      HASHED_PASSWORD: #optional
       SUDO_PASSWORD: ${ADMIN_PASSWORD} #optional
       SUDO_PASSWORD_HASH:  #optional
       PROXY_DOMAIN: code.${MYDOMAIN} #optional
@@ -29,14 +29,15 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.code.entrypoints: websecure
+      traefik.http.routers.code.middlewares: https-local-auth@file
       traefik.http.routers.code.rule: Host(`code.${MYDOMAIN}`)
-      traefik.http.routers.code.middlewares: local-ipwhitelist@file
+      traefik.http.routers.code.middlewares: https-local@file
       traefik.http.services.code.loadbalancer.server.port: 8443
       homepage.group: Tools
       homepage.name: Code-Server
       homepage.icon: code.png
       homepage.href: https://code.${MYDOMAIN}/
-      homepage.description: Visual Studio Code
+      homepage.description: "[SSO] Visual Studio Code"
 
 networks:
   proxy:

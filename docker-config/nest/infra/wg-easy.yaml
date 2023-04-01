@@ -19,7 +19,7 @@ services:
       - SYS_MODULE
     environment:
       WG_HOST: vpn.${MYDOMAIN} # The public hostname of your VPN server
-      PASSWORD: ${ADMIN_PASSWORD} # When set, requires a password when logging in to the Web UI
+      #PASSWORD: ${ADMIN_PASSWORD} # When set, requires a password when logging in to the Web UI -> SSO
       #WG_DEFAULT_DNS: 1.1.1.1,8.8.8.8 # DNS server clients will use
       WG_DEFAULT_DNS: ${MAIN_NODE_IP} # DNS server clients will use
       WG_DEFAULT_ADDRESS: 10.8.0.x # Clients IP address range      
@@ -36,13 +36,13 @@ services:
       traefik.enable: true
       traefik.http.routers.wireguard.entrypoints: websecure
       traefik.http.routers.wireguard.rule: Host(`vpn.${MYDOMAIN}`)
+      traefik.http.routers.wireguard.middlewares: https-local-auth@file
       traefik.http.services.wireguard.loadbalancer.server.port: 51821
-      traefik.http.routers.wireguard.middlewares: local-ipwhitelist@file
       homepage.group: Infra
       homepage.name: WireGuard Easy
       homepage.icon: wireguard.png
       homepage.href: https://vpn.${MYDOMAIN}/
-      homepage.description: VPN Service
+      homepage.description: "[SSO] VPN Service"
 
 networks:
  proxy:

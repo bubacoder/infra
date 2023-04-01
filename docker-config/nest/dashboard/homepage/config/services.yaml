@@ -11,5 +11,5 @@
 - Arr:
     - Transmission @ NAS:
         href: https://transmission.example.com/
-        description: BitTorrent client
+        description: "[SSO] BitTorrent client"
         icon: transmission.png

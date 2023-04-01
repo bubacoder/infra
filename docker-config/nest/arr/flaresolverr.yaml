@@ -16,14 +16,12 @@ services:
       LOG_HTML: ${LOG_HTML:-false}
       CAPTCHA_SOLVER: ${CAPTCHA_SOLVER:-none}
       TZ: ${TIMEZONE}
-    ports:
-      - 8191:8191 # TODO remove
     networks:
       - proxy
     labels:
       traefik.enable: true
       traefik.http.routers.flaresolverr.entrypoints: websecure
-      traefik.http.routers.flaresolverr.middlewares: local-ipwhitelist@file
+      traefik.http.routers.flaresolverr.middlewares: https-local@file
       traefik.http.services.flaresolverr.loadbalancer.server.port: 8191
       homepage.group: Arr
       homepage.name: Flaresolverr

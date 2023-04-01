@@ -4,6 +4,7 @@
 # https://hub.docker.com/r/linuxserver/transmission
 ---
 version: "3.5"
+name: transmission
 services:
   transmission:
     image: lscr.io/linuxserver/transmission:latest

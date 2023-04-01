@@ -1,0 +1,38 @@
+# Authelia is an open-source authentication and authorization server providing two-factor authentication and single sign-on (SSO) for your applications via a web portal.
+#
+# https://docs.ibracorp.io/authelia/
+# https://docs.technotim.live/posts/authelia-traefik/
+---
+version: "3.5"
+name: authelia
+services:
+  authelia:
+    container_name: authelia
+    image: authelia/authelia
+    restart: unless-stopped
+    environment:
+      TZ: ${TIMEZONE}
+    healthcheck:
+      disable: true
+    volumes:
+      - ./authelia:/config
+      - ${DOCKER_VOLUMES}/authelia:/data
+    expose:
+      - 9091
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.authelia.entrypoints: websecure
+      traefik.http.routers.authelia.rule: Host(`auth.${MYDOMAIN}`)
+      traefik.http.routers.authelia.middlewares: https-local@file
+      traefik.http.services.authelia.loadbalancer.server.port: 9091
+      homepage.group: Infra
+      homepage.name: Authelia
+      homepage.icon: authelia.png
+      homepage.href: https://auth.${MYDOMAIN}/
+      homepage.description: "[SSO] Open-source authentication and authorization"
+
+networks:
+  proxy:
+    external: true

@@ -7,14 +7,15 @@ http:
       rule: 'Host(`router.example.com`)'
       service: router
       middlewares:
-        - "local-ipwhitelist@file"
+        - "https-local@file"
     transmission:
       entryPoints:
         - websecure
       rule: 'Host(`transmission.example.com`)'
       service: transmission
       middlewares:
-        - "local-ipwhitelist@file"
+        - "https-local-auth@file"
+
 
   services:
     router:
@@ -34,16 +35,40 @@ http:
     insecureTransport:
       insecureSkipVerify: true
 
+
   ## MIDDLEWARES ##
   middlewares:
+    https-local:
+      chain:
+        middlewares:
+          - https-only
+          - local-ip-whitelist
+
+    https-local-auth:
+      chain:
+        middlewares:
+          - https-only
+          - local-ip-whitelist
+          - authelia
+
+    https-only:
+      redirectScheme:
+        scheme: https
+
     # Only Allow Local networks
-    local-ipwhitelist:
+    local-ip-whitelist:
       ipWhiteList:
-        sourceRange: 
-          - 127.0.0.1/32 # localhost
-          - 10.0.0.0/8 # private class A
-          - 172.16.0.0/12 # private class B
-          - 192.168.0.0/16 # private class C
+        sourceRange:
+          - 127.0.0.1/32    # localhost
+          - 10.0.0.0/8      # private class A
+          - 172.16.0.0/12   # private class B
+          - 192.168.0.0/16  # private class C
+
+    authelia:
+      forwardAuth:
+        address: "http://authelia:9091/api/verify?rd=https://auth.example.com"
+        trustForwardHeader: true
+        authResponseHeaders: Remote-User,Remote-Groups,Remote-Name,Remote-Email        
 
     # Security headers
     security-headers:
@@ -68,6 +93,7 @@ http:
         stsSeconds: 63072000 # HTTP-Strict-Transport-Security (HSTS)
         stsPreload: true # HTTP-Strict-Transport-Security (HSTS)
         #contentSecurityPolicy: "block-all-mixed-content" # Content-Security-Policy (CSP)
+
 
 # Only use secure ciphers - https://ssl-config.mozilla.org/#server=traefik&version=2.9&config=intermediate&guideline=5.6
 tls:

@@ -18,14 +18,12 @@ services:
     volumes:
       - ${DOCKER_VOLUMES}/bazarr/config:/config
       - ${MEDIA}:/media
-    ports:
-      - 6767:6767 # TODO remove
     networks:
       - proxy
     labels:
       traefik.enable: true
       traefik.http.routers.bazarr.entrypoints: websecure
-      traefik.http.routers.bazarr.middlewares: local-ipwhitelist@file
+      traefik.http.routers.bazarr.middlewares: https-local@file
       traefik.http.services.bazarr.loadbalancer.server.port: 6767
       homepage.group: Arr
       homepage.name: Bazarr

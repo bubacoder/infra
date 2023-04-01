@@ -19,14 +19,12 @@ services:
       - ${DOCKER_VOLUMES}/sonarr:/config
       - ${MEDIA}:/media
       - ${DOWNLOADS}:/downloads #optional
-    ports:
-      - 8989:8989 # TODO remove
     networks:
       - proxy
     labels:
       traefik.enable: true
       traefik.http.routers.sonarr.entrypoints: websecure
-      traefik.http.routers.sonarr.middlewares: local-ipwhitelist@file
+      traefik.http.routers.sonarr.middlewares: https-local@file
       traefik.http.services.sonarr.loadbalancer.server.port: 8989
       homepage.group: Arr
       homepage.name: Sonarr

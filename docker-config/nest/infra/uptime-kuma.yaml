@@ -17,12 +17,13 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.uptime-kuma.entrypoints: websecure
+      traefik.http.routers.uptime-kuma.middlewares: https-local-auth@file
       traefik.http.services.uptime-kuma.loadbalancer.server.port: 3001
       homepage.group: Infra
       homepage.name: Uptime Kuma
       homepage.icon: uptime-kuma.png
       homepage.href: https://uptime-kuma.${MYDOMAIN}/
-      homepage.description: Monitoring tool
+      homepage.description: "[SSO] Monitoring tool"
 
 networks:
   proxy:

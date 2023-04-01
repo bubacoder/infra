@@ -1,0 +1,19 @@
+---
+###############################################################
+#                         Users Database                      #
+###############################################################
+
+# This file can be used if you do not have an LDAP set up.
+
+# Generate password hash with:
+#   docker run authelia/authelia:latest authelia hash-password 'yourpassword'
+
+# List of users
+users:
+  buba:
+    displayname: "Buba"
+    password: "$argon2id$..." 
+    email: bubacoder@gmail.com
+    groups:
+      - admins
+      - dev

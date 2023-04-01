@@ -25,13 +25,23 @@ services:
       - 8920:8920 #optional
       - 7359:7359/udp #optional
       #- 1900:1900/udp #optional TODO enable
+    networks:
+      - proxy
     labels:
+      traefik.enable: true
+      traefik.http.routers.jellyfin.entrypoints: websecure
+      # traefik.http.routers.jellyfin.middlewares: https-local@file
+      traefik.http.services.jellyfin.loadbalancer.server.port: 8096
       homepage.group: Media
       homepage.name: Jellyfin
       homepage.icon: jellyfin.png
-      homepage.href: http://nest:8096/
+      homepage.href: https://jellyfin.${MYDOMAIN}/
       homepage.description: Media Management
       homepage.widget.type: jellyfin
-      homepage.widget.url: http://nest:8096
+      homepage.widget.url: https://jellyfin.${MYDOMAIN}
       # You can create an API key from inside Jellyfin at Settings > Advanced > API Keys.
       homepage.widget.key: SomeSecureValueGoesHere
+
+networks:
+  proxy:
+    external: true

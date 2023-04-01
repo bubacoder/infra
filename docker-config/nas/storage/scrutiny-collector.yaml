@@ -6,6 +6,7 @@
 # https://github.com/AnalogJ/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml
 ---
 version: "3.5"
+name: scrutiny-collector
 services:
   scrutiny-collector:
     image: 'ghcr.io/analogj/scrutiny:master-collector'

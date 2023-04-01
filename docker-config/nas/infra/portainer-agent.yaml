@@ -1,5 +1,9 @@
+# Making Docker and Kubernetes management easy
+#
+# https://github.com/portainer/portainer
 ---
 version: "3.5"
+name: portainer-agent
 services:
   agent:
     image: portainer/agent:2.16.2

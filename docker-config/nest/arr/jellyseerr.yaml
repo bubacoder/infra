@@ -16,14 +16,12 @@ services:
       TZ: ${TIMEZONE}
     volumes:
       - ${DOCKER_VOLUMES}/jellyseerr:/app/config
-    ports:
-      - 5055:5055 # TODO remove
     networks:
       - proxy
     labels:
       traefik.enable: true
       traefik.http.routers.jellyseerr.entrypoints: websecure
-      traefik.http.routers.jellyseerr.middlewares: local-ipwhitelist@file
+      traefik.http.routers.jellyseerr.middlewares: https-local@file
       traefik.http.services.jellyseerr.loadbalancer.server.port: 5055
       homepage.group: Arr
       homepage.name: Jellyseerr

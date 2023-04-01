@@ -19,7 +19,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.portainer.entrypoints: websecure
-      traefik.http.routers.portainer.middlewares: local-ipwhitelist@file
+      traefik.http.routers.portainer.middlewares: https-local@file
       traefik.http.services.portainer.loadbalancer.server.port: 9000
       homepage.group: Infra
       homepage.name: Portainer
