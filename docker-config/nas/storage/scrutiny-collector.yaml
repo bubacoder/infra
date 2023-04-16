@@ -10,6 +10,7 @@ name: scrutiny-collector
 services:
   scrutiny-collector:
     image: 'ghcr.io/analogj/scrutiny:master-collector'
+    container_name: scrutiny-collector
     cap_add:
       - SYS_RAWIO
     volumes:

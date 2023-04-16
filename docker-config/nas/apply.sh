@@ -3,6 +3,9 @@
 . ../common.sh
 
 up infra portainer-agent
-up fileshare transmission
+up infra node-exporter
+
+up fileshare qbittorrent
+
 up storage samba
 up storage scrutiny-collector

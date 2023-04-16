@@ -1,0 +1,18 @@
+# Prometheus exporter for machine metrics, written in Go with pluggable metric collectors.
+#
+# https://hub.docker.com/r/prom/node-exporter/
+---
+version: "3.5"
+name: node_exporter
+services:
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:latest
+    container_name: node_exporter
+    restart: unless-stopped
+    pid: host
+    ports:
+      - 9100:9100
+    command:
+      - '--path.rootfs=/host'
+    volumes:
+      - '/:/host:ro,rslave'

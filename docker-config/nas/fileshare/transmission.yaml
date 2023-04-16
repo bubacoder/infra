@@ -20,7 +20,7 @@ services:
       #- PEERPORT=peerport #optional
       #- HOST_WHITELIST=dnsname list #optional
     volumes:
-      - ${CONTAINERDATA}/transmission:/config
+      - ${DOCKER_VOLUMES}/transmission:/config
       - ${DOWNLOADS}/torrent-downloads:/downloads
       - ${DOWNLOADS}/torrent-watch:/watch
     ports:
