@@ -8,33 +8,30 @@ http:
       service: router
       middlewares:
         - "https-local@file"
-    transmission:
+    qbittorrent:
       entryPoints:
         - websecure
-      rule: 'Host(`transmission.example.com`)'
-      service: transmission
+      rule: 'Host(`qbittorrent.example.com`)'
+      service: qbittorrent
       middlewares:
         - "https-local-auth@file"
-
-
+  
   services:
     router:
       loadBalancer:
         serversTransport: insecureTransport
         servers:
           - url: http://192.168.1.1:80
-    transmission:
+    qbittorrent:
       loadBalancer:
         serversTransport: insecureTransport
         servers:
-          - url: http://nas:9091
-
+          - url: http://nas:8080
 
   # allow self-signed certificates for proxied web services
   serversTransports:
     insecureTransport:
       insecureSkipVerify: true
-
 
   ## MIDDLEWARES ##
   middlewares:
