@@ -8,11 +8,12 @@
           href: https://www.youtube.com/watch?v=RgVIUkscEik
 
 - Tech:
+    - HomeServers Doc:
+        - abbr: GD
+          href: https://docs.google.com/document/d/1HqpccyslwNdUV7VZWK4-lWE5nGbsXb8iFa_9x0J2xmg/edit
     - Homepage Setup:
         - abbr: HS
           href: https://gethomepage.dev/en/installation/docker/
-
-# - Entertainment:
-#     - YouTube:
-#         - abbr: YT
-#           href: https://youtube.com/
+    - Azure Portal:
+        - abbr: AZ
+          href: https://portal.azure.com/

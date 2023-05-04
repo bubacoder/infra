@@ -11,9 +11,9 @@
     memory: true
     disk: /
 
-- search:
-    provider: google
-    target: _blank
+# - search:
+#     provider: google
+#     target: _blank
 
 - datetime:
     text_size: xl

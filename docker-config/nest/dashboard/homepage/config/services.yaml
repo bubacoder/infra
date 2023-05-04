@@ -2,14 +2,27 @@
 # For configuration options and examples, please see:
 # https://gethomepage.dev/en/configs/services
 
-- Infra:
+- Connections:
     - Router:
-        href: https://router.example.com/
+        href: https://router.example.com/cgi-bin/luci/
+        ping: https://router.example.com/
         description: OpenWRT LuCi
         icon: router.png
+    - Nest SSH:
+        href: https://guacamole.example.com/#/client/MQBjAHBvc3RncmVzcWw
+        description: SSH connection
+        icon: ubuntu.png
+    - NAS SSH:
+        href: https://guacamole.example.com/#/client/MgBjAHBvc3RncmVzcWw
+        description: SSH connection
+        icon: debian.png
+    - Nest-Win RDP:
+        href: https://guacamole.example.com/#/client/NgBjAHBvc3RncmVzcWw
+        description: Remote Desktop connection
+        icon: windows-95.png
 
 - Arr:
-    - Transmission @ NAS:
-        href: https://transmission.example.com/
-        description: "[SSO] BitTorrent client"
-        icon: transmission.png
+    - qBittorrent @ NAS:
+        href: https://qbittorrent.example.com/
+        description: "BitTorrent client"
+        icon: qbittorrent.png

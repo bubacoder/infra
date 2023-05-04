@@ -2,13 +2,19 @@
 # For configuration options and examples, please see:
 # https://gethomepage.dev/en/configs/settings
 
+title: Example.com
+theme: dark # or light
+color: slate
+hideVersion: true
+showStats: false
+
 # providers:
 #   openweathermap: openweathermapapikey
 #   weatherapi: weatherapiapikey
 
 quicklaunch:
-    searchDescriptions: true
-    hideInternetSearch: true
+    searchDescriptions: false
+    hideInternetSearch: false
 
 # layout:
 #   Infra:
@@ -26,6 +32,12 @@ quicklaunch:
 
 layout:
   Infra:
+    style: row
+    columns: 4
+  Monitoring:
+    style: row
+    columns: 4
+  Connections:
     style: row
     columns: 4
   Tools:
