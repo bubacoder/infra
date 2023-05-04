@@ -1,4 +1,5 @@
-# Syncthing replaces proprietary sync and cloud services with something open, trustworthy and decentralized. Your data is your data alone and you deserve to choose where it is stored, if it is shared with some third party and how it's transmitted over the Internet.
+# Syncthing replaces proprietary sync and cloud services with something open, trustworthy and decentralized.
+# Your data is your data alone and you deserve to choose where it is stored, if it is shared with some third party and how it's transmitted over the Internet.
 #
 # https://hub.docker.com/r/linuxserver/syncthing
 ---
@@ -18,7 +19,22 @@ services:
       - ${DOCKER_VOLUMES}/syncthing:/config
       - ${ALLSTORAGE}:/storage
     ports:
-      - 8384:8384 # Web UI
       - 22000:22000/tcp
       - 22000:22000/udp
       - 21027:21027/udp
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.syncthing.entrypoints: websecure
+      traefik.http.routers.syncthing.middlewares: https-local-auth@file
+      traefik.http.services.syncthing.loadbalancer.server.port: 8384
+      homepage.group: Storage
+      homepage.name: Syncthing
+      homepage.icon: syncthing.png
+      homepage.href: https://syncthing.${MYDOMAIN}/
+      homepage.description: "[SSO] File Sync"
+
+networks:
+  proxy:
+    external: true

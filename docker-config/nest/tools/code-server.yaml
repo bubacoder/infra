@@ -23,7 +23,7 @@ services:
       DEFAULT_WORKSPACE: /config/workspace #optional
     volumes:
       - ${DOCKER_VOLUMES}/code-server:/config
-      - /home/buba/repos:/config/repos
+      - ${HOME}/repos:/config/repos
     networks:
       - proxy
     labels:
@@ -31,7 +31,6 @@ services:
       traefik.http.routers.code.entrypoints: websecure
       traefik.http.routers.code.middlewares: https-local-auth@file
       traefik.http.routers.code.rule: Host(`code.${MYDOMAIN}`)
-      traefik.http.routers.code.middlewares: https-local@file
       traefik.http.services.code.loadbalancer.server.port: 8443
       homepage.group: Tools
       homepage.name: Code-Server

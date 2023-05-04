@@ -49,7 +49,7 @@ services:
       traefik.http.routers.scrutiny.rule: Host(`scrutiny.${MYDOMAIN}`)
       traefik.http.services.scrutiny.loadbalancer.server.port: 8080
       traefik.http.routers.scrutiny.middlewares: https-local@file
-      homepage.group: Storage
+      homepage.group: Monitoring
       homepage.name: Scrutiny
       homepage.icon: scrutiny.png
       homepage.href: https://scrutiny.${MYDOMAIN}/

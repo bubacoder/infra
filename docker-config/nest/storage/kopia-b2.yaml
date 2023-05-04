@@ -38,15 +38,15 @@ services:
       - ${DOCKER_VOLUMES}/kopia-b2/logs:/app/logs
 
       # NAS
-      # - /mnt/nas/family-media:/mnt/family-media:ro
       - /mnt/nas/family-media:/sources/nas/family-media:ro
 
       # Nest
       - /etc:/sources/nest/etc:ro
       - ${DOCKER_VOLUMES}:/sources/nest/docker-volumes:ro
+      - ${HOME}/repos:/sources/nest/repos:ro
 
     networks:
-      - proxy     
+      - proxy
 
     labels:
       traefik.enable: true

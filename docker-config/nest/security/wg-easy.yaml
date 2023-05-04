@@ -27,7 +27,6 @@ services:
       WG_ALLOWED_IPS: "192.168.0.0/16,1.2.3.4/32" # Allowed IPs clients will use
     ports:
       - 51820:51820/udp # VPN
-      #- 51821:51821/tcp # WEBGUI
     volumes:
       - ${DOCKER_VOLUMES}/wg-easy:/etc/wireguard
     networks:
