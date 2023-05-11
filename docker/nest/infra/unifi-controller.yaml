@@ -38,15 +38,15 @@ services:
       traefik.http.routers.unifi-controller.entrypoints: websecure
       traefik.http.routers.unifi-controller.middlewares: https-local@file
       traefik.http.services.unifi-controller.loadbalancer.server.port: 8443
-      traefik.http.services.unifi-controller.loadbalancer.serversTransport: insecureTransport@file # new - direct: "Your connection is not private"
-      #serverstransports.<name>.insecureskipverify within the Docker label !
+      traefik.http.services.unifi-controller.loadbalancer.server.scheme: https
+      traefik.http.services.unifi-controller.loadbalancer.serversTransport: insecureTransport@file
       homepage.group: Infra
       homepage.name: Unifi Controller
       homepage.icon: unifi-controller.png
       homepage.href: https://unifi-controller.${MYDOMAIN}/
       homepage.description: Wireless software engine
       homepage.widget.type: unifi
-      homepage.widget.url: https://${MAIN_NODE_IP}:8443
+      homepage.widget.url: https://unifi-controller.${MYDOMAIN}
       homepage.widget.username: ${UNIFI_USERNAME}
       homepage.widget.password: ${UNIFI_PASSWORD}
       # - homepage.widget.site: Site Name # optional
