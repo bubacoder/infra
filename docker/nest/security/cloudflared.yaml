@@ -1,0 +1,26 @@
+# Client for Cloudflare Tunnel, a daemon that exposes private services through the Cloudflare edge. 
+#
+# https://hub.docker.com/r/cloudflare/cloudflared
+# https://www.crosstalksolutions.com/cloudflare-tunnel-easy-setup/
+---
+version: "3.5"
+name: cloudflared
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN}
+    networks:
+      - proxy
+    labels:
+      homepage.group: Security
+      homepage.name: Cloudflared
+      homepage.icon: cloudflare.png
+      homepage.description: "Cloudflare Tunnel"
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,46 @@
+# GitLab Community Edition docker image based on the Omnibus package 
+#
+# Visit the GitLab URL, and sign in with the username root and the password from the following command:
+# docker exec -it gitlab grep 'Password:' /etc/gitlab/initial_root_password
+#
+# https://hub.docker.com/r/gitlab/gitlab-ce/
+# https://docs.gitlab.com/ee/install/docker.html
+---
+version: "3.5"
+name: gitlab
+services:
+  gitlab:
+    image: 'gitlab/gitlab-ce:latest'
+    container_name: gitlab
+    restart: unless-stopped
+    hostname: 'gitlab.${MYDOMAIN}'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://gitlab.${MYDOMAIN}'
+        # Add any other gitlab.rb configuration here, each on its own line
+        gitlab_rails['gitlab_shell_ssh_port'] = 3022
+    ports:
+      - '3022:22' # TODO use Traefik
+    volumes:
+      - '${DOCKER_VOLUMES}/gitlab/config:/etc/gitlab'
+      - '${DOCKER_VOLUMES}/gitlab/logs:/var/log/gitlab'
+      - '${DOCKER_VOLUMES}/gitlab/data:/var/opt/gitlab'
+    shm_size: '256m'
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.gitlab.entrypoints: websecure
+      traefik.http.routers.gitlab.middlewares: https-local@file
+      traefik.http.services.gitlab.loadbalancer.server.port: 443
+      traefik.http.services.gitlab.loadbalancer.server.scheme: https
+      traefik.http.services.gitlab.loadbalancer.serversTransport: insecureTransport@file
+      homepage.group: Tools
+      homepage.name: Gitlab
+      homepage.icon: gitlab.png
+      homepage.href: https://gitlab.${MYDOMAIN}/
+      homepage.description: "GitLab Community Edition"
+
+networks:
+  proxy:
+    external: true

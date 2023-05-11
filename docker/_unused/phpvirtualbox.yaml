@@ -1,0 +1,55 @@
+# phpVirtualBox is a modern web interface that allows you to control remote VirtualBox instances - mirroring the VirtualBox GUI.
+# Changed the phpVirtualBox Repo to phpVirtualBox by BartekSz95 as this includes the support for php 8.1 and VirtualBox 7.x.
+#
+# https://hub.docker.com/r/jazzdd/phpvirtualbox/
+# https://github.com/BartekSz95/phpvirtualbox
+---
+version: "3.5"
+name: phpvirtualbox
+services:
+  vbox-http:
+    container_name: vbox-http
+    image: jazzdd/phpvirtualbox
+    restart: unless-stopped
+    environment:
+      # NEST_HOSTPORT: "vbox_websrv_nest:18083"
+      # NEST_NAME: "Nest"
+      # NEST_USER: "${ADMIN_USER}"
+      # NEST_PW: "${ADMIN_PASSWORD}"
+      NEST_HOSTPORT: "${MAIN_NODE_IP}:18083"
+      NEST_NAME: "Nest"
+      NEST_USER: "${ADMIN_USER}"
+      NEST_PW: "${ADMIN_PASSWORD}"
+      CONF_browserRestrictFolders: "/home,/usr/lib/virtualbox,"
+      CONF_noAuth: "true"
+    networks:
+      - proxy
+    depends_on:
+      - vbox-websrv
+    labels:
+      traefik.enable: true
+      traefik.http.routers.phpvirtualbox.entrypoints: websecure
+      traefik.http.routers.phpvirtualbox.rule: Host(`virtualbox.${MYDOMAIN}`)
+      traefik.http.routers.phpvirtualbox.middlewares: https-local@file
+      traefik.http.services.phpvirtualbox.loadbalancer.server.port: 80
+      homepage.group: Infra
+      homepage.name: phpVirtualBox
+      homepage.icon: vmware.png
+      homepage.href: https://virtualbox.${MYDOMAIN}/
+      homepage.description: VirtualBox GUI
+
+  vbox-websrv:
+    container_name: vbox_websrv_nest
+    image: jazzdd/vboxwebsrv
+    command: buba@${MAIN_NODE_IP}
+    restart: unless-stopped
+    volumes:
+      - "${DOCKER_VOLUMES}/phpvirtualbox/vbox_websrv_nest/ssh:/root/.ssh"
+    networks:
+      - proxy
+    environment:
+      USE_KEY: 1
+
+networks:
+  proxy:
+    external: true
