@@ -2,18 +2,24 @@
 # For configuration options and examples, please see:
 # https://gethomepage.dev/en/configs/bookmarks
 
-- Media:
-    - Work Music:
-        - abbr: WM
-          href: https://www.youtube.com/watch?v=RgVIUkscEik
-
-- Tech:
-    - HomeServers Doc:
-        - abbr: GD
-          href: https://docs.google.com/document/d/1HqpccyslwNdUV7VZWK4-lWE5nGbsXb8iFa_9x0J2xmg/edit
-    - Homepage Setup:
-        - abbr: HS
-          href: https://gethomepage.dev/en/installation/docker/
+- Cloud:
+    - OVHCloud:
+        - abbr: OVH
+          href: https://www.ovh.com/manager/
+    - Cloudflare:
+        - abbr: CF
+          href: https://dash.cloudflare.com/
     - Azure Portal:
         - abbr: AZ
           href: https://portal.azure.com/
+
+- Docs:
+    - HomeServers Doc:
+        - abbr: DOC
+          href: https://docs.google.com/document/d/1HqpccyslwNdUV7VZWK4-lWE5nGbsXb8iFa_9x0J2xmg/edit
+    - r/selfhosted:
+        - abbr: R/S
+          href: https://www.reddit.com/r/selfhosted/
+    - Homepage Setup:
+        - abbr: HS
+          href: https://gethomepage.dev/en/installation/docker/

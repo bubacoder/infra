@@ -16,31 +16,20 @@ quicklaunch:
     searchDescriptions: false
     hideInternetSearch: false
 
-# layout:
-#   Infra:
-#     style: column
-#   Tools:
-#     style: column
-#   Fileshare:
-#     style: column
-#   Storage:
-#     style: column
-#   Media:
-#     style: column
-#   Arr:
-#     style: column
-
 layout:
   Infra:
     style: row
     columns: 4
-  Monitoring:
+  Tools:
     style: row
     columns: 4
   Connections:
     style: row
     columns: 4
-  Tools:
+  Monitoring:
+    style: row
+    columns: 4
+  Security:
     style: row
     columns: 4
   Fileshare:
