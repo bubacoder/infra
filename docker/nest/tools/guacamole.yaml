@@ -24,7 +24,7 @@ services:
       traefik.http.routers.guacamole.entrypoints: websecure
       traefik.http.routers.guacamole.middlewares: https-local@file
       traefik.http.services.guacamole.loadbalancer.server.port: 8080
-      homepage.group: Tools
+      homepage.group: Connections
       homepage.name: Guacamole
       homepage.icon: guacamole.png
       homepage.href: https://guacamole.${MYDOMAIN}/

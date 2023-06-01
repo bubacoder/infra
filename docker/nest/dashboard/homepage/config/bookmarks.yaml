@@ -3,12 +3,15 @@
 # https://gethomepage.dev/en/configs/bookmarks
 
 - Cloud:
-    - OVHCloud:
+    - OVHCloud (Domain):
         - abbr: OVH
           href: https://www.ovh.com/manager/
-    - Cloudflare:
+    - Cloudflare (DNS, Tunnel):
         - abbr: CF
           href: https://dash.cloudflare.com/
+    - Backblaze (B2 storage):
+        - abbr: B2
+          href: https://secure.backblaze.com/user_signin.htm
     - Azure Portal:
         - abbr: AZ
           href: https://portal.azure.com/

@@ -37,7 +37,7 @@ services:
       traefik.http.routers.wireguard.rule: Host(`vpn.${MYDOMAIN}`)
       traefik.http.routers.wireguard.middlewares: https-local-auth@file
       traefik.http.services.wireguard.loadbalancer.server.port: 51821
-      homepage.group: Infra
+      homepage.group: Security
       homepage.name: WireGuard Easy
       homepage.icon: wireguard.png
       homepage.href: https://vpn.${MYDOMAIN}/
