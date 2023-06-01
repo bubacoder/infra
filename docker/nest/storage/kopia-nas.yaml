@@ -6,11 +6,11 @@
 # https://github.com/kopia/kopia/tree/master/tools/docker
 ---
 version: "3.5"
-name: kopia
+name: kopia-nas
 services:
-  kopia:
+  kopia-nas:
     image: kopia/kopia:latest
-    container_name: kopia
+    container_name: kopia-nas
     restart: "unless-stopped"
     user: "0:0"
     privileged: true
@@ -29,25 +29,34 @@ services:
       - --address=0.0.0.0:80
     environment:
       USER: ${ADMIN_USER}
-      KOPIA_PASSWORD: ${KOPIA_LOCAL_REPOSOTORY_PASSWORD}
+      KOPIA_PASSWORD: ${KOPIA_NAS_REPOSOTORY_PASSWORD}
       TZ: ${TIMEZONE}
+
     volumes:
-      - ${DOCKER_VOLUMES}/kopia/config:/app/config
-      - ${DOCKER_VOLUMES}/kopia/cache:/app/cache
-      - ${DOCKER_VOLUMES}/kopia/logs:/app/logs
-      - /:/local-data:ro
-      - /home/buba/backup:/local-repo
+      - ${DOCKER_VOLUMES}/kopia-nas/config:/app/config
+      - ${DOCKER_VOLUMES}/kopia-nas/cache:/app/cache
+      - ${DOCKER_VOLUMES}/kopia-nas/logs:/app/logs
+
+      # Nest (source)
+      - /etc:/sources/nest/etc:ro
+      - ${DOCKER_VOLUMES}:/sources/nest/docker-volumes:ro
+      - ${HOME}/repos:/sources/nest/repos:ro
+
+      # NAS (repository)
+      - ${BACKUP_ON_NAS}/kopia:/backup-on-nas
+
     networks:
       - proxy
+
     labels:
       traefik.enable: true
-      traefik.http.routers.kopia.entrypoints: websecure
-      traefik.http.routers.kopia.middlewares: https-local-auth@file
-      traefik.http.services.kopia.loadbalancer.server.port: 80
+      traefik.http.routers.kopia-nas.entrypoints: websecure
+      traefik.http.routers.kopia-nas.middlewares: https-local-auth@file
+      traefik.http.services.kopia-nas.loadbalancer.server.port: 80
       homepage.group: Storage
-      homepage.name: Kopia - Local
+      homepage.name: Kopia - NAS
       homepage.icon: kopia.png
-      homepage.href: https://kopia.${MYDOMAIN}/
+      homepage.href: https://kopia-nas.${MYDOMAIN}/
       homepage.description: "[SSO] Backups Using the Cloud Storage You Pick"
 
 networks:
