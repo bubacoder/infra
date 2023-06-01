@@ -1,4 +1,5 @@
 # Making Docker and Kubernetes management easy
+# In order to generate an API key, please follow the steps outlined here https://docs.portainer.io/api/access
 #
 # https://github.com/portainer/portainer
 ---
@@ -27,10 +28,9 @@ services:
       homepage.href: https://portainer.${MYDOMAIN}/
       homepage.description: Docker and Kubernetes management
       homepage.widget.type: portainer
-      homepage.widget.url: https://portainer.${MYDOMAIN} # https://portainer.host.or.ip:9443
+      homepage.widget.url: https://portainer.${MYDOMAIN}
       homepage.widget.env: 2
-      # In order to generate an API key, please follow the steps outlined here https://docs.portainer.io/api/access
-      homepage.widget.key: SomeSecureValueGoesHere
+      homepage.widget.key: ${PORTAINER_API_KEY}
 
 networks:
   proxy:
