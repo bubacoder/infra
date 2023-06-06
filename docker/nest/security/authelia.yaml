@@ -27,7 +27,7 @@ services:
       traefik.http.routers.authelia.rule: Host(`auth.${MYDOMAIN}`)
       traefik.http.routers.authelia.middlewares: https-local@file
       traefik.http.services.authelia.loadbalancer.server.port: 9091
-      homepage.group: Infra
+      homepage.group: Security
       homepage.name: Authelia
       homepage.icon: authelia.png
       homepage.href: https://auth.${MYDOMAIN}/
