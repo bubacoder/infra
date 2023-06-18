@@ -3,6 +3,8 @@
 # Visit the GitLab URL, and sign in with the username root and the password from the following command:
 # docker exec -it gitlab grep 'Password:' /etc/gitlab/initial_root_password
 #
+# Register the runner: https://docs.gitlab.com/runner/register/index.html#docker
+#
 # https://hub.docker.com/r/gitlab/gitlab-ce/
 # https://docs.gitlab.com/ee/install/docker.html
 ---
@@ -13,14 +15,19 @@ services:
     image: 'gitlab/gitlab-ce:latest'
     container_name: gitlab
     restart: unless-stopped
-    hostname: 'gitlab.${MYDOMAIN}'
+    # Do not use 'gitlab.${MYDOMAIN}', because the runner would use it and skip Traefik, resulting certificate error
+    hostname: 'gitlab'
     environment:
+      TZ: ${TIMEZONE}
       GITLAB_OMNIBUS_CONFIG: |
         external_url 'https://gitlab.${MYDOMAIN}'
         # Add any other gitlab.rb configuration here, each on its own line
         gitlab_rails['gitlab_shell_ssh_port'] = 3022
+        # HTTPS is handled by Traefik
+        nginx['listen_https'] = false
+        nginx['listen_port'] = 80
     ports:
-      - '3022:22' # TODO use Traefik
+     - '3022:22' # expose GitLab SSH on port 3022 on the host, as Traefik does not yet support TCP routing
     volumes:
       - '${DOCKER_VOLUMES}/gitlab/config:/etc/gitlab'
       - '${DOCKER_VOLUMES}/gitlab/logs:/var/log/gitlab'
@@ -28,18 +35,30 @@ services:
     shm_size: '256m'
     networks:
       - proxy
+
     labels:
       traefik.enable: true
       traefik.http.routers.gitlab.entrypoints: websecure
       traefik.http.routers.gitlab.middlewares: https-local@file
-      traefik.http.services.gitlab.loadbalancer.server.port: 443
-      traefik.http.services.gitlab.loadbalancer.server.scheme: https
-      traefik.http.services.gitlab.loadbalancer.serversTransport: insecureTransport@file
+      traefik.http.services.gitlab.loadbalancer.server.port: 80
+
       homepage.group: Tools
       homepage.name: Gitlab
       homepage.icon: gitlab.png
       homepage.href: https://gitlab.${MYDOMAIN}/
       homepage.description: "GitLab Community Edition"
+
+  gitlab-runner:
+    image: 'gitlab/gitlab-runner:latest'
+    container_name: gitlab-runner
+    restart: unless-stopped
+    environment:
+      TZ: ${TIMEZONE}
+    volumes:
+      - '${DOCKER_VOLUMES}/gitlab-runner/config:/etc/gitlab-runner'
+      - '/var/run/docker.sock:/var/run/docker.sock'
+    networks:
+      - proxy
 
 networks:
   proxy:
