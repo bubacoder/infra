@@ -1,22 +1,53 @@
 #!/bin/bash
 
+# Update Docker images with:
+# PULL=true ./apply.sh
+
 . ../common.sh
+
+assert-hostname "nest"
+init
 
 # docker network create proxy
 
-up infra traefik
-up infra authelia
-up infra portainer
-up infra adguardhome
-up infra uptime-kuma
-up infra unifi-controller
-up infra wg-easy
-up infra phpvirtualbox
+up security traefik
+up security authelia
+up security wg-easy
+up security cloudflared
 
-up dashboard hemidall
 up dashboard homepage
 
+up infra portainer
+up infra adguardhome
+up infra unifi-controller
+
+up monitoring scrutiny
+up monitoring uptime-kuma
+up monitoring prometheus
+up monitoring grafana
+
 up smarthome homeassistant
+
+up media jellyfin
+up media jellyfin-vue
+up media metube
+#up media immich
+
+#down storage samba
+up storage syncthing
+#up storage google-drive
+up storage filebrowser
+up storage kopia-nas
+up storage kopia-b2
+
+up dev code-server
+up dev gitlab
+up dev jupyter-notebook
+
+up tools vaultwarden
+up tools openspeedtest
+up tools cyberchef
+up tools guacamole
 
 up arr radarr
 up arr sonarr
@@ -25,27 +56,6 @@ up arr prowlarr
 up arr jellyseerr
 up arr flaresolverr
 
-up fileshare qbittorrent
-#up fileshare sabnzbd
+down game legendary-minecraft
 
-#up media jellyfin # --- to avoid interruptions
-up media jellyfin-vue
-up media metube
-#up media immich
-#up media plex
-
-#up storage samba
-up storage syncthing
-#up storage google-drive
-up storage filebrowser
-up storage kopia
-up storage kopia-b2
-up storage scrutiny
-
-up tools code-server
-up tools vaultwarden
-up tools openspeedtest
-up tools cyberchef
-up tools guacamole
-
-up game legendary-minecraft
+cleanup
