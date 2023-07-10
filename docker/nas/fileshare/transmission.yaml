@@ -21,8 +21,8 @@ services:
       #- HOST_WHITELIST=dnsname list #optional
     volumes:
       - ${DOCKER_VOLUMES}/transmission:/config
-      - ${DOWNLOADS}/torrent-downloads:/downloads
-      - ${DOWNLOADS}/torrent-watch:/watch
+      - ${STORAGE_DOWNLOADS}/torrent-downloads:/downloads
+      - ${STORAGE_DOWNLOADS}/torrent-watch:/watch
     ports:
       - 9091:9091 # Web UI / API
       - 51413:51413

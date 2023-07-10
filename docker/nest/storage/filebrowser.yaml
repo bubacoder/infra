@@ -16,7 +16,7 @@ services:
       PGID: ${PGID}
       TZ: ${TIMEZONE}
     volumes:
-      - ${ALLSTORAGE}:/srv
+      - ${STORAGE_ALL}:/srv
       - ${DOCKER_VOLUMES}/filebrowser/filebrowser.db:/database/filebrowser.db
       - ${DOCKER_VOLUMES}/filebrowser/settings.json:/config/settings.json
     networks:

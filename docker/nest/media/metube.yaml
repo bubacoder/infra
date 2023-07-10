@@ -14,7 +14,7 @@ services:
       UID: ${PUID}
       GID: ${PGID}
     volumes:
-      - ${DOWNLOADS}/youtube:/downloads
+      - ${STORAGE_DOWNLOADS}/youtube:/downloads
     networks:
       - proxy
     labels:

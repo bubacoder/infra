@@ -15,7 +15,7 @@ services:
       TZ: ${TIMEZONE}
     volumes:
       - ${DOCKER_VOLUMES}/sabnzbd:/config
-      - ${DOWNLOADS}/sabnzbd:/downloads #optional
-      - ${DOWNLOADS}/sabnzbd-incomplete:/incomplete-downloads #optional
+      - ${STORAGE_DOWNLOADS}/sabnzbd:/downloads #optional
+      - ${STORAGE_DOWNLOADS}/sabnzbd-incomplete:/incomplete-downloads #optional
     ports:
       - 8080:8080

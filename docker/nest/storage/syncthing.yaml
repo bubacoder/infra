@@ -17,7 +17,7 @@ services:
       TZ: ${TIMEZONE}
     volumes:
       - ${DOCKER_VOLUMES}/syncthing:/config
-      - ${ALLSTORAGE}:/storage
+      - ${STORAGE_SYNCTHING}:/storage
     ports:
       - 22000:22000/tcp
       - 22000:22000/udp
@@ -33,7 +33,7 @@ services:
       homepage.name: Syncthing
       homepage.icon: syncthing.png
       homepage.href: https://syncthing.${MYDOMAIN}/
-      homepage.description: "[SSO] File Sync"
+      homepage.description: "[SSO] File Sync" # TODO double auth
 
 networks:
   proxy:

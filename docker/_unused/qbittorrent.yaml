@@ -18,7 +18,7 @@ services:
       WEBUI_PORT: 8080
     volumes:
       - ${DOCKER_VOLUMES}/qbittorrent:/config
-      - ${DOWNLOADS}/torrent-downloads:/downloads
+      - ${STORAGE_DOWNLOADS}/torrent-downloads:/downloads
     ports:
       #- 8080:8080
       - 6881:6881

@@ -18,7 +18,7 @@ services:
     volumes:
       - ${DOCKER_VOLUMES}/sonarr:/config
       - ${MEDIA}:/media
-      - ${DOWNLOADS}:/downloads #optional
+      - ${STORAGE_DOWNLOADS}:/downloads #optional
     networks:
       - proxy
     labels:
