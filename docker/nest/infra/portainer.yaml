@@ -13,8 +13,9 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${DOCKER_VOLUMES}/portainer:/data
-    # ports:
-    #   - 9000:9000
+    ports:
+      # Keep this as fallback
+      - 9000:9000
     networks:
       - proxy
     labels:
