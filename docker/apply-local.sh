@@ -1,3 +1,3 @@
 #!/bin/bash
 
-cd $(hostname) && ./apply.sh
+cd $(hostname | tr '[:upper:]' '[:lower:]') && ./apply.sh
