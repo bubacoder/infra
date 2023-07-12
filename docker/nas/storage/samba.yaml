@@ -46,6 +46,7 @@ services:
       # System shares
       SAMBA_VOLUME_CONFIG_mnt_adminonly: "[mnt]; path=/shares/mnt; valid users = buba; guest ok = no; read only = no; browseable = no"
       SAMBA_VOLUME_CONFIG_backup_adminonly: "[backup]; path=/shares/backup; valid users = buba; guest ok = no; read only = no; browseable = no"
+      SAMBA_VOLUME_CONFIG_downloads_adminonly: "[downloads]; path=/shares/downloads; valid users = buba; guest ok = no; read only = no; browseable = no"
 
       #Examples
       #SAMBA_VOLUME_CONFIG_shared_home: "[Home]; path=/shares/homes/%U; valid users = alice, bob, foo; guest ok = no; read only = no; browseable = yes"
@@ -62,5 +63,6 @@ services:
       - ${MEDIA}:/shares/media
       - ${FAMILYMEDIA}:/shares/family-media
       - ${BACKUP}:/shares/backup
+      - ${STORAGE_DOWNLOADS}:/shares/downloads
 
     restart: unless-stopped
