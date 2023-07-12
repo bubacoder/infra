@@ -63,8 +63,8 @@ docker compose -f adguardhome.yaml up --detach
 
 ##docker compose -f syncthing.yaml up --detach
 
-create_dir ${DOWNLOADS}/torrent-downloads
-create_dir ${DOWNLOADS}/torrent-watch
+create_dir ${STORAGE_DOWNLOADS}/torrent-downloads
+create_dir ${STORAGE_DOWNLOADS}/torrent-watch
 docker compose -f transmission.yaml up --detach
 
 ##create_dir /storage/media/tvseries
