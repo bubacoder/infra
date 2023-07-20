@@ -17,6 +17,8 @@ services:
       OVH_APPLICATION_KEY: ${OVH_APPLICATION_KEY}
       OVH_APPLICATION_SECRET: ${OVH_APPLICATION_SECRET}
       OVH_CONSUMER_KEY: ${OVH_CONSUMER_KEY}
+      MYDOMAIN: ${MYDOMAIN}
+      MYEMAIL: ${MYEMAIL}
     volumes:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock:ro

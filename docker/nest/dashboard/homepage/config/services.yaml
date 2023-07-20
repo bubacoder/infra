@@ -3,11 +3,15 @@
 # https://gethomepage.dev/en/configs/services
 
 - Connections:
-    - Router:
+    - Router Web UI:
         href: https://router.example.com/cgi-bin/luci/
         ping: https://router.example.com/
         description: OpenWRT LuCi
         icon: router.png
+    - Proxmox Web UI:
+        href: https://proxmox.example.com/
+        description: Proxmox Virtual Environment
+        icon: proxmox.png
     - Nest SSH:
         href: https://guacamole.example.com/#/client/MQBjAHBvc3RncmVzcWw
         description: SSH connection

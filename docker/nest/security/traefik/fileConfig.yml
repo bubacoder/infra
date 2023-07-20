@@ -4,14 +4,21 @@ http:
     router:
       entryPoints:
         - websecure
-      rule: 'Host(`router.example.com`)'
+      rule: 'Host(`router.{{env "MYDOMAIN"}}`)'
       service: router
+      middlewares:
+        - "https-local@file"
+    proxmox:
+      entryPoints:
+        - websecure
+      rule: 'Host(`proxmox.{{env "MYDOMAIN"}}`)'
+      service: proxmox
       middlewares:
         - "https-local@file"
     qbittorrent:
       entryPoints:
         - websecure
-      rule: 'Host(`qbittorrent.example.com`)'
+      rule: 'Host(`qbittorrent.{{env "MYDOMAIN"}}`)'
       service: qbittorrent
       middlewares:
         - "https-local-auth@file"
@@ -22,6 +29,11 @@ http:
         serversTransport: insecureTransport
         servers:
           - url: http://192.168.1.1:80
+    proxmox:
+      loadBalancer:
+        serversTransport: insecureTransport
+        servers:
+          - url: https://192.168.1.50:8006
     qbittorrent:
       loadBalancer:
         serversTransport: insecureTransport
@@ -63,9 +75,9 @@ http:
 
     authelia:
       forwardAuth:
-        address: "http://authelia:9091/api/verify?rd=https://auth.example.com"
-        trustForwardHeader: true
+        address: 'http://authelia:9091/api/verify?rd=https://auth.{{env "MYDOMAIN"}}'
         authResponseHeaders: Remote-User,Remote-Groups,Remote-Name,Remote-Email        
+        trustForwardHeader: true
 
     # Security headers
     security-headers:
