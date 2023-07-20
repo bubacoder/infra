@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# Update Docker images with:
-# PULL=true ./apply.sh
-
+# shellcheck disable=SC1091
 . ../common.sh
 
 assert-hostname "nest"
@@ -32,6 +30,7 @@ up media jellyfin
 up media jellyfin-vue
 up media metube
 #up media immich
+up media photoprism
 
 #down storage samba
 up storage syncthing

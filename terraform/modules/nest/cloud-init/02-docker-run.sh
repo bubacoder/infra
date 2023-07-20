@@ -47,7 +47,7 @@ function wait_until_installed {
 # Mount
 create_dir /storage/
 mount_storage
-create_dir ${CONTAINERDATA}/
+create_dir "${CONTAINERDATA}/"
 
 
 # Start containers

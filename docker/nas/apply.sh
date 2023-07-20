@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# Update Docker images with:
-# PULL=true ./apply.sh
-
+# shellcheck disable=SC1091
 . ../common.sh
 
 assert-hostname "NAS"
