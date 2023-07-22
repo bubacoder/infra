@@ -1,0 +1,26 @@
+---
+admin_user: buba
+admin_name: "Buba"
+admin_email: "bubacoder@gmail.com"
+
+ubuntu_version: jammy
+
+base_packages:
+  - mc
+  - vim
+  - git
+  - net-tools
+  - util-linux
+  - screen
+  - tmux
+  - mdadm
+  - hdparm
+  - htop
+  - make
+  - shellcheck
+
+smb_shares:
+  - media
+  - family-media
+  - backup
+  - downloads

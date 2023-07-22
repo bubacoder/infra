@@ -1,0 +1,33 @@
+---
+- name: Configure admin user
+  hosts: all
+  become: true
+
+  tasks:
+    # TODO Set prompt
+
+    - name: Create admin user '{{ admin_user }}'
+      ansible.builtin.user:
+        name: "{{ admin_user }}"
+        password: "{{ admin_password | password_hash('sha512') }}"
+        comment: "{{ admin_name }}"
+        groups:
+          - sudo
+        append: true
+        update_password: on_create
+
+    - name: Set git global config for user '{{ admin_user }}'
+      community.general.git_config:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        scope: global
+      become_user: "{{ admin_user }}"
+      with_items:
+        - name: "user.name"
+          value: "{{ admin_name }}"
+        - name: "user.email"
+          value: "{{ admin_email }}"
+        - name: "credential.helper"
+          value: "store"
+        - name: "pull.rebase"
+          value: "true"
