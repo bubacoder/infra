@@ -1,0 +1,19 @@
+---
+docker_hosts:
+  hosts:
+    nest:
+      ansible_user: buba
+      ansible_conection: ssh
+  vars:
+    ansible_conection: ssh
+
+minimal:
+  hosts:
+    nas:
+      ansible_user: root
+    proxmox:
+      ansible_host: 192.168.1.50
+      ansible_user: buba
+    # router
+  vars:
+    ansible_conection: ssh

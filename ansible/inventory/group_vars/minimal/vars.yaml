@@ -1,0 +1,13 @@
+---
+base_packages:
+  - sudo
+  - mc
+  - vim
+  - git
+  - net-tools
+  - util-linux
+  - screen
+  - tmux
+  - mdadm
+  - hdparm
+  - htop

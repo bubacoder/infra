@@ -1,11 +1,8 @@
 ---
-admin_user: buba
-admin_name: "Buba"
-admin_email: "bubacoder@gmail.com"
-
 ubuntu_version: jammy
 
 base_packages:
+  - sudo
   - mc
   - vim
   - git
