@@ -58,15 +58,18 @@ entryPoints:
               - '*.example.com'
 
 # https://doc.traefik.io/traefik/user-guides/docker-compose/acme-dns/
-# https://go-acme.github.io/lego/dns/ovh/
-# https://medium.com/nephely/configure-traefik-for-the-dns-01-challenge-with-ovh-as-dns-provider-c737670c0434
+# OVH:
+#   https://go-acme.github.io/lego/dns/ovh/
+#   https://medium.com/nephely/configure-traefik-for-the-dns-01-challenge-with-ovh-as-dns-provider-c737670c0434
+# Cloudflare:
+#   https://go-acme.github.io/lego/dns/cloudflare/
 certificatesResolvers:
   letsencrypt:
     acme:
       email: bubacoder@gmail.com # Sets the email address to use when registering with the Let's Encrypt CA
       storage: /letsencrypt/acme.json # Sets the path where Traefik will store ACME data (such as obtained certificates) 
       dnsChallenge:
-        provider: ovh # Configures OVH as the DNS provider to use for the ACME DNS challenge
+        provider: cloudflare # Configures Cloudflare as the DNS provider to use for the ACME DNS challenge
         delayBeforeCheck: 10 # Specifies the number of seconds to wait before checking if the DNS propagation is completed
         resolvers:
           - "1.1.1.1:53" # Specifies a list of DNS resolvers to use for the DNS queries
