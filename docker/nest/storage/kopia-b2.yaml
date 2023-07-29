@@ -40,7 +40,7 @@ services:
       # Nest (source)
       - /etc:/sources/nest/etc:ro
       - ${DOCKER_VOLUMES}:/sources/nest/docker-volumes:ro
-      - ${HOME}/repos:/sources/nest/repos:ro
+      - ${ADMIN_HOME}/repos:/sources/nest/repos:ro
 
       # NAS (source)
       - ${FAMILYMEDIA}:/sources/nas/family-media:ro

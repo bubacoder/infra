@@ -23,7 +23,8 @@ services:
       DEFAULT_WORKSPACE: /config/workspace #optional
     volumes:
       - ${DOCKER_VOLUMES}/code-server:/config
-      - ${HOME}/repos:/config/repos
+      - ${ADMIN_HOME}/repos:/config/repos
+      # TODO - ${ADMIN_HOME}/.ssh: ...
     networks:
       - proxy
     labels:
