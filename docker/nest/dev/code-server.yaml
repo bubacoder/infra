@@ -10,6 +10,7 @@ services:
   code-server:
     image: lscr.io/linuxserver/code-server:latest
     container_name: code-server
+    hostname: code-server
     restart: unless-stopped
     environment:
       PUID: ${PUID}
@@ -24,7 +25,7 @@ services:
     volumes:
       - ${DOCKER_VOLUMES}/code-server:/config
       - ${ADMIN_HOME}/repos:/config/repos
-      # TODO - ${ADMIN_HOME}/.ssh: ...
+      - ${ADMIN_HOME}/.ssh:/config/.ssh
     networks:
       - proxy
     labels:
