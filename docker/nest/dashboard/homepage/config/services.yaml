@@ -20,7 +20,7 @@
         href: https://guacamole.example.com/#/client/MgBjAHBvc3RncmVzcWw
         description: SSH connection
         icon: debian.png
-    - Nest-Win RDP:
+    - Vostro RDP:
         href: https://guacamole.example.com/#/client/NgBjAHBvc3RncmVzcWw
         description: Remote Desktop connection
         icon: windows-95.png
