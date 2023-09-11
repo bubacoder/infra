@@ -17,9 +17,9 @@ resource "random_id" "random_id" {
 
 # Create storage account for boot diagnostics
 resource "azurerm_storage_account" "nest_storage_account" {
-  name                     = "diag${random_id.random_id.hex}"
-  location                 = var.location
-  resource_group_name      = var.resourcegroup
+  name                = "diag${random_id.random_id.hex}"
+  location            = var.location
+  resource_group_name = var.resourcegroup
 
   account_tier             = "Standard"
   account_replication_type = "LRS"
@@ -32,8 +32,8 @@ resource "azurerm_public_ip" "nest" {
   location            = var.location
   resource_group_name = var.resourcegroup
 
-  domain_name_label   = "buba-${local.vm_name}"
-  allocation_method   = "Dynamic"
+  domain_name_label = "buba-${local.vm_name}"
+  allocation_method = "Dynamic"
 }
 
 # Create Network Security Group and rule
@@ -207,9 +207,9 @@ resource "tls_private_key" "nest_ssh" {
 
 # Create virtual machine
 resource "azurerm_linux_virtual_machine" "nest" {
-  name                  = "${local.vm_name}"
-  location              = var.location
-  resource_group_name   = var.resourcegroup
+  name                = local.vm_name
+  location            = var.location
+  resource_group_name = var.resourcegroup
 
   network_interface_ids = [azurerm_network_interface.nest_nic.id]
   size                  = var.vm_size
@@ -227,7 +227,7 @@ resource "azurerm_linux_virtual_machine" "nest" {
     version   = "latest"
   }
 
-  computer_name                   = "${local.vm_name}"
+  computer_name                   = local.vm_name
   admin_username                  = "azureuser"
   disable_password_authentication = true
 

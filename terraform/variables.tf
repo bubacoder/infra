@@ -7,4 +7,3 @@ variable "resourcegroup" {
   default     = "HomeInfra"
   description = "Name of Resource Group"
 }
-

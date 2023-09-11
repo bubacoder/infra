@@ -42,7 +42,7 @@ data "cloudinit_config" "nest_config" {
     content      = file("${path.module}/compose/portainer.yaml")
     filename     = "portainer.yaml"
   }
-  
+
   part {
     content_type = "text/x-shellscript"
     content      = file("${path.module}/compose/syncthing.yaml")

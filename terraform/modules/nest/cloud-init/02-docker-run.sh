@@ -70,4 +70,3 @@ docker compose -f filebrowser.yaml up --detach
 
 #docker compose -f homeassistant.yaml up --detach
 #docker compose -f unifi-controller.yaml up --detach
-
