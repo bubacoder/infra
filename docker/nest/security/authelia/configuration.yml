@@ -36,7 +36,7 @@ authentication_backend:
       salt_length: 16
       parallelism: 8
       memory: 64
-      
+
 access_control:
   default_policy: deny
   rules:
@@ -45,7 +45,7 @@ access_control:
     # - domain: "very-secure.example.com" # TODO example
     #   policy: two_factor
     - domain: "*.example.com"
-      # subject: 
+      # subject:
       #   - "group:admins"
       policy: one_factor
 

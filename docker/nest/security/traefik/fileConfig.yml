@@ -22,7 +22,7 @@ http:
       service: qbittorrent
       middlewares:
         - "https-local-auth@file"
-  
+
   services:
     router:
       loadBalancer:
@@ -76,7 +76,7 @@ http:
     authelia:
       forwardAuth:
         address: 'http://authelia:9091/api/verify?rd=https://auth.{{env "MYDOMAIN"}}'
-        authResponseHeaders: Remote-User,Remote-Groups,Remote-Name,Remote-Email        
+        authResponseHeaders: Remote-User,Remote-Groups,Remote-Name,Remote-Email
         trustForwardHeader: true
 
     # Security headers

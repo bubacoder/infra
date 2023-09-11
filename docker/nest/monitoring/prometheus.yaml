@@ -2,7 +2,7 @@
 #
 # https://hub.docker.com/r/prom/prometheus
 # https://prometheus.io/docs/introduction/overview/
-# 
+#
 # Collectors:
 # https://hub.docker.com/r/prom/node-exporter/
 # https://github.com/google/cadvisor/

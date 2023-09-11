@@ -67,7 +67,7 @@ certificatesResolvers:
   letsencrypt:
     acme:
       email: bubacoder@gmail.com # Sets the email address to use when registering with the Let's Encrypt CA
-      storage: /letsencrypt/acme.json # Sets the path where Traefik will store ACME data (such as obtained certificates) 
+      storage: /letsencrypt/acme.json # Sets the path where Traefik will store ACME data (such as obtained certificates)
       dnsChallenge:
         provider: cloudflare # Configures Cloudflare as the DNS provider to use for the ACME DNS challenge
         delayBeforeCheck: 10 # Specifies the number of seconds to wait before checking if the DNS propagation is completed

@@ -1,5 +1,5 @@
-# This is an experimental web client for Jellyfin based on Vue.js. 
-# 
+# This is an experimental web client for Jellyfin based on Vue.js.
+#
 # https://github.com/jellyfin/jellyfin-vue
 # https://hub.docker.com/r/jellyfin/jellyfin-vue
 ---

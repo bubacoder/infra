@@ -12,7 +12,7 @@
 users:
   buba:
     displayname: "Buba"
-    password: "$argon2id$..." 
+    password: "$argon2id$..."
     email: bubacoder@gmail.com
     groups:
       - admins

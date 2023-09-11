@@ -5,4 +5,4 @@
 ---
 
 # https://immich.app/docs/install/docker-compose
-# The TensorFlow version used by Immich doesn't run on older CPU architectures. It requires a CPU with AVX and AVX2 instruction sets. 
+# The TensorFlow version used by Immich doesn't run on older CPU architectures. It requires a CPU with AVX and AVX2 instruction sets.

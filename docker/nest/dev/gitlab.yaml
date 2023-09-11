@@ -1,4 +1,4 @@
-# GitLab Community Edition docker image based on the Omnibus package 
+# GitLab Community Edition docker image based on the Omnibus package
 #
 # Visit the GitLab URL, and sign in with the username root and the password from the following command:
 # docker exec -it gitlab grep 'Password:' /etc/gitlab/initial_root_password
