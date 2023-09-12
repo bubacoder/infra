@@ -1,15 +1,15 @@
 ---
 - name: Install base host
-  import_playbook: playbooks/00-base.yaml
+  import_playbook: playbooks/debian/00-base.yaml
 
 - name: Configure admin user
-  import_playbook: playbooks/05-user.yaml
+  import_playbook: playbooks/debian/05-user.yaml
 
 - name: Configure network
-  import_playbook: playbooks/10-network.yaml
+  import_playbook: playbooks/debian/10-network.yaml
 
 - name: Mount network shares
-  import_playbook: playbooks/15-samba.yaml
+  import_playbook: playbooks/nest/15-samba.yaml
 
 - name: Install Docker
-  import_playbook: playbooks/20-docker.yaml
+  import_playbook: playbooks/nest/20-docker.yaml

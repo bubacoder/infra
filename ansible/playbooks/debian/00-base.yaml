@@ -18,7 +18,7 @@
 
     - name: Install base packages
       ansible.builtin.apt:
-        pkg: "{{ base_packages }}"
+        pkg: "{{ base_apt_packages }}"
         state: present
         update_cache: false
 

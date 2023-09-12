@@ -1,5 +1,5 @@
 ---
-base_packages:
+base_apt_packages:
   - sudo
   - mc
   - vim

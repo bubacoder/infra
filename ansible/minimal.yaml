@@ -1,6 +1,6 @@
 ---
 - name: Install base host
-  import_playbook: playbooks/00-base.yaml
+  import_playbook: playbooks/debian/00-base.yaml
 
 - name: Configure admin user
-  import_playbook: playbooks/05-user.yaml
+  import_playbook: playbooks/debian/05-user.yaml

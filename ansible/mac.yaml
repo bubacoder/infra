@@ -1,0 +1,6 @@
+---
+- name: Install Mac Dev base
+  import_playbook: playbooks/mac/00-base.yaml
+
+- name: Setup mac user
+  import_playbook: playbooks/mac/05-user.yaml

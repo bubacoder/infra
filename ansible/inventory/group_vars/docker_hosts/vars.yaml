@@ -1,7 +1,7 @@
 ---
 ubuntu_version: jammy
 
-base_packages:
+base_apt_packages:
   - sudo
   - mc
   - vim
@@ -15,6 +15,7 @@ base_packages:
   - htop
   - make
   - shellcheck
+  - tshark
 
 smb_shares:
   - media

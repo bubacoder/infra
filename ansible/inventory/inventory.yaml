@@ -1,4 +1,9 @@
 ---
+local:
+  hosts:
+    localhost:
+      ansible_connection: local
+
 docker_hosts:
   hosts:
     nest:
