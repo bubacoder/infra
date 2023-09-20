@@ -13,3 +13,6 @@
 
 - name: Install Docker
   import_playbook: playbooks/nest/20-docker.yaml
+
+- name: Install Helix Editor
+  import_playbook: playbooks/nest/25-helix-editor.yaml
