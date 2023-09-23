@@ -8,8 +8,13 @@ init()
 up()
 {
     echo ">>> Starting $1/$2"
-    if ${PULL:-false}; then
-        docker compose -f "$1/$2.yaml" --env-file .env pull
+    if ${UPDATE:-false}; then
+        if grep -q "build:" "$1/$2.yaml"
+        then
+            docker compose -f "$1/$2.yaml" build --pull
+        else
+            docker compose -f "$1/$2.yaml" --env-file .env pull
+        fi
     fi
     docker compose -f "$1/$2.yaml" --env-file .env up --detach
 }
@@ -22,7 +27,7 @@ down()
 
 cleanup()
 {
-    if ${PULL:-false}; then
+    if ${UPDATE:-false}; then
         echo Cleanup...
         docker image prune -a -f
     fi
