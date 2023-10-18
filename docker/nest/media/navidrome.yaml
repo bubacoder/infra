@@ -1,0 +1,46 @@
+# Navidrome is an open source web-based music collection server and streamer. 
+# It gives you freedom to listen to your music collection from any browser or mobile device.
+#
+# In case of "unable to open database file: no such file or directory" error, chown the data directory.
+#
+# https://www.navidrome.org/docs/installation/docker/
+# https://www.navidrome.org/docs/usage/configuration-options/
+# https://hub.docker.com/r/deluan/navidrome
+#
+# Recommended desktop player:
+# Sonixd - A full-featured Subsonic/Jellyfin compatible desktop music player
+# https://github.com/jeffvli/sonixd
+# (Startup fix on Mac: xattr -cr /Applications/Sonixd.app)
+---
+version: "3.5"
+name: navidrome
+services:
+  navidrome:
+    image: deluan/navidrome:latest
+    container_name: navidrome
+    user: ${PUID}:${PGID} # should be owner of volumes
+    restart: unless-stopped
+    environment:
+      # Optional: put your config options customization here. Examples:
+      ND_SCANSCHEDULE: 8h
+      ND_LOGLEVEL: info  
+      ND_SESSIONTIMEOUT: 24h
+      ND_MUSICFOLDER: /media/music
+    volumes:
+      - ${DOCKER_VOLUMES}/navidrome:/data
+      - ${MEDIA}/music:/media/music:ro
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.navidrome.entrypoints: websecure
+      traefik.http.services.navidrome.loadbalancer.server.port: 4533
+      homepage.group: Media
+      homepage.name: Navidrome
+      homepage.icon: navidrome.png
+      homepage.href: https://navidrome.${MYDOMAIN}/
+      homepage.description: Music collection
+
+networks:
+  proxy:
+    external: true
