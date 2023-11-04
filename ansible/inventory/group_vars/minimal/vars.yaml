@@ -1,5 +1,5 @@
 ---
-base_apt_packages:
+apt_base_packages:
   - sudo
   - mc
   - vim
@@ -11,3 +11,5 @@ base_apt_packages:
   - mdadm
   - hdparm
   - htop
+
+apt_packages: apt_base_packages # TODO

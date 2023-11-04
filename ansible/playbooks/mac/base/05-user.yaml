@@ -37,7 +37,5 @@
       ansible.builtin.copy:
         src: "assets/Hungarian_Win.keylayout"
         dest: "/Library/Keyboard Layouts/Hungarian_Win.keylayout"
-        # owner: foo
-        # group: foo
-        # mode: '0644'
+        mode: '0644'
       become: true

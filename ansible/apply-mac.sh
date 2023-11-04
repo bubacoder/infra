@@ -1,3 +1,3 @@
 #!/bin/sh
 
-ansible-playbook -v mac.yaml --ask-become-pass --limit mac "$@"
+ansible-playbook -v playbooks/mac-base.yaml --ask-become-pass --limit local "$@"

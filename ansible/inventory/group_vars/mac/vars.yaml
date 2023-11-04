@@ -13,7 +13,6 @@ brew_base_tools:
   - python               # https://docs.python-guide.org/starting/install3/osx/
   - tree                 # https://linux.die.net/man/1/tree
   - pre-commit           # https://pre-commit.com/
-
   # - sponge # Soak up standard input and write to a file
   # - the_silver_searcher # command: ag
 
@@ -25,8 +24,8 @@ brew_cloud_tools:
   # fatal: [localhost]: FAILED! => {"changed": false, "msg": "Your current Google Cloud CLI version is: 442.0.0\nThe latest available version is: 442.0.0\n\nTo install or remove components at your current SDK version [442.0.0], run:\n  $ gcloud components install COMPONENT_ID\n  $ gcloud components remove COMPONENT_ID\n\nTo update your SDK installation to the latest version [442.0.0], run:\n  $ gcloud components update\n\n==> Source [/opt/homebrew/share/google-cloud-sdk/completion.zsh.inc] in your profile to enable shell command completion for gcloud.\n==> Source [/opt/homebrew/share/google-cloud-sdk/path.zsh.inc] in your profile to add the Google Cloud SDK command line tools to your $PATH."}
   #- google-cloud-sdk    # https://cloud.google.com/sdk/docs/install
 
+# Note: terraform is set up by asdf
 brew_terraform_tools:
-  - terraform           # https://developer.hashicorp.com/terraform/downloads?product_intent=terraform
   - terraform-docs      # https://github.com/terraform-docs/terraform-docs
   - terragrunt          # https://terragrunt.gruntwork.io/docs/getting-started/install/
   - tfsec               # https://github.com/aquasecurity/tfsec
@@ -39,9 +38,6 @@ brew_kubernetes_tools:
   - helm                  # https://helm.sh/docs/intro/install/
   - kubent                # https://github.com/doitintl/kube-no-trouble
   - aws-iam-authenticator # https://github.com/kubernetes-sigs/aws-iam-authenticator
-
-  # - kubectx
-  # - fluxcd/tap/flux # https://fluxcd.io/flux/cmd/ # . <(flux completion zsh)
   # - popeye # https://popeyecli.io/ - Popeye is a utility that scans live Kubernetes cluster and reports potential issues with deployed resources and configurations.
 
 install_homebrew_if_missing: false

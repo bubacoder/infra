@@ -1,7 +1,7 @@
 ---
 ubuntu_version: jammy
 
-base_apt_packages:
+apt_base_packages:
   - sudo
   - mc
   - vim
@@ -13,9 +13,15 @@ base_apt_packages:
   - mdadm
   - hdparm
   - htop
+
+apt_developer_packages:
   - make
+  - pre-commit
+  - terraform
   - shellcheck
   - tshark
+
+apt_packages: apt_base_packages + apt_developer_packages # TODO
 
 smb_shares:
   - media
