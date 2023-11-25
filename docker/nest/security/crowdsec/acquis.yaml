@@ -1,0 +1,24 @@
+filenames:
+  - /var/log/auth.log
+labels:
+  type: syslog
+---
+filenames:
+  - /var/log/traefik-access.log
+labels:
+  type: traefik
+---
+filenames:
+  - /var/log/authelia.log
+labels:
+  type: authelia
+---
+filenames:
+  - /var/log/vaultwarden.log
+labels:
+  type: vaultwarden
+---
+filenames:
+ - /var/log/jellyfin/log_*.log
+labels:
+  type: jellyfin

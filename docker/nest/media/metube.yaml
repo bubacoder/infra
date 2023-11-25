@@ -20,6 +20,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.metube.entrypoints: websecure
+      traefik.http.routers.metube.middlewares: https-local@file
       traefik.http.services.metube.loadbalancer.server.port: 8081
       homepage.group: Media
       homepage.name: Metube

@@ -15,22 +15,22 @@ services:
       PUID: ${PUID}
       PGID: ${PGID}
       TZ: ${TIMEZONE}
-      JELLYFIN_PublishedServerUrl: ${MAIN_NODE_IP} #optional TODO change
+      JELLYFIN_PublishedServerUrl: ${MAIN_NODE_IP}
     volumes:
       - ${DOCKER_VOLUMES}/jellyfin:/config
       - ${MEDIA}:/media:ro
       - ${FAMILYMEDIA}:/family-media:ro
     ports:
       - 8096:8096 # Web UI
-      - 8920:8920 #optional
-      - 7359:7359/udp #optional
-      #- 1900:1900/udp #optional TODO enable
+      - 8920:8920 # optional
+      - 7359:7359/udp # optional
+      #- 1900:1900/udp # optional TODO enable
     networks:
       - proxy
     labels:
       traefik.enable: true
       traefik.http.routers.jellyfin.entrypoints: websecure
-      # traefik.http.routers.jellyfin.middlewares: https-local@file
+      traefik.http.routers.jellyfin.middlewares: https-public@file
       traefik.http.services.jellyfin.loadbalancer.server.port: 8096
       homepage.group: Media
       homepage.name: Jellyfin

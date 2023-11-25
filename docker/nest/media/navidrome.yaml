@@ -1,4 +1,4 @@
-# Navidrome is an open source web-based music collection server and streamer. 
+# Navidrome is an open source web-based music collection server and streamer.
 # It gives you freedom to listen to your music collection from any browser or mobile device.
 #
 # In case of "unable to open database file: no such file or directory" error, chown the data directory.
@@ -23,7 +23,7 @@ services:
     environment:
       # Optional: put your config options customization here. Examples:
       ND_SCANSCHEDULE: 8h
-      ND_LOGLEVEL: info  
+      ND_LOGLEVEL: info
       ND_SESSIONTIMEOUT: 24h
       ND_MUSICFOLDER: /media/music
     volumes:
@@ -34,6 +34,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.navidrome.entrypoints: websecure
+      traefik.http.routers.navidrome.middlewares: https-local@file
       traefik.http.services.navidrome.loadbalancer.server.port: 4533
       homepage.group: Media
       homepage.name: Navidrome

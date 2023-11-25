@@ -1,0 +1,59 @@
+# Crowdsec - An open-source, lightweight agent to detect and respond to bad behaviours.
+#
+# https://www.crowdsec.net/
+# https://hub.docker.com/r/crowdsecurity/crowdsec
+# https://github.com/crowdsecurity/example-docker-compose
+# Tutorial: https://docs.ibracorp.io/crowdsec/
+# Register to dashboard, subscribe to blocklists: https://app.crowdsec.net/
+# Useful commands:
+#  cscli collections list
+#  cscli bouncers list
+#  cscli decisions list
+#  cscli alerts list
+#  cscli metrics
+---
+version: "3.5"
+name: crowdsec
+services:
+  crowdsec:
+    image: crowdsecurity/crowdsec
+    container_name: crowdsec
+    restart: unless-stopped
+    expose:
+      - 8080
+    environment:
+      PGID: "1000"
+      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve Dominic-Wagner/vaultwarden LePresidente/jellyfin"
+    volumes:
+      - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml
+      - ${DOCKER_VOLUMES}/crowdsec/etc:/etc/crowdsec
+      - ${DOCKER_VOLUMES}/crowdsec/data:/var/lib/crowdsec/data
+      # Log files:
+      - /var/log/auth.log:/var/log/auth.log:ro
+      - ${DOCKER_VOLUMES}/traefik/logs/traefik-access.log:/var/log/traefik-access.log:ro
+      - ${DOCKER_VOLUMES}/authelia/authelia.log:/var/log/authelia.log:ro
+      - ${DOCKER_VOLUMES}/vaultwarden/vaultwarden.log:/var/log/vaultwarden.log:ro
+      - ${DOCKER_VOLUMES}/jellyfin/log:/var/log/jellyfin:ro
+    labels:
+      homepage.group: Security
+      homepage.name: Crowdsec
+      homepage.icon: crowdsec.png
+      homepage.href: https://app.crowdsec.net/
+      homepage.description: "Crowdsec Security Engine"
+
+  crowdsec-traefik-bouncer:
+    image: fbonalair/traefik-crowdsec-bouncer
+    container_name: bouncer-traefik
+    restart: unless-stopped
+    environment:
+      # Generate key within the crowdsec container: cscli bouncers add traefik-bouncer
+      CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_API_KEY}
+      CROWDSEC_AGENT_HOST: crowdsec:8080
+      GIN_MODE: release
+    depends_on:
+      - crowdsec
+
+networks:
+  default:
+    external: true
+    name: proxy

@@ -8,7 +8,10 @@ server:
   port: 9091
 
 log:
-  level: debug
+  level: info
+  format: json
+  file_path: "/data/authelia.log"
+  keep_stdout: true
 
 theme: dark
 

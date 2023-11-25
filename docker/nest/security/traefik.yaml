@@ -8,11 +8,12 @@ version: "3.5"
 name: traefik
 services:
   traefik:
-    image: traefik:v2.9
+    image: traefik:v2.10
     container_name: traefik
     restart: unless-stopped
     environment:
       TZ: ${TIMEZONE}
+      # OVH is no longer used
       #OVH_ENDPOINT: ${OVH_ENDPOINT}
       #OVH_APPLICATION_KEY: ${OVH_APPLICATION_KEY}
       #OVH_APPLICATION_SECRET: ${OVH_APPLICATION_SECRET}
