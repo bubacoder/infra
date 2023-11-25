@@ -2,35 +2,34 @@
 
 init()
 {
-    echo Init...
+  echo Init...
 }
 
 up()
 {
-    echo ">>> Starting $1/$2"
-    if ${UPDATE:-false}; then
-        if grep -q "build:" "$1/$2.yaml"
-        then
-            docker compose -f "$1/$2.yaml" build --pull
-        else
-            docker compose -f "$1/$2.yaml" --env-file .env pull
-        fi
+  echo ">>> Starting $1/$2"
+  if ${UPDATE:-false}; then
+    if grep -q "build:" "$1/$2.yaml"; then
+      docker compose -f "$1/$2.yaml" build --pull
+    else
+      docker compose -f "$1/$2.yaml" --env-file .env pull
     fi
-    docker compose -f "$1/$2.yaml" --env-file .env up --detach
+  fi
+  docker compose -f "$1/$2.yaml" --env-file .env up --detach
 }
 
 down()
 {
-    echo ">>> Stopping $1/$2"
-    docker compose -f "$1/$2.yaml" --env-file .env down
+  echo ">>> Stopping $1/$2"
+  docker compose -f "$1/$2.yaml" --env-file .env down
 }
 
 cleanup()
 {
-    if ${UPDATE:-false}; then
-        echo Cleanup...
-        docker image prune -a -f
-    fi
+  if ${UPDATE:-false}; then
+    echo Cleanup...
+    docker image prune -a -f
+  fi
 }
 
 assert-hostname() {
