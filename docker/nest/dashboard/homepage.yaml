@@ -2,7 +2,7 @@
 #
 # https://gethomepage.dev/
 # https://gethomepage.dev/en/installation/docker/
-# https://github.com/benphelps/homepage
+# https://github.com/gethomepage/homepage/
 #
 # Dashboard Icons:
 # https://github.com/walkxcode/dashboard-icons/tree/main
@@ -11,7 +11,7 @@ version: "3.5"
 name: homepage
 services:
   homepage:
-    image: ghcr.io/benphelps/homepage:latest
+    image: ghcr.io/gethomepage/homepage:latest
     container_name: homepage
     restart: unless-stopped
     # TODO improve with: https://gethomepage.dev/en/installation/docker/
