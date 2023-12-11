@@ -16,7 +16,7 @@ services:
     volumes:
       - ${DOCKER_VOLUMES}/radarr:/config
       - ${MEDIA}:/media
-      - ${STORAGE_DOWNLOADS}:/downloads #optional
+      - ${STORAGE_TORRENT_DOWNLOADS}:/downloads
     networks:
       - proxy
     labels:

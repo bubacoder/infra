@@ -1,0 +1,36 @@
+# Readarr - Book Manager and Automation (Sonarr for Ebooks)
+#
+# https://github.com/Readarr/Readarr
+# https://docs.linuxserver.io/images/docker-readarr/
+---
+version: "3.5"
+name: readarr
+services:
+  readarr:
+    image: lscr.io/linuxserver/readarr:nightly
+    container_name: readarr
+    restart: unless-stopped
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TIMEZONE}
+    volumes:
+      - ${DOCKER_VOLUMES}/readarr:/config
+      - ${STORAGE_CALIBRE_LIBRARY}:/books
+      - ${STORAGE_TORRENT_DOWNLOADS}:/downloads
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.readarr.entrypoints: websecure
+      traefik.http.routers.readarr.middlewares: https-local@file
+      traefik.http.services.readarr.loadbalancer.server.port: 8787
+      homepage.group: Arr
+      homepage.name: Readarr
+      homepage.icon: readarr.png
+      homepage.href: https://readarr.${MYDOMAIN}/
+      homepage.description: Download books
+
+networks:
+  proxy:
+    external: true

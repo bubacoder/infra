@@ -1,0 +1,42 @@
+# Calibre-web is a web app providing a clean interface for browsing, reading and downloading eBooks using an existing Calibre database.
+# It is also possible to integrate google drive and edit metadata and your calibre library through the app itself.
+#
+# Default login: admin / admin123
+#
+# https://github.com/janeczku/calibre-web
+# https://docs.linuxserver.io/images/docker-calibre-web/
+---
+version: "3.5"
+name: calibre-web
+services:
+  calibre-web:
+    image: lscr.io/linuxserver/calibre-web:latest
+    container_name: calibre-web
+    restart: unless-stopped
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TIMEZONE}
+      DOCKER_MODS: linuxserver/mods:universal-calibre #optional
+      OAUTHLIB_RELAX_TOKEN_SCOPE: 1 #optional
+    volumes:
+      - ${DOCKER_VOLUMES}/calibre-web:/config
+      - ${STORAGE_CALIBRE_LIBRARY}:/books
+    # ports:
+    #   - 8083:8083
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.calibre-web.entrypoints: websecure
+      traefik.http.routers.calibre-web.middlewares: https-local@file
+      traefik.http.services.calibre-web.loadbalancer.server.port: 8083
+      homepage.group: Media
+      homepage.name: Calibre-web
+      homepage.icon: calibre-web.png
+      homepage.href: https://calibre-web.${MYDOMAIN}/
+      homepage.description: Web interface for Calibre database
+
+networks:
+  proxy:
+    external: true
