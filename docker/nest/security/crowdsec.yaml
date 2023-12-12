@@ -23,7 +23,7 @@ services:
       - 8080
     environment:
       PGID: "1000"
-      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve Dominic-Wagner/vaultwarden LePresidente/jellyfin"
+      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve Dominic-Wagner/vaultwarden LePresidente/jellyfin crowdsecurity/endlessh"
     volumes:
       - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml
       - ${DOCKER_VOLUMES}/crowdsec/etc:/etc/crowdsec
@@ -34,6 +34,7 @@ services:
       - ${DOCKER_VOLUMES}/authelia/authelia.log:/var/log/authelia.log:ro
       - ${DOCKER_VOLUMES}/vaultwarden/vaultwarden.log:/var/log/vaultwarden.log:ro
       - ${DOCKER_VOLUMES}/jellyfin/log:/var/log/jellyfin:ro
+      - ${DOCKER_VOLUMES}/endlessh/logs/endlessh:/var/log/endlessh:ro
     labels:
       homepage.group: Security
       homepage.name: Crowdsec

@@ -22,3 +22,8 @@ filenames:
  - /var/log/jellyfin/log_*.log
 labels:
   type: jellyfin
+---
+filenames:
+  - /var/log/endlessh/*
+labels:
+  type: endlessh
