@@ -41,9 +41,11 @@ services:
       - /etc:/sources/nest/etc:ro
       - ${DOCKER_VOLUMES}:/sources/nest/docker-volumes:ro
       - ${ADMIN_HOME}/repos:/sources/nest/repos:ro
+      - ${STORAGE_NEST_MEDIA}:/sources/nest/media:ro
 
       # NAS (source)
       - ${FAMILYMEDIA}:/sources/nas/family-media:ro
+      - ${MEDIA}:/sources/nas/media:ro
 
     networks:
       - proxy
