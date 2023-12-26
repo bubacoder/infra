@@ -24,6 +24,12 @@ down()
   docker compose -f "$1/$2.yaml" --env-file .env down
 }
 
+restart()
+{
+  down "$1" "$2"
+  up "$1" "$2"
+}
+
 cleanup()
 {
   if ${UPDATE:-false}; then
