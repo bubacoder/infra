@@ -37,10 +37,10 @@ services:
       homepage.icon: jellyfin.png
       homepage.href: https://jellyfin.${MYDOMAIN}/
       homepage.description: Media Management
-      homepage.widget.type: jellyfin
-      homepage.widget.url: https://jellyfin.${MYDOMAIN}
-      # You can create an API key from inside Jellyfin at Settings > Advanced > API Keys.
-      homepage.widget.key: ${JELLYFIN_API_KEY}
+      # homepage.widget.type: jellyfin
+      # homepage.widget.url: https://jellyfin.${MYDOMAIN}
+      # # You can create an API key from inside Jellyfin at Settings > Advanced > API Keys.
+      # homepage.widget.key: ${JELLYFIN_API_KEY}
 
 networks:
   proxy:
