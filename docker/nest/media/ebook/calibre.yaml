@@ -18,33 +18,32 @@ services:
     container_name: calibre
     restart: unless-stopped
     security_opt:
-      - seccomp:unconfined #optional
+      - seccomp:unconfined # optional
     environment:
       PUID: ${PUID}
       PGID: ${PGID}
       TZ: ${TIMEZONE}
-      PASSWORD: #optional
-      CLI_ARGS: #optional
+      PASSWORD: # optional GUI password
+      CLI_ARGS: # optional - see https://manual.calibre-ebook.com/generated/en/calibre.html
     volumes:
       - ${DOCKER_VOLUMES}/calibre:/config
       - ${STORAGE_CALIBRE_LIBRARY}:/books
+      - ${STORAGE_CALIBRE_LIBRARY_HUN}:/books-hun
       - ${STORAGE_DOWNLOADS}:/downloads:ro
-    # ports:
-    #   - 8080:8080 # Calibre desktop gui.
-    #   - 8181:8181 # Calibre desktop gui HTTPS.
-    #   - 8081:8081 # Calibre webserver gui.
     networks:
       - proxy
     labels:
       traefik.enable: true
 
-      # Desktop GUI (KasmVNC)
+      # Desktop GUI (via KasmVNC)
       traefik.http.routers.calibre.service: calibre
       traefik.http.routers.calibre.entrypoints: websecure
       traefik.http.routers.calibre.middlewares: https-local@file
       traefik.http.services.calibre.loadbalancer.server.port: 8080
 
-      # Content Server
+      # Content Server (OPDS Catalog)
+      # URL: https://calibre-server.${MYDOMAIN}/opds
+      # Set Preferences -> Sharing over the net -> Advanced -> Authentication: basic
       traefik.http.routers.calibre-server.service: calibre-server
       traefik.http.routers.calibre-server.entrypoints: websecure
       traefik.http.routers.calibre-server.middlewares: https-local@file
