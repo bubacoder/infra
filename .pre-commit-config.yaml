@@ -4,7 +4,7 @@
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v4.5.0
     hooks:
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
@@ -22,7 +22,7 @@ repos:
       - id: detect-private-key
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.83.2
+    rev: v1.86.0
     hooks:
       - id: terraform_fmt
         files: ^terraform/
@@ -36,12 +36,12 @@ repos:
           - --args=--fix
 
   - repo: https://github.com/ansible-community/ansible-lint
-    rev: v6.19.0
+    rev: v6.22.1
     hooks:
       - id: ansible-lint
         files: ^ansible/
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.9.0.5
+    rev: v0.9.0.6
     hooks:
       - id: shellcheck
