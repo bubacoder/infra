@@ -1,11 +1,9 @@
 # A highly customizable homepage (or startpage / application dashboard) with Docker and service API integrations.
 #
-# https://gethomepage.dev/
-# https://gethomepage.dev/en/installation/docker/
-# https://github.com/gethomepage/homepage/
-#
-# Dashboard Icons:
-# https://github.com/walkxcode/dashboard-icons/tree/main
+# 🏠 Home: https://gethomepage.dev/  
+# 🦊 https://gethomepage.dev/en/installation/docker/  
+# 📜 Source: https://github.com/gethomepage/homepage/  
+# Dashboard Icons: https://github.com/walkxcode/dashboard-icons/tree/main  
 ---
 version: "3.5"
 name: homepage
@@ -22,7 +20,7 @@ services:
       - ./homepage/config:/app/config
       - ./homepage/icons:/app/public/icons
       - ${DOCKER_VOLUMES}/homepage/logs:/app/config/logs
-      - /var/run/docker.sock:/var/run/docker.sock:ro # (optional) For docker integrations
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - proxy
     labels:

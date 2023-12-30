@@ -1,9 +1,11 @@
 # Encrypted, Compressed, and Deduplicated Backups Using the Cloud Storage You Pick
 # Cross-platform backup tool for Windows, macOS & Linux with fast, incremental backups, client-side end-to-end encryption, compression and data deduplication. CLI and GUI included.
 #
-# https://kopia.io/
-# https://github.com/kopia/kopia
-# https://github.com/kopia/kopia/tree/master/tools/docker
+# This instance's repository is configured for local **NAS** storage
+#
+# 🏠 Home: https://kopia.io/  
+# 📜 Source: https://github.com/kopia/kopia  
+# 🐙 Compose: https://github.com/kopia/kopia/tree/master/tools/docker  
 ---
 version: "3.5"
 name: kopia-nas

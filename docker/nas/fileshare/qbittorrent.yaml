@@ -4,8 +4,8 @@
 # To enable VueTorrent (https://github.com/WDaan/VueTorrent) web interface,
 # point your alternate WebUI location to '/usr/vuetorrent' folder in qBittorrent settings.
 #
-# https://www.qbittorrent.org/
-# https://hub.docker.com/r/linuxserver/qbittorrent
+# 🏠 Home: https://www.qbittorrent.org/  
+# 📦 Image: https://hub.docker.com/r/linuxserver/qbittorrent  
 ---
 version: "3.5"
 name: qbittorrent

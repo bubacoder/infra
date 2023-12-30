@@ -1,12 +1,12 @@
 # GitLab Community Edition docker image based on the Omnibus package
 #
-# Visit the GitLab URL, and sign in with the username root and the password from the following command:
-# docker exec -it gitlab grep 'Password:' /etc/gitlab/initial_root_password
+# Visit the GitLab URL, and sign in with the username root and the password from the following command:  
+# `docker exec -it gitlab grep 'Password:' /etc/gitlab/initial_root_password`
 #
-# Register the runner: https://docs.gitlab.com/runner/register/index.html#docker
+# Register the runner (`gitlab-runner` service): https://docs.gitlab.com/runner/register/index.html#docker
 #
-# https://hub.docker.com/r/gitlab/gitlab-ce/
-# https://docs.gitlab.com/ee/install/docker.html
+# 📦 Image: https://hub.docker.com/r/gitlab/gitlab-ce/  
+# Docker install instructions: https://docs.gitlab.com/ee/install/docker.html  
 ---
 version: "3.5"
 name: gitlab

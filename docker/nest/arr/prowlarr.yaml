@@ -2,8 +2,8 @@
 # Prowlarr supports both Torrent Trackers and Usenet Indexers. It integrates seamlessly with Sonarr, Radarr, Lidarr, and Readarr offering complete management
 # of your indexers with no per app Indexer setup required (we do it all).
 #
-# https://hub.docker.com/r/linuxserver/prowlarr
-# https://github.com/Prowlarr/Prowlarr
+# 📦 Image: https://hub.docker.com/r/linuxserver/prowlarr  
+# 📜 Source: https://github.com/Prowlarr/Prowlarr  
 ---
 version: "3.5"
 name: prowlarr

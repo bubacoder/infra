@@ -3,8 +3,8 @@
 # Initially released for the Linux kernel, it is now cross-platform (Windows, macOS, BSD, iOS, Android) and widely deployable. It is currently under heavy development,
 # but already it might be regarded as the most secure, easiest to use, and simplest VPN solution in the industry.
 #
-# https://www.wireguard.com/
-# https://github.com/WeeJeWel/wg-easy
+# 🏠 Home: https://www.wireguard.com/  
+# 📜 Source: https://github.com/WeeJeWel/wg-easy  
 ---
 version: "3.5"
 name: wg-easy
@@ -19,12 +19,12 @@ services:
       - SYS_MODULE
     environment:
       WG_HOST: vpn.${MYDOMAIN} # The public hostname of your VPN server
-      #PASSWORD: ${ADMIN_PASSWORD} # When set, requires a password when logging in to the Web UI -> SSO
+      #PASSWORD: ${ADMIN_PASSWORD} # When set, requires a password when logging in to the Web UI -> Disabled, Authelia SSO is configured
       #WG_DEFAULT_DNS: 1.1.1.1,8.8.8.8 # DNS server clients will use
       WG_DEFAULT_DNS: ${MAIN_NODE_IP} # DNS server clients will use
       WG_DEFAULT_ADDRESS: 10.8.0.x # Clients IP address range
       #WG_ALLOWED_IPS: "0.0.0.0/0,::/0" # Allowed IPs clients will use
-      WG_ALLOWED_IPS: "192.168.0.0/16,1.2.3.4/32" # Allowed IPs clients will use
+      WG_ALLOWED_IPS: "192.168.0.0/16,1.2.3.4/32" # Allowed IPs clients will use - TODO 1.2.3.4 ???
     ports:
       - 51820:51820/udp # VPN
     volumes:

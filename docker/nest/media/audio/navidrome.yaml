@@ -1,16 +1,17 @@
 # Navidrome is an open source web-based music collection server and streamer.
 # It gives you freedom to listen to your music collection from any browser or mobile device.
 #
-# In case of "unable to open database file: no such file or directory" error, chown the data directory.
+# In case of "unable to open database file: no such file or directory" error, chown the `data` directory to match `${PUID}:${PGID}`.
 #
-# https://www.navidrome.org/docs/installation/docker/
-# https://www.navidrome.org/docs/usage/configuration-options/
-# https://hub.docker.com/r/deluan/navidrome
+# 🏠 Home: https://www.navidrome.org/  
+# 📦 Image: https://hub.docker.com/r/deluan/navidrome  
+# Installing with Docker: https://www.navidrome.org/docs/installation/docker/  
+# Configuration Options: https://www.navidrome.org/docs/usage/configuration-options/  
 #
-# Recommended desktop player:
-# Sonixd - A full-featured Subsonic/Jellyfin compatible desktop music player
-# https://github.com/jeffvli/sonixd
-# (Startup fix on Mac: xattr -cr /Applications/Sonixd.app)
+# Recommended desktop player:  
+# Sonixd - A full-featured Subsonic/Jellyfin compatible desktop music player  
+# https://github.com/jeffvli/sonixd  
+# (Fix startup issue Mac: `xattr -cr /Applications/Sonixd.app`)
 ---
 version: "3.5"
 name: navidrome
@@ -18,10 +19,10 @@ services:
   navidrome:
     image: deluan/navidrome:latest
     container_name: navidrome
-    user: ${PUID}:${PGID} # should be owner of volumes
+    user: ${PUID}:${PGID} # Should be owner of volumes
     restart: unless-stopped
     environment:
-      # Optional: put your config options customization here. Examples:
+      # Put your config options customization here
       ND_SCANSCHEDULE: 8h
       ND_LOGLEVEL: info
       ND_SESSIONTIMEOUT: 24h

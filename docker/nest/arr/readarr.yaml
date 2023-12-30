@@ -1,7 +1,9 @@
 # Readarr - Book Manager and Automation (Sonarr for Ebooks)
 #
-# https://github.com/Readarr/Readarr
-# https://docs.linuxserver.io/images/docker-readarr/
+# Quick start guide: https://wiki.servarr.com/readarr/quick-start-guide
+#
+# 📜 Source: https://github.com/Readarr/Readarr  
+# 📦 Image: https://docs.linuxserver.io/images/docker-readarr/  
 ---
 version: "3.5"
 name: readarr

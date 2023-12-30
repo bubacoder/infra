@@ -1,8 +1,8 @@
 # The Cloud Native Application Proxy
 #
-# https://traefik.io/
-# https://github.com/traefik/traefik
-# https://blog.lrvt.de/nginx-proxy-manager-versus-traefik/
+# 🏠 Home: https://traefik.io/  
+# 📜 Source: https://github.com/traefik/traefik  
+# Comparison with nginx: https://blog.lrvt.de/nginx-proxy-manager-versus-traefik/  
 ---
 version: "3.5"
 name: traefik

@@ -3,12 +3,12 @@
 # It's also completely free and open source and great for both casual users and computer experts.
 #
 # Application setup:
-# - Create the library at /books
+# - Create the library at `/books`
 # - For Readarr integration: Enable Content Server at Preferences -> Sharing over the net, enable "Require username and password to access the Content server"
 # - Optional: Install plugins at Preferences -> Get plugins
 #
-# https://calibre-ebook.com/
-# https://docs.linuxserver.io/images/docker-calibre/
+# 📜 Source: https://calibre-ebook.com/  
+# 📦 Image: https://docs.linuxserver.io/images/docker-calibre/  
 ---
 version: "3.5"
 name: calibre

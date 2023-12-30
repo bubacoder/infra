@@ -1,7 +1,8 @@
 # Syncthing replaces proprietary sync and cloud services with something open, trustworthy and decentralized.
 # Your data is your data alone and you deserve to choose where it is stored, if it is shared with some third party and how it's transmitted over the Internet.
 #
-# https://hub.docker.com/r/linuxserver/syncthing
+# 🏠 Home: https://syncthing.net/  
+# 📦 Image: https://hub.docker.com/r/linuxserver/syncthing  
 ---
 version: "3.5"
 name: syncthing
@@ -33,7 +34,7 @@ services:
       homepage.name: Syncthing
       homepage.icon: syncthing.png
       homepage.href: https://syncthing.${MYDOMAIN}/
-      homepage.description: "[SSO] File Sync" # TODO double auth
+      homepage.description: "[SSO] File Sync" # TODO solve double auth
 
 networks:
   proxy:

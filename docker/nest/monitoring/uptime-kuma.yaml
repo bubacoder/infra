@@ -1,7 +1,7 @@
 # Uptime Kuma is an easy-to-use self-hosted monitoring tool.
 #
-# https://uptime.kuma.pet/
-# https://github.com/louislam/uptime-kuma
+# 🏠 Home: https://uptime.kuma.pet/  
+# 📜 Source: https://github.com/louislam/uptime-kuma  
 ---
 version: "3.5"
 name: uptime-kuma

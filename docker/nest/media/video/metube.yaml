@@ -1,7 +1,7 @@
 # Web GUI for youtube-dl (using the yt-dlp fork) with playlist support. Allows you to download videos from YouTube and dozens of other sites
 #
-# https://github.com/alexta69/metube
-# https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md
+# 📜 Source: https://github.com/alexta69/metube  
+# Supported sites: https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md  
 ---
 version: "3.5"
 name: metube

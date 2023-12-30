@@ -1,10 +1,11 @@
 # The Unifi-controller software is a powerful, enterprise wireless software engine ideal for high-density client deployments requiring low latency and high uptime performance.
 #
-# For Unifi to adopt other devices, e.g. an Access Point, it is required to change the inform IP address.
+# For Unifi to adopt other devices, e.g. an Access Point, it is required to change the *inform* IP address.
 # Because Unifi runs inside Docker by default it uses an IP address not accessible by other devices.
 # To change this go to Settings > System Settings > Controller Configuration and set the Controller Hostname/IP to a hostname or IP address accessible by your devices.
 #
-# https://hub.docker.com/r/linuxserver/unifi-controller
+# 🏠 Home: https://ui.com/download/releases/network-server  
+# 📦 Image: https://hub.docker.com/r/linuxserver/unifi-controller  
 ---
 version: "3.5"
 name: unifi-controller

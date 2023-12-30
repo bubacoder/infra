@@ -1,9 +1,9 @@
 # Hard Drive S.M.A.R.T Monitoring, Historical Trends & Real World Failure Thresholds
 #
-# https://github.com/AnalogJ/scrutiny
+# 📜 Source: https://github.com/AnalogJ/scrutiny
 #
 # In addition to the Omnibus image (available under the latest tag) you can deploy in Hub/Spoke mode
-# https://github.com/AnalogJ/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml
+# 🐙 Compose: https://github.com/AnalogJ/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml
 ---
 version: "3.5"
 name: scrutiny-collector

@@ -1,12 +1,13 @@
-# https://github.com/ServerContainers/samba
-# https://hub.docker.com/r/servercontainers/samba
+# Samba (+ optional zeroconf, wsdd2 & time machine) on alpine [x86 + arm]
+#
+# 📜 Source: https://github.com/ServerContainers/samba  
+# 📦 Image: https://github.com/servercontainers/samba/pkgs/container/samba  
 ---
 version: "3.5"
 name: samba
 services:
   samba:
-    build: .
-    image: servercontainers/samba
+    image: ghcr.io/servercontainers/samba
     container_name: samba
     network_mode: host
 

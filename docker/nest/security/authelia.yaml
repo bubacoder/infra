@@ -1,7 +1,10 @@
 # Authelia is an open-source authentication and authorization server providing two-factor authentication and single sign-on (SSO) for your applications via a web portal.
 #
-# https://docs.ibracorp.io/authelia/
-# https://docs.technotim.live/posts/authelia-traefik/
+# 🏠 Home: https://www.authelia.com/
+#
+# Introduction:
+# - https://docs.ibracorp.io/authelia/
+# - https://docs.technotim.live/posts/authelia-traefik/
 ---
 version: "3.5"
 name: authelia

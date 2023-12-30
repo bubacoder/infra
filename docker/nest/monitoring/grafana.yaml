@@ -2,12 +2,14 @@
 # Grafana OSS provides you with tools to turn your time-series database (TSDB) data into insightful graphs and visualizations.
 # The Grafana OSS plugin framework also enables you to connect other data sources like NoSQL/SQL databases, ticketing tools like Jira or ServiceNow, and CI/CD tooling like GitLab.
 #
-# Default admin user credentials: admin/admin
+# Default admin user credentials: `admin` / `admin`
 #
-# https://hub.docker.com/r/grafana/grafana-oss
-# https://grafana.com/docs/grafana/latest/getting-started/getting-started/
+# 🏠 Home: https://grafana.com/grafana/  
+# 📦 Image: https://hub.docker.com/r/grafana/grafana-oss  
+# Getting Started: https://grafana.com/docs/grafana/latest/getting-started/getting-started/
 #
-# Imported dashboards:
+# Recommended dashboards to import:
+# - https://grafana.com/grafana/dashboards/1860-node-exporter-full/
 # - https://grafana.com/grafana/dashboards/14282-cadvisor-exporter/
 ---
 version: "3.5"

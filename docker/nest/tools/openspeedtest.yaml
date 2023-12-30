@@ -1,7 +1,6 @@
 # SpeedTest by OpenSpeedTest™ is a Free and Open-Source HTML5 Network Performance Estimation Tool
 #
-# https://hub.docker.com/r/openspeedtest/latest
-# https://blog.lrvt.de/nginx-proxy-manager-versus-traefik/
+# 📦 Image: https://hub.docker.com/r/openspeedtest/latest  
 ---
 version: "3.5"
 name: openspeedtest

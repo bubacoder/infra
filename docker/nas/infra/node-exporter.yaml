@@ -1,6 +1,7 @@
 # Prometheus exporter for machine metrics, written in Go with pluggable metric collectors.
 #
-# https://hub.docker.com/r/prom/node-exporter/
+# 📜 Source: https://github.com/prometheus/node_exporter  
+# 📦 Image: https://hub.docker.com/r/prom/node-exporter/  
 ---
 version: "3.5"
 name: node_exporter

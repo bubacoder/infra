@@ -1,7 +1,8 @@
 # Client for Cloudflare Tunnel, a daemon that exposes private services through the Cloudflare edge.
 #
-# https://hub.docker.com/r/cloudflare/cloudflared
-# https://www.crosstalksolutions.com/cloudflare-tunnel-easy-setup/
+# 🏠 Home: https://www.cloudflare.com/products/tunnel/  
+# 📦 Image: https://hub.docker.com/r/cloudflare/cloudflared  
+# Introduction: https://www.crosstalksolutions.com/cloudflare-tunnel-easy-setup/  
 ---
 version: "3.5"
 name: cloudflared

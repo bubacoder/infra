@@ -1,16 +1,18 @@
 # Crowdsec - An open-source, lightweight agent to detect and respond to bad behaviours.
 #
-# https://www.crowdsec.net/
-# https://hub.docker.com/r/crowdsecurity/crowdsec
-# https://github.com/crowdsecurity/example-docker-compose
-# Tutorial: https://docs.ibracorp.io/crowdsec/
+# 🏠 Home: https://www.crowdsec.net/  
+# 📦 Image: https://hub.docker.com/r/crowdsecurity/crowdsec  
+# 📜 Source: https://github.com/crowdsecurity/example-docker-compose  
+# Tutorial: https://docs.ibracorp.io/crowdsec/  
+#
 # Register to dashboard, subscribe to blocklists: https://app.crowdsec.net/
-# Useful commands:
-#  cscli collections list
-#  cscli bouncers list
-#  cscli decisions list
-#  cscli alerts list
-#  cscli metrics
+#
+# Useful commands (to be executed withon the container):
+# - `cscli collections list`
+# - `cscli bouncers list`
+# - `cscli decisions list`
+# - `cscli alerts list`
+# - `cscli metrics`
 ---
 version: "3.5"
 name: crowdsec

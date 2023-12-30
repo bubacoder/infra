@@ -1,8 +1,8 @@
 # Code-server is VS Code running on a remote server, accessible through the browser.
 #
-# https://hub.docker.com/r/linuxserver/code-server
-# https://github.com/coder/code-server
-# https://github.com/coder/code-server/blob/main/docs/FAQ.md
+# 📦 Image: https://hub.docker.com/r/linuxserver/code-server  
+# 📜 Source: https://github.com/coder/code-server  
+# FAQ: https://github.com/coder/code-server/blob/main/docs/FAQ.md  
 ---
 version: "3.5"
 name: code-server

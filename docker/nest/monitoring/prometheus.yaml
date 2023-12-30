@@ -1,11 +1,12 @@
 # Prometheus is a systems and service monitoring system. It collects metrics from configured targets at given intervals, evaluates rule expressions, displays the results, and can trigger alerts if some condition is observed to be true.
 #
-# https://hub.docker.com/r/prom/prometheus
-# https://prometheus.io/docs/introduction/overview/
+# 🏠 Home: https://prometheus.io/  
+# 📦 Image: https://hub.docker.com/r/prom/prometheus  
+# Introduction: https://prometheus.io/docs/introduction/overview/
 #
-# Collectors:
-# https://hub.docker.com/r/prom/node-exporter/
-# https://github.com/google/cadvisor/
+# Recommended collectors:
+# - https://hub.docker.com/r/prom/node-exporter/
+# - https://github.com/google/cadvisor/
 ---
 version: "3.5"
 name: prometheus
