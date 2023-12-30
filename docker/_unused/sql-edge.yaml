@@ -1,7 +1,0 @@
-# Azure SQL Edge is an optimized relational database engine geared for IoT and edge deployments.
-#
-# https://hub.docker.com/_/microsoft-azure-sql-edge
-# https://learn.microsoft.com/en-us/azure/azure-sql-edge/
-# Alternative: https://hub.docker.com/_/microsoft-mssql-server
----
-# docker run --cap-add SYS_PTRACE -e 'ACCEPT_EULA=1' -e 'MSSQL_SA_PASSWORD=yourStrong(!)Password' -e 'MSSQL_PID=Developer' -p 1433:1433 --name azuresqledge -d mcr.microsoft.com/azure-sql-edge
