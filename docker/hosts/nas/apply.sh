@@ -1,13 +1,14 @@
 #!/bin/bash
 
 # shellcheck disable=SC1091
-. ../common.sh
+. ../../common.sh
 
 assert-hostname "NAS"
 init
 
 up infra portainer-agent
-up infra node-exporter
+
+up monitoring node-exporter
 
 up fileshare qbittorrent
 

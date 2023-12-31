@@ -3,4 +3,4 @@
 # Update Docker images with:
 # UPDATE=true ./apply-local.sh
 
-cd "$(hostname | tr '[:upper:]' '[:lower:]')" && ./apply.sh
+cd "hosts/$(hostname | tr '[:upper:]' '[:lower:]')" && ./apply.sh

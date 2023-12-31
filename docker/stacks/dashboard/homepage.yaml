@@ -1,8 +1,8 @@
 # A highly customizable homepage (or startpage / application dashboard) with Docker and service API integrations.
 #
 # 🏠 Home: https://gethomepage.dev/  
-# 🦊 https://gethomepage.dev/en/installation/docker/  
 # 📜 Source: https://github.com/gethomepage/homepage/  
+# Docker integration: https://gethomepage.dev/en/installation/docker/  
 # Dashboard Icons: https://github.com/walkxcode/dashboard-icons/tree/main  
 ---
 version: "3.5"

@@ -8,20 +8,22 @@ init()
 up()
 {
   echo ">>> Starting $1/$2"
+  yaml="../../stacks/$1/$2.yaml"
   if ${UPDATE:-false}; then
-    if grep -q "build:" "$1/$2.yaml"; then
-      docker compose -f "$1/$2.yaml" build --pull
+    if grep -q "build:" "$yaml"; then
+      docker compose -f "$yaml" build --pull
     else
-      docker compose -f "$1/$2.yaml" --env-file .env pull
+      docker compose -f "$yaml" --env-file .env pull
     fi
   fi
-  docker compose -f "$1/$2.yaml" --env-file .env up --detach
+  docker compose -f "$yaml" --env-file .env up --detach
 }
 
 down()
 {
   echo ">>> Stopping $1/$2"
-  docker compose -f "$1/$2.yaml" --env-file .env down
+  yaml="../../stacks/$1/$2.yaml"
+  docker compose -f "$yaml" --env-file .env down
 }
 
 restart()
