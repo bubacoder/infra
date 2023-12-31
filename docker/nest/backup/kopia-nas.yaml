@@ -31,7 +31,7 @@ services:
       - --address=0.0.0.0:80
     environment:
       USER: ${ADMIN_USER}
-      KOPIA_PASSWORD: ${KOPIA_NAS_REPOSOTORY_PASSWORD}
+      KOPIA_PASSWORD: ${KOPIA_NAS_REPOSITORY_PASSWORD}
       TZ: ${TIMEZONE}
 
     volumes:
