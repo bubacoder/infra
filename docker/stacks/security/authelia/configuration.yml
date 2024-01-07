@@ -15,7 +15,7 @@ log:
 
 theme: dark
 
-# 'jwt_secret' is set via AUTHELIA_JWT_SECRET_FILE
+# 'jwt_secret' is set via AUTHELIA_JWT_SECRET
 
 default_redirection_url: https://auth.example.com
 
@@ -27,8 +27,7 @@ totp:
 # duo_api:
 #  hostname: api-123456789.example.com
 #  integration_key: ABCDEF
-#  # This secret can also be set using the env variables AUTHELIA_DUO_API_SECRET_KEY_FILE
-#  secret_key: 1234567890abcdefghifjkl
+#  secret_key: 1234567890abcdefghifjkl # This secret can also be set using the env variables AUTHELIA_DUO_API_SECRET_KEY
 
 authentication_backend:
   file:
@@ -45,7 +44,8 @@ access_control:
   rules:
     - domain: "auth.example.com"
       policy: bypass
-    # - domain: "very-secure.example.com" # TODO example
+    # Two-factor example:
+    # - domain: "very-secure.example.com"
     #   policy: two_factor
     - domain: "*.example.com"
       # subject:
@@ -53,7 +53,7 @@ access_control:
       policy: one_factor
 
 session:
-  # 'secret' is set via AUTHELIA_SESSION_SECRET_FILE
+  # 'secret' is set via AUTHELIA_SESSION_SECRET
   name: authelia_session
   domain: example.com # Should match whatever your root protected domain is
   same_site: lax
@@ -64,8 +64,7 @@ session:
   # redis:
   #   host: redis
   #   port: 6379
-  #   # This secret can also be set using the env variables AUTHELIA_SESSION_REDIS_PASSWORD_FILE
-  #   # password: authelia
+  #   # password: authelia # This secret can also be set using the env variables AUTHELIA_SESSION_REDIS_PASSWORD
 
 regulation:
   max_retries: 3
@@ -73,14 +72,14 @@ regulation:
   ban_time: 12h
 
 storage:
-  # 'encryption_key' is set via AUTHELIA_STORAGE_ENCRYPTION_KEY_FILE
+  # 'encryption_key' is set via AUTHELIA_STORAGE_ENCRYPTION_KEY
   local:
     path: /data/db.sqlite3
 
 notifier:
   # smtp:
   #   username: test
-  #   # This secret can also be set using the env variables AUTHELIA_NOTIFIER_SMTP_PASSWORD_FILE
+  #   # This secret can also be set using the env variables AUTHELIA_NOTIFIER_SMTP_PASSWORD
   #   password: password
   #   host: mail.example.com
   #   port: 25

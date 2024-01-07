@@ -15,7 +15,8 @@ services:
       TZ: ${TIMEZONE}
       CLOUDFLARE_DNS_API_TOKEN: ${CLOUDFLARE_DNS_API_TOKEN}
       MYDOMAIN: ${MYDOMAIN}
-      MYEMAIL: ${MYEMAIL}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      MAIN_NODE_IP: ${MAIN_NODE_IP}
     volumes:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock:ro

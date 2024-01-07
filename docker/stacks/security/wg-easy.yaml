@@ -24,7 +24,7 @@ services:
       WG_DEFAULT_DNS: ${MAIN_NODE_IP} # DNS server clients will use
       WG_DEFAULT_ADDRESS: 10.8.0.x # Clients IP address range
       #WG_ALLOWED_IPS: "0.0.0.0/0,::/0" # Allowed IPs clients will use
-      WG_ALLOWED_IPS: "192.168.0.0/16,1.2.3.4/32" # Allowed IPs clients will use - TODO 1.2.3.4 ???
+      WG_ALLOWED_IPS: "192.168.0.0/16" # Allowed IPs clients will use
     ports:
       - 51820:51820/udp # VPN
     volumes:

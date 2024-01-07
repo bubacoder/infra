@@ -2,7 +2,7 @@
 # For configuration options and examples, please see:
 # https://gethomepage.dev/en/configs/settings
 
-title: Example.com
+title: "{{HOMEPAGE_VAR_MYDOMAIN}}"
 theme: dark # or light
 color: slate
 hideVersion: true

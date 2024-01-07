@@ -35,7 +35,7 @@ providers:
     watch: true
     network: proxy
     # Default host rule to containername.domain.example
-    defaultRule: "Host(`{{ index .Labels \"com.docker.compose.service\"}}.example.com`)"
+    defaultRule: "Host(`{{ index .Labels \"com.docker.compose.service\"}}.{{env \"MYDOMAIN\"}}`)"
     swarmModeRefreshSeconds: 15s
     exposedByDefault: false  # Tells Traefik not to expose containers to the outside world unless explicitly instructed to do so
 
@@ -57,9 +57,9 @@ entryPoints:
         certResolver: letsencrypt # Configures the HTTPS entrypoint to use certificates obtained from the Let's Encrypt CA
         # Generate a wildcard domain certificate
         domains:
-          - main: example.com
+          - main: '{{env "MYDOMAIN"}}'
             sans:
-              - '*.example.com'
+              - '*.{{env "MYDOMAIN"}}'
       # middlewares:
       #   - security-headers@file
       #   - crowdsec-bouncer@file
@@ -73,7 +73,7 @@ entryPoints:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: bubacoder@gmail.com # Sets the email address to use when registering with the Let's Encrypt CA
+      email: '{{env "ADMIN_EMAIL"}}' # Sets the email address to use when registering with the Let's Encrypt CA
       storage: /letsencrypt/acme.json # Sets the path where Traefik will store ACME data (such as obtained certificates)
       dnsChallenge:
         provider: cloudflare # Configures Cloudflare as the DNS provider to use for the ACME DNS challenge

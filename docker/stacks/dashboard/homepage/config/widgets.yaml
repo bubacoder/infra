@@ -22,9 +22,9 @@
       hourCycle: h23
 
 - openmeteo:
-    label: City # optional
-    latitude: 0.0
-    longitude: 0.0
-    timezone: Etc/UTC # optional
+    label: "{{HOMEPAGE_VAR_CITY}}"
+    latitude: "{{HOMEPAGE_VAR_LATITUDE}}"
+    longitude: "{{HOMEPAGE_VAR_LONGITUDE}}"
+    timezone: "{{HOMEPAGE_VAR_TIMEZONE}}"
     units: metric # or imperial
     cache: 15 # Time in minutes to cache API responses, to stay within limits
