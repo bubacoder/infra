@@ -1,5 +1,3 @@
-# https://blog.lrvt.de/nginx-proxy-manager-versus-traefik/
-
 # Traefik global configuration
 global:
   checkNewVersion: true
@@ -60,9 +58,9 @@ entryPoints:
           - main: '{{env "MYDOMAIN"}}'
             sans:
               - '*.{{env "MYDOMAIN"}}'
-      # middlewares:
-      #   - security-headers@file
-      #   - crowdsec-bouncer@file
+      # If no other middleware usage defined by the Docker labels, access is restricted to local networks
+      middlewares:
+        - https-local@file
 
 # https://doc.traefik.io/traefik/user-guides/docker-compose/acme-dns/
 # OVH:
