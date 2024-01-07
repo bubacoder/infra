@@ -1,5 +1,14 @@
 # Home Assistant Core - Open source home automation that puts local control and privacy first. Powered by a worldwide community of tinkerers and DIY enthusiasts. Perfect to run on a Raspberry Pi or a local server.
 #
+# Home Assistant needs to set up to allow the Traefik reverse proxy (details: https://www.home-assistant.io/integrations/http/)
+# For this, add to `${DOCKER_VOLUMES}/homeassistant/configuration.yaml`:
+# ```
+# http:
+#   use_x_forwarded_for: true
+#   trusted_proxies:
+#     - 172.18.0.0/24
+# ```
+#
 # 🏠 Home: https://www.home-assistant.io/  
 # 📦 Image: https://hub.docker.com/r/linuxserver/homeassistant  
 ---
@@ -17,14 +26,13 @@ services:
       TZ: ${TIMEZONE}
     volumes:
       - ${DOCKER_VOLUMES}/homeassistant:/config
-    ports:
-      # Warning: "Published ports are discarded when using host network mode"
-      - 8123:8123 # Web UI
+    expose:
+      - 8123 # Web UI
     #devices:
     #  - /path/to/device:/path/to/device #optional
     labels:
-      homepage.group: Infra
+      homepage.group: Tools
       homepage.name: HomeAssistant
       homepage.icon: home-assistant.png
-      homepage.href: https://homeassistant.${MYDOMAIN}/
+      homepage.href: https://ha.${MYDOMAIN}/ # Configured in traefik/fileConfig.yaml (due to 'host' network_mode)
       homepage.description: Open source home automation

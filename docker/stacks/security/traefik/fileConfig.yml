@@ -1,3 +1,5 @@
+# Dynamic configuration - changes in this file are applied without restarting Traefik (https://doc.traefik.io/traefik/providers/file/#watch).
+
 http:
 
   routers:
@@ -22,6 +24,13 @@ http:
       service: qbittorrent
       middlewares:
         - "https-local-auth@file"
+    ha:
+      entryPoints:
+        - websecure
+      rule: 'Host(`ha.{{env "MYDOMAIN"}}`)'
+      service: ha
+      middlewares:
+        - "https-local@file"
 
   services:
     router:
@@ -39,6 +48,11 @@ http:
         serversTransport: insecureTransport
         servers:
           - url: http://nas:8080
+    ha:
+      loadBalancer:
+        serversTransport: insecureTransport
+        servers:
+          - url: http://{{env "MAIN_NODE_IP"}}:8123
 
   # allow self-signed certificates for proxied web services
   serversTransports:
@@ -51,6 +65,7 @@ http:
       chain:
         middlewares:
           - https-only
+          # - security-headers@file
           - crowdsec-bouncer
 
     https-local:
