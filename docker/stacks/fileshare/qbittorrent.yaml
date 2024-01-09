@@ -1,8 +1,10 @@
 # The qBittorrent project aims to provide an open-source software alternative to µTorrent. qBittorrent is based on the Qt toolkit and libtorrent-rasterbar library.
-# The default username/password is admin/adminadmin.
+# The default username/password is `admin` / `adminadmin`.
 #
-# To enable VueTorrent (https://github.com/WDaan/VueTorrent) web interface,
-# point your alternate WebUI location to '/usr/vuetorrent' folder in qBittorrent settings.
+# Recommended setup steps:
+# - Configure "Bypass authentication for clients in whitelisted IP subnets" (Settings -> Webui) - Authelia handles the authentication
+# - The image is build locally (see: `Dockerfile`) and includes the VueTorrent (https://github.com/WDaan/VueTorrent) web interface. To enable it, point your alternate WebUI location to '/usr/vuetorrent' folder in qBittorrent settings.
+# - Configure categories (Settings menu) to specify default download locations
 #
 # 🏠 Home: https://www.qbittorrent.org/  
 # 📦 Image: https://hub.docker.com/r/linuxserver/qbittorrent  

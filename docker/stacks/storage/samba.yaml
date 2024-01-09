@@ -1,5 +1,25 @@
 # Samba (+ optional zeroconf, wsdd2 & time machine) on alpine [x86 + arm]
 #
+# Examples of the environment variable based configuration:
+# ```
+# environment:
+#   ACCOUNT_bob: bobpass
+#   UID_bob: 1001
+#   GROUPS_bob: family
+
+#   # example for hashed password (user: foo | password: bar) - generated using create-hash.sh script.
+#   ACCOUNT_foo: "foo:1000:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX:86C156FC198B358CCCF6278D8BD49B6A:[U          ]:LCT-61B0859A:"
+#   UID_foo: 1002
+#   GROUPS_foo: family
+#
+#   SAMBA_VOLUME_CONFIG_shared_home: "[Home]; path=/shares/homes/%U; valid users = alice, bob, foo; guest ok = no; read only = no; browseable = yes"
+#   SAMBA_VOLUME_CONFIG_alicehidden: "[Alice Hidden Share]; path=/shares/alice-hidden; valid users = alice; guest ok = no; read only = no; browseable = no"
+#   SAMBA_VOLUME_CONFIG_bobonly: "[Bob Share]; path=/shares/bob; valid users = bob; guest ok = no; read only = no; browseable = yes"
+#   SAMBA_VOLUME_CONFIG_public: "[Public]; path=/shares/public; valid users = alice, bob, foo; guest ok = no; read only = no; browseable = yes; force group = family"
+#   SAMBA_VOLUME_CONFIG_public_ro: "[Public ReadOnly]; path=/shares/public; guest ok = yes; read only = yes; browseable = yes; force group = family"
+#   SAMBA_VOLUME_CONFIG_timemachine: "[TimeMachine]; path=/shares/timemachine/%U; valid users = alice, bob, foo; guest ok = no; read only = no; browseable = yes; fruit:time machine = yes; fruit:time machine max size = 500G"
+# ```
+#
 # 📜 Source: https://github.com/ServerContainers/samba  
 # 📦 Image: https://github.com/servercontainers/samba/pkgs/container/samba  
 ---
@@ -27,35 +47,18 @@ services:
 
       GROUP_family: 1500
 
-      ACCOUNT_buba: ${ADMIN_PASSWORD}
-      UID_buba: 1000
-      GROUPS_buba: family
-
-      #ACCOUNT_bob: bobpass
-      #UID_bob: 1001
-      #GROUPS_bob: family
-
-      # example for hashed password (user: foo | password: bar) - generated using create-hash.sh script.
-      #ACCOUNT_foo: "foo:1000:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX:86C156FC198B358CCCF6278D8BD49B6A:[U          ]:LCT-61B0859A:"
-      #UID_foo: 1002
-      #GROUPS_foo: family
+      ACCOUNT_${ADMIN_USER}: ${ADMIN_PASSWORD}
+      UID_${ADMIN_USER}: 1000
+      GROUPS_${ADMIN_USER}: family
 
       # Public shares
-      SAMBA_VOLUME_CONFIG_media_adminonly: "[media]; path=/shares/media ; valid users = buba; guest ok = no; read only = no; browseable = yes"
-      SAMBA_VOLUME_CONFIG_family_media_adminonly: "[family-media]; path=/shares/family-media; valid users = buba; guest ok = no; read only = no; browseable = yes"
+      SAMBA_VOLUME_CONFIG_media_adminonly: "[media]; path=/shares/media ; valid users = ${ADMIN_USER}; guest ok = no; read only = no; browseable = yes"
+      SAMBA_VOLUME_CONFIG_family_media_adminonly: "[family-media]; path=/shares/family-media; valid users = ${ADMIN_USER}; guest ok = no; read only = no; browseable = yes"
 
       # System shares
-      SAMBA_VOLUME_CONFIG_mnt_adminonly: "[mnt]; path=/shares/mnt; valid users = buba; guest ok = no; read only = no; browseable = no"
-      SAMBA_VOLUME_CONFIG_backup_adminonly: "[backup]; path=/shares/backup; valid users = buba; guest ok = no; read only = no; browseable = no"
-      SAMBA_VOLUME_CONFIG_downloads_adminonly: "[downloads]; path=/shares/downloads; valid users = buba; guest ok = no; read only = no; browseable = no"
-
-      #Examples
-      #SAMBA_VOLUME_CONFIG_shared_home: "[Home]; path=/shares/homes/%U; valid users = alice, bob, foo; guest ok = no; read only = no; browseable = yes"
-      #SAMBA_VOLUME_CONFIG_alicehidden: "[Alice Hidden Share]; path=/shares/alice-hidden; valid users = alice; guest ok = no; read only = no; browseable = no"
-      #SAMBA_VOLUME_CONFIG_bobonly: "[Bob Share]; path=/shares/bob; valid users = bob; guest ok = no; read only = no; browseable = yes"
-      #SAMBA_VOLUME_CONFIG_public: "[Public]; path=/shares/public; valid users = alice, bob, foo; guest ok = no; read only = no; browseable = yes; force group = family"
-      #SAMBA_VOLUME_CONFIG_public_ro: "[Public ReadOnly]; path=/shares/public; guest ok = yes; read only = yes; browseable = yes; force group = family"
-      #SAMBA_VOLUME_CONFIG_timemachine: "[TimeMachine]; path=/shares/timemachine/%U; valid users = alice, bob, foo; guest ok = no; read only = no; browseable = yes; fruit:time machine = yes; fruit:time machine max size = 500G"
+      SAMBA_VOLUME_CONFIG_mnt_adminonly: "[mnt]; path=/shares/mnt; valid users = ${ADMIN_USER}; guest ok = no; read only = no; browseable = no"
+      SAMBA_VOLUME_CONFIG_backup_adminonly: "[backup]; path=/shares/backup; valid users = ${ADMIN_USER}; guest ok = no; read only = no; browseable = no"
+      SAMBA_VOLUME_CONFIG_downloads_adminonly: "[downloads]; path=/shares/downloads; valid users = ${ADMIN_USER}; guest ok = no; read only = no; browseable = no"
 
     volumes:
       - /etc/avahi/services/:/external/avahi

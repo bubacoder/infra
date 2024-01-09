@@ -7,7 +7,7 @@
 #
 # Register to dashboard, subscribe to blocklists: https://app.crowdsec.net/
 #
-# Useful commands (to be executed withon the container):
+# Useful commands - execute within the container like `docker exec crowdsec <command>`:
 # - `cscli collections list`
 # - `cscli bouncers list`
 # - `cscli decisions list`

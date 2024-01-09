@@ -15,7 +15,9 @@ services:
     restart: unless-stopped
     environment:
       TZ: ${TIMEZONE}
-      # TODO move to file - https://www.authelia.com/configuration/methods/secrets/
+      # TODO More secure approach is to use file secrets
+      #   https://www.authelia.com/configuration/methods/secrets/
+      #   https://www.authelia.com/integration/deployment/docker/
       AUTHELIA_JWT_SECRET: ${AUTHELIA_JWT_SECRET}
       AUTHELIA_SESSION_SECRET: ${AUTHELIA_SESSION_SECRET}
       AUTHELIA_STORAGE_ENCRYPTION_KEY: ${AUTHELIA_STORAGE_ENCRYPTION_KEY}
