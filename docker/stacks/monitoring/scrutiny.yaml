@@ -26,8 +26,6 @@ services:
     image: 'ghcr.io/analogj/scrutiny:master-web'
     container_name: scrutiny-web
     restart: unless-stopped
-    ports:
-      - 8085:8080
     networks:
      - proxy
     volumes:
@@ -46,34 +44,14 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.scrutiny.entrypoints: websecure
+      traefik.http.routers.scrutiny.middlewares: https-local@file
       traefik.http.routers.scrutiny.rule: Host(`scrutiny.${MYDOMAIN}`)
       traefik.http.services.scrutiny.loadbalancer.server.port: 8080
-      traefik.http.routers.scrutiny.middlewares: https-local@file
       homepage.group: Monitoring
       homepage.name: Scrutiny
       homepage.icon: scrutiny.png
       homepage.href: https://scrutiny.${MYDOMAIN}/
       homepage.description: Hard Drive S.M.A.R.T Monitoring
-
-  scrutiny-collector:
-    image: 'ghcr.io/analogj/scrutiny:master-collector'
-    container_name: scrutiny-collector
-    restart: unless-stopped
-    cap_add:
-      - SYS_RAWIO
-    networks:
-     - proxy
-    volumes:
-      - /run/udev:/run/udev:ro
-    environment:
-      COLLECTOR_API_ENDPOINT: 'http://localhost:8080'
-      COLLECTOR_CRON_SCHEDULE: '0 0 * * *'
-    depends_on:
-      scrutiny-web:
-        condition: service_healthy
-    devices:
-      - /dev/sda
-      #- /dev/sdb
 
 networks:
  proxy:
