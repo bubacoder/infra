@@ -1,0 +1,12 @@
+title: MiniLab
+languageCode: en-us
+publishDir: ../public
+
+module:
+  imports:
+  - path: github.com/McShelby/hugo-theme-relearn
+
+params:
+  description: "Documentation of my Homelab"
+  themeVariant: "zen-dark"
+  alwaysopen: "false"
