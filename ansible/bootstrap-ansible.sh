@@ -1,15 +1,18 @@
-#!/bin/sh
+#!/bin/bash
+
+ANSIBLE_DIR=$(dirname "$0")
 
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
   # Installing Ansible on Ubuntu
   # https://docs.ansible.com/ansible/latest/installation_guide/installation_distros.html#installing-ansible-on-ubuntu
 
-  apt update
-  apt install --yes software-properties-common
+  apt-get update
+  apt-get install --yes software-properties-common
   add-apt-repository --yes --update ppa:ansible/ansible
-  apt install --yes ansible
+  apt-get install --yes ansible python3-pip
 
   pip install passlib ansible-lint
+  ansible-galaxy install -r "${ANSIBLE_DIR}/requirements.yml"
 
 elif [[ "$OSTYPE" == "darwin"* ]]; then
   # Mac OSX
@@ -18,6 +21,7 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
 
   # Install Ansible
   brew install ansible
+  ansible-galaxy install -r "${ANSIBLE_DIR}/requirements.yml"
 
 else
   echo "Platform not supported."

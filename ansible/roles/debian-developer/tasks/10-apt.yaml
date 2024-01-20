@@ -1,0 +1,5 @@
+---
+- name: Install deb packages with apt
+  ansible.builtin.apt:
+    pkg: "{{ dev_apt_packages }}"
+    state: present

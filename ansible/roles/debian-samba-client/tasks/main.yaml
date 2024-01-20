@@ -1,0 +1,8 @@
+---
+- name: Mount network shares
+  ansible.builtin.include_tasks: 10-samba.yaml
+  when:
+    - smb_hostname is defined
+    - smb_shares is defined
+    - smb_shares | type_debug == 'list'
+    - smb_shares | length > 0

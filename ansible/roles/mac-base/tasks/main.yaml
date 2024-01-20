@@ -1,0 +1,6 @@
+---
+- name: Install packages with Homebrew
+  ansible.builtin.import_tasks: 10-homebrew.yaml
+
+- name: Configure admin user
+  ansible.builtin.import_tasks: 20-user.yaml

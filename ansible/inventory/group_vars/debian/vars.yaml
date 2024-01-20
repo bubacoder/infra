@@ -1,0 +1,49 @@
+---
+
+admin_user: buba
+admin_name: "Buba"
+admin_email: "bubacoder@gmail.com"
+
+ssh_key_file: "/home/buba/.ssh/id_ed25519.pub"
+
+base_apt_packages:
+  - sudo
+  - mc
+  - vim
+  - git
+  - net-tools
+  - util-linux
+  - screen
+  - tmux
+  - mdadm
+  - hdparm
+  - htop
+  - tree
+
+dev_apt_packages:
+  - make
+  - pre-commit
+  - shellcheck
+  - tshark
+
+dev_brew_packages:
+  - asdf
+  - helix               # https://helix-editor.com
+  # AWS
+  - awscli
+  - eksctl
+  # Azure
+  - azure-cli
+  # Terraform tools
+  - terraform@1.5
+  - terraform-docs      # https://github.com/terraform-docs/terraform-docs
+  - terragrunt          # https://terragrunt.gruntwork.io/docs/getting-started/install/
+  - tfsec               # https://github.com/aquasecurity/tfsec
+  - tflint              # https://github.com/terraform-linters/tflint
+
+smb_hostname: nas
+smb_shares:
+  - media
+  - family-media
+  - backup
+  - downloads

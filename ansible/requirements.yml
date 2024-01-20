@@ -1,0 +1,9 @@
+# ansible-galaxy install -r requirements.yml
+---
+collections:
+- name: community.general
+  version: 8.2.0
+- name: community.docker
+  version: 3.5.0
+- name: ansible.posix
+  version: 1.5.0

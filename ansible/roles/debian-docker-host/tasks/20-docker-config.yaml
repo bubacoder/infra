@@ -1,0 +1,17 @@
+- name: Create docker-volumes directory
+  ansible.builtin.file:
+    path: /srv/docker-volumes
+    state: directory
+    owner: root
+    group: root
+    mode: '0777'
+
+- name: Create 'proxy' Docker network
+  community.docker.docker_network:
+    name: proxy
+
+- name: Add user admin_user to Docker group
+  ansible.builtin.user:
+    name: '{{ admin_user }}'
+    groups: docker
+    append: true

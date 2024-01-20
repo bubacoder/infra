@@ -1,0 +1,7 @@
+#!/usr/bin/env ansible-playbook
+
+- name: Setup Mac base
+  become: true
+  hosts: mac
+  roles:
+    - role: mac-base

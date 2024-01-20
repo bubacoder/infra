@@ -1,0 +1,39 @@
+---
+- name: Add IP address of all hosts to all hosts
+  ansible.builtin.lineinfile:
+    dest: /etc/hosts
+    regexp: '.*{{ item }}$'
+    line: "{{ hostvars[item].ansible_host }} {{ item }}"
+    state: present
+  when: hostvars[item].ansible_host is defined
+  with_items: "{{ groups.all }}"
+
+- name: Check if /etc/systemd/resolved.conf exists
+  stat:
+    path: /etc/systemd/resolved.conf
+  register: systemd_resolved_conf
+
+- name: Check if /run/systemd/resolve/resolv.conf exists
+  stat:
+    path: /run/systemd/resolve/resolv.conf
+  register: run_systemd_resolved_conf
+
+# https://www.linuxuprising.com/2020/07/ubuntu-how-to-free-up-port-53-used-by.html
+- name: Disable DNSStubListener
+  ansible.builtin.lineinfile:
+    path: /etc/systemd/resolved.conf
+    regexp: '^(.*)DNSStubListener(.*)$'
+    line: 'DNSStubListener=no'
+    backrefs: true
+  when: systemd_resolved_conf.stat.exists == true
+  notify: Restart service systemd-resolved
+
+- name: Create symbolic link to resolv.conf
+  ansible.builtin.file:
+    src: /run/systemd/resolve/resolv.conf
+    dest: /etc/resolv.conf
+    owner: systemd-resolve
+    group: systemd-resolve
+    state: link
+    force: true
+  when: run_systemd_resolved_conf.stat.exists == true

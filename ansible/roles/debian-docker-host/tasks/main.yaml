@@ -1,0 +1,9 @@
+---
+- name: Install Docker packages
+  ansible.builtin.include_tasks: "{{ item }}"
+  with_first_found:
+    - files:
+      - "10-docker-{{ ansible_distribution }}.yaml"
+
+- name: Configure Docker
+  ansible.builtin.import_tasks: 20-docker-config.yaml

@@ -1,0 +1,38 @@
+# https://brew.sh/
+# https://docs.brew.sh/Homebrew-on-Linux
+---
+- name: Check if Homebrew is installed
+  ansible.builtin.stat:
+    path: /home/linuxbrew/.linuxbrew/bin/brew
+  register: homebrew_check
+  when: ansible_system == "Linux"
+
+- name: Check if Homebrew is installed
+  ansible.builtin.stat:
+    path: /opt/homebrew/bin/brew
+  register: homebrew_check
+  when: ansible_system == "Darwin"
+
+- name: Install Homebrew
+  ansible.builtin.shell: /bin/bash -c "NONINTERACTIVE=true $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  become: false
+  when: not homebrew_check.stat.exists
+
+- name: Update Homebrew
+  community.general.homebrew:
+    update_homebrew: true
+  when: homebrew_check.stat.exists
+  become: false
+
+- name: Install Homebrew packages
+  community.general.homebrew:
+    name: "{{ brew_base_tools + brew_cloud_tools + brew_terraform_tools + brew_kubernetes_tools }}"
+    # name: "{{ dev_brew_packages }}"
+    state: present
+  become: false
+
+- name: Install Homebrew Cask packages
+  community.general.homebrew_cask:
+    name: "{{ brew_cask_packages }}"
+    state: present
+  become: false

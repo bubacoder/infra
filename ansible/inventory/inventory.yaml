@@ -1,24 +1,21 @@
 ---
-local:
-  hosts:
-    localhost:
-      ansible_connection: local
 
-docker_hosts:
+debian:
   hosts:
-    nest:
-      ansible_user: buba
-      ansible_conection: ssh
-  vars:
-    ansible_conection: ssh
-
-minimal:
-  hosts:
-    nas:
-      ansible_user: root
     proxmox:
       ansible_host: 192.168.1.50
       ansible_user: buba
-    # router
+    nas:
+      ansible_user: buba
+    nest:
+      ansible_user: buba
+    nest-ct-test:
+      ansible_user: buba
+      ansible_host: 192.168.1.166
   vars:
     ansible_conection: ssh
+
+mac:
+  hosts:
+    localhost:
+      ansible_connection: local

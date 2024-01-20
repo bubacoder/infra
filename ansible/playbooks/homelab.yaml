@@ -1,0 +1,26 @@
+#!/usr/bin/env ansible-playbook
+
+- name: Setup Debian base
+  become: true
+  hosts:
+    - debian
+  roles:
+    - role: debian-base
+
+- name: Setup Docker-host
+  become: true
+  hosts:
+    - nas
+    - nest
+    - nest-ct-test
+  roles:
+    - role: debian-docker-host
+
+- name: Setup Samba client + developer tools
+  become: true
+  hosts:
+    - nest
+    - nest-ct-test
+  roles:
+    - role: debian-samba-client
+    - role: debian-developer

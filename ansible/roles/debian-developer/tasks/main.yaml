@@ -1,0 +1,12 @@
+---
+
+- name: Install apt packages
+  ansible.builtin.import_tasks: 10-apt.yaml
+
+# Only install homebrew if packages are configured
+- name: Install packages with Homebrew
+  ansible.builtin.include_tasks: 20-homebrew.yaml
+  when:
+    - dev_brew_packages is defined             or dev_brew_cask_packages is defined
+    - dev_brew_packages | type_debug == 'list' or dev_brew_cask_packages | type_debug == 'list'
+    - dev_brew_packages | length > 0           or dev_brew_cask_packages | length > 0

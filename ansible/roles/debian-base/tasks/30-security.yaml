@@ -1,0 +1,7 @@
+---
+- name: Enable passwordless sudo for members of group 'sudo'
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers
+    regexp: "^%sudo"
+    line: "%sudo ALL=(ALL:ALL) NOPASSWD: ALL"
+    validate: "/usr/sbin/visudo -cf %s"

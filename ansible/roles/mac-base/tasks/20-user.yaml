@@ -1,0 +1,11 @@
+---
+#  1. Copy the keylayout file into /Library/Keyboard Layouts/
+#  2. Restart
+#  3. You can then select the new layout from System Preferences > Language & Text > Input Sources
+#  https://github.com/zaki/mac-hun-keyboard
+- name: Copy Hungarian-Win keyboard layout
+  ansible.builtin.copy:
+    src: "assets/Hungarian_Win.keylayout"
+    dest: "/Library/Keyboard Layouts/Hungarian_Win.keylayout"
+    mode: '0644'
+  become: true

@@ -1,0 +1,17 @@
+---
+- name: Install aptitude
+  ansible.builtin.apt:
+    name: aptitude
+    state: present
+    update_cache: true
+    cache_valid_time: 28800 # 8h
+
+- name: Apt update & upgrade
+  ansible.builtin.apt:
+    upgrade: true
+    autoremove: true
+
+- name: Install base packages with apt
+  ansible.builtin.apt:
+    pkg: "{{ base_apt_packages }}"
+    state: present
