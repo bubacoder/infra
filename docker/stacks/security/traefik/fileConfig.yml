@@ -1,4 +1,5 @@
 # Dynamic configuration - changes in this file are applied without restarting Traefik (https://doc.traefik.io/traefik/providers/file/#watch).
+# Configuration via environment variables: use go templating, like {{env "VARIABLENAME"}}
 
 http:
 
@@ -65,8 +66,8 @@ http:
       chain:
         middlewares:
           - https-only
-          # - security-headers@file
           - crowdsec-bouncer
+          # - security-headers
 
     https-local:
       chain:

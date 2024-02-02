@@ -1,12 +1,14 @@
+# Static configuration - restart Traefik to apply the changes
+# Configuration via environment variables: https://doc.traefik.io/traefik/reference/static-configuration/env/
+
 # Traefik global configuration
 global:
-  checkNewVersion: true
+  checkNewVersion: false
   sendAnonymousUsage: false
 
 # Enable traefik UI dashboard
 api:
   dashboard: true
-  insecure: true  # Enables the web UI and API over HTTP (without HTTPS)
 
 log:
   filePath: /logs/traefik.log # Sets the path where Traefik will write logs
@@ -33,7 +35,7 @@ providers:
     watch: true
     network: proxy
     # Default host rule to containername.domain.example
-    defaultRule: "Host(`{{ index .Labels \"com.docker.compose.service\"}}.{{env \"MYDOMAIN\"}}`)"
+    defaultRule: 'Host(`{{ index .Labels "com.docker.compose.service"}}.{{env "MYDOMAIN"}}`)'
     swarmModeRefreshSeconds: 15s
     exposedByDefault: false  # Tells Traefik not to expose containers to the outside world unless explicitly instructed to do so
 
@@ -53,14 +55,7 @@ entryPoints:
       tls:
         # minVersion: VersionTLS12 # Enforces TLS 1.2 or better
         certResolver: letsencrypt # Configures the HTTPS entrypoint to use certificates obtained from the Let's Encrypt CA
-        # Generate a wildcard domain certificate
-        domains:
-          - main: '{{env "MYDOMAIN"}}'
-            sans:
-              - '*.{{env "MYDOMAIN"}}'
-      # If no other middleware usage defined by the Docker labels, access is restricted to local networks
-      middlewares:
-        - https-local@file
+        # domains: -> configured by TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_DOMAINS_* env var
 
 # https://doc.traefik.io/traefik/user-guides/docker-compose/acme-dns/
 # OVH:
@@ -71,7 +66,7 @@ entryPoints:
 certificatesResolvers:
   letsencrypt:
     acme:
-      email: '{{env "ADMIN_EMAIL"}}' # Sets the email address to use when registering with the Let's Encrypt CA
+      # email: -> configured by TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL env var. Sets the email address to use when registering with the Let's Encrypt CA
       storage: /letsencrypt/acme.json # Sets the path where Traefik will store ACME data (such as obtained certificates)
       dnsChallenge:
         provider: cloudflare # Configures Cloudflare as the DNS provider to use for the ACME DNS challenge
