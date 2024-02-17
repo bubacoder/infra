@@ -36,12 +36,34 @@ variable "vm_ubuntu_server_sku" {
 }
 
 variable "admin_source_address" {
-  default     = "1.2.3.4"
-  description = "Allow admin access only from these ports"
+  description = "Allow admin access only from this IP"
   type        = string
 }
 
 variable "data_disk_id" {
   description = "ID of the permanent data disk"
+  type        = string
+}
+
+# TODO use during VM creation
+variable "admin_user" {
+  description = "Name of the adminustrative user on the VM"
+  default     = "azureuser"
+  type        = string
+}
+
+variable "git_credentials" {
+  description = "Git credentials for accessing the infrastructure repository. Will be written to ~/.git-credentials"
+  type        = string
+}
+
+variable "repo_url" {
+  description = "URL of the infrastructure repository"
+  type        = string
+}
+
+variable "repo_directory" {
+  description = "Name of the infrastructure repository directory"
+  default     = "infra"
   type        = string
 }

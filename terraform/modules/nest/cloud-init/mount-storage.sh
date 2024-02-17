@@ -1,8 +1,7 @@
 #!/bin/bash
+set -euo pipefail
 
-# Location: /var/lib/cloud/instance/scripts
-
-echo Starting Docker containers...
+echo Mounting storage...
 
 function mount_storage {
     max_attempts=60
@@ -36,37 +35,11 @@ function create_dir {
     fi
 }
 
-function wait_until_installed {
-    while ! command -v "$1" >/dev/null 2>&1; do
-        sleep 1
-    done
-    echo "Docker has been installed"
-}
-
-
-# Mount
 create_dir /storage/
 mount_storage
-create_dir "${CONTAINERDATA}/"
-
-
-# Start containers
-wait_until_installed "docker"
-
-docker compose -f portainer.yaml up --detach
-
-docker compose -f syncthing.yaml up --detach
 
 create_dir /storage/torrent-downloads
 create_dir /storage/torrent-watch
-docker compose -f transmission.yaml up --detach
-
 create_dir /storage/media/tvseries
 create_dir /storage/media/movies
 create_dir /storage/media/audio
-docker compose -f jellyfin.yaml up --detach
-
-docker compose -f filebrowser.yaml up --detach
-
-#docker compose -f homeassistant.yaml up --detach
-#docker compose -f unifi-controller.yaml up --detach
