@@ -9,8 +9,10 @@ repos:
       - id: trailing-whitespace
         args: ["--markdown-linebreak-ext=md,yaml"]
       - id: end-of-file-fixer
+        exclude: "docker/stacks/security/authelia/"
       - id: mixed-line-ending
       - id: fix-byte-order-marker
+      - id: check-merge-conflict
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
       - id: check-yaml
@@ -21,8 +23,27 @@ repos:
         args: ["--allow-missing-credentials"]
       - id: detect-private-key
 
+  # Find security vulnerabilities, compliance issues, and infrastructure misconfigurations early in the development cycle of your infrastructure-as-code with KICS by Checkmarx.
+  # KICS stands for Keeping Infrastructure as Code Secure, it is open source and is a must-have for any cloud native project.
+  # https://docs.kics.io/latest/commands/
+  - repo: https://github.com/Checkmarx/kics
+    rev: v1.7.12
+    hooks:
+      - id: kics-scan
+        # TODO solve the high severity issues first
+        args: ["--exclude-severities", "info,low,medium"]
+        pass_filenames: false
+        always_run: true
+
+  # Gitleaks is a SAST tool for detecting and preventing hardcoded secrets like passwords, api keys, and tokens in git repos.
+  # Gitleaks is an easy-to-use, all-in-one solution for detecting secrets, past or present, in your code.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.1
+    hooks:
+      - id: gitleaks
+
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.86.0
+    rev: v1.87.0
     hooks:
       - id: terraform_fmt
         files: ^terraform/
@@ -32,11 +53,10 @@ repos:
         files: ^terraform/
       - id: terraform_tflint
         files: ^terraform/
-        args:
-          - --args=--fix
+        args: ["--args=--fix"]
 
   - repo: https://github.com/ansible-community/ansible-lint
-    rev: v6.22.1
+    rev: v6.22.2
     hooks:
       - id: ansible-lint
         files: ^ansible/
