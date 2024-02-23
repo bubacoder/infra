@@ -1,0 +1,11 @@
+{
+  "recommendations": [
+    "editorconfig.editorconfig",
+    "ms-azuretools.vscode-docker",
+    "redhat.ansible",
+    "redhat.vscode-yaml",
+    "mhutchie.git-graph",
+    "hashicorp.terraform",
+    "ms-vscode.makefile-tools"
+  ]
+}
