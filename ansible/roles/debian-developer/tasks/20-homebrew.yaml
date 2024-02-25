@@ -13,15 +13,17 @@
   register: homebrew_check_darwin
   when: ansible_system == "Darwin"
 
+# Not yet installed -> install
 - name: Install Homebrew
   ansible.builtin.shell: /bin/bash -c "NONINTERACTIVE=true $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   become: false
-  when: not homebrew_check_linux.stat.exists and not homebrew_check_darwin.stat.exists
+  when: not ((homebrew_check_linux.stat is defined and homebrew_check_linux.stat.exists) or (homebrew_check_darwin.stat is defined and homebrew_check_darwin.stat.exists))
 
+# Already installed -> update
 - name: Update Homebrew
   community.general.homebrew:
     update_homebrew: true
-  when: homebrew_check_linux.stat.exists or homebrew_check_darwin.stat.exists
+  when: (homebrew_check_linux.stat is defined and homebrew_check_linux.stat.exists) or (homebrew_check_darwin.stat is defined and homebrew_check_darwin.stat.exists)
   become: false
 
 # TODO configure for user (on Linux)

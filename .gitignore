@@ -1,3 +1,1 @@
 .env
-ansible/.fact_cache/
-ansible/**/secret.yaml
