@@ -1,16 +1,23 @@
 # Makefile Cheat Sheet: https://bytes.usc.edu/cs104/wiki/makefile
 
-SHELL := /bin/bash
-RESOURCE_GROUP := HomeInfra
+# Note: An alternative for 'Makefile' is 'Taskfile'.
+#   See: https://taskfile.dev/, https://www.youtube.com/watch?v=Z7EnwBaJzCk
 
+SHELL := /bin/bash
+
+# TODO Read params from tfvars
+RESOURCE_GROUP := HomeInfra
 VM_NAME := nest
-VM_KEYFILE := ~/.ssh/id_rsa_azure_nest
-VM_FQDN := buba-nest.westeurope.cloudapp.azure.com
+VM_KEYFILE := ~/.ssh/id_rsa_azure_vm
+VM_FQDN ?= $(shell terraform output -raw vm_fqdn)
+VM_ADMIN_USER := azureuser
 
 OWN_PUBLIC_IP ?= $(shell curl -s https://ipinfo.io/ip)
 GIT_CREDENTIALS ?= $(shell cat ~/.git-credentials | head -n 1)
 REPO_URL ?= $(shell git config --get remote.origin.url)
+VAR_PARAMETERS ?= -var-file="infra.tfvars" -var="admin_source_address=${OWN_PUBLIC_IP}" -var="git_credentials=${GIT_CREDENTIALS}" -var="repo_url=${REPO_URL}"
 
+export TF_IN_AUTOMATION = 1
 
 .PHONY: clean
 clean:
@@ -27,24 +34,33 @@ check:
 
 .PHONY: plan
 plan:
-	terraform plan -var="admin_source_address=${OWN_PUBLIC_IP}" -var="git_credentials=${GIT_CREDENTIALS}" -var="repo_url=${REPO_URL}" -out="tfplan"
+	terraform init
+	@echo "terraform plan..."
+	@terraform plan ${VAR_PARAMETERS} -out="tfplan"
 
 .PHONY: apply
 apply: plan
-	time terraform apply --auto-approve "tfplan"
-	ssh-keygen -f ~/.ssh/known_hosts -R "${VM_FQDN}" && terraform output -raw tls_private_key > ${VM_KEYFILE} && chmod 600 ${VM_KEYFILE}
+	@echo "terraform apply..."
+	@time terraform apply --auto-approve "tfplan"
+	ssh-keygen -f ~/.ssh/known_hosts -R "${VM_FQDN}" && terraform output -raw vm_tls_private_key > ${VM_KEYFILE} && chmod 600 ${VM_KEYFILE}
 
 .PHONY: destroy
 destroy:
-	time terraform destroy --auto-approve -var="admin_source_address=${OWN_PUBLIC_IP}" -var="git_credentials=${GIT_CREDENTIALS}" -var="repo_url=${REPO_URL}" && rm ${VM_KEYFILE}
+	@echo "terraform destroy..."
+	@terraform destroy --auto-approve ${VAR_PARAMETERS} && rm ${VM_KEYFILE}
 
 .PHONY: destroy-vm
 destroy-vm:
-	time terraform destroy --auto-approve -var="admin_source_address=${OWN_PUBLIC_IP}" -var="git_credentials=${GIT_CREDENTIALS}" -var="repo_url=${REPO_URL}" --target module.nest.azurerm_linux_virtual_machine.nest && rm ${VM_KEYFILE}
+	@echo "terraform destroy..."
+	@terraform destroy --auto-approve ${VAR_PARAMETERS} --target module.vm.azurerm_linux_virtual_machine.vm && rm ${VM_KEYFILE}
 
-.PHONY: connect
-connect:
-	ssh -i ${VM_KEYFILE} azureuser@${VM_FQDN}
+.PHONY: connect-vm
+connect-vm:
+	ssh -i ${VM_KEYFILE} ${VM_ADMIN_USER}@${VM_FQDN}
+
+.PHONY: config-vm
+config-vm:
+	cd ../ansible; ./apply-cloud.sh
 
 .PHONY: start-vm
 start-vm:

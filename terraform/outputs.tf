@@ -1,12 +1,20 @@
-output "public_ip_address" {
-  value = module.nest.public_ip_address
+output "vm_id" {
+  value = module.vm.virtual_machine_id
 }
 
-output "tls_private_key" {
-  value     = module.nest.tls_private_key
+output "vm_public_ip_address" {
+  value = module.vm.public_ip_address
+}
+
+output "vm_fqdn" {
+  value = module.vm.fqdn
+}
+
+output "vm_tls_private_key" {
+  value     = module.vm.tls_private_key
   sensitive = true
 }
 
-output "public_key_fingerprint_sha256" {
-  value = module.nest.public_key_fingerprint_sha256
+output "vm_public_key_fingerprint_sha256" {
+  value = module.vm.public_key_fingerprint_sha256
 }

@@ -1,4 +1,4 @@
-data "cloudinit_config" "nest_config" {
+data "cloudinit_config" "vm_config" {
   gzip          = true
   base64_encode = true
 

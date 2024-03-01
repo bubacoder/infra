@@ -1,8 +1,6 @@
-### Permanent storage
-
-# Configure:
-# cfdisk /dev/sdc
-# mkfs.ext4 /dev/sdc1
+# Configure disk after created and attached to the VM:
+#   cfdisk /dev/sdc
+#   mkfs.ext4 /dev/sdc1
 resource "azurerm_managed_disk" "data" {
   name                = "nest_DataDisk"
   location            = var.location
@@ -10,7 +8,7 @@ resource "azurerm_managed_disk" "data" {
 
   storage_account_type = "Standard_LRS"
   create_option        = "Empty"
-  disk_size_gb         = 10
+  disk_size_gb         = var.disk_size_gb
 
   lifecycle {
     prevent_destroy = true
