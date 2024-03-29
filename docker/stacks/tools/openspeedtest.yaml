@@ -13,12 +13,13 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.openspeedtest.middlewares: https-local@file
+      traefik.http.routers.openspeedtest.middlewares: https-public@file
+      traefik.http.routers.openspeedtest.rule: Host(`speedtest.${MYDOMAIN}`)
       traefik.http.services.openspeedtest.loadbalancer.server.port: 3000
       homepage.group: Tools
       homepage.name: OpenSpeedTest
       homepage.icon: librespeed.png # 404: openspeedtest.png
-      homepage.href: https://openspeedtest.${MYDOMAIN}/
+      homepage.href: https://speedtest.${MYDOMAIN}/
       homepage.description: "Network Performance Estimation"
 
 networks:
