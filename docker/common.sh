@@ -1,8 +1,15 @@
 # shellcheck disable=SC2148
 
+create_network_if_missing()
+{
+  docker network inspect "$1" >/dev/null 2>&1 || \
+    docker network create --driver bridge "$1"
+}
+
 init()
 {
   echo Init...
+  create_network_if_missing "proxy"
 }
 
 up()
