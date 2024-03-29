@@ -1,0 +1,5 @@
+formatter: "markdown table"
+
+settings:
+  anchor: false
+  lockfile: false
