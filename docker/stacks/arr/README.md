@@ -1,6 +1,5 @@
-+++
-title = "Arr Suite"
-+++
+
+# Arr Suite
 
 Software to acquire and manage different media types:
 - Radarr -- Movies

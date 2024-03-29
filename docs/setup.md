@@ -1,70 +1,58 @@
-+++
-title = "Setup"
-weight = 1
-+++
+# Getting started
 
-## Setup
+## Cloud accounts
+
+This setup uses a public Domain Name to allow publishing local services and to have a recognized TLS certificate.
+An alternative is to use free subdomains (e.g. duckdns.org) but its support is not included in this lab setup.
+
+1. Register a Domain Name, e.g at [OVHcloud](https://www.ovhcloud.com/en/) - but the registrar does not matter, see next step
+2. Transfer the DNS Zone administration to [Cloudflare](https://www.cloudflare.com/application-services/products/dns/) - traefik reverse proxy certificate renewal is configured to use Cloudflare
+
+## Overview of local setup
 
 1. Install type 1 virtualization - Proxmox VE
 2. Install & configure Admin host
 3. Install Docker host
 4. Configure Docker host with Ansible
-5. Configure core/access services
-6. Configure workloads
-- Domain
-- DNS
-- .env
+5. Setup .env file for the Docker host(s)
+6. Configure core/access services
+7. Configure workloads
 
-- Traefik
-- Domain
-- DNS
-  Alternative: duckdns.org
-- TLS cert
+## Install Proxmox Virtual Environment
 
-- Cloudflare
-- Monitoring
-- Backup
+--> See [Proxmox VE](pve)
 
-### Setup admin host
+## Setup admin host
 
 Supported: Linux/WSL/MacOS
 
 Steps:
-- Clone repository
-- Install Ansible with: `bootstrap-ansible-linux.sh`
+- Clone the repository: `git clone <repository url>`
+- Install Ansible with: `bootstrap-ansible.sh`
 
-### Install Proxmox Virtual Environment host
+## Install Ubuntu Server VM (Docker host)
 
---> TODO
+Currently the VM is manually created and the OS (Ubuntu Server LTS or Debian) is manually installed.
 
-Alternative: VMWare ESXi
-
-### Install Ubuntu Server VM
-
-TODO: Terraform
-- VM or LXC?
-- https://registry.terraform.io/providers/Telmate/proxmox/latest/docs
+Alternatives:
+- Use Terraform to deploy the VM (Proxmox Terraform provider: https://registry.terraform.io/providers/Telmate/proxmox/latest/docs)
+- Use LXC
 
 Proxmox settings:
-- Autostart
+- Autostart the VM
 
 Router settings:
-- Static DHCP lease
-- Port forward
+- Static DHCP lease for the VM
+- Port forward to the VM (HTTPS, WireGuard)
 
-Alternative: Debian
+## Run Ansible to set up dependencies in the VM(s)
 
-### Ubuntu Server VM Post-install configuration
+Excute on the admin host:
+`ansible/apply-homelab.sh`
 
-Everything is configured by Ansible.
+## Add .env file
 
-#### Clone repo
-
-git clone <repository url>
-
-#### Add .env file
-
-TODO Saved to ...
+The `.env` files are not committed to the repository (see: .gitignore). Backup these files!
 
 ```
 hosts
@@ -77,17 +65,16 @@ hosts
     └── .env
 ```
 
-#### Ansible
+### Configure core/access services
 
-`ansible/apply-nest.sh`
+- Traefik
+- Domain
+- DNS
+- TLS cert
+- Cloudflare
+- Monitoring
+- Backup
 
-### Restore backup (Docker volumes)
+## Start containers
 
-Local or B2
-TODO Script, not compose (?)
-`docker/backup.sh`
-
-### Start containers
-
-`docker/nest/apply.sh`
-
+`docker/hosts/<hostname>/apply.sh`

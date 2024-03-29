@@ -1,5 +1,3 @@
-+++
-title = "Storage"
-+++
+# Storage
 
 Remote file access and synching.

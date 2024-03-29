@@ -1,5 +1,3 @@
-+++
-title = "Media"
-+++
+# Media
 
 Media services.

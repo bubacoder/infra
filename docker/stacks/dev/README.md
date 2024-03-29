@@ -1,5 +1,3 @@
-+++
-title = "Development"
-+++
+# Development
 
 Services for software-/infrastructure-development.

@@ -1,5 +1,3 @@
-+++
-title = "Smarthome"
-+++
+# Smarthome
 
 Home automation software.

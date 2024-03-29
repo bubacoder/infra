@@ -1,6 +1,4 @@
-+++
-title = "Monitoring"
-+++
+# Monitoring
 
 - Prometheus + Grafana stack
 - Service monitoring

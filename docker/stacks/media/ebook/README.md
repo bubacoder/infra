@@ -1,6 +1,4 @@
-+++
-title = "Ebook"
-+++
+# Ebook
 
 ## Customize Kobo Libra 2
 

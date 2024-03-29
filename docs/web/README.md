@@ -1,21 +1,21 @@
-+++
-title = "Documentation"
-weight = 5
-+++
+# Documentation
 
-The documentation is written in [Markdown format](https://www.markdownguide.org/) and built with the Hugo static site generator, using the Relearn theme.
+The documentation is written in [Markdown format](https://www.markdownguide.org/) and built with the [Hugo](https://gohugo.io/) static site generator, using the Relearn theme.
 
-# Hugo
+## Hugo
 
 > [Hugo](https://gohugo.io/) is one of the most popular open-source static site generators. With its amazing speed and flexibility, Hugo makes building websites fun again.
 
 ▶️ [Getting Started With Hugo](https://www.youtube.com/watch?v=hjD9jTi_DQ4)
 
+## Installation
+
+Install with APT (older version)...:
 ```bash
 sudo apt install hugo
 ```
 
-
+...or install a specific release from Github:
 ```bash
 $ wget https://github.com/gohugoio/hugo/releases/download/v0.121.1/hugo_0.121.1_linux-amd64.tar.gz
 
@@ -23,27 +23,23 @@ $ ./hugo version
 hugo v0.121.1-00b46fed8e47f7bb0a85d7cfc2d9f1356379b740 linux/amd64 BuildDate=2023-12-08T08:47:45Z VendorInfo=gohugoio
 ```
 
-TODO homebrew
+...or use Docker:
+[Hugo Docker Images](https://hugomods.com/docs/docker/)
 
+## Theme
 
-
-# Theme
-
-https://mcshelby.github.io/hugo-theme-relearn/
-
-https://mcshelby.github.io/hugo-theme-relearn/basics/installation/index.html
-
-https://github.com/McShelby/hugo-theme-relearn/blob/main/exampleSite/
+- https://mcshelby.github.io/hugo-theme-relearn/
+- https://mcshelby.github.io/hugo-theme-relearn/basics/installation/index.html
+- https://github.com/McShelby/hugo-theme-relearn/blob/main/exampleSite/
 
 `git clone https://github.com/McShelby/hugo-theme-relearn.git --depth 1`
 
-# WIP
-
+## Create and serve a new website
 
 ```bash
-$ hugo new site misikoli -f yaml
+$ hugo new site <site_name> -f yaml
 
-Congratulations! Your new Hugo site is created in /home/buba/repos/infra/docs/misikoli.
+Congratulations! Your new Hugo site is created in <.../site_name>.
 
 Just a few more steps and you're ready to go:
 
@@ -58,13 +54,8 @@ Visit https://gohugo.io/ for quickstart guide and full documentation.
 ```
 
 ```bash
-cd misikoli
+cd <site_name>
 hugo mod get -u https://github.com/McShelby/hugo-theme-relearn.git
 hugo serve
-cd infra/docs/misikoli; ./hugo serve --bind=0.0.0.0 --baseURL=http://0.0.0.0:1313
+cd infra/docs/<site_name>; ./hugo serve --bind=0.0.0.0 --baseURL=http://0.0.0.0:1313
 ```
-
-# Docker
-
-https://hugomods.com/docs/docker/
-

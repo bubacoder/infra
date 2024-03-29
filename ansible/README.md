@@ -1,3 +1,4 @@
+# Ansible
 
 https://www.ansible.com/
 
@@ -6,9 +7,9 @@ https://www.ansible.com/
 
 ## Tutorials, Resources
 
-[Learn Linux TV - Getting started with Ansible](https://www.youtube.com/playlist?list=PLT98CRl2KxKEUHie1m24-wkyHpEsa4Y70)
-[Laying out roles, inventories and playbooks](https://leucos.github.io/ansible-files-layout)
-[An evolving set of mac user creation, setup and maintenance playbooks being used at Ideas On Purpose](https://github.com/ideasonpurpose/ansible-playbooks)
+- [Learn Linux TV - Getting started with Ansible](https://www.youtube.com/playlist?list=PLT98CRl2KxKEUHie1m24-wkyHpEsa4Y70)
+- [Laying out roles, inventories and playbooks](https://leucos.github.io/ansible-files-layout)
+- [An evolving set of mac user creation, setup and maintenance playbooks being used at Ideas On Purpose](https://github.com/ideasonpurpose/ansible-playbooks)
 
 ## Setup steps
 

@@ -1,3 +1,3 @@
-+++
-title = "Audio"
-+++
+# Audio
+
+Audio applications

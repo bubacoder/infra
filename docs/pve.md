@@ -1,41 +1,58 @@
-+++
-title = "Proxmox VE"
-weight = 3
-+++
+# Proxmox VE
 
-https://www.proxmox.com/en/downloads/proxmox-virtual-environment
+> Proxmox Virtual Environment is a complete, open-source server management platform for enterprise virtualization. It tightly integrates the KVM hypervisor and Linux Containers (LXC), software-defined storage and networking functionality, on a single platform. With the integrated web-based user interface you can manage VMs and containers, high availability for clusters, or the integrated disaster recovery tools with ease.
 
-VM config: `/etc/pve/qemu-server/100.conf`
+See more: https://www.proxmox.com/en/proxmox-virtual-environment/overview
 
-https://tteck.github.io/Proxmox/
+Download: https://www.proxmox.com/en/downloads/proxmox-virtual-environment
+
+- [Mobile Application](https://play.google.com/store/apps/details?id=com.proxmox.app.pve_flutter_frontend)
+- [Scripts for Streamlining Your Homelab with Proxmox VE](https://tteck.github.io/Proxmox/)
+- [Collection of tools for Proxmox](https://github.com/DerDanilo/proxmox-stuff)
 
 Post-install configuration:
 - https://pve.proxmox.com/wiki/Package_Repositories#sysadmin_no_subscription_repo
 - TODO
 
+## Virtual machines
 
-## Kernel Samepage Merging
+VM config location: `/etc/pve/qemu-server/<ID>.conf`
 
-https://docs.kernel.org/admin-guide/mm/ksm.html
+### Kernel Samepage Merging (KSM)
 
-`watch cat /sys/kernel/mm/ksm/pages_sharing`
+KSM is a memory-saving de-duplication feature.
+See more: https://docs.kernel.org/admin-guide/mm/ksm.html
+
+Check KSM statistics: `watch cat /sys/kernel/mm/ksm/pages_sharing`
 Note: a page is 4096 bytes
 
-## Windows VM
+### Proxmox VM Watchdogs
 
-▶️ [How to Virtualise an Existing Windows Install using Proxmox](https://www.youtube.com/watch?v=eFDcCxRS5Xk)
-https://pve.proxmox.com/wiki/Windows_VirtIO_Drivers
-https://pve.proxmox.com/wiki/Dynamic_Memory_Management
+[Proxmox VM Watchdogs](https://tompaw.net/proxmox-vm-watchdogs/)
+
+### Windows VM
+
+- ▶️ [How to Virtualise an Existing Windows Install using Proxmox](https://www.youtube.com/watch?v=eFDcCxRS5Xk)
+- [Windows VirtIO Drivers](https://pve.proxmox.com/wiki/Windows_VirtIO_Drivers)
+- [Dynamic Memory Management](https://pve.proxmox.com/wiki/Dynamic_Memory_Management)
+
+#### Application deployment solutions
+
+- [Windows Package Manager / WinGet](https://github.com/microsoft/winget-cli)
+- [Ninite - Install and Update All Your Programs at Once](https://ninite.com/)
+- [PortableApps](https://portableapps.com/)
 
 ## LXC Containers
 
-`pct enter <CTID>`
+Connect to terminal: `pct enter <CTID>`
 
 ### Create a container
 
 proxmox_lxc_pct_provisioner.sh
 https://gist.github.com/tinoji/7e066d61a84d98374b08d2414d9524f2
 `pct create <id> /var/lib/vz/template/cache/centos-7-default_20170504_amd64.tar.xz ...`
+
+CLI examples (TODO):
 
 ```
 pct create <id> /data/template/cache/debian-11-standard_11.3-1_amd64.tar.zst \
@@ -72,10 +89,7 @@ pct exec <id> -- bash -c "yum update -y &&\
     echo "password" | passwd --stdin hogeuser"
 ```
 
-
-
-
-### Cannot mount a SMB share
+### Issue: Cannot mount a SMB share
 
 ```
 mount error(1): Operation not permitted

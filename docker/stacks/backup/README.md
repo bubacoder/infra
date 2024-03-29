@@ -1,6 +1,4 @@
-+++
-title = "Backup"
-+++
+# Backup
 
 The scheduled backup uses two instances of Kopia.  
 One instance backup repository is configured for Backblaze B2, the other is for a local NAS.

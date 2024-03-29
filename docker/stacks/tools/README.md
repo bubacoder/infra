@@ -1,5 +1,3 @@
-+++
-title = "Tools"
-+++
+# Tools
 
 Various tools.
