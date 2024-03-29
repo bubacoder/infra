@@ -2,6 +2,10 @@
 #
 # 📜 Source: https://github.com/alexta69/metube  
 # Supported sites: https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md  
+#
+# Browser plugins:
+# - Chrome/Chromium based browser: https://chromewebstore.google.com/detail/metube-downloader/fbmkmdnlhacefjljljlbhkodfmfkijdh
+# - Firefox: https://addons.mozilla.org/en-US/firefox/addon/metube-downloader/
 ---
 version: "3.5"
 name: metube
