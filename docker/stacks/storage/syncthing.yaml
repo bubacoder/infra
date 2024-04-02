@@ -4,7 +4,6 @@
 # 🏠 Home: https://syncthing.net/  
 # 📦 Image: https://hub.docker.com/r/linuxserver/syncthing  
 ---
-version: "3.5"
 name: syncthing
 services:
   syncthing:

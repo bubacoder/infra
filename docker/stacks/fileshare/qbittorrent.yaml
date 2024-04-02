@@ -9,7 +9,6 @@
 # 🏠 Home: https://www.qbittorrent.org/  
 # 📦 Image: https://hub.docker.com/r/linuxserver/qbittorrent  
 ---
-version: "3.5"
 name: qbittorrent
 services:
   qbittorrent:

@@ -2,7 +2,6 @@
 #
 # 📦 Image: https://hub.docker.com/r/openspeedtest/latest  
 ---
-version: "3.5"
 name: openspeedtest
 services:
   openspeedtest:

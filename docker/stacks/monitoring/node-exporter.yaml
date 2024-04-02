@@ -3,7 +3,6 @@
 # 📜 Source: https://github.com/prometheus/node_exporter  
 # 📦 Image: https://hub.docker.com/r/prom/node-exporter/  
 ---
-version: "3.5"
 name: node_exporter
 services:
   node_exporter:

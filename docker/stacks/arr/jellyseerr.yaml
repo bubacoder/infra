@@ -4,7 +4,6 @@
 # 📜 Source: https://github.com/Fallenbagel/jellyseerr  
 # 📦 Image: https://hub.docker.com/r/fallenbagel/jellyseerr  
 ---
-version: "3.5"
 name: jellyseerr
 services:
   jellyseerr:

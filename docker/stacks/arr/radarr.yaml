@@ -3,7 +3,6 @@
 # 📦 Image: https://hub.docker.com/r/linuxserver/radarr  
 # 📜 Source: https://github.com/Radarr/Radarr  
 ---
-version: "3.5"
 name: radarr
 services:
   radarr:

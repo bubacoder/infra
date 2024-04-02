@@ -6,7 +6,6 @@
 # 🏠 Home: https://www.portainer.io/  
 # 📜 Source: https://github.com/portainer/portainer  
 ---
-version: "3.5"
 name: portainer
 services:
   portainer:

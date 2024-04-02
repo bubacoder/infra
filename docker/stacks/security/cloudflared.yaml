@@ -4,7 +4,6 @@
 # 📦 Image: https://hub.docker.com/r/cloudflare/cloudflared  
 # Introduction: https://www.crosstalksolutions.com/cloudflare-tunnel-easy-setup/  
 ---
-version: "3.5"
 name: cloudflared
 services:
   cloudflared:

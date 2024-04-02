@@ -6,7 +6,6 @@
 # 📜 Source: https://github.com/janeczku/calibre-web  
 # 📦 Image: https://docs.linuxserver.io/images/docker-calibre-web/  
 ---
-version: "3.5"
 name: calibre-web
 services:
   calibre-web:

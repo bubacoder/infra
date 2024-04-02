@@ -12,7 +12,6 @@
 # - https://grafana.com/grafana/dashboards/1860-node-exporter-full/
 # - https://grafana.com/grafana/dashboards/14282-cadvisor-exporter/
 ---
-version: "3.5"
 name: grafana
 services:
   grafana:

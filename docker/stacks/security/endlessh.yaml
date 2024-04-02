@@ -4,7 +4,6 @@
 # 📜 Source: https://github.com/skeeto/endlessh  
 # Setup: https://docs.linuxserver.io/images/docker-endlessh/#application-setup  
 ---
-version: "3.5"
 name: endlessh
 services:
   endlessh:

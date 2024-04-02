@@ -5,7 +5,6 @@
 # Docker integration: https://gethomepage.dev/en/installation/docker/  
 # Dashboard Icons: https://github.com/walkxcode/dashboard-icons/tree/main  
 ---
-version: "3.5"
 name: homepage
 services:
   homepage:

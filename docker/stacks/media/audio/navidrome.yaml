@@ -13,7 +13,6 @@
 # https://github.com/jeffvli/sonixd  
 # (Fix startup issue Mac: `xattr -cr /Applications/Sonixd.app`)
 ---
-version: "3.5"
 name: navidrome
 services:
   navidrome:

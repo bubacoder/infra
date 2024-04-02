@@ -7,7 +7,6 @@
 # 📜 Source: https://github.com/kopia/kopia  
 # 🐙 Compose: https://github.com/kopia/kopia/tree/master/tools/docker  
 ---
-version: "3.5"
 name: kopia-nas
 services:
   kopia-nas:

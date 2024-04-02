@@ -4,7 +4,6 @@
 # 📜 Source: https://github.com/coder/code-server  
 # FAQ: https://github.com/coder/code-server/blob/main/docs/FAQ.md  
 ---
-version: "3.5"
 name: code-server
 services:
   code-server:

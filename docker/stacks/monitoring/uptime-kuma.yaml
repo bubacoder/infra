@@ -3,7 +3,6 @@
 # 🏠 Home: https://uptime.kuma.pet/  
 # 📜 Source: https://github.com/louislam/uptime-kuma  
 ---
-version: "3.5"
 name: uptime-kuma
 services:
   uptime-kuma:

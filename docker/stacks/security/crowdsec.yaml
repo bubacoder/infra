@@ -14,7 +14,6 @@
 # - `cscli alerts list`
 # - `cscli metrics`
 ---
-version: "3.5"
 name: crowdsec
 services:
   crowdsec:

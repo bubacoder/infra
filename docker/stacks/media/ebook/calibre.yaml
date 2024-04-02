@@ -10,7 +10,6 @@
 # 📜 Source: https://calibre-ebook.com/  
 # 📦 Image: https://docs.linuxserver.io/images/docker-calibre/  
 ---
-version: "3.5"
 name: calibre
 services:
   calibre:

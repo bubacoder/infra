@@ -5,7 +5,6 @@
 # In addition to the Omnibus image (available under the latest tag) you can deploy in Hub/Spoke mode.
 # Details: https://github.com/AnalogJ/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml
 ---
-version: "3.5"
 name: scrutiny
 services:
   scrutiny-influxdb:

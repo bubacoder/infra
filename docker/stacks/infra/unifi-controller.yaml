@@ -7,7 +7,6 @@
 # 🏠 Home: https://ui.com/download/releases/network-server  
 # 📦 Image: https://hub.docker.com/r/linuxserver/unifi-controller  
 ---
-version: "3.5"
 name: unifi-controller
 services:
   unifi-controller:

@@ -6,7 +6,6 @@
 # 🏠 Home: https://guacamole.apache.org/  
 # 📦 Image: https://hub.docker.com/r/maxwaldorf/guacamole  
 ---
-version: "3.5"
 name: guacamole
 services:
   guacamole:

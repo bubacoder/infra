@@ -5,7 +5,6 @@
 # Keepass import: https://github.com/dani-garcia/vaultwarden/wiki/Importing-data-from-Keepass-or-KeepassX  
 # Bitwarden: https://bitwarden.com/, https://bitwarden.com/browser-start/  
 ---
-version: "3.5"
 name: vaultwarden
 services:
   server:

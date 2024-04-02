@@ -4,7 +4,6 @@
 # 🏠 Home: https://www.bazarr.media/  
 # 📦 Image: https://hub.docker.com/r/linuxserver/bazarr  
 ---
-version: "3.5"
 name: bazarr
 services:
   bazarr:

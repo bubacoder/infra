@@ -6,7 +6,6 @@
 # - https://docs.ibracorp.io/authelia/
 # - https://docs.technotim.live/posts/authelia-traefik/
 ---
-version: "3.5"
 name: authelia
 services:
   authelia:

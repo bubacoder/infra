@@ -12,7 +12,6 @@
 # 🏠 Home: https://www.home-assistant.io/  
 # 📦 Image: https://hub.docker.com/r/linuxserver/homeassistant  
 ---
-version: "3.5"
 name: homeassistant
 services:
   homeassistant:

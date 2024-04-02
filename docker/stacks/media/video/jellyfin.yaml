@@ -6,7 +6,6 @@
 #
 # Desktop client: https://github.com/jellyfin/jellyfin-media-player  
 ---
-version: "3.5"
 name: jellyfin
 services:
   jellyfin:

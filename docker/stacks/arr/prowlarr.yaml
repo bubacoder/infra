@@ -5,7 +5,6 @@
 # 📦 Image: https://hub.docker.com/r/linuxserver/prowlarr  
 # 📜 Source: https://github.com/Prowlarr/Prowlarr  
 ---
-version: "3.5"
 name: prowlarr
 services:
   prowlarr:

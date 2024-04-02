@@ -5,7 +5,6 @@
 # 🏠 Home: https://adguard.com/en/adguard-home/overview.html  
 # 📦 Image: https://hub.docker.com/r/adguard/adguardhome  
 ---
-version: "3.5"
 name: adguardhome
 services:
   adguardhome:

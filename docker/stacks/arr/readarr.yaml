@@ -5,7 +5,6 @@
 # 📜 Source: https://github.com/Readarr/Readarr  
 # 📦 Image: https://docs.linuxserver.io/images/docker-readarr/  
 ---
-version: "3.5"
 name: readarr
 services:
   readarr:

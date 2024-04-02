@@ -9,7 +9,6 @@
 # 📦 Image: https://hub.docker.com/r/gitlab/gitlab-ce/  
 # Docker install instructions: https://docs.gitlab.com/ee/install/docker.html  
 ---
-version: "3.5"
 name: gitlab
 services:
   gitlab:

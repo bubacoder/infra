@@ -6,7 +6,6 @@
 # 🏠 Home: https://www.wireguard.com/  
 # 📜 Source: https://github.com/WeeJeWel/wg-easy  
 ---
-version: "3.5"
 name: wg-easy
 services:
   wg-easy:

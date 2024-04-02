@@ -7,7 +7,6 @@
 # - Chrome/Chromium based browser: https://chromewebstore.google.com/detail/metube-downloader/fbmkmdnlhacefjljljlbhkodfmfkijdh
 # - Firefox: https://addons.mozilla.org/en-US/firefox/addon/metube-downloader/
 ---
-version: "3.5"
 name: metube
 services:
   metube:

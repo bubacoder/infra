@@ -23,7 +23,6 @@
 # 📜 Source: https://github.com/ServerContainers/samba  
 # 📦 Image: https://github.com/servercontainers/samba/pkgs/container/samba  
 ---
-version: "3.5"
 name: samba
 services:
   samba:
