@@ -3,6 +3,7 @@
 # You can update your hooks to the latest version automatically by running `pre-commit autoupdate`
 
 repos:
+  # Some out-of-the-box hooks for pre-commit
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -42,6 +43,7 @@ repos:
     hooks:
       - id: gitleaks
 
+  # pre-commit git hooks to take care of Terraform configurations
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.88.4
     hooks:
@@ -57,13 +59,21 @@ repos:
         # Automatically fix issues
         args: ["--args=--fix"]
 
+  # ansible-lint checks playbooks for practices and behavior that could potentially be improved and can fix some of the most common ones for you 
   - repo: https://github.com/ansible-community/ansible-lint
-    rev: v24
+    rev: v24.2.1
     hooks:
       - id: ansible-lint
         files: ^ansible/
 
+  # ShellCheck, a static analysis tool for shell scripts
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1
     hooks:
       - id: shellcheck
+
+  # flake8 is a python tool that glues together pycodestyle, pyflakes, mccabe, and third-party plugins to check the style and quality of some python code. 
+  -   repo: https://github.com/PyCQA/flake8
+      rev: 7.0.0
+      hooks:
+      -   id: flake8
