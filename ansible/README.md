@@ -31,10 +31,7 @@ https://www.ansible.com/
 
 The following parameters can be applied to `ansible-playbook` and the "apply..." scripts.
 
-`-l`, `--limit` - Limit Ansible run for a specific host (or host group):
-`./apply-homelab.sh --limit <host>`
-
-`-v`, `--verbose` - Causes Ansible to print more debug messages. Adding multiple -v will increase the verbosity, the builtin plugins currently evaluate up to -vvvvvv. A reasonable level to start is -vvv, connection debugging might require -vvvv:
-`./apply-homelab.sh -v`
+- `-l`, `--limit` - Limit Ansible run for a specific host (or host group). Example: `./apply-homelab.sh --limit <host>`
+- `-v`, `--verbose` - Causes Ansible to print more debug messages. Adding multiple -v will increase the verbosity, the builtin plugins currently evaluate up to -vvvvvv. A reasonable level to start is -vvv, connection debugging might require -vvvv. Example: `./apply-homelab.sh -v`
 
 See `man ansible-playbook` for more.

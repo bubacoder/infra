@@ -70,6 +70,7 @@ hosts
 - Traefik
 - Domain
 - DNS
+- Configure router (DNS, port forwarding)
 - TLS cert
 - Cloudflare
 - Monitoring

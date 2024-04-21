@@ -1,6 +1,6 @@
 # Documentation
 
-The documentation is written in [Markdown format](https://www.markdownguide.org/) and built with the [Hugo](https://gohugo.io/) static site generator, using the Relearn theme.
+The documentation is written in [Markdown format](https://www.markdownguide.org/) and built with the [Hugo](https://gohugo.io/) static site generator, using the [Relearn](https://mcshelby.github.io/hugo-theme-relearn/) theme.
 
 ## Hugo
 
@@ -8,9 +8,13 @@ The documentation is written in [Markdown format](https://www.markdownguide.org/
 
 ▶️ [Getting Started With Hugo](https://www.youtube.com/watch?v=hjD9jTi_DQ4)
 
+Alternatives to Hugo:
+- [Jekyll](https://jekyllrb.com/)
+- [Astro](https://astro.build/)
+
 ## Installation
 
-Install with APT (older version)...:
+Install with APT (older version):
 ```bash
 sudo apt install hugo
 ```
@@ -32,6 +36,7 @@ hugo v0.121.1-00b46fed8e47f7bb0a85d7cfc2d9f1356379b740 linux/amd64 BuildDate=202
 - https://mcshelby.github.io/hugo-theme-relearn/basics/installation/index.html
 - https://github.com/McShelby/hugo-theme-relearn/blob/main/exampleSite/
 
+Clone repo:
 `git clone https://github.com/McShelby/hugo-theme-relearn.git --depth 1`
 
 ## Create and serve a new website

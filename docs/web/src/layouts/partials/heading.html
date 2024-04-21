@@ -1,0 +1,9 @@
+{{- if .Params.Icon }}
+<img src="{{ .Params.Icon }}" alt="{{ .Title }}" width="60px" height="auto"/>
+{{- end }}
+
+<h1 id="{{ .Title | plainify | anchorize }}">{{ .Title }}</h1>
+
+{{- if .Description }}
+<h3>{{ .Description }}</h3>
+{{- end }}
