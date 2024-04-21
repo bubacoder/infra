@@ -1,3 +1,0 @@
-# Smarthome
-
-Home automation software.

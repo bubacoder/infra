@@ -1,0 +1,48 @@
+# The world's most popular workflow automation platform for technical teams
+#
+# https://n8n.io/  
+# https://docs.n8n.io/hosting/installation/docker/  
+# Compose based on: https://github.com/n8n-io/n8n/commit/db5c587cc8690201c8715977b234f6d053b80897#diff-687bca9db184257d4d3b884ab2ac7dca4f357376bce6c3142241f20e24660e01
+---
+name: n8n
+services:
+  initContainer:
+    image: busybox
+    container_name: n8n-init
+    command: ['sh', '-c', 'chown -R 1000:1000 /home/node/.n8n']
+    volumes:
+      - ${DOCKER_VOLUMES}/n8n:/home/node/.n8n
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: n8n
+    restart: unless-stopped
+    environment:
+      TZ: ${TIMEZONE}
+      GENERIC_TIMEZONE: ${TIMEZONE}
+      WEBHOOK_URL: https://n8n.${MYDOMAIN}/
+      N8N_HOST: n8n.${MYDOMAIN}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: https
+      NODE_ENV: production
+    volumes:
+      - ${DOCKER_VOLUMES}/n8n:/home/node/.n8n
+    networks:
+      - proxy
+    depends_on:
+      initContainer:
+        condition: service_completed_successfully
+    labels:
+      traefik.enable: true
+      traefik.http.routers.n8n.entrypoints: websecure
+      traefik.http.routers.n8n.middlewares: https-local@file
+      traefik.http.services.n8n.loadbalancer.server.port: 5678
+      homepage.group: Tools
+      homepage.name: n8n
+      homepage.icon: n8n.png
+      homepage.href: https://n8n.${MYDOMAIN}/
+      homepage.description: Workflow automation platform
+
+networks:
+  proxy:
+    external: true
