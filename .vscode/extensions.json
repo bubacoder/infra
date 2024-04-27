@@ -1,6 +1,7 @@
 {
   "recommendations": [
     "editorconfig.editorconfig",
+    "yzhang.markdown-all-in-one",
     "ms-azuretools.vscode-docker",
     "redhat.ansible",
     "redhat.vscode-yaml",
