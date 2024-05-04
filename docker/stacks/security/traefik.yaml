@@ -33,6 +33,8 @@ services:
       - 443:443/udp # HTTP/3 - QUIC
     networks:
       - proxy
+    extra_hosts:
+      - host.docker.internal:host-gateway
     labels:
       traefik.enable: true
       traefik.http.routers.api.rule: Host(`traefik.${MYDOMAIN}`) # Define the subdomain for the traefik dashboard

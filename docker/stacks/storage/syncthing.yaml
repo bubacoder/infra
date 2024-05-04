@@ -10,7 +10,8 @@ services:
     image: lscr.io/linuxserver/syncthing:latest
     container_name: syncthing
     restart: unless-stopped
-    hostname: nest
+    network_mode: host
+    hostname: ${MAIN_NODE}
     environment:
       PUID: ${PUID}
       PGID: ${PGID}
@@ -18,12 +19,11 @@ services:
     volumes:
       - ${DOCKER_VOLUMES}/syncthing:/config
       - ${STORAGE_SYNCTHING}:/storage
-    ports:
-      - 22000:22000/tcp
-      - 22000:22000/udp
-      - 21027:21027/udp
-    networks:
-      - proxy
+    # Not needed due to 'network_mode: host'
+    # ports:
+    #   - 22000:22000/tcp
+    #   - 22000:22000/udp
+    #   - 21027:21027/udp
     labels:
       traefik.enable: true
       traefik.http.routers.syncthing.entrypoints: websecure
@@ -34,7 +34,3 @@ services:
       homepage.icon: syncthing.png
       homepage.href: https://syncthing.${MYDOMAIN}/
       homepage.description: "[SSO] File Sync" # TODO solve double auth
-
-networks:
-  proxy:
-    external: true
