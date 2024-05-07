@@ -1,0 +1,64 @@
+# MinIO is a high-performance, S3 compatible object store
+#
+# The MinIO deployment starts using default root credentials ${ADMIN_USER}:${ADMIN_PASSWORD}. You can test the deployment using the MinIO Console, an embedded object browser built into MinIO Server.
+# Point a web browser to https://minio-console.${MYDOMAIN} and log in with the root credentials. You can use the Browser to create buckets, upload objects, and browse the contents of the MinIO server.
+# You can also connect using any S3-compatible tool, such as the MinIO Client mc commandline tool. See Test using MinIO Client mc for more information on using the mc commandline tool.
+# For application developers, see https://min.io/docs/minio/linux/developers/minio-drivers.html to view MinIO SDKs for supported languages.
+#
+# For example, consider a MinIO deployment behind a proxy https://minio.example.net, https://console.minio.example.net with rules for forwarding traffic on port :9000 and :9001 to MinIO and the MinIO Console respectively
+# on the internal network. Set MINIO_BROWSER_REDIRECT_URL to https://console.minio.example.net to ensure the browser receives a valid reachable URL.
+# Similarly, if your TLS certificates do not have the IP SAN for the MinIO server host, the MinIO Console may fail to validate the connection to the server. Use the MINIO_SERVER_URL environment variable and specify the proxy-accessible hostname of the MinIO server to allow the Console to use the MinIO server API using the TLS certificate.
+# For example: export MINIO_SERVER_URL="https://minio.example.net"
+#
+# Compose: https://github.com/minio/minio/blob/master/docs/orchestration/docker-compose/docker-compose.yaml
+---
+name: minio
+services:
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio
+    hostname: minio
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${ADMIN_USER}
+      MINIO_ROOT_PASSWORD: ${ADMIN_PASSWORD}
+      MINIO_BROWSER_REDIRECT_URL: https://minio-console.${MYDOMAIN}
+    expose:
+      - "9000" # S3 API
+      - "9001" # Console
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - ${DOCKER_VOLUMES}/minio:/data
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+
+      # S3 API
+      traefik.http.routers.minio.service: minio
+      traefik.http.routers.minio.entrypoints: websecure
+      traefik.http.routers.minio.rule: Host(`s3.${MYDOMAIN}`)
+      traefik.http.routers.minio.middlewares: https-local@file
+      traefik.http.services.minio.loadbalancer.server.port: 9000
+
+      # Console
+      traefik.http.routers.minio-console.service: minio-console
+      traefik.http.routers.minio-console.entrypoints: websecure
+      traefik.http.routers.minio-console.rule: Host(`minio-console.${MYDOMAIN}`)
+      traefik.http.routers.minio-console.middlewares: https-local@file
+      traefik.http.services.minio-console.loadbalancer.server.port: 9001
+
+      homepage.group: Storage
+      homepage.name: MinIO
+      homepage.icon: minio.png
+      homepage.href: https://minio-console.${MYDOMAIN}/
+      homepage.description: High-performance, S3 compatible object store
+
+networks:
+  proxy:
+    external: true
