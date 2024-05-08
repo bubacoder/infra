@@ -1,0 +1,35 @@
+# LLM Frontend for Power Users.
+#
+# https://github.com/SillyTavern/SillyTavern  
+# Image: https://github.com/SillyTavern/SillyTavern/pkgs/container/sillytavern  
+# Docker setup: https://docs.sillytavern.app/installation/docker/  
+# Docker Compose: https://github.com/SillyTavern/SillyTavern/blob/release/docker/docker-compose.yml  
+# 
+# Character cards: https://chub.ai/
+---
+name: sillytavern
+services:
+  sillytavern:
+    image: ghcr.io/sillytavern/sillytavern:1.11.6
+    container_name: sillytavern
+    restart: unless-stopped
+    volumes:
+      - ${DOCKER_VOLUMES}/sillytavern/config:/home/node/app/config
+      - ${DOCKER_VOLUMES}/sillytavern/data:/home/node/app/data
+      - ${DOCKER_VOLUMES}/sillytavern/plugins:/home/node/app/plugins
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.sillytavern.entrypoints: websecure
+      traefik.http.routers.sillytavern.middlewares: https-local@file
+      traefik.http.services.sillytavern.loadbalancer.server.port: 8000
+      homepage.group: AI
+      homepage.name: SillyTavern
+      homepage.icon: chatgpt.png
+      homepage.href: https://sillytavern.${MYDOMAIN}/
+      homepage.description: "LLM Frontend for Power Users"
+
+networks:
+  proxy:
+    external: true

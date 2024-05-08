@@ -1,0 +1,65 @@
+# Get up and running with Llama 2, Mistral, Gemma, and other large language models.  
+# https://github.com/ollama/ollama
+#
+# Open WebUI is an extensible, feature-rich, and user-friendly self-hosted WebUI for various LLM runners, supported LLM runners include Ollama and OpenAI-compatible APIs.  
+# https://openwebui.com/  
+# https://github.com/open-webui/open-webui/  
+# https://docs.openwebui.com/getting-started/  
+#
+# Compose file based on: https://github.com/open-webui/open-webui/blob/main/docker-compose.yaml
+---
+name: ollama
+services:
+  ollama:
+    # Enable for GPU support (see ollama documentation for CUDA driver setup)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities:
+    #             - gpu
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    # https://docs.docker.com/config/containers/resource_constraints/#configure-the-default-cfs-scheduler
+    # https://batey.info/cgroup-cpu-shares-for-docker.html
+    cpu_shares: 512
+    volumes:
+      - ${DOCKER_VOLUMES}/ollama:/root/.ollama
+    expose:
+      - 11434
+    networks:
+      - proxy
+
+  ollama-open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: ollama-open-webui
+    restart: unless-stopped
+    volumes:
+      - ${DOCKER_VOLUMES}/ollama-open-webui:/app/backend/data
+    networks:
+      - proxy
+    depends_on:
+      - ollama
+    environment:
+      OLLAMA_API_BASE_URL: http://ollama:11434/api
+      WEBUI_SECRET_KEY: ''
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    labels:
+      traefik.enable: true
+      traefik.http.routers.ollama-open-webui.entrypoints: websecure
+      traefik.http.routers.ollama-open-webui.middlewares: https-local@file
+      traefik.http.routers.ollama-open-webui.rule: Host(`ollama.${MYDOMAIN}`)
+      traefik.http.services.ollama-open-webui.loadbalancer.server.port: 8080
+      homepage.group: AI
+      homepage.name: "Ollama - Open WebUI"
+      homepage.icon: chatgpt.png # 404: ollama.png
+      homepage.href: https://ollama.${MYDOMAIN}/
+      homepage.description: "User-friendly WebUI for LLMs (Formerly Ollama WebUI)"
+
+networks:
+  proxy:
+    external: true

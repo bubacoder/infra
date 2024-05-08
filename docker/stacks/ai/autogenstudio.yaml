@@ -1,0 +1,33 @@
+# AutoGen Studio is an AutoGen-powered AI app (user interface) to help you rapidly prototype AI agents, enhance them with skills, compose them into workflows and interact with them to accomplish tasks.
+# It is built on top of the AutoGen framework, which is a toolkit for building AI agents.
+#
+# https://microsoft.github.io/autogen/blog/2023/12/01/AutoGenStudio/  
+# https://github.com/microsoft/autogen/tree/main/samples/apps/autogen-studio  
+# https://microsoft.github.io/autogen/  
+# https://www.reddit.com/r/AutoGenAI/  
+---
+name: autogenstudio
+services:
+  autogenstudio:
+    image: autogenstudio
+    build: ./autogenstudio
+    container_name: autogenstudio
+    restart: unless-stopped
+    volumes:
+      - ${DOCKER_VOLUMES}/autogenstudio:/root/.autogenstudio
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.autogenstudio.entrypoints: websecure
+      traefik.http.routers.autogenstudio.middlewares: https-local@file
+      traefik.http.services.autogenstudio.loadbalancer.server.port: 8081
+      homepage.group: AI
+      homepage.name: AutoGen Studio
+      homepage.icon: chatgpt.png
+      homepage.href: https://autogenstudio.${MYDOMAIN}/
+      homepage.description: "Rapidly prototype AI agents"
+
+networks:
+  proxy:
+    external: true
