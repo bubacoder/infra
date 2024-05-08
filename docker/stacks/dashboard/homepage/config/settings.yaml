@@ -13,8 +13,8 @@ showStats: false
 #   weatherapi: weatherapiapikey
 
 quicklaunch:
-    searchDescriptions: false
-    hideInternetSearch: false
+  searchDescriptions: false
+  hideInternetSearch: false
 
 layout:
   Infra:
@@ -26,10 +26,10 @@ layout:
   Connections:
     style: row
     columns: 4
-  Monitoring:
+  AI:
     style: row
     columns: 4
-  Security:
+  Automation:
     style: row
     columns: 4
   Fileshare:
@@ -42,5 +42,11 @@ layout:
     style: row
     columns: 4
   Arr:
+    style: row
+    columns: 4
+  Monitoring:
+    style: row
+    columns: 4
+  Security:
     style: row
     columns: 4

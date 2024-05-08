@@ -37,7 +37,7 @@ services:
       traefik.http.routers.n8n.entrypoints: websecure
       traefik.http.routers.n8n.middlewares: https-local@file
       traefik.http.services.n8n.loadbalancer.server.port: 5678
-      homepage.group: Tools
+      homepage.group: Automation
       homepage.name: n8n
       homepage.icon: n8n.png
       homepage.href: https://n8n.${MYDOMAIN}/

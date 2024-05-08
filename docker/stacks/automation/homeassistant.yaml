@@ -36,7 +36,7 @@ services:
       traefik.http.routers.homeassistant.middlewares: https-local@file
       traefik.http.routers.homeassistant.rule: Host(`ha.${MYDOMAIN}`)
       traefik.http.services.homeassistant.loadbalancer.server.port: 8123
-      homepage.group: Tools
+      homepage.group: Automation
       homepage.name: HomeAssistant
       homepage.icon: home-assistant.png
       homepage.href: https://ha.${MYDOMAIN}/
