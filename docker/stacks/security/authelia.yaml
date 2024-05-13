@@ -8,6 +8,19 @@
 ---
 name: authelia
 services:
+  initContainer:
+    image: dibi/envsubst:latest
+    environment:
+      MYDOMAIN: ${MYDOMAIN}
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_DISPLAYNAME: ${ADMIN_DISPLAYNAME}
+      AUTHELIA_ADMIN_PASSWORD: ${AUTHELIA_ADMIN_PASSWORD}
+    container_name: authelia-init
+    volumes:
+      - ./authelia:/workdir
+      - ${DOCKER_VOLUMES}/authelia/config:/processed
+
   authelia:
     container_name: authelia
     image: authelia/authelia:4.37
@@ -23,12 +36,15 @@ services:
     healthcheck:
       disable: true
     volumes:
-      - ./authelia:/config
-      - ${DOCKER_VOLUMES}/authelia:/data
+      - ${DOCKER_VOLUMES}/authelia/config:/config
+      - ${DOCKER_VOLUMES}/authelia/data:/data
     expose:
       - 9091
     networks:
       - proxy
+    depends_on:
+      initContainer:
+        condition: service_completed_successfully
     labels:
       traefik.enable: true
       traefik.http.routers.authelia.entrypoints: websecure

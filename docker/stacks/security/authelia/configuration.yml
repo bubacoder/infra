@@ -17,7 +17,7 @@ theme: dark
 
 # 'jwt_secret' is set via AUTHELIA_JWT_SECRET
 
-default_redirection_url: https://auth.example.com
+default_redirection_url: https://auth.${MYDOMAIN}
 
 totp:
   issuer: authelia.com
@@ -42,12 +42,12 @@ authentication_backend:
 access_control:
   default_policy: deny
   rules:
-    - domain: "auth.example.com"
+    - domain: "auth.${MYDOMAIN}"
       policy: bypass
     # Two-factor example:
-    # - domain: "very-secure.example.com"
+    # - domain: "very-secure.${MYDOMAIN}"
     #   policy: two_factor
-    - domain: "*.example.com"
+    - domain: "*.${MYDOMAIN}"
       # subject:
       #   - "group:admins"
       policy: one_factor
@@ -55,7 +55,7 @@ access_control:
 session:
   # 'secret' is set via AUTHELIA_SESSION_SECRET
   name: authelia_session
-  domain: example.com # Should match whatever your root protected domain is
+  domain: ${MYDOMAIN} # Should match whatever your root protected domain is
   same_site: lax
   expiration: 8h
   inactivity: 1h

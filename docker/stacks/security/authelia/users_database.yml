@@ -10,10 +10,10 @@
 
 # List of users
 users:
-  buba:
-    displayname: "Buba"
-    password: "$argon2id$..."
-    email: bubacoder@gmail.com
+  ${ADMIN_USER}:
+    displayname: "${ADMIN_DISPLAYNAME}"
+    password: "${AUTHELIA_ADMIN_PASSWORD}"
+    email: "${ADMIN_EMAIL}"
     groups:
       - admins
       - dev
