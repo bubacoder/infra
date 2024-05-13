@@ -9,7 +9,7 @@
 name: jellyfin
 services:
   jellyfin:
-    image: lscr.io/linuxserver/jellyfin:latest
+    image: lscr.io/linuxserver/jellyfin:10.9.1
     container_name: jellyfin
     restart: unless-stopped
     environment:
@@ -21,11 +21,12 @@ services:
       - ${DOCKER_VOLUMES}/jellyfin:/config
       - ${STORAGE_MEDIA}:/media:ro
       - ${STORAGE_FAMILYMEDIA}:/family-media:ro
+    # https://jellyfin.org/docs/general/networking/
     ports:
-      - 8096:8096 # Web UI
-      - 8920:8920 # optional
-      - 7359:7359/udp # optional
-      #- 1900:1900/udp # optional TODO enable
+      - 8096:8096 # Web UI - HTTP
+      - 8920:8920 # Web UI - HTTPS
+      - 7359:7359/udp # Auto-discovery
+      #- 1900:1900/udp # Service auto-discovery, DLNA - TODO enable
     networks:
       - proxy
     labels:
