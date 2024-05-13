@@ -15,7 +15,7 @@ services:
       TZ: ${TIMEZONE}
     volumes:
       - ${DOCKER_VOLUMES}/radarr:/config
-      - ${MEDIA}:/media
+      - ${STORAGE_MEDIA}:/media
       - ${STORAGE_TORRENT_DOWNLOADS}:/downloads
     networks:
       - proxy

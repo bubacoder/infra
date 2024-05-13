@@ -19,8 +19,8 @@ services:
       JELLYFIN_PublishedServerUrl: ${MAIN_NODE_IP}
     volumes:
       - ${DOCKER_VOLUMES}/jellyfin:/config
-      - ${MEDIA}:/media:ro
-      - ${FAMILYMEDIA}:/family-media:ro
+      - ${STORAGE_MEDIA}:/media:ro
+      - ${STORAGE_FAMILYMEDIA}:/family-media:ro
     ports:
       - 8096:8096 # Web UI
       - 8920:8920 # optional

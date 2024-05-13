@@ -63,9 +63,9 @@ services:
       - /etc/avahi/services/:/external/avahi
 
       - /mnt:/shares/mnt
-      - ${MEDIA}:/shares/media
-      - ${FAMILYMEDIA}:/shares/family-media
-      - ${BACKUP}:/shares/backup
+      - ${STORAGE_MEDIA}:/shares/media
+      - ${STORAGE_FAMILYMEDIA}:/shares/family-media
+      - ${STORAGE_BACKUP}:/shares/backup
       - ${STORAGE_DOWNLOADS}:/shares/downloads
 
     restart: unless-stopped

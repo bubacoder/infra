@@ -44,7 +44,7 @@ services:
       - ${ADMIN_HOME}/repos:/sources/nest/repos:ro
 
       # NAS (repository)
-      - ${BACKUP_ON_NAS}/kopia:/backup-on-nas
+      - ${STORAGE_BACKUP_ON_NAS}/kopia:/backup-on-nas
 
     networks:
       - proxy

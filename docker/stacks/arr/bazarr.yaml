@@ -16,7 +16,7 @@ services:
       TZ: ${TIMEZONE}
     volumes:
       - ${DOCKER_VOLUMES}/bazarr/config:/config
-      - ${MEDIA}:/media
+      - ${STORAGE_MEDIA}:/media
     networks:
       - proxy
     labels:

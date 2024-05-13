@@ -28,7 +28,7 @@ services:
       ND_MUSICFOLDER: /media/music
     volumes:
       - ${DOCKER_VOLUMES}/navidrome:/data
-      - ${MEDIA}/music:/media/music:ro
+      - ${STORAGE_MEDIA}/music:/media/music:ro
     networks:
       - proxy
     labels:

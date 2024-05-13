@@ -45,8 +45,8 @@ services:
       - ${STORAGE_NEST_MEDIA}:/sources/nest/media:ro
 
       # NAS (source)
-      - ${FAMILYMEDIA}:/sources/nas/family-media:ro
-      - ${MEDIA}:/sources/nas/media:ro
+      - ${STORAGE_FAMILYMEDIA}:/sources/nas/family-media:ro
+      - ${STORAGE_MEDIA}:/sources/nas/media:ro
 
     networks:
       - proxy
