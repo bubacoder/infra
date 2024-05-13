@@ -1,0 +1,39 @@
+# ddclient is a Perl client used to update dynamic DNS entries for accounts on Dynamic DNS Network Service Provider. It was originally written by Paul Burry and is now mostly by wimpunk.
+# It has the capability to update more than just dyndns and it can fetch your WAN-ipaddress in a few different ways.
+#
+# https://ddclient.net/  
+# https://docs.linuxserver.io/images/docker-ddclient/  
+---
+name: ddclient
+services:
+  # envsubst initcontainer - replaces environment variables in config files
+  #   https://hub.docker.com/r/dibi/envsubst
+  #   Test: docker run --rm -v $(pwd)/workdir:/workdir -v $(pwd)/processed:/processed -e "CLOUDFLARE_DNS_API_TOKEN=AAA" -e "MYDOMAIN=BBB" dibi/envsubst:latest
+  initContainer:
+    image: dibi/envsubst:latest
+    environment:
+      CLOUDFLARE_DNS_API_TOKEN: ${CLOUDFLARE_DNS_API_TOKEN}
+      MYDOMAIN: ${MYDOMAIN}
+    container_name: ddclient-init
+    volumes:
+      - ./ddclient:/workdir
+      - ${DOCKER_VOLUMES}/ddclient:/processed
+
+  ddclient:
+    image: lscr.io/linuxserver/ddclient:latest
+    container_name: ddclient
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TIMEZONE}
+    volumes:
+      - ${DOCKER_VOLUMES}/ddclient:/config
+    restart: unless-stopped
+    depends_on:
+      initContainer:
+        condition: service_completed_successfully
+    labels:
+      homepage.group: Tools
+      homepage.name: "ddclient - ${MYDOMAIN}"
+      homepage.icon: cloudflare.png
+      homepage.description: Dynamic DNS updater
