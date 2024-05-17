@@ -1,28 +1,28 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-DOCKER_VOLUMES=/srv/docker-volumes
+DOCKER_VOLUMES="/srv/docker-volumes"
+BACKUP_FILE="docker-volumes-$(date +'%Y-%m-%d').tar.bz2"
+BACKUP_PATH="$HOME/$BACKUP_FILE"
 
-stop-all-containers()
-{
-  docker ps -q | xargs docker stop
+stop_all_containers() {
+  # shellcheck disable=SC2046
+  docker stop $(docker ps -q)
 }
 
-start-selected-containers()
-{
+start_selected_containers() {
   ./apply-local.sh
 }
 
-kopia-backup-docker-volumes()
-{
+kopia_backup_docker_volumes() {
   docker exec -it kopia-nas /usr/bin/kopia --config-file=/app/config/repository.config snapshot create /sources/nest/docker-volumes
 }
 
-tar-backup-docker-volumes()
-{
-  tar c -v --bzip2 -f ~/docker-volumes-"$(date +'%Y-%m-%d')".tar.bz2 $DOCKER_VOLUMES
+compress_docker_volumes() {
+  tar -cvf "$BACKUP_PATH" --bzip2 "$DOCKER_VOLUMES"
 }
 
-stop-all-containers
-#kopia-backup-docker-volumes
-tar-backup-docker-volumes
-start-selected-containers
+stop_all_containers
+#kopia_backup_docker_volumes
+compress_docker_volumes
+start_selected_containers

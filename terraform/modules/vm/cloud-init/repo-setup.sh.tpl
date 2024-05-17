@@ -1,10 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 # HACK Do not let cloud-init start this script automatically with root user.
 if [ "$1" != "setup" ]; then
-    echo "First parameter must be 'setup'. Exiting."
-    exit 1
+  echo "First parameter must be 'setup'. Exiting."
+  exit 1
 fi
 
 echo "Setting up git credentials for $(whoami)..."

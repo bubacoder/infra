@@ -1,11 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
 
-JELLYFIN_URL="https://jellyfin.example.com"
-JELLYFIN_API_KEY="SomeSecureValueGoesHere"
+readonly JELLYFIN_URL="https://jellyfin.example.com"
+readonly JELLYFIN_API_KEY="SomeSecureValueGoesHere"
 
 # Function to trigger the media library rescan
 trigger_rescan() {
-  local library_id=$1
+  local library_id="$1"
   #local endpoint="${JELLYFIN_URL}/Library/Refresh/${library_id}/"
   local endpoint="${JELLYFIN_URL}/Library/Refresh"
   local response=$(curl -X POST -H "X-Emby-Token: ${JELLYFIN_API_KEY}" "${endpoint}")

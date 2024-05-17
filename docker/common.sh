@@ -1,58 +1,66 @@
 # shellcheck disable=SC2148
 
-create_network_if_missing()
-{
-  docker network inspect "$1" >/dev/null 2>&1 || \
-    docker network create --driver bridge "$1"
+create_network_if_missing() {
+  local network_name="$1"
+  if ! docker network inspect "$network_name" &>/dev/null; then
+    docker network create --driver bridge "$network_name"
+  fi
 }
 
-init()
-{
-  echo Init...
+init() {
+  echo "Init..."
   create_network_if_missing "proxy"
 }
 
-up()
-{
-  echo ">>> Starting $1/$2"
-  yaml="../../stacks/$1/$2.yaml"
-  if ${UPDATE:-false}; then
-    if grep -q "build:" "$yaml"; then
-      docker compose -f "$yaml" build --pull
+up() {
+  local stack_dir="$1"
+  local service_name="$2"
+  local yaml_file="../../stacks/$stack_dir/$service_name.yaml"
+
+  echo ">>> Starting $stack_dir/$service_name"
+
+  if [[ "${UPDATE:-false}" == "true" ]]; then
+    if grep -q "build:" "$yaml_file"; then
+      docker compose -f "$yaml_file" build --pull
     else
-      docker compose -f "$yaml" --env-file .env pull
+      docker compose -f "$yaml_file" --env-file .env pull
     fi
   fi
-  docker compose -f "$yaml" --env-file .env up --detach
+
+  docker compose -f "$yaml_file" --env-file .env up --detach
 }
 
-down()
-{
-  echo ">>> Stopping $1/$2"
-  yaml="../../stacks/$1/$2.yaml"
-  docker compose -f "$yaml" --env-file .env down
+down() {
+  local stack_dir="$1"
+  local service_name="$2"
+  local yaml_file="../../stacks/$stack_dir/$service_name.yaml"
+
+  echo ">>> Stopping $stack_dir/$service_name"
+  docker compose -f "$yaml_file" --env-file .env down
 }
 
-restart()
-{
-  down "$1" "$2"
-  up "$1" "$2"
+restart() {
+  local stack_dir="$1"
+  local service_name="$2"
+  down "$stack_dir" "$service_name"
+  up "$stack_dir" "$service_name"
 }
 
-cleanup()
-{
-  if ${UPDATE:-false}; then
-    echo Cleanup...
-    docker image prune -a -f
+cleanup() {
+  if [[ "${UPDATE:-false}" == "true" ]]; then
+    echo "Cleanup..."
+    # Remove unused and dangling images created before given timestamp
+    docker image prune --all --force --filter "until=21d"
   fi
 }
 
-assert-hostname() {
-  requiredHostname="$1"
-  currentHostname=$(hostname)
+assert_hostname() {
+  local required_hostname="$1"
+  local current_hostname
+  current_hostname=$(hostname)
 
-  if [ "$currentHostname" != "$requiredHostname" ]; then
-    echo "Error: Current hostname ($currentHostname) does not match the required hostname ($requiredHostname). Exiting..."
+  if [[ "$current_hostname" != "$required_hostname" ]]; then
+    echo "Error: Current hostname ($current_hostname) does not match the required hostname ($required_hostname). Exiting..."
     exit 1
   fi
 }

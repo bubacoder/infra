@@ -1,42 +1,42 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-echo Mounting storage...
+echo "Mounting storage..."
 
-function mount_storage {
-    max_attempts=60
-    counter=0
-    success=0
+function mount_storage() {
+  local device="$1"
+  local mount_path="$2"
+  local max_attempts=60
+  local counter=0
+  local success=0
 
-    while [ "$success" -eq 0 ] && [ "$counter" -lt $max_attempts ]
-    do
-        if [ -b "/dev/sdc1" ]
-        then
-            success=1
-        else
-            sleep 1
-            ((counter++))
-        fi
-    done
-
-    if [ "$success" -eq 0 ]
-    then
-        echo "Error: /dev/sdc1 not available after $max_attempts attempts."
-        exit
+  while [ "$success" -eq 0 ] && [ "$counter" -lt "$max_attempts" ]; do
+    if [ -b "$device" ]; then
+      success=1
     else
-        echo "/dev/sdc1 is now available."
-        mount /dev/sdc1 /storage
+      sleep 1
+      ((counter++))
     fi
+  done
+
+  if [ "$success" -eq 0 ]; then
+    echo "Error: $device is not available after $max_attempts attempts."
+    exit 1
+  else
+    echo "$device is now available."
+    create_dir "$mount_path"
+    mount "$device" "$mount_path"
+  fi
 }
 
-function create_dir {
-    if [ ! -d "$1" ]; then
-        mkdir --parents "$1"
-    fi
+function create_dir() {
+  local dir="$1"
+  if [ ! -d "$dir" ]; then
+    mkdir --parents "$dir"
+  fi
 }
 
-create_dir /storage/
-mount_storage
+mount_storage "/dev/sdc1" "/storage"
 
 create_dir /storage/torrent-downloads
 create_dir /storage/torrent-watch

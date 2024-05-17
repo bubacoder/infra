@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 if [ "$#" -ne 2 ]; then
@@ -8,24 +8,22 @@ if [ "$#" -ne 2 ]; then
   exit 1
 fi
 
-create-playbook() {
-  HOSTNAME=$1
-  ROLES=$(echo "$2" | tr "," "\n")
+create_playbook() {
+  local hostname="$1"
+  local roles=$(echo "$2" | tr "," "\n")
 
   echo "
-- name: Setup ${HOSTNAME}
+- name: Setup ${hostname}
   become: true
   hosts:
-    - ${HOSTNAME}
+    - ${hostname}
   roles:"
 
-  for ROLE in ${ROLES}
-  do
-    echo "    - role: ${ROLE}"
+  for role in ${roles}; do
+    echo "    - role: ${role}"
   done
 }
 
-PLAYBOOK=playbooks/adhoc.yaml
-
-create-playbook "$1" "$2" > ${PLAYBOOK}
-ansible-playbook ${PLAYBOOK}
+PLAYBOOK_FILE="playbooks/adhoc.yaml"
+create_playbook "$1" "$2" > "${PLAYBOOK_FILE}"
+ansible-playbook "${PLAYBOOK_FILE}"
