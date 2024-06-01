@@ -19,6 +19,7 @@ brew_cloud_tools:
   - awscli              # https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
   - azure-cli           # https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-macos
   - vaulted             # https://github.com/miquella/vaulted
+  - cfn-lint            # https://github.com/aws-cloudformation/cfn-lint
 
   # fatal: [localhost]: FAILED! => {"changed": false, "msg": "Your current Google Cloud CLI version is: 442.0.0\nThe latest available version is: 442.0.0\n\nTo install or remove components at your current SDK version [442.0.0], run:\n  $ gcloud components install COMPONENT_ID\n  $ gcloud components remove COMPONENT_ID\n\nTo update your SDK installation to the latest version [442.0.0], run:\n  $ gcloud components update\n\n==> Source [/opt/homebrew/share/google-cloud-sdk/completion.zsh.inc] in your profile to enable shell command completion for gcloud.\n==> Source [/opt/homebrew/share/google-cloud-sdk/path.zsh.inc] in your profile to add the Google Cloud SDK command line tools to your $PATH."}
   #- google-cloud-sdk    # https://cloud.google.com/sdk/docs/install
