@@ -5,6 +5,7 @@
 # - Configure "Bypass authentication for clients in whitelisted IP subnets" (Settings -> Webui) - Authelia handles the authentication
 # - The image is build locally (see: `Dockerfile`) and includes the VueTorrent (https://github.com/WDaan/VueTorrent) web interface. To enable it, point your alternate WebUI location to '/usr/vuetorrent' folder in qBittorrent settings.
 # - Configure categories (Settings menu) to specify default download locations
+# - Setup forwarding of port 6881 (TCP, UDP) in the router, check open port: https://www.yougetsignal.com/tools/open-ports/
 #
 # 🏠 Home: https://www.qbittorrent.org/  
 # 📦 Image: https://hub.docker.com/r/linuxserver/qbittorrent  
@@ -16,6 +17,8 @@ services:
     build: ./qbittorrent
     container_name: qbittorrent
     restart: unless-stopped
+    # network_mode: host
+    # hostname: ${MAIN_NODE}
     environment:
       PUID: ${PUID}
       PGID: ${PGID}
@@ -25,7 +28,18 @@ services:
       - ${DOCKER_VOLUMES}/qbittorrent:/config
       - ${STORAGE_DOWNLOADS}/torrent-downloads:/downloads
       - ${STORAGE_MEDIA}:/media
+    # Not needed if 'network_mode: host' is set
     ports:
-      - 8080:8080
-      - 6881:6881/tcp
-      - 6881:6881/udp
+      - 8080:8080 # Web UI
+      - 6881:6881/tcp # Bittorrent incoming connections
+      - 6881:6881/udp # Bittorrent incoming connections
+    labels:
+      traefik.enable: true
+      traefik.http.routers.qbittorrent.entrypoints: websecure
+      traefik.http.routers.qbittorrent.middlewares: https-local-auth@file
+      traefik.http.services.qbittorrent.loadbalancer.server.port: 8080
+      homepage.group: Arr
+      homepage.name: qBittorrent
+      homepage.icon: qbittorrent.png
+      homepage.href: https://qbittorrent.${MYDOMAIN}/
+      homepage.description: "[SSO] BitTorrent client" # TODO solve double auth
