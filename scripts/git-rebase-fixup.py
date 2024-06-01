@@ -10,7 +10,7 @@ import sys
 import subprocess
 
 
-def reorder_commits(file_path):
+def reorder_commits(file_path: str) -> None:
     git_sequence_editor = 'nano'
 
     with open(file_path, 'r') as file:
@@ -29,25 +29,27 @@ def reorder_commits(file_path):
                 reordered_lines.append(line)
 
     for fixup_line in fixup_lines:
+        original_commit_message = get_original_commit_message(fixup_line)
         original_commit_found = False
-        fixup_message = ' '.join(fixup_line.split()[2:]).replace('[FIXUP]', '').replace('[F]', '').strip()
         for i, reordered_line in enumerate(reordered_lines):
-            if fixup_message in reordered_line:
+            if original_commit_message in reordered_line:
                 fixup_line = fixup_line.replace('pick', 'fixup', 1)
-                reordered_lines.insert(i+1, fixup_line)
+                reordered_lines.insert(i + 1, fixup_line)
                 original_commit_found = True
                 break
         if not original_commit_found:
             reordered_lines.insert(0, fixup_line)
-
-    # for line in reordered_lines:
-    #     print(line, end='')
 
     with open(file_path, 'w') as file:
         file.writelines(reordered_lines)
 
     res = subprocess.call([git_sequence_editor, file_path])
     sys.exit(res)
+
+
+def get_original_commit_message(fixup_line: str) -> str:
+    message = ' '.join(fixup_line.split()[2:])
+    return message.replace('[FIXUP]', '').replace('[F]', '').strip()
 
 
 if __name__ == "__main__":
