@@ -18,6 +18,12 @@ Post-install configuration:
 
 VM config location: `/etc/pve/qemu-server/<ID>.conf`
 
+## Create a VM via CLI
+
+https://pve.proxmox.com/pve-docs/qm.1.html
+
+qm create $VMID ...
+
 ### Kernel Samepage Merging (KSM)
 
 KSM is a memory-saving de-duplication feature.
