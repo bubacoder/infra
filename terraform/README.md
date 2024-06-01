@@ -1,27 +1,24 @@
 # Terraform
 
-## Azure
+TODO: Migrate to [OpenTofu](https://opentofu.org/)
 
-Loging to Azure account (without browser access on device):
-`az login --use-device-code`
+## Basic Terraform commands - Cheat sheet
 
-## Makefile
+| Command                    | Description                                                                                                     |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `terraform init`           | Initialize the Terraform directory and download the required provider plugins                                   |
+| `terraform fmt -recursive` | Ensure all Terraform code in the current directory and subdirectories is formatted properly                     |
+| `terraform validate`       | Validate the syntax of the Terraform configuration files and check for errors                                   |
+| `terraform plan`           | Show the execution plan, including the number and type of resources that will be created, updated, or destroyed |
+| `terraform apply`          | Apply the changes required to reach the desired state of the infrastructure                                     |
+| `terraform destroy`        | Destroy the Terraform-managed infrastructure                                                                    |
+| `terraform show`           | Display the current state of the Terraform-managed infrastructure                                               |
+| `terraform state list`     | List all resources in the Terraform state                                                                       |
 
-See possible `make` commands in `Makefile`.
+## Usage of the Azure VM module
 
-## Basic Terraform commands
-
-Initialize the Terraform directory you changed into to download the required provider
-`terraform init`
-
-Ensure Terraform code is formatted properly:
-`terraform fmt -recursive`
-
-Ensure code has proper syntax and no errors:
-`terraform validate`
-
-See the execution plan and note the number of resources that will be created:
-`terraform plan`
+1. Loging to Azure account (without browser access on device): `az login --use-device-code`
+2. See possible `make` commands in `Makefile`.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
