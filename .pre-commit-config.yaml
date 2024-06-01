@@ -5,7 +5,7 @@
 repos:
   # Some out-of-the-box hooks for pre-commit
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
         args: ["--markdown-linebreak-ext=md,yaml"]
@@ -28,7 +28,7 @@ repos:
   # KICS stands for Keeping Infrastructure as Code Secure, it is open source and is a must-have for any cloud native project.
   # https://docs.kics.io/latest/commands/
   - repo: https://github.com/Checkmarx/kics
-    rev: v1.7.13
+    rev: v2.0.1
     hooks:
       - id: kics-scan
         # TODO solve the high severity issues first
@@ -39,13 +39,13 @@ repos:
   # Gitleaks is a SAST tool for detecting and preventing hardcoded secrets like passwords, api keys, and tokens in git repos.
   # Gitleaks is an easy-to-use, all-in-one solution for detecting secrets, past or present, in your code.
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.18.2
+    rev: v8.18.3
     hooks:
       - id: gitleaks
 
   # pre-commit git hooks to take care of Terraform configurations
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.88.4
+    rev: v1.90.0
     hooks:
       - id: terraform_fmt
         files: ^terraform/
@@ -59,7 +59,7 @@ repos:
         # Automatically fix issues
         args: ["--args=--fix"]
 
-  # ansible-lint checks playbooks for practices and behavior that could potentially be improved and can fix some of the most common ones for you 
+  # ansible-lint checks playbooks for practices and behavior that could potentially be improved and can fix some of the most common ones for you.
   - repo: https://github.com/ansible-community/ansible-lint
     rev: v24.2.1
     hooks:
@@ -72,8 +72,14 @@ repos:
     hooks:
       - id: shellcheck
 
-  # flake8 is a python tool that glues together pycodestyle, pyflakes, mccabe, and third-party plugins to check the style and quality of some python code. 
-  -   repo: https://github.com/PyCQA/flake8
-      rev: 7.0.0
-      hooks:
-      -   id: flake8
+  # flake8 is a python tool that glues together pycodestyle, pyflakes, mccabe, and third-party plugins to check the style and quality of some python code.
+  # Third-party scripts are excluded.
+  - repo: https://github.com/PyCQA/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        exclude: |
+            (?x)^(
+                scripts/git-filter-repo.py|
+                scripts/test-colors.py
+            )$

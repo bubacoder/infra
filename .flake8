@@ -1,0 +1,5 @@
+# Options: https://flake8.pycqa.org/en/latest/user/options.html
+
+[flake8]
+extend-ignore = E501
+exclude = .git
