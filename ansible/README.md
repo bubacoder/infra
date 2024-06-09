@@ -35,3 +35,9 @@ The following parameters can be applied to `ansible-playbook` and the "apply..."
 - `-v`, `--verbose` - Causes Ansible to print more debug messages. Adding multiple -v will increase the verbosity, the builtin plugins currently evaluate up to -vvvvvv. A reasonable level to start is -vvv, connection debugging might require -vvvv. Example: `./apply-homelab.sh -v`
 
 See `man ansible-playbook` for more.
+
+## GUI
+
+https://github.com/ansible/awx
+
+> ansible/awx: AWX provides a web-based user interface, REST API, and task engine built on top of Ansible. It is one of the upstream projects for Red Hat Ansible Automation Platform.

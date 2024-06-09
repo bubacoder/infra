@@ -24,6 +24,7 @@ create_playbook() {
   done
 }
 
-PLAYBOOK_FILE="playbooks/adhoc.yaml"
+cd $(dirname "$0")
+readonly PLAYBOOK_FILE="playbooks/adhoc.yaml"
 create_playbook "$1" "$2" > "${PLAYBOOK_FILE}"
 ansible-playbook "${PLAYBOOK_FILE}"

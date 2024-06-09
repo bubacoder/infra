@@ -1,3 +1,4 @@
 #!/bin/sh
 
-ansible-playbook playbooks/mac-workstation.yaml -v --ask-become-pass "$@"
+cd $(dirname "$0")
+ansible-playbook "playbooks/mac-workstation.yaml" -v --ask-become-pass "$@"

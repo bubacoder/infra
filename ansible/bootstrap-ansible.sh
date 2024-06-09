@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ANSIBLE_DIR=$(dirname "$0")
+readonly ANSIBLE_DIR=$(dirname "$0")
 
 install_ansible_on_ubuntu() {
   # Installing Ansible on Ubuntu

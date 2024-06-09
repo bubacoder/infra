@@ -1,3 +1,4 @@
 #!/bin/sh
 
-ansible-playbook playbooks/cloud.yaml "$@"
+cd $(dirname "$0")
+ansible-playbook "playbooks/cloud.yaml" "$@"

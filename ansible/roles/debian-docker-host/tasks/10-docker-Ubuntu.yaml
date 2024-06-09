@@ -32,3 +32,6 @@
 - name: Install Docker Module for Python
   ansible.builtin.pip:
     name: docker
+  environment:
+    # For compatibility with PEP668 - https://forum.ansible.com/t/breaking-changes-with-pip-and-system-packages/2177
+    PIP_BREAK_SYSTEM_PACKAGES: "1"
