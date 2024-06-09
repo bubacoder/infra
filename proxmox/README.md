@@ -20,9 +20,9 @@ VM config location: `/etc/pve/qemu-server/<ID>.conf`
 
 ## Create a VM via CLI
 
-https://pve.proxmox.com/pve-docs/qm.1.html
+[Proxmox VE `qm` command manual](https://pve.proxmox.com/pve-docs/qm.1.html)
 
-qm create $VMID ...
+See example: `create-ubuntu-server-vm.sh`
 
 ### Kernel Samepage Merging (KSM)
 
