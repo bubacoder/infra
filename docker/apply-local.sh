@@ -6,4 +6,5 @@
 # Stop all containers:
 # docker stop $(docker ps -a -q)
 
+cd $(dirname "$0")
 cd "hosts/$(hostname | tr '[:upper:]' '[:lower:]')" && ./apply.sh

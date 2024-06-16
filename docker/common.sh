@@ -21,7 +21,7 @@ up() {
 
   if [[ "${UPDATE:-false}" == "true" ]]; then
     if grep -q "build:" "$yaml_file"; then
-      docker compose -f "$yaml_file" build --pull
+      docker compose -f "$yaml_file" --env-file .env build --pull
     else
       docker compose -f "$yaml_file" --env-file .env pull
     fi

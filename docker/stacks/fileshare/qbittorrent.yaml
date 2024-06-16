@@ -13,7 +13,6 @@
 name: qbittorrent
 services:
   qbittorrent:
-    image: qbittorrent-vue
     build: ./qbittorrent
     container_name: qbittorrent
     restart: unless-stopped

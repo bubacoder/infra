@@ -9,7 +9,6 @@
 name: autogenstudio
 services:
   autogenstudio:
-    image: autogenstudio
     build: ./autogenstudio
     container_name: autogenstudio
     restart: unless-stopped
