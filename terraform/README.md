@@ -4,16 +4,17 @@ TODO: Migrate to [OpenTofu](https://opentofu.org/)
 
 ## Basic Terraform commands - Cheat sheet
 
-| Command                    | Description                                                                                                     |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `terraform init`           | Initialize the Terraform directory and download the required provider plugins                                   |
-| `terraform fmt -recursive` | Ensure all Terraform code in the current directory and subdirectories is formatted properly                     |
-| `terraform validate`       | Validate the syntax of the Terraform configuration files and check for errors                                   |
-| `terraform plan`           | Show the execution plan, including the number and type of resources that will be created, updated, or destroyed |
-| `terraform apply`          | Apply the changes required to reach the desired state of the infrastructure                                     |
-| `terraform destroy`        | Destroy the Terraform-managed infrastructure                                                                    |
-| `terraform show`           | Display the current state of the Terraform-managed infrastructure                                               |
-| `terraform state list`     | List all resources in the Terraform state                                                                       |
+| Command                         | Description                                                                                 |
+| ------------------------------- | ------------------------------------------------------------------------------------------- |
+| `terraform init`                | Initialize the Terraform directory and download the required provider plugins               |
+| `terraform fmt -recursive`      | Ensure all Terraform code in the current directory and subdirectories is formatted properly |
+| `terraform validate`            | Validate the syntax of the Terraform configuration files and check for errors               |
+| `terraform plan`                | Show the execution plan, the resources that will be created, updated, or destroyed          |
+| `terraform apply`               | Apply the changes required to reach the desired state of the infrastructure                 |
+| `terraform destroy`             | Destroy the Terraform-managed infrastructure                                                |
+| `terraform show`                | Display the current state of the Terraform-managed infrastructure                           |
+| `terraform state list`          | List all resources in the Terraform state                                                   |
+| `terraform apply -replace "id"` | Force replacement of a resource                                                             |
 
 ## Usage of the Azure VM module
 

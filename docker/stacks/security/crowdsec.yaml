@@ -13,6 +13,9 @@
 # - `cscli decisions list`
 # - `cscli alerts list`
 # - `cscli metrics`
+#
+# TODO Install firewall Bouncer:
+#   https://www.smarthomebeginner.com/crowdsec-docker-compose-1-fw-bouncer/
 ---
 name: crowdsec
 services:
@@ -32,7 +35,7 @@ services:
       # Log files:
       - /var/log/auth.log:/var/log/auth.log:ro
       - ${DOCKER_VOLUMES}/traefik/logs/traefik-access.log:/var/log/traefik-access.log:ro
-      - ${DOCKER_VOLUMES}/authelia/authelia.log:/var/log/authelia.log:ro
+      - ${DOCKER_VOLUMES}/authelia/data/authelia.log:/var/log/authelia.log:ro
       - ${DOCKER_VOLUMES}/vaultwarden/vaultwarden.log:/var/log/vaultwarden.log:ro
       - ${DOCKER_VOLUMES}/jellyfin/log:/var/log/jellyfin:ro
       - ${DOCKER_VOLUMES}/endlessh/logs/endlessh:/var/log/endlessh:ro

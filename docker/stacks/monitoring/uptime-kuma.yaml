@@ -1,5 +1,8 @@
 # Uptime Kuma is an easy-to-use self-hosted monitoring tool.
 #
+# TODOO Possible improvement:  
+# AutoKuma is a utility that automates the creation of Uptime Kuma monitors based on Docker container labels - https://github.com/BigBoot/AutoKuma
+#
 # 🏠 Home: https://uptime.kuma.pet/  
 # 📜 Source: https://github.com/louislam/uptime-kuma  
 ---

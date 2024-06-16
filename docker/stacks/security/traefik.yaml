@@ -4,6 +4,8 @@
 # 📜 Source: https://github.com/traefik/traefik  
 # Comparison with nginx: https://blog.lrvt.de/nginx-proxy-manager-versus-traefik/  
 # Customizing error pages in Traefik: https://www.imandrea.me/blog/traefik-custom-404/  
+#
+# TODO Log rotation - https://doc.traefik.io/traefik/observability/access-logs/
 ---
 name: traefik
 services:
@@ -47,6 +49,26 @@ services:
       homepage.description: The Cloud Native Application Proxy
       homepage.widget.type: traefik
       homepage.widget.url: https://traefik.${MYDOMAIN}/
+
+    # https://community.traefik.io/t/how-does-log-rotation-work-especially-when-running-traefik-in-container/21349
+    #
+    # initContainers: # Add the initContainers section
+    #   - name: logrotate
+    #     image: traefik:v2.10 # Use the same image as the traefik service
+    #     command: ["/bin/sh", "-c"]
+    #     args:
+    #       - |
+    #         apk add --no-cache logrotate
+    #         echo '/logs/*.log {
+    #             weekly
+    #             rotate 4
+    #             compress
+    #             missingok
+    #             notifempty
+    #         }' > /etc/logrotate.d/traefik
+    #     volumeMounts:
+    #       - mountPath: /logs
+    #         name: logs-volume
 
 networks:
   proxy:

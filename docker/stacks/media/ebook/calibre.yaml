@@ -7,6 +7,9 @@
 # - For Readarr integration: Enable Content Server at Preferences -> Sharing over the net, enable "Require username and password to access the Content server"
 # - Optional: Install plugins at Preferences -> Get plugins
 #
+# Book database (STORAGE_CALIBRE_LIBRARY) is not recommended to mounted via SMB due to locking issue ("DB appears locked").
+# A possible fix: https://www.mobileread.com/forums/showpost.php?s=2a2bb1273085bedaedd817ada675c7df&p=3460465&postcount=9
+#
 # 📜 Source: https://calibre-ebook.com/  
 # 📦 Image: https://docs.linuxserver.io/images/docker-calibre/  
 ---

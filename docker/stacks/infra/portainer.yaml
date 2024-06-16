@@ -16,7 +16,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${DOCKER_VOLUMES}/portainer:/data
     ports:
-      # Keep this as fallback
+      # Keep this as fallback if Traefik is not available
       - 9000:9000
     networks:
       - proxy

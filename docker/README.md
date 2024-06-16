@@ -12,6 +12,9 @@ Configuration files:
 - Host-specific settings: `docker/hosts/<hostname>/.env` (These files are not included in the repo - backup them separately!)
 - Configure which services to start (`up` function) or stop (`down` function): `docker/hosts/<hostname>/apply.sh`
 
+Create example `.env` file from a host configuration:
+`scripts/create-env-example.py docker/hosts/nest/.env > docker/hosts/example/.env`
+
 ## Services
 
 The applications/services are defined in the `docker/stacks` folder, ordered by category.  
