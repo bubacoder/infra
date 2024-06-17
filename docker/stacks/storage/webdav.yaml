@@ -1,0 +1,45 @@
+# Nginx webserver with WebDAV enabled.
+# Aims to enable a no-nonsense WebDAV docker system on the latest available nginx mainline.
+#
+# Source: https://github.com/dgraziotin/docker-nginx-webdav-nononsense  
+# Based on [Making Native WebDAV Actually Work on nginx with Finder and Explorer](https://www.rebeccapeck.org/2020/06/making-webdav-actually-work-on-nginx/)
+#
+# Note: this container is a bit heavy (Ubuntu-based). The ideal solution would be to use the official
+# Alpine-based [nginx image](https://hub.docker.com/_/nginx) and add the `nginx-mod-http-dav-ext` module.
+# But the module in the Alpine repo is not compatible with the recent nginx versions and wibes this error:
+# `nginx: [emerg] module "/usr/lib/nginx/modules/ngx_http_dav_ext_module.so" version 1024000 instead of 1026001 in /etc/nginx/nginx.conf:5`
+---
+name: webdav
+services:
+  webdav:
+    image: dgraziotin/nginx-webdav-nononsense
+    container_name: webdav
+    restart: unless-stopped
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TIMEZONE}
+      WEBDAV_USERNAME: ${ADMIN_USER}
+      WEBDAV_PASSWORD: ${ADMIN_PASSWORD}
+      SERVER_NAMES: webdav.${MYDOMAIN}
+      TIMEOUTS_S: 1200 # these are seconds
+      CLIENT_MAX_BODY_SIZE: 100M # must end with M(egabytes) or G(igabytes)
+    volumes:
+      - ${STORAGE_WEBDAV}:/data
+      - ${DOCKER_VOLUMES}/webdav/log:/var/log/nginx # error.log, access.log
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.webdav.entrypoints: websecure
+      traefik.http.routers.webdav.middlewares: https-local@file
+      traefik.http.services.webdav.loadbalancer.server.port: 80
+      homepage.group: Storage
+      homepage.name: WebDAV
+      homepage.icon: nginx.png
+      homepage.href: https://webdav.${MYDOMAIN}/
+      homepage.description: Nginx WebDAV Server
+
+networks:
+  proxy:
+    external: true
