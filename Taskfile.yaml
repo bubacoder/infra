@@ -1,0 +1,56 @@
+# https://taskfile.dev/ - Task is a task runner / build tool that aims to be simpler and easier to use than, for example, GNU Make.
+# [Say Goodbye to Makefile - Use Taskfile to Manage Tasks in CI/CD Pipelines and Locally](https://www.youtube.com/watch?v=Z7EnwBaJzCk)
+# Installed via the `debian-developer` Ansible role.
+
+version: '3'
+
+env:
+  MAIN_HOST: nest
+
+tasks:
+  default:
+    cmds:
+      - task --list-all
+
+  lint:
+    cmds:
+      - pre-commit run --all-files
+
+  create-example-env:
+    cmds:
+      - scripts/create-example-env.py docker/hosts/${MAIN_HOST}/.env > docker/hosts/example/.env
+    sources:
+      - docker/hosts/${MAIN_HOST}/.env
+    generates:
+      - docker/hosts/example/.env
+
+  docker-apply-local:
+    cmds:
+      - docker/apply-local.sh
+
+  docker-update-local:
+    cmds:
+      - UPDATE=true docker/apply-local.sh
+
+  crowdsec-collections:
+    cmds:
+      - docker exec crowdsec cscli collections list
+  crowdsec-bouncers:
+    cmds:
+      - docker exec crowdsec cscli bouncers list
+  crowdsec-decisions:
+    cmds:
+      - docker exec crowdsec cscli decisions list
+  crowdsec-alerts:
+    cmds:
+      - docker exec crowdsec cscli alerts list
+  crowdsec-metrics:
+    cmds:
+      - docker exec crowdsec cscli metrics
+
+  star-github-repos:
+    preconditions:
+      - sh: "[ ! -z \"${GITHUB_API_TOKEN}\" ]"
+        msg: GITHUB_API_TOKEN environment variable must be set (exported)
+    cmds:
+      - scripts/github-extract-links.py . | scripts/github-star-repo.py`

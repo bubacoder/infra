@@ -27,15 +27,19 @@ dev_apt_packages:
   - tshark
 
 dev_brew_packages:
-  - asdf
+  - asdf                # https://asdf-vm.com/
   - helix               # https://helix-editor.com
+  - go-task             # https://taskfile.dev/
+
   # AWS
-  - awscli
-  - eksctl
+  - awscli              # https://github.com/aws/aws-cli
+  - eksctl              # https://eksctl.io/
+
   # Azure
-  - azure-cli
+  - azure-cli           # https://learn.microsoft.com/en-us/cli/azure/
+
   # Terraform tools
-  - terraform@1.5
+  - terraform@1.5       # https://www.terraform.io/
   - terraform-docs      # https://github.com/terraform-docs/terraform-docs
   - terragrunt          # https://terragrunt.gruntwork.io/docs/getting-started/install/
   - tfsec               # https://github.com/aquasecurity/tfsec

@@ -1,19 +1,20 @@
 ---
 
 brew_base_tools:
-  - helix                # https://helix-editor.com/
-  - midnight-commander   # https://midnight-commander.org/
-  - starship             # https://starship.rs/ --- OR oh-my-zsh
-  - shellcheck           # https://www.shellcheck.net/
-  - asdf                 # https://asdf-vm.com/guide/getting-started.html
-  - jq                   # https://jqlang.github.io/jq/
-  - yq                   # https://github.com/mikefarah/yq
-  - wget                 # https://www.gnu.org/software/wget/
-  - gpg                  # https://gnupg.org/
-  - htop                 # https://htop.dev/
-  - python               # https://docs.python-guide.org/starting/install3/osx/
-  - tree                 # https://linux.die.net/man/1/tree
-  - pre-commit           # https://pre-commit.com/
+  - helix               # https://helix-editor.com/
+  - midnight-commander  # https://midnight-commander.org/
+  - starship            # https://starship.rs/ --- OR oh-my-zsh
+  - shellcheck          # https://www.shellcheck.net/
+  - asdf                # https://asdf-vm.com/guide/getting-started.html
+  - jq                  # https://jqlang.github.io/jq/
+  - yq                  # https://github.com/mikefarah/yq
+  - wget                # https://www.gnu.org/software/wget/
+  - gpg                 # https://gnupg.org/
+  - htop                # https://htop.dev/
+  - python              # https://docs.python-guide.org/starting/install3/osx/
+  - tree                # https://linux.die.net/man/1/tree
+  - pre-commit          # https://pre-commit.com/
+  - go-task             # https://taskfile.dev/
 
 brew_cloud_tools:
   - awscli              # https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
