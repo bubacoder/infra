@@ -11,9 +11,12 @@ readonly INSTALL_ISO="ubuntu-${UBUNTU_VERSION}-live-server-amd64.iso"
 # false: The install media is downloaded and attached. Manual installation is needed.
 # true:  The install media is downloaded and attached. Edit the autoinstall config file below. Only need to approve the start of the installer on the VM console.
 readonly AUTOINSTALL=true
+
 # User settings for autoinstall
 readonly USERNAME="buba"
+
 # "initial_pswd" - created with `docker run -it --rm alpine mkpasswd --method=SHA-512`
+# shellcheck disable=SC2016
 readonly PASSWORD_HASH='$5$ZZvSaWFZz6GSdet7$spw97QIa9A1KmbWLHS0mqJuyUsRAfKJu4lWglYSaFK7'
 
 # VM params

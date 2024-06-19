@@ -1,12 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -e
 
+cd "$(dirname "$0")" || exit
 # shellcheck disable=SC1091
 . ../../common.sh
 
-assert-hostname "nest"
+assert_hostname "nest"
 init
 
-# docker network create proxy
+set +e
 
 up security crowdsec
 up security traefik

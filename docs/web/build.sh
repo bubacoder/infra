@@ -13,7 +13,7 @@ TAG=docs.${MYDOMAIN}:latest
 
 ./update-docs.py
 
-docker build -t ${TAG} --build-arg HUGO_BASEURL=${HUGO_BASEURL} .
+docker build -t "${TAG}" --build-arg HUGO_BASEURL=${HUGO_BASEURL} .
 
 # Configured in docker/stacks/tools/homelab-docs.yaml
 # docker run -p ${HUGO_PORT}:80 ${TAG}

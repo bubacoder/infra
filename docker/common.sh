@@ -74,8 +74,8 @@ restart() {
 cleanup() {
   if [[ "${UPDATE:-false}" == "true" ]]; then
     echo "Cleanup..."
-    # Remove unused and dangling images created before given timestamp
-    docker image prune --all --force --filter "until=21d"
+    # Remove unused and dangling images created before given timestamp (21 days)
+    docker image prune --all --force --filter "until=504h"
   fi
 }
 
