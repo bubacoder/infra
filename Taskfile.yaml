@@ -4,25 +4,34 @@
 
 version: '3'
 
-env:
-  MAIN_HOST: nest
-
 tasks:
   default:
     cmds:
       - task --list-all
+
+  ### Development-related tasks
 
   lint:
     cmds:
       - pre-commit run --all-files
 
   create-example-env:
+    dotenv: ['docker/hosts/.env']
     cmds:
-      - scripts/create-example-env.py docker/hosts/${MAIN_HOST}/.env > docker/hosts/example/.env
+      - scripts/create-example-env.py docker/hosts/.env > docker/hosts/.env.example
+      - scripts/create-example-env.py docker/hosts/${MAIN_NODE}/.env > docker/hosts/example/.env
     sources:
-      - docker/hosts/${MAIN_HOST}/.env
+      - docker/hosts/.env
+      - docker/hosts/${MAIN_NODE}/.env
     generates:
+      - docker/hosts/.env.example
       - docker/hosts/example/.env
+
+  docs-build:
+    cmds:
+      - docs/web/build.sh
+
+  ### Operations-related tasks
 
   docker-apply-local:
     cmds:
@@ -49,8 +58,10 @@ tasks:
       - docker exec crowdsec cscli metrics
 
   star-github-repos:
+    dotenv: ['docker/hosts/.env']
     preconditions:
       - sh: "[ ! -z \"${GITHUB_API_TOKEN}\" ]"
         msg: GITHUB_API_TOKEN environment variable must be set (exported)
     cmds:
       - scripts/github-extract-links.py . | scripts/github-star-repo.py`
+

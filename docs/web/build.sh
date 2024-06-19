@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+cd "$(dirname "$0")" || exit
+
+# Get the MYDOMAIN variable
+# shellcheck disable=SC1091
+. ../../docker/hosts/.env
+
 HUGO_PORT=1314
 HUGO_BASEURL=http://localhost:${HUGO_PORT}
-TAG=docs.example.com:latest
+TAG=docs.${MYDOMAIN}:latest
 
 ./update-docs.py
 
