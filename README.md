@@ -1,106 +1,71 @@
-+++
-archetype = "home"
-title = ""
-+++
+# Home Infra<!-- omit in toc -->
 
-# Homelab<!-- omit in toc -->
+This repository contains the Infrastructure as Code (IaC) configuration and documentation for my home infrastructure. The main goals of this ever-evolving setup are:
+- Create a local, self-hosted environment for various services and applications, minimizing reliance on external cloud providers.
+- Learning and organizing knowledge, best practices, and tool documentation into a single repository.
 
-- [Goals](#goals)
-  - [**Learning**, knowledge organization](#learning-knowledge-organization)
-  - [**Independence** from external resources](#independence-from-external-resources)
-  - [Principles](#principles)
-- [Key software components \& services](#key-software-components--services)
-  - [Local infrastructure components](#local-infrastructure-components)
-  - [Cloud services (external dependencies)](#cloud-services-external-dependencies)
-- [Directory structure](#directory-structure)
+## Table of Contents<!-- omit in toc -->
+
+- [Principles](#principles)
+- [Key Software Components \& Services](#key-software-components--services)
+  - [Local Infrastructure Components](#local-infrastructure-components)
+  - [Cloud Services (External Dependencies)](#cloud-services-external-dependencies)
+- [Getting Started](#getting-started)
 - [Development](#development)
 - [EOL](#eol)
 
-## Goals
+## Principles
 
-### **Learning**, knowledge organization
+- **Automate Everything**: Embrace the "cattle, not pets" approach by automating as much as possible to ensure consistency and reproducibility.
+- **Prioritize Local Functionality**: While cloud services may be utilized, the focus is on minimizing external dependencies and enabling local, cloud-independent functionality.
+- **Minimal and Energy-efficient Hardware**: Favor energy-efficient hardware solutions to reduce environmental impact and operational costs.
+- **Avoid Overcomplication**: Maintain a lightweight and straightforward setup by avoiding unnecessary complexities.
+- **Extensibility and Easy Configuration**: Ensure that the infrastructure is easily extensible and configurable to accommodate future changes and requirements.
+- **Security-minded**: Prioritize security best practices and implement appropriate measures to protect the infrastructure and data.
 
-### **Independence** from external resources
+## Key Software Components & Services
 
-### Principles
+The key components of this infrastructure include:
 
-- Automate everything -- "Keep cattle, not pets"
-- Priorize local, cloud independent functionality --- Minimal cloud dependency
-- Minimal, energy efficient hardware
-- Avoid overcomplication -- No k8s
-- Extensibility, easy configuration
-- Think about security
+### Local Infrastructure Components
 
-## Key software components & services
+- **Proxmox Virtual Environment**: A Type 1 hypervisor for managing virtual machines and containers.
+- **Ubuntu Server**: The host OS for running Docker containers and administrative tools.
+- **Ansible**: Used for configuring the host OS and deploying required software.
+- **Docker Compose**: For defining and managing Docker container configurations.
+- **Traefik**: A reverse proxy with TLS certificate management.
+- **Authelia**: Provides authentication and single sign-on capabilities.
+- **Guacamole**: A web-based remote desktop and SSH access solution.
+- **Homepage**: A dashboard for managing and accessing various services.
 
-### Local infrastructure components
+### Cloud Services (External Dependencies)
 
-- [Proxmox Virtual Environment](pve) -- Type 1 hypervisor
-- Ubuntu Server -- Docker & admin tools host
-- Ansible -- Configuration of the host OS & required software
-- Docker Compose -- Configure Docker containers
-- Traefik -- Reverse proxy with TLS certificate
-- Authelia -- Authentication, Single Sign On
-- [Guacamole](https://guacamole.apache.org/) -- Web based Remote Desktop and SSH access
-- Homepage -- Dashboard
+The long-term goal is to reduce these dependencies and provide offline alternatives.
 
-### Cloud services (external dependencies)
+| Name                                                                     | Description                            | Remarks                                                                 |
+| ------------------------------------------------------------------------ | -------------------------------------- | ----------------------------------------------------------------------- |
+| Docker images                                                            | All services are running as containers | Downloaded on first use                                                 |
+| Plugins, Modules (e.g. Crowdsec)                                         | Various plugins for services           | Downloaded on first use. TODO create inventory                          |
+| Large Language Models                                                    | Optional, used by Ollama               | Downloaded on first use                                                 |
+| [OVHcloud](https://www.ovhcloud.com/en/) (or other registrar)            | Domain Name registration               | Required for remote access and TLS certificates. TODO document fallback |
+| [Cloudflare](https://www.cloudflare.com/)                                | DNS zone administration, tunnel        | Optional, for remote access                                             |
+| [Let's Encrypt](https://letsencrypt.org/)                                | TLS certificates (managed by Traefik)  | Required. TODO document local CA setup for fallback                     |
+| [Backblaze B2](https://www.backblaze.com/cloud-storage)                  | Backup storage                         | Optional, local backup also configured                                  |
+| [CrowdSec](https://app.crowdsec.net/)                                    | Crowd-sourced IP blocklist             | Optional, security service, can be disabled                             |
+| [Azure](https://azure.microsoft.com/)                                    | Temporal VM, storage                   | Optional, not used by any lab components                                |
+| [Homepage Icons](https://github.com/walkxcode/dashboard-icons/tree/main) | Icon set for the services              | Optional, hosted on a CDN. TODO host locally                            |
 
-| Name                                                    | Description                            | Remarks                                                          |
-| ------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------- |
-| Docker images                                           | All services are running as containers | Downloaded on first use                                          |
-| Plugins, Modules (e.g. Crowdsec)                        | Various plugins for services           | Downloaded on first use. TODO create inventory                   |
-| Large Language Models                                   | Optional, used by Ollama               | Downloaded on first use                                          |
-| [OVHcloud](https://www.ovhcloud.com/en/) (or other)     | Domain Name registration               | Required for remote access and TLS certs. TODO document fallback |
-| [Cloudflare](https://www.cloudflare.com/)               | DNS zone administration, tunnel        | Optional, for remote access                                      |
-| [Let's Encrypt](https://letsencrypt.org/)               | TLS certificate (managed by Traefik)   | Required. TODO document local CA setup for fallback              |
-| [Backblaze B2](https://www.backblaze.com/cloud-storage) | Backup storage                         | Optional, local backup also configured                           |
-| [CrowdSec](https://app.crowdsec.net/)                   | Crowd-sourced IP blocklist             | Optional, security service, can be disabled                      |
-| [Azure](https://azure.microsoft.com/)                   | Temporal VM, storage                   | Optional, not used by any lab components                         |
-| Homepage Icons                                          | Icon set for the services              | Optional, hosted on a CDN. TODO host locally                     |
 
-## Directory structure
+## Getting Started
 
-- `ansible` -- Configuration of the host OS & required software
-  - `ansible/roles` -- Roles for Debian-based Docker & admin hosts and a Mac-based DevOps/SRE toolset
-  - `ansible/inventory` -- Host specific environment configuration
-- `docker` -- Docker-based service configuration
-  - `docker/stacks` -- Docker Compose files organized into categories
-  - `docker/hosts` -- Host specific service configuration
-- `terraform` -- contains an Azure VM configured for running Docker
-
-```
-$ tree -d -L 4
-.
-├── ansible
-│   ├── inventory
-│   │   └── group_vars
-│   │       ├── all
-│   │       ├── docker_hosts
-│   │       ├── mac
-│   │       └── minimal
-│   └── playbooks
-│       ├── debian
-│       │   ├── base
-│       │   ├── developer
-│       │   └── docker-host
-│       └── mac
-│           └── base
-├── docker
-│   ├── hosts
-│   │   ├── example
-│   │   ├── nas
-│   │   └── nest
-│   └── stacks
-│       ├── arr
-│       ├── backup
-...
-```
+-> See [Getting Started](setup)
 
 ## Development
 
 Code quality scanning tools are set up via [pre-commit](https://pre-commit.com).
-Perform the checks by running `lint.sh`.
+Perform the checks by running `task lint` (or `lint.sh` in the root of the repo).
+
+Create/update example `.env` files: `task create-example-env`.
 
 ## EOL
 

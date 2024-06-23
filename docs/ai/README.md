@@ -4,7 +4,6 @@
 
 [A Guide to Quantization in LLMs](https://symbl.ai/developers/blog/a-guide-to-quantization-in-llms/)
 
-
 ## Local inference
 
 ### Hardware requirements
@@ -23,8 +22,7 @@ HW performance benchmarks:
 
 -> See [models](models.md)
 
-
-## AI LLM frameworks
+## AI LLM Frameworks
 
 > fabric is an open-source framework for augmenting humans using AI. It provides a modular framework for solving specific problems using a crowdsourced set of AI prompts that can be used anywhere.
 
@@ -32,11 +30,15 @@ https://github.com/danielmiessler/fabric
 
 ## LM Studio
 
+> Discover, download, and run local LLMs
+> Run any Llama 3, Phi 3, Falcon, Mistral, StarCoder, Gemma, gguf models from Hugging Face
+
 https://lmstudio.ai/
 
 ## Text - Speech
 
-Zero-Shot Speech Editing and Text-to-Speech in the Wild
+> Zero-Shot Speech Editing and Text-to-Speech in the Wild
+
 https://github.com/jasonppy/VoiceCraft
 
 ## OpenAI parameters
@@ -63,5 +65,8 @@ Ollama parameters: https://github.com/ollama/ollama/blob/main/docs/modelfile.md#
 - [awesome-llm-json](https://github.com/imaurer/awesome-llm-json) - Resource list for generating JSON using LLMs via function calling, tools, CFG. Libraries, Models, Notebooks, etc.
 
 ### RAG - Retrival Augmented Generation
+
+> Turn your enterprise data into production-ready LLM applications
+> LlamaIndex is the leading data framework for building LLM applications
 
 https://www.llamaindex.ai/

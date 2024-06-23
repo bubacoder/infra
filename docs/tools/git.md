@@ -1,8 +1,19 @@
 # Git
 
+## Statistics
+
+https://github.com/arzzen/git-quick-stats
+
+> Git quick statistics is a simple and efficient way to access various statistics in git repository.
+
+Install (Debian Bullseye+ / Ubuntu Focal+):
+```
+apt install git-quick-stats
+```
+
 ## Reposirory cleanup
 
-[Nobody Cares About Your Git History](https://spin.atomicobject.com/git-history/) ...but don't leave any secrets in it.
+"[Nobody Cares About Your Git History](https://spin.atomicobject.com/git-history/)" ...but don't leave any secrets in it!
 
 **git-filter-repo** - Quickly rewrite git repository history (filter-branch replacement)
 
@@ -27,10 +38,10 @@ mypassw0rd==>SomeSecureValueGoesHere
 otherPassword==>SomeSecureValueGoesHere
 ```
 
-### Author
+### Change author
 
 ```shell
-git filter-repo --mailmap mailmap.txt
+git-filter-repo --mailmap mailmap.txt
 ```
 
 Example `mailmap.txt`:
@@ -38,4 +49,4 @@ Example `mailmap.txt`:
 Correct Name <correct@email.com> <old@email.com>
 ```
 
-More mailmap examples: https://git-scm.com/docs/gitmailmap#_examples
+[More mailmap examples](https://git-scm.com/docs/gitmailmap#_examples)

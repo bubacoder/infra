@@ -11,6 +11,13 @@ https://www.ansible.com/
 - [Laying out roles, inventories and playbooks](https://leucos.github.io/ansible-files-layout)
 - [An evolving set of mac user creation, setup and maintenance playbooks being used at Ideas On Purpose](https://github.com/ideasonpurpose/ansible-playbooks)
 
+## Directory structure
+
+- `ansible` -- Configuration of the host OS & required software
+  - `ansible/roles` -- Roles for Debian-based Docker & admin hosts and a Mac-based DevOps/SRE toolset
+  - `ansible/playbooks` -- Host-role assignments. The playbooks can be executed with the `apply-*.sh` scripts
+  - `ansible/inventory` -- Host specific environment configuration
+
 ## Setup steps
 
 1. Instal Ansible on the admin workstation with `bootstrap-ansible.sh`

@@ -21,17 +21,17 @@ https://github.com/yusufcanb/tlm?tab=readme-ov-file
 
 ### Access Ollama running on a firewalled machine
 
-Special usecase: Ollama is running on a machine which is not externally accessible, but from that machine you can connect the host, where the application is running which want to use Ollama.
+Special usecase: Ollama is running on a machine which is not accepting incoming connections, but from that machine you can connect the host, where the application is running which want to use Ollama.
 1. Start reverse SSH tunnel from ollama's host: `ssh -N -o 'ExitOnForwardFailure yes' -R *:11444:localhost:11434 <user>@<consumer-host>`
 2. Use endpoint `localhost:11444` on the API consumer machine.
 
-TODO:
-GatewayPorts
-             Specifies whether remote hosts are allowed to connect to ports forwarded for the client.  By default, sshd(8) binds remote port forwardings to the loopback address.  This prevents other remote hosts from connecting to forwarded
-             ports.  GatewayPorts can be used to specify that sshd should allow remote port forwardings to bind to non-loopback addresses, thus allowing other hosts to connect.  The argument may be no to force remote port forwardings to be
-             available to the local host only, yes to force remote port forwardings to bind to the wildcard address, or clientspecified to allow the client to select the address to which the forwarding is bound.  The default is no.
+TODO SSH `GatewayPorts` option:
+> Specifies whether remote hosts are allowed to connect to ports forwarded for the client.  By default, sshd(8) binds remote port forwardings to the loopback address.  This prevents other remote hosts from connecting to forwarded ports.
+> GatewayPorts can be used to specify that sshd should allow remote port forwardings to bind to non-loopback addresses, thus allowing other hosts to connect.
+> The argument may be no to force remote port forwardings to be available to the local host only, yes to force remote port forwardings to bind to the wildcard address, or clientspecified to allow the client to select the address to which the forwarding is bound.
+> The default is no.
 
-ssh -N -o 'ExitOnForwardFailure yes' -R "*:11444:localhost:11434" buba@nest
+`ssh -N -o 'ExitOnForwardFailure yes' -R "*:11444:localhost:11434" buba@nest`
 
 ### Access Ollama with OpenAI compatible API
 
@@ -44,6 +44,7 @@ Previous solution:
 
 Reference: [Deploying LiteLLM Proxy](https://litellm.vercel.app/docs/proxy/deploy)
 `litellm --model mistral:7b-instruct --api_base https://ollama.example.com --temperature 0.6 --max_tokens 2048`
+Using Docker:
 `docker run -it --rm --name litellm-proxy -p 8888:8000 ghcr.io/berriai/litellm:main-latest --model mistral:7b-instruct --api_base https://ollama.example.com --temperature 0.6 --max_tokens 2048`
 
 ### Ollama API

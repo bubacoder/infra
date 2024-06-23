@@ -31,15 +31,37 @@ tasks:
     cmds:
       - docs/web/build.sh
 
+  docs-deploy:
+    cmds:
+      - task: docs-build
+      - task: docker-command
+        vars:
+          STACK: tools
+          SERVICE: homelab-docs
+          COMMAND: recreate
+
   ### Operations-related tasks
 
-  docker-apply-local:
+  docker-command:
+    internal: true
+    cmds:
+      - cd "docker/hosts/$(hostname | tr '[:upper:]' '[:lower:]')" && bash -c "source ../../common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
+
+  docker-apply:
     cmds:
       - docker/apply-local.sh
 
-  docker-update-local:
+  docker-update:
     cmds:
       - UPDATE=true docker/apply-local.sh
+
+  docker-stop-all:
+    cmds:
+      - docker stop $(docker ps -a -q)
+
+  docker-check-updates:
+    cmds:
+      - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --run-once --cleanup --monitor-only
 
   crowdsec-collections:
     cmds:

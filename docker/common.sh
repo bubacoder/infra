@@ -13,6 +13,12 @@ init() {
   create_network_if_missing "proxy"
 }
 
+get_yaml_file() {
+  local stack_dir="$1"
+  local service_name="$2"
+  echo "../../stacks/${stack_dir}/${service_name}.yaml"
+}
+
 get_env_file_args() {
   local service_name="$1"
   local env_files=()
@@ -34,7 +40,7 @@ get_env_file_args() {
 up() {
   local stack_dir="$1"
   local service_name="$2"
-  local yaml_file="../../stacks/$stack_dir/$service_name.yaml"
+  local yaml_file="$(get_yaml_file "${stack_dir}" "${service_name}")"
   local env_file_args="$(get_env_file_args "${service_name}")"
 
   echo ">>> Starting $stack_dir/$service_name"
@@ -56,7 +62,7 @@ up() {
 down() {
   local stack_dir="$1"
   local service_name="$2"
-  local yaml_file="../../stacks/$stack_dir/$service_name.yaml"
+  local yaml_file="$(get_yaml_file "${stack_dir}" "${service_name}")"
   local env_file_args="$(get_env_file_args "${service_name}")"
 
   echo ">>> Stopping $stack_dir/$service_name"
@@ -67,8 +73,23 @@ down() {
 restart() {
   local stack_dir="$1"
   local service_name="$2"
-  down "$stack_dir" "$service_name"
-  up "$stack_dir" "$service_name"
+  local yaml_file="$(get_yaml_file "${stack_dir}" "${service_name}")"
+  local env_file_args="$(get_env_file_args "${service_name}")"
+
+  echo ">>> Restarting $stack_dir/$service_name"
+  # shellcheck disable=SC2086
+  docker compose -f "$yaml_file" $env_file_args restart
+}
+
+recreate() {
+  local stack_dir="$1"
+  local service_name="$2"
+  local yaml_file="$(get_yaml_file "${stack_dir}" "${service_name}")"
+  local env_file_args="$(get_env_file_args "${service_name}")"
+
+  echo ">>> Recreating $stack_dir/$service_name"
+  # shellcheck disable=SC2086
+  docker compose -f "$yaml_file" $env_file_args up --detach --force-recreate
 }
 
 cleanup() {

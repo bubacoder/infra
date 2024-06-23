@@ -29,8 +29,8 @@ See example: `create-ubuntu-server-vm.sh`
 KSM is a memory-saving de-duplication feature.
 See more: https://docs.kernel.org/admin-guide/mm/ksm.html
 
-Check KSM statistics: `watch cat /sys/kernel/mm/ksm/pages_sharing`
-Note: a page is 4096 bytes
+Check KSM statistics: `watch cat /sys/kernel/mm/ksm/pages_sharing`  
+Note: a page is 4096 bytes.
 
 ### Proxmox VM Watchdogs
 
@@ -48,7 +48,7 @@ https://gist.github.com/tinoji/7e066d61a84d98374b08d2414d9524f2
 
 CLI examples (TODO):
 
-```
+```sh
 pct create <id> /data/template/cache/debian-11-standard_11.3-1_amd64.tar.zst \
  -ostype <debian|centos|etc> \ \
  -hostname <hostname> \
@@ -62,7 +62,7 @@ pct create <id> /data/template/cache/debian-11-standard_11.3-1_amd64.tar.zst \
 pct start <id>
 ```
 
-```
+```sh
 pct create <id> /var/lib/vz/template/cache/centos-7-default_20170504_amd64.tar.xz \
     -arch amd64 \
     -ostype <centos|ubuntu|etc> \

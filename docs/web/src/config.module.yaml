@@ -1,0 +1,4 @@
+# Duplicated this entry from config.yaml to speed up docker build with having a cached layer of the modules.
+module:
+  imports:
+  - path: github.com/McShelby/hugo-theme-relearn

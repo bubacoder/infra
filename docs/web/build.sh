@@ -7,13 +7,15 @@ cd "$(dirname "$0")" || exit
 # shellcheck disable=SC1091
 . ../../docker/hosts/.env
 
-HUGO_PORT=1314
-HUGO_BASEURL=http://localhost:${HUGO_PORT}
-TAG=docs.${MYDOMAIN}:latest
+SITE_DOMAIN=docs.${MYDOMAIN}
+HUGO_BASEURL=https://${SITE_DOMAIN}
+TAG=${SITE_DOMAIN}:latest
 
+# Add parameter for verbose output: --verbose
 ./update-docs.py
 
-docker build -t "${TAG}" --build-arg HUGO_BASEURL=${HUGO_BASEURL} .
+# Add parameters for debugging: --progress=plain --no-cache
+docker build -t "${TAG}" --build-arg HUGO_BASEURL="${HUGO_BASEURL}" .
 
 # Configured in docker/stacks/tools/homelab-docs.yaml
-# docker run -p ${HUGO_PORT}:80 ${TAG}
+# docker run -p 1314:80 ${TAG}

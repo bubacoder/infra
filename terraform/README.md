@@ -1,6 +1,20 @@
-# Terraform
+# Terraform/OpenTofu
 
-TODO: Migrate to [OpenTofu](https://opentofu.org/)
+**Terraform**
+
+> Infrastructure automation to provision and manage resources in any cloud or data center.
+
+Home: https://www.terraform.io/  
+Releases: https://github.com/hashicorp/terraform/releases  
+Final version with *Mozilla Public License*: 1.5.7  
+The newer versions are released under *Business Source License*.  
+
+**OpenTofu**
+
+> The open source infrastructure as code tool
+
+Home: https://opentofu.org/  
+Releases: https://github.com/opentofu/opentofu/releases  
 
 ## Basic Terraform commands - Cheat sheet
 
@@ -16,10 +30,15 @@ TODO: Migrate to [OpenTofu](https://opentofu.org/)
 | `terraform state list`          | List all resources in the Terraform state                                                   |
 | `terraform apply -replace "id"` | Force replacement of a resource                                                             |
 
-## Usage of the Azure VM module
+## Azure VM module
+
+The modules in the `terraform/modules` folder are implementing a Virtual Machine with the associated network setup and storage.
+This VM can be used to test/host the Docker services of this repo.
+
+**Usage:**
 
 1. Loging to Azure account (without browser access on device): `az login --use-device-code`
-2. See possible `make` commands in `Makefile`.
+2. See the file `terraform/Makefile` for available `make` commands for deploying/connection/deleting the VM.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements

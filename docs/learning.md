@@ -1,0 +1,16 @@
+# Learning
+
+Some good sources of learning materials and inspiration in the area of DevOps, Homelab and AI.
+
+| Platform | Channel/Community                                             | Description                                                                                                                                                                             |
+| -------- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| YouTube  | [Matthew Berman](https://youtube.com/@matthew_berman)         | "Artificial Intelligence (AI), Open Source, Generative Art, AI Art, Futurism, ChatGPT, Large Language Models (LLM), Machine Learning, Technology, Coding, Tutorials, AI News, and more" |
+| YouTube  | [DevOps Toolkit](https://youtube.com/@DevOpsToolkit)          | "We want to help you make decisions. What works well, what doesn't work, why you should choose one tool over the other, and how to get up-to-speed quickly."                            |
+| YouTube  | [NetworkChuck](https://youtube.com/@NetworkChuck)             | Keywords: Information Technology, IT Certifications, Cisco Certifications, CompTIA, AWS, Microsoft, CBT Nuggets Trainer, CCNA, CompTIA A+, CompTIA Network+, career in IT field.        |
+| YouTube  | [Christian Lempa](https://www.youtube.com/@christianlempa)    | "I create educational videos about my Homelab and Tech Projects."                                                                                                                       |
+| YouTube  | [TechWorld with Nana](https://youtube.com/@TechWorldwithNana) | "Some topics covered: Docker, Kubernetes, CI/CD - GitLab CI, GitHub Actions, Jenkins, Python, Ansible, Prometheus Monitoring, Terraform, YAML"                                          |
+| YouTube  | [Two Minute Papers](https://youtube.com/@TwoMinutePapers)     | "What a time to be alive!"                                                                                                                                                              |
+| YouTube  | [David Shapiro](https://youtube.com/@DaveShap)                | "Navigating the Fourth Industrial Revolution! The future is incredibly bright, but the journey is fraught with risks."                                                                  |
+| Reddit   | [r/selfhosted](https://www.reddit.com/r/selfhosted/)          | "A place to share, discuss, discover, assist with, gain assistance for, and critique self-hosted alternatives to our favorite web apps, web services, and online tools."                |
+| Reddit   | [r/homelab](https://www.reddit.com/r/homelab/)                | "Welcome to your friendly /r/homelab, where techies and sysadmin from everywhere are welcome to share their labs, projects, builds, etc."                                               |
+| Reddit   | [r/LocalLLaMA](https://www.reddit.com/r/LocalLLaMA/)          | "Subreddit to discuss about Llama, the large language model created by Meta AI."                                                                                                        |

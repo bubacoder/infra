@@ -1,5 +1,5 @@
 
-# AI Agent tools
+# AI Agents
 
 [AI Pioneer Shows The Power of AI AGENTS - "The Future Is Agentic"](https://www.youtube.com/watch?v=ZYf9V2fSFwU)
 

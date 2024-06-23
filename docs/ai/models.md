@@ -34,6 +34,7 @@
 - [Code Llama by Meta](https://ai.meta.com/blog/code-llama-large-language-model-coding/)
 - [CodeGemma by Google](https://ai.google.dev/gemma/docs/codegemma)
 - [CodeQwen by Alibaba Cloud](https://qwenlm.github.io/blog/codeqwen1.5/), context: 64K, [HF](https://huggingface.co/Qwen/CodeQwen1.5-7B-Chat-GGUF), [Ollama](https://ollama.com/library/codeqwen:latest) <-- Top
+- DeepSeek-Coder-V2
 
 ### Optimied for RAG - Retrival Augmented Generation
 

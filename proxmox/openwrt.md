@@ -4,9 +4,9 @@
 
 https://openwrt.org/docs/guide-user/installation/openwrt_x86
 
-Target, disk image:
-- `64` is for modern PC hardware (anything from around 2007 onward), it is built for 64-bit capable computers and has support for modern CPU features. Choose this unless you have good reasons not to.
-- `ext4-combined.img.gz` This disk image uses a single read-write ext4 partition without a read-only squashfs root filesystem. As a result, the root partition can be expanded to fill a large drive (e.g. SSD/SATA/mSATA/SATA DOM/NVMe/etc). Features like Failsafe Mode or Factory Reset will not be available as they need a read-only squashfs partition in order to function. It has both the boot and root partitions and Master Boot Record (MBR) area with updated GRUB2.
+Target, disk image selection:
+- `64`: for modern PC hardware (anything from around 2007 onward), it is built for 64-bit capable computers and has support for modern CPU features. Choose this unless you have good reasons not to.
+- `ext4-combined.img.gz`: This disk image uses a single read-write ext4 partition without a read-only squashfs root filesystem. As a result, the root partition can be expanded to fill a large drive (e.g. SSD/SATA/mSATA/SATA DOM/NVMe/etc). Features like Failsafe Mode or Factory Reset will not be available as they need a read-only squashfs partition in order to function. It has both the boot and root partitions and Master Boot Record (MBR) area with updated GRUB2.
 
 ## Setup
 
@@ -37,9 +37,31 @@ opkg install luci
 Open a new browser tab and navigate to http://IP-of-VM, http://192.168.1.60 in the example
 At the login screen, enter the username `root` and the password set above > Click the Login button
 
----
+## Use Serial Console:
 
-TODO:
+TODO Test
+
+```sh
+ssh root@proxmox "qm terminal 200"
+```
+
+## Setup USB Wifi stick
+
+TODO Describe steps
+
+```
+$ lsusb
+
+MediaTek WiFi
+https://linux-hardware.org/?id=usb:148f-
+Device 'Ralink Technology MT7610U ("Archer T2U" 2.4G+5G WLAN Adapter')
+
+Install kmod-mt76
+```
+
+## Configure as an Access Point
+
+TODO Describe steps
 
 Change LAN interface CIDR
 
@@ -50,16 +72,3 @@ opkg update
 opkg install usbutils
 ```
 
-Setup USB Wifi:
-
-```
-lsusb
-MediaTek WiFi
-kmod-mt76
-https://linux-hardware.org/?id=usb:148f-
-Device 'Ralink Technology MT7610U ("Archer T2U" 2.4G+5G WLAN Adapter'
-```
-
-Use Serial Console:
-
-ssh root@proxmox "qm terminal 200"

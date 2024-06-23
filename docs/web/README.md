@@ -1,6 +1,13 @@
-# Documentation
+# Documentation Site
 
-The documentation is written in [Markdown format](https://www.markdownguide.org/) and built with the [Hugo](https://gohugo.io/) static site generator, using the [Relearn](https://mcshelby.github.io/hugo-theme-relearn/) theme.
+The documentation is written in [Markdown format](https://www.markdownguide.org/) to keep it portable.
+A website is built with the [Hugo](https://gohugo.io/) static site generator, using the [Relearn](https://mcshelby.github.io/hugo-theme-relearn/) theme.
+
+## Development
+
+**Build process:** The Markdown and Docker Compose files are collected and converted by `update-docs.py`, then `hugo` build is executed in a Docker container, producing a container image with `nginx` serving the static website.
+
+Run `task docs-deploy` to build and locally deploy (using `docker/stacks/tools/homelab-docs.yaml`) the site.
 
 ## Hugo
 
@@ -8,19 +15,19 @@ The documentation is written in [Markdown format](https://www.markdownguide.org/
 
 ▶️ [Getting Started With Hugo](https://www.youtube.com/watch?v=hjD9jTi_DQ4)
 
-Alternatives to Hugo:
+Note - Alternatives to Hugo:
 - [Jekyll](https://jekyllrb.com/)
 - [Astro](https://astro.build/)
 
-## Installation
+### Installation
 
-Install with APT (older version):
-```bash
+Install with APT (older Hugo version):
+```sh
 sudo apt install hugo
 ```
 
-...or install a specific release from Github:
-```bash
+...or install a specific [release](https://github.com/gohugoio/hugo/releases) from Github:
+```sh
 $ wget https://github.com/gohugoio/hugo/releases/download/v0.121.1/hugo_0.121.1_linux-amd64.tar.gz
 
 $ ./hugo version
@@ -28,9 +35,10 @@ hugo v0.121.1-00b46fed8e47f7bb0a85d7cfc2d9f1356379b740 linux/amd64 BuildDate=202
 ```
 
 ...or use Docker:
-[Hugo Docker Images](https://hugomods.com/docs/docker/)
+[Hugo Docker Images](https://hugomods.com/docs/docker/)  
+Use `docker pull hugomods/hugo:exts` to update Hugo.
 
-## Theme
+### Theme
 
 - https://mcshelby.github.io/hugo-theme-relearn/
 - https://mcshelby.github.io/hugo-theme-relearn/basics/installation/index.html
@@ -39,11 +47,15 @@ hugo v0.121.1-00b46fed8e47f7bb0a85d7cfc2d9f1356379b740 linux/amd64 BuildDate=202
 Clone repo:
 `git clone https://github.com/McShelby/hugo-theme-relearn.git --depth 1`
 
-## Create and serve a new website
+### Create and serve a new website
 
-```bash
-$ hugo new site <site_name> -f yaml
+Initialize the new site:
+```sh
+hugo new site <site_name> -f yaml
+```
 
+Output:
+```
 Congratulations! Your new Hugo site is created in <.../site_name>.
 
 Just a few more steps and you're ready to go:
@@ -58,9 +70,13 @@ Just a few more steps and you're ready to go:
 Visit https://gohugo.io/ for quickstart guide and full documentation.
 ```
 
-```bash
+Install the theme:
+```sh
 cd <site_name>
 hugo mod get -u https://github.com/McShelby/hugo-theme-relearn.git
-hugo serve
-cd infra/docs/<site_name>; ./hugo serve --bind=0.0.0.0 --baseURL=http://0.0.0.0:1313
+```
+
+Run the webserver, allowing remote HTTP access:
+```
+hugo serve --bind=0.0.0.0 --baseURL=http://0.0.0.0:1313
 ```
