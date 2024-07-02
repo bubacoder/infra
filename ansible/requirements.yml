@@ -1,9 +1,18 @@
 # ansible-galaxy install -r requirements.yml
 ---
+
+# Install roles from Ansible Galaxy
+roles:
+  # Source: https://github.com/markosamuli/ansible-linuxbrew
+  # Role: https://galaxy.ansible.com/ui/standalone/roles/markosamuli/linuxbrew/
+  - name: markosamuli.linuxbrew
+    version: v2.0.2
+
+# Install collections from Ansible Galaxy
 collections:
-- name: community.general
-  version: 8.2.0
-- name: community.docker
-  version: 3.5.0
-- name: ansible.posix
-  version: 1.5.0
+  - name: community.general
+    version: 8.2.0
+  - name: community.docker
+    version: 3.5.0
+  - name: ansible.posix
+    version: 1.5.0

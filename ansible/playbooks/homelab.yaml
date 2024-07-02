@@ -23,4 +23,5 @@
     - nest-ct-test
   roles:
     - role: debian-samba-client
+    - role: markosamuli.linuxbrew
     - role: debian-developer

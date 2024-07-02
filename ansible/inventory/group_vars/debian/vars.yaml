@@ -6,6 +6,9 @@ admin_email: "bubacoder@gmail.com"
 
 ssh_key_file: "~/.ssh/id_ed25519.pub"
 
+linuxbrew_use_installer: true
+linuxbrew_init_shell: true
+
 base_apt_packages:
   - sudo
   - mc

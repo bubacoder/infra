@@ -1,5 +1,4 @@
 # https://brew.sh/
-# https://docs.brew.sh/Homebrew-on-Linux
 ---
 - name: Check if Homebrew is installed
   ansible.builtin.stat:
