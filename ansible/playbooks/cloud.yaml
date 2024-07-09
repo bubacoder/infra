@@ -1,7 +1,6 @@
 #!/usr/bin/env ansible-playbook
 
 - name: Setup Debian base
-  become: true
   hosts:
     - azure-vm
   roles:

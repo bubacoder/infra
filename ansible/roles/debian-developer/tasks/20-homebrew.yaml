@@ -4,19 +4,19 @@
     # name: "{{ brew_base_tools + brew_cloud_tools + brew_terraform_tools + brew_kubernetes_tools }}"
     name: "{{ dev_brew_packages }}"
     state: present
-  become: false
   when:
     - dev_brew_packages is defined
     - dev_brew_packages | type_debug == 'list'
     - dev_brew_packages | length > 0
+  become: false
 
 - name: Install Homebrew Cask packages (only on Darwin)
   community.general.homebrew_cask:
     name: "{{ dev_brew_cask_packages }}"
     state: present
-  become: false
   when:
     - ansible_system == "Darwin"
     - dev_brew_cask_packages is defined
     - dev_brew_cask_packages | type_debug == 'list'
     - dev_brew_cask_packages | length > 0
+  become: false

@@ -1,12 +1,16 @@
 ---
 - name: Install and update apt packages
   ansible.builtin.import_tasks: 10-apt.yaml
+  become: true
 
 - name: Security configuration
   ansible.builtin.import_tasks: 30-security.yaml
+  become: true
 
 - name: Configure network
   ansible.builtin.import_tasks: 40-network.yaml
+  become: true
 
 - name: Configure admin user
   ansible.builtin.import_tasks: 50-user.yaml
+  become: true

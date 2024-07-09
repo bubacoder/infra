@@ -3,13 +3,15 @@
 https://www.ansible.com/
 
 > Automation for everyone
-> No matter your role, or what your automation goals are, Ansible can help you demonstrate value, connect teams, and deliver efficiencies for your organization. Built on open source, Red Hat® Ansible® Automation Platform is a hardened, tested subscription product that offers full life cycle support for organizations. Explore how Ansible can help you automate today—and scale for the future.
+> No matter your role, or what your automation goals are, Ansible can help you demonstrate value, connect teams, and deliver efficiencies for your organization.
+> Built on open source, Red Hat® Ansible® Automation Platform is a hardened, tested subscription product that offers full life cycle support for organizations. Explore how Ansible can help you automate today—and scale for the future.
 
 ## Tutorials, Resources
 
 - [Learn Linux TV - Getting started with Ansible](https://www.youtube.com/playlist?list=PLT98CRl2KxKEUHie1m24-wkyHpEsa4Y70)
 - [Laying out roles, inventories and playbooks](https://leucos.github.io/ansible-files-layout)
 - [An evolving set of mac user creation, setup and maintenance playbooks being used at Ideas On Purpose](https://github.com/ideasonpurpose/ansible-playbooks)
+- [Variable precedence: Where should I put a variable?](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#variable-precedence-where-should-i-put-a-variable)
 
 ## Directory structure
 
@@ -20,7 +22,7 @@ https://www.ansible.com/
 
 ## Setup steps
 
-1. Instal Ansible on the admin workstation with `bootstrap-ansible.sh`
+1. Instal Ansible on the admin workstation with `bootstrap-ansible.sh`. (See: [Ansible control node](https://docs.ansible.com/ansible/latest/network/getting_started/basic_concepts.html#control-node))
 2. Configure variables in `inventory/group_vars/`
 3. Add hosts to `inventory/inventory.yaml`
 4. Assign roles to hosts in `playbooks/`

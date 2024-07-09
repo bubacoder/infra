@@ -14,7 +14,6 @@ create_playbook() {
 
   echo "
 - name: Setup ${hostname}
-  become: true
   hosts:
     - ${hostname}
   roles:"
@@ -25,6 +24,7 @@ create_playbook() {
 }
 
 cd "$(dirname "$0")" || exit
-readonly PLAYBOOK_FILE="playbooks/adhoc.yaml"
+readonly PLAYBOOK_FILE="$(mktemp -t playbook.XXXXXXX)"
 create_playbook "$1" "$2" > "${PLAYBOOK_FILE}"
 ansible-playbook "${PLAYBOOK_FILE}"
+rm "${PLAYBOOK_FILE}"
