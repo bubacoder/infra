@@ -4,18 +4,35 @@
 
 version: '3'
 
+includes:
+  crowdsec: ./docker/stacks/security/Taskfile.crowdsec.yaml
+  devcontainer: ./Taskfile.dev.yaml
+
 tasks:
   default:
+    desc: List all tasks
     cmds:
       - task --list-all
+
+  # TaskUI is a lightweight terminal user interface for executing tasks defined using taskfile.dev.
+  # https://github.com/thmshmm/taskui
+  ui:
+    desc: Open terminal user interface for executing tasks (TaskUI)
+    env:
+      TASKUI_HIGHLIGHT_STYLE_BG: "#00cc66"
+      TASKUI_HIGHLIGHT_STYLE_FG: "#4c4f69"
+    cmds:
+      - taskui
 
   ### Development-related tasks
 
   lint:
+    desc: Run linting tools (via pre-commit)
     cmds:
       - pre-commit run --all-files
 
   create-example-env:
+    desc: Create/update Docker example environment files
     dotenv: ['docker/hosts/.env']
     cmds:
       - scripts/create-example-env.py docker/hosts/.env > docker/hosts/.env.example
@@ -27,39 +44,38 @@ tasks:
       - docker/hosts/.env.example
       - docker/hosts/example/.env
 
-  devcontainer-build:
-    internal: true
+  pre-commit-update:
+    desc: Update pre-commit repositories
     cmds:
-      - cd ansible; docker build --platform linux/amd64 -t infra-devcontainer:{{.TAG}} -f ../Dockerfile.dev --build-arg BASE_IMAGE={{.BASE_IMAGE}} --progress=plain .
+      - pre-commit autoupdate
 
-  devcontainer-build-debian:
+  git-rebase-fixup:
+    desc: Interactively rebase current branch to origin (stash, rebase, pop)
     cmds:
-      - task: devcontainer-build
-        vars:
-          BASE_IMAGE: "debian:bookworm-slim"
-          TAG: debian
+      - git stash
+      - GIT_SEQUENCE_EDITOR=scripts/git-rebase-fixup.py git rebase -i origin/$(git branch --show-current)
+      - git stash pop
 
-  devcontainer-build-ubuntu:
+  build:
+    desc: Run all linting and build tasks
     cmds:
-      - task: devcontainer-build
-        vars:
-          BASE_IMAGE: "ubuntu:24.04"
-          TAG: ubuntu
+      - task: create-example-env
+      - task: docs-deploy
+      - task: pre-commit-update
+      - task: lint
 
-  devcontainer-build-all:
+  docs-build-dev:
+    desc: Build documentation site
     cmds:
-      - task: devcontainer-build-debian
-      - task: devcontainer-build-ubuntu
+      - docs/web/dev.sh
 
-  devcontainer-run:
-    cmds:
-      - docker run -it infra-devcontainer
-
-  docs-build:
+  docs-build-prod:
+    desc: Build documentation site container
     cmds:
       - docs/web/build.sh
 
   docs-deploy:
+    desc: Build and deploy documentation site
     cmds:
       - task: docs-build
       - task: docker-command
@@ -70,48 +86,58 @@ tasks:
 
   ### Operations-related tasks
 
+  get-public-ip:
+    desc: Display public IP (ipinfo.io)
+    cmds:
+      - curl -s https://ipinfo.io/ip
+
+  versions:
+    desc: Show software version numbers
+    cmds:
+      - uname -a
+      - lsb_release -a
+      - docker --version
+
   docker-command:
     internal: true
     cmds:
       - cd "docker/hosts/$(hostname | tr '[:upper:]' '[:lower:]')" && bash -c "source ../../common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
 
   docker-apply:
+    desc: Deploy locally configured containers
     cmds:
       - docker/apply-local.sh
 
   docker-update:
+    desc: Update and restart containers
     cmds:
       - UPDATE=true docker/apply-local.sh
 
   docker-stop-all:
+    desc: Stop all running containers
     cmds:
       - docker stop $(docker ps -a -q)
 
   docker-check-updates:
+    desc: Run Watchtower to get updated container images
     cmds:
       - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --run-once --cleanup --monitor-only
 
-  crowdsec-collections:
-    cmds:
-      - docker exec crowdsec cscli collections list
-  crowdsec-bouncers:
-    cmds:
-      - docker exec crowdsec cscli bouncers list
-  crowdsec-decisions:
-    cmds:
-      - docker exec crowdsec cscli decisions list
-  crowdsec-alerts:
-    cmds:
-      - docker exec crowdsec cscli alerts list
-  crowdsec-metrics:
-    cmds:
-      - docker exec crowdsec cscli metrics
-
   star-github-repos:
+    desc: Add star to all referenced GitHub repos
     dotenv: ['docker/hosts/.env']
     preconditions:
       - sh: "[ ! -z \"${GITHUB_API_TOKEN}\" ]"
         msg: GITHUB_API_TOKEN environment variable must be set (exported)
     cmds:
-      - scripts/github-extract-links.py . | scripts/github-star-repo.py`
+      - scripts/github-extract-links.py . | sort | uniq | scripts/github-star-repo.py`
 
+  ansible-apply-homelab:
+    desc: Run 'homelab' Ansible playbook
+    cmds:
+      - ansible/apply-homelab.sh
+
+  ansible-apply-cloud:
+    desc: Run 'cloud' Ansible playbook
+    cmds:
+      - ansible/apply-cloud.sh
