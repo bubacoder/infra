@@ -28,7 +28,7 @@ repos:
   # KICS stands for Keeping Infrastructure as Code Secure, it is open source and is a must-have for any cloud native project.
   # https://docs.kics.io/latest/commands/
   - repo: https://github.com/Checkmarx/kics
-    rev: v2.0.1
+    rev: v2.1.1
     hooks:
       - id: kics-scan
         # TODO solve the high severity issues first
@@ -39,13 +39,13 @@ repos:
   # Gitleaks is a SAST tool for detecting and preventing hardcoded secrets like passwords, api keys, and tokens in git repos.
   # Gitleaks is an easy-to-use, all-in-one solution for detecting secrets, past or present, in your code.
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.18.3
+    rev: v8.18.4
     hooks:
       - id: gitleaks
 
   # pre-commit git hooks to take care of Terraform configurations
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.90.0
+    rev: v1.92.0
     hooks:
       - id: terraform_fmt
         files: ^terraform/
@@ -75,7 +75,7 @@ repos:
   # flake8 is a python tool that glues together pycodestyle, pyflakes, mccabe, and third-party plugins to check the style and quality of some python code.
   # Third-party scripts are excluded.
   - repo: https://github.com/PyCQA/flake8
-    rev: 7.0.0
+    rev: 7.1.0
     hooks:
       - id: flake8
         exclude: |
@@ -83,3 +83,9 @@ repos:
                 scripts/git-filter-repo.py|
                 scripts/test-colors.py
             )$
+
+  # Dockerfile linter, validate inline bash, written in Haskell
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.13.0-beta
+    hooks:
+      - id: hadolint-docker
