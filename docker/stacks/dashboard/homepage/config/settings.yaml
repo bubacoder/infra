@@ -7,6 +7,7 @@ theme: dark # or light
 color: slate
 hideVersion: true
 showStats: false
+logpath: /app/logs
 
 # providers:
 #   openweathermap: openweathermapapikey

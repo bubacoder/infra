@@ -36,4 +36,5 @@ services:
       homepage.group: Tools
       homepage.name: ddclient
       homepage.icon: cloudflare.png
+      homepage.href: https://dash.cloudflare.com/
       homepage.description: Dynamic DNS updater

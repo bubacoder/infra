@@ -19,6 +19,7 @@ services:
       homepage.group: Security
       homepage.name: Cloudflared
       homepage.icon: cloudflare.png
+      homepage.href: https://dash.cloudflare.com/
       homepage.description: "Cloudflare Tunnel"
 
 networks:
