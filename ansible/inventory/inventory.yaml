@@ -3,17 +3,14 @@
 debian:
   vars:
     ansible_conection: ssh
+    ansible_user: buba
   hosts:
     proxmox:
-      ansible_user: buba
       ansible_host: 192.168.1.50
-    nas:
-      ansible_user: buba
-    nest:
-      ansible_user: buba
-    nest-ct-test:
-      ansible_user: buba
-      ansible_host: 192.168.1.166
+    nas: {}
+    nest: {}
+    nest2:
+      ansible_host: 192.168.1.151
 
     # Cloud. Excluded in apply-homelab.sh
     azure-vm:
