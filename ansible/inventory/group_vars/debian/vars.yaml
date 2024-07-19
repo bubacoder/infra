@@ -21,10 +21,13 @@ base_apt_packages:
   - util-linux
   - screen
   - tmux
-  - mdadm
-  - hdparm
   - htop
   - tree
+  # Storage management
+  - hdparm
+  - parted
+  - mdadm
+  - lvm2
 
 dev_apt_packages:
   - make
@@ -32,6 +35,7 @@ dev_apt_packages:
   - shellcheck
   - tshark
 
+# Homebrew - https://brew.sh/
 dev_brew_packages:
   - asdf                # https://asdf-vm.com/
   - helix               # https://helix-editor.com
