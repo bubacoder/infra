@@ -5,11 +5,14 @@
 
 SHELL := /bin/bash
 
+# Select "terraform" or "tofu"
+TFBIN := terraform
+
 # TODO Read params from tfvars
 RESOURCE_GROUP := HomeInfra
 VM_NAME := nest
 VM_KEYFILE := ~/.ssh/id_rsa_azure_vm
-VM_FQDN ?= $(shell terraform output -raw vm_fqdn)
+VM_FQDN ?= $(shell ${TFBIN} output -raw vm_fqdn)
 VM_ADMIN_USER := azureuser
 
 OWN_PUBLIC_IP ?= $(shell curl -s https://ipinfo.io/ip)
@@ -30,29 +33,31 @@ docs:
 
 .PHONY: check
 check:
-	terraform validate && tfsec
+	${TFBIN} validate && tfsec
 
 .PHONY: plan
 plan:
-	terraform init
-	@echo "terraform plan..."
-	@terraform plan ${VAR_PARAMETERS} -out="tfplan"
+	${TFBIN} init
+	@echo "${TFBIN} plan..."
+	@${TFBIN} plan ${VAR_PARAMETERS} -out="tfplan"
 
 .PHONY: apply
 apply: plan
-	@echo "terraform apply..."
-	@time terraform apply --auto-approve "tfplan"
-	ssh-keygen -f ~/.ssh/known_hosts -R "${VM_FQDN}" && terraform output -raw vm_tls_private_key > ${VM_KEYFILE} && chmod 600 ${VM_KEYFILE}
+	@echo "${TFBIN} apply..."
+	@time ${TFBIN} apply --auto-approve "tfplan"
+	ssh-keygen -f ~/.ssh/known_hosts -R "${VM_FQDN}" && ${TFBIN} output -raw vm_tls_private_key > ${VM_KEYFILE} && chmod 600 ${VM_KEYFILE}
+
+# TODO Use provisioner: https://www.udemy.com/course/terraform-hands-on-labs/learn/lecture/29614642#overview
 
 .PHONY: destroy
 destroy:
-	@echo "terraform destroy..."
-	@terraform destroy --auto-approve ${VAR_PARAMETERS} && rm ${VM_KEYFILE}
+	@echo "${TFBIN} destroy..."
+	@${TFBIN} destroy --auto-approve ${VAR_PARAMETERS} && rm ${VM_KEYFILE}
 
 .PHONY: destroy-vm
 destroy-vm:
-	@echo "terraform destroy..."
-	@terraform destroy --auto-approve ${VAR_PARAMETERS} --target module.vm.azurerm_linux_virtual_machine.vm && rm ${VM_KEYFILE}
+	@echo "${TFBIN} destroy..."
+	@${TFBIN} destroy --auto-approve ${VAR_PARAMETERS} --target module.vm.azurerm_linux_virtual_machine.vm && rm ${VM_KEYFILE}
 
 .PHONY: connect-vm
 connect-vm:

@@ -50,6 +50,7 @@ dev_brew_packages:
   - terragrunt          # https://terragrunt.gruntwork.io/docs/getting-started/install/
   - tfsec               # https://github.com/aquasecurity/tfsec
   - tflint              # https://github.com/terraform-linters/tflint
+  - opentofu            # https://opentofu.org/
 
 smb_hostname: nas
 smb_shares:
