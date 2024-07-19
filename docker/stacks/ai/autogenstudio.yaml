@@ -26,6 +26,7 @@ services:
       homepage.icon: chatgpt.png
       homepage.href: https://autogenstudio.${MYDOMAIN}/
       homepage.description: "Rapidly prototype AI agents"
+      com.centurylinklabs.watchtower.enable: false
 
 networks:
   proxy:

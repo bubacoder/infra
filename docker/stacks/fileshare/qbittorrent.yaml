@@ -42,3 +42,4 @@ services:
       homepage.icon: qbittorrent.png
       homepage.href: https://qbittorrent.${MYDOMAIN}/
       homepage.description: "[SSO] BitTorrent client" # TODO solve double auth
+      com.centurylinklabs.watchtower.enable: false
