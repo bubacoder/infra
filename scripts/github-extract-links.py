@@ -10,7 +10,7 @@ def extract_github_links(directory: str) -> List[str]:
     github_links: Set[str] = set()
     for root, dirs, files in os.walk(directory):
         for file in files:
-            if file.endswith(".md") or file.endswith(".yaml"):
+            if file.endswith(".md") or file.endswith(".yml") or file.endswith(".yaml") or file.endswith(".sh") or file.startswith("Dockerfile"):
                 file_path = os.path.join(root, file)
                 with open(file_path, "r") as f:
                     content = f.read()
