@@ -19,7 +19,8 @@ services:
       COLLECTOR_API_ENDPOINT: 'https://scrutiny.${MYDOMAIN}/'
       COLLECTOR_CRON_SCHEDULE: '0 0 * * *'
     devices:
+      # Only enable existing devices!
       - /dev/sda
       - /dev/sdb
-      #- /dev/sdc
+      - /dev/sdc
       #- /dev/sdd
