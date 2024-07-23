@@ -1,5 +1,4 @@
 # Generate: pip freeze > requirements.txt
 # Install: pip install -r requirements.txt
 
-filelock==3.6.0
-pyyaml
+pyyaml==6.0.1

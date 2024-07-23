@@ -6,7 +6,6 @@ import subprocess
 import yaml
 import argparse
 from pathlib import Path
-from filelock import FileLock
 
 # Markdown files to be included in the website
 # Fields: source ("filename" or "directory/"), target, weight
@@ -198,22 +197,25 @@ def process_docker_directory(source_dir: Path, target_dir: str) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process documentation files.")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
+    parser.add_argument("--repository-root", type=str, help="Specify the root of the repository")
     args = parser.parse_args()
 
     VERBOSE = args.verbose
 
-    repo_root = Path(get_git_root())
+    if args.repository_root:
+        repo_root = Path(args.repository_root)
+    else:
+        repo_root = Path(get_git_root())
+
     stacks = repo_root / "docker" / "stacks"
     web_root = repo_root / "docs" / "web" / "src"
 
-    # https://discourse.gohugo.io/t/what-is-the-hugo-build-lock-file/35417/2
-    with FileLock(web_root / ".hugo_build.lock"):
-        # Remove the content directory (which only contains generated content)
-        delete_directory_content(web_root / "content")
+    # Remove the content directory (which only contains generated content)
+    delete_directory_content(web_root / "content")
 
-        print("Processing Docker Compose stacks")
-        process_docker_directory(stacks, web_root / "content" / "docker")
+    print("Processing Docker Compose stacks")
+    process_docker_directory(stacks, web_root / "content" / "docker")
 
-        for source, target, weight in MARKDOWN_LOCATIONS:
-            print(f"Processing {source} ==> {target}")
-            process_location(repo_root, source, target, weight)
+    for source, target, weight in MARKDOWN_LOCATIONS:
+        print(f"Processing {source} ==> {target}")
+        process_location(repo_root, source, target, weight)

@@ -64,15 +64,15 @@ tasks:
       - task: pre-commit-update
       - task: lint
 
-  docs-build-dev:
-    desc: Build documentation site
-    cmds:
-      - docs/web/dev.sh
-
-  docs-build-prod:
+  docs-build:
     desc: Build documentation site container
+    dotenv: ['docker/hosts/.env']
     cmds:
-      - docs/web/build.sh
+      - |
+        SITE_DOMAIN=docs.${MYDOMAIN}
+        HUGO_BASEURL=https://${SITE_DOMAIN}
+        TAG=${SITE_DOMAIN}:latest
+        docker build -f docs/web/Dockerfile -t "${TAG}" --build-arg HUGO_BASEURL="${HUGO_BASEURL}" .
 
   docs-deploy:
     desc: Build and deploy documentation site
