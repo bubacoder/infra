@@ -4,7 +4,7 @@
 FROM python:3.12-alpine3.20 AS collect
 
 COPY docs/web/requirements.txt requirements.txt
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . /repo
 
@@ -35,5 +35,7 @@ RUN hugo --minify --gc
 #                            Final Stage                            #
 #####################################################################
 FROM hugomods/hugo:nginx-1.27.0
+
+USER nginx
 
 COPY --from=build /public /site

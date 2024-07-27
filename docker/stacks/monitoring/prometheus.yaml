@@ -42,6 +42,7 @@ services:
     command:
       - '--path.rootfs=/host'
     volumes:
+      # kics-scan ignore-line
       - '/:/host:ro,rslave'
     networks:
       - proxy
@@ -50,7 +51,9 @@ services:
     image: gcr.io/cadvisor/cadvisor:v0.47.0
     restart: unless-stopped
     container_name: cadvisor
+    # kics-scan ignore-line
     privileged: true
+    # kics-scan ignore-block
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro

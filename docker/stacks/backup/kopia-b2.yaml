@@ -14,9 +14,11 @@ services:
     container_name: kopia-b2
     restart: "unless-stopped"
     user: "0:0"
+    # kics-scan ignore-line
     privileged: true
     cap_add:
       - SYS_ADMIN
+    # kics-scan ignore-line
     security_opt:
       - apparmor:unconfined
     devices:
@@ -33,6 +35,7 @@ services:
       KOPIA_PASSWORD: ${KOPIA_B2_REPOSITORY_PASSWORD}
       TZ: ${TIMEZONE}
 
+    # kics-scan ignore-block
     volumes:
       - ${DOCKER_VOLUMES}/kopia-b2/config:/app/config
       - ${DOCKER_VOLUMES}/kopia-b2/cache:/app/cache

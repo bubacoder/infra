@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Note: More functions https://bgstack15.ddns.net/cgit/jellystack/tree/jellystack_lib.py
+
+#TODO define
 readonly JELLYFIN_URL="https://jellyfin.example.com"
 readonly JELLYFIN_API_KEY="SomeSecureValueGoesHere"
 
 # Function to trigger the media library rescan
 trigger_rescan() {
   local library_id="$1"
-  #local endpoint="${JELLYFIN_URL}/Library/Refresh/${library_id}/"
-  local endpoint="${JELLYFIN_URL}/Library/Refresh"
+  local endpoint="${JELLYFIN_URL}/Items/${library_id}/Refresh?Recursive=true&ImageRefreshMode=Default&MetadataRefreshMode=Default&ReplaceAllImages=false&ReplaceAllMetadata=false"
   local response=$(curl -X POST -H "X-Emby-Token: ${JELLYFIN_API_KEY}" "${endpoint}")
   echo "${response}"
 }

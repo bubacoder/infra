@@ -32,7 +32,8 @@ services:
       - ./crowdsec/acquis.yaml:/etc/crowdsec/acquis.yaml
       - ${DOCKER_VOLUMES}/crowdsec/etc:/etc/crowdsec
       - ${DOCKER_VOLUMES}/crowdsec/data:/var/lib/crowdsec/data
-      # Log files:
+
+      # kics-scan ignore-line
       - /var/log/auth.log:/var/log/auth.log:ro
       - ${DOCKER_VOLUMES}/traefik/logs/traefik-access.log:/var/log/traefik-access.log:ro
       - ${DOCKER_VOLUMES}/authelia/data/authelia.log:/var/log/authelia.log:ro

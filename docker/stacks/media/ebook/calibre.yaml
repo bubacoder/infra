@@ -19,6 +19,7 @@ services:
     image: lscr.io/linuxserver/calibre:latest
     container_name: calibre
     restart: unless-stopped
+    # kics-scan ignore-line
     security_opt:
       - seccomp:unconfined # optional
     environment:

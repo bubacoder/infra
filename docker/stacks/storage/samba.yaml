@@ -60,6 +60,7 @@ services:
       SAMBA_VOLUME_CONFIG_downloads_adminonly: "[downloads]; path=/shares/downloads; valid users = ${ADMIN_USER}; guest ok = no; read only = no; browseable = no"
 
     volumes:
+      # kics-scan ignore-line
       - /etc/avahi/services/:/external/avahi
 
       - /mnt:/shares/mnt

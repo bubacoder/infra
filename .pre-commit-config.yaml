@@ -27,6 +27,7 @@ repos:
   # Find security vulnerabilities, compliance issues, and infrastructure misconfigurations early in the development cycle of your infrastructure-as-code with KICS by Checkmarx.
   # KICS stands for Keeping Infrastructure as Code Secure, it is open source and is a must-have for any cloud native project.
   # https://docs.kics.io/latest/commands/
+  # Ignoring errors: https://docs.kics.io/latest/running-kics/#using_commands_on_scanned_files_as_comments
   - repo: https://github.com/Checkmarx/kics
     rev: v2.1.1
     hooks:
@@ -66,7 +67,8 @@ repos:
       - id: ansible-lint
         files: ^ansible/
 
-  # ShellCheck, a static analysis tool for shell scripts
+  # ShellCheck, a static analysis tool for shell scripts - https://www.shellcheck.net/
+  # Ignoring errors: https://www.shellcheck.net/wiki/Ignore, `.shellcheckrc`
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.10.0.1
     hooks:
@@ -89,3 +91,5 @@ repos:
     rev: v2.13.0-beta
     hooks:
       - id: hadolint-docker
+        exclude: "\\.dockerignore$"
+

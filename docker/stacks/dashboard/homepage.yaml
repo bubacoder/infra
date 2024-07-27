@@ -26,6 +26,7 @@ services:
       - ./homepage/config:/app/config
       - ./homepage/icons:/app/public/icons
       - ${DOCKER_VOLUMES}/homepage/logs:/app/logs
+      # kics-scan ignore-line
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - proxy

@@ -71,4 +71,3 @@ Install packages:
 opkg update
 opkg install usbutils
 ```
-
