@@ -6,10 +6,8 @@ FROM python:3.12-alpine3.20 AS collect
 COPY docs/web/requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . /repo
-
 # Note: Add parameter for verbose output: --verbose
-RUN /repo/docs/web/update-docs.py --repository-root /repo
+RUN --mount=type=bind,ro,source=.,target=/repo /repo/docs/web/update-docs.py --repository-path /repo --output-content-path /src/content
 
 #####################################################################
 #                            Build Stage                            #
@@ -28,7 +26,7 @@ RUN hugo mod get
 # Build site
 COPY docs/web/src/config.yaml /src/
 COPY docs/web/src/layouts/ /src/layouts/
-COPY --from=collect /repo/docs/web/src/content/ /src/content/
+COPY --from=collect /src/content/ /src/content/
 RUN hugo --minify --gc
 
 #####################################################################

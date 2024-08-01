@@ -74,24 +74,24 @@ def copy_markdown_file(source_file_path: Path, target_file_path: Path, weight: i
         readme_file.writelines(processed_lines)
 
 
-def process_location(repo_root: Path, source_path: str, target_name: str, weight: int = 0) -> None:
+def process_location(repository_path: Path, source_path: str, target_name: str, weight: int = 0) -> None:
     if source_path.endswith("/"):
-        process_directory(repo_root, source_path, target_name, weight)
+        process_directory(repository_path, source_path, target_name, weight)
     else:
-        process_markdown_file(repo_root, source_path, target_name, weight)
+        process_markdown_file(repository_path, source_path, target_name, weight)
 
 
-def process_directory(repo_root: Path, source_path: str, target_name: str, weight: int = 0) -> None:
-    source_dir = repo_root / source_path
+def process_directory(repository_path: Path, source_path: str, target_name: str, weight: int = 0) -> None:
+    source_dir = repository_path / source_path
     for file in os.listdir(source_dir):
         if file.endswith(".md"):
             target_filename = "_index.md" if file == "README.md" else file
-            process_markdown_file(repo_root, source_path + "/" + file, target_name + "/" + target_filename, weight)
+            process_markdown_file(repository_path, source_path + "/" + file, target_name + "/" + target_filename, weight)
 
 
-def process_markdown_file(repo_root: Path, source_path: str, target_name: str, weight: int = 0) -> None:
-    source_file_path = repo_root / source_path
-    target_file_path = web_root / "content" / target_name
+def process_markdown_file(repository_path: Path, source_path: str, target_name: str, weight: int = 0) -> None:
+    source_file_path = repository_path / source_path
+    target_file_path = output_content_path / target_name
 
     create_directory(target_file_path.parent)
     log_copy(source_file_path, target_file_path)
@@ -197,25 +197,28 @@ def process_docker_directory(source_dir: Path, target_dir: str) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process documentation files.")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
-    parser.add_argument("--repository-root", type=str, help="Specify the root of the repository")
+    parser.add_argument("--repository-path", type=str, help="Specify the path to the repository root")
+    parser.add_argument("--output-content-path", type=str, help="Specify the path of the generated content")
     args = parser.parse_args()
 
     VERBOSE = args.verbose
 
-    if args.repository_root:
-        repo_root = Path(args.repository_root)
+    if args.repository_path:
+        repository_path = Path(args.repository_path)
     else:
-        repo_root = Path(get_git_root())
+        repository_path = Path(get_git_root())
 
-    stacks = repo_root / "docker" / "stacks"
-    web_root = repo_root / "docs" / "web" / "src"
+    if args.output_content_path:
+        output_content_path = Path(args.output_content_path)
+    else:
+        output_content_path = repository_path / "docs" / "web" / "src" / "content"
 
     # Remove the content directory (which only contains generated content)
-    delete_directory_content(web_root / "content")
+    delete_directory_content(output_content_path)
 
     print("Processing Docker Compose stacks")
-    process_docker_directory(stacks, web_root / "content" / "docker")
+    process_docker_directory(repository_path / "docker" / "stacks", output_content_path / "docker")
 
     for source, target, weight in MARKDOWN_LOCATIONS:
         print(f"Processing {source} ==> {target}")
-        process_location(repo_root, source, target, weight)
+        process_location(repository_path, source, target, weight)
