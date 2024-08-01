@@ -1,0 +1,32 @@
+version: '3'
+
+tasks:
+  command:
+    internal: true
+    cmds:
+      - cd "docker/hosts/$(hostname | tr '[:upper:]' '[:lower:]')" && bash -c "source ../../common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
+
+  apply:
+    desc: Deploy locally configured containers
+    cmds:
+      - docker/apply-local.sh
+
+  update:
+    desc: Update and restart containers
+    cmds:
+      - UPDATE=true docker/apply-local.sh
+
+  stop-all:
+    desc: Stop all running containers
+    cmds:
+      - docker stop $(docker ps -a -q)
+
+  prune:
+    desc: Remove unused and dangling images
+    cmds:
+      - docker image prune --all --force --filter "until=504h"
+
+  check-updates:
+    desc: Run Watchtower to get updated container images
+    cmds:
+      - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --run-once --cleanup --monitor-only

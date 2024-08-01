@@ -5,8 +5,10 @@
 version: '3'
 
 includes:
-  crowdsec: ./docker/stacks/security/Taskfile.crowdsec.yaml
+  docker: ./docker/Taskfile.docker.yaml
+  docs: ./docs/web/Taskfile.web.yaml
   devcontainer: ./Taskfile.dev.yaml
+  crowdsec: ./docker/stacks/security/Taskfile.crowdsec.yaml
 
 tasks:
   default:
@@ -44,11 +46,6 @@ tasks:
       - docker/hosts/.env.example
       - docker/hosts/example/.env
 
-  pre-commit-update:
-    desc: Update pre-commit repositories
-    cmds:
-      - pre-commit autoupdate
-
   git-rebase-fixup:
     desc: Interactively rebase current branch to origin (stash, rebase, pop)
     cmds:
@@ -64,27 +61,26 @@ tasks:
       - task: pre-commit-update
       - task: lint
 
-  docs-build:
-    desc: Build documentation site container
-    dotenv: ['docker/hosts/.env']
+  pre-commit-update:
+    desc: Update pre-commit repositories
     cmds:
-      - |
-        SITE_DOMAIN=docs.${MYDOMAIN}
-        HUGO_BASEURL=https://${SITE_DOMAIN}
-        TAG=${SITE_DOMAIN}:latest
-        docker build -f docs/web/Dockerfile -t "${TAG}" --build-arg HUGO_BASEURL="${HUGO_BASEURL}" .
+      - pre-commit autoupdate
 
-  docs-deploy:
-    desc: Build and deploy documentation site
+  star-github-repos:
+    desc: Add star to all referenced GitHub repos
+    dotenv: ['docker/hosts/.env']
+    preconditions:
+      - sh: "[ ! -z \"${GITHUB_API_TOKEN}\" ]"
+        msg: GITHUB_API_TOKEN environment variable must be set (exported)
     cmds:
-      - task: docs-build
-      - task: docker-command
-        vars:
-          STACK: tools
-          SERVICE: homelab-docs
-          COMMAND: recreate
+      - scripts/github-extract-links.py . | sort | uniq | scripts/github-star-repo.py`
 
   ### Operations-related tasks
+
+  docker-command:
+    internal: true
+    cmds:
+      - cd "docker/hosts/$(hostname | tr '[:upper:]' '[:lower:]')" && bash -c "source ../../common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
 
   get-public-ip:
     desc: Display public IP (ipinfo.io)
@@ -97,40 +93,6 @@ tasks:
       - uname -a
       - lsb_release -a
       - docker --version
-
-  docker-command:
-    internal: true
-    cmds:
-      - cd "docker/hosts/$(hostname | tr '[:upper:]' '[:lower:]')" && bash -c "source ../../common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
-
-  docker-apply:
-    desc: Deploy locally configured containers
-    cmds:
-      - docker/apply-local.sh
-
-  docker-update:
-    desc: Update and restart containers
-    cmds:
-      - UPDATE=true docker/apply-local.sh
-
-  docker-stop-all:
-    desc: Stop all running containers
-    cmds:
-      - docker stop $(docker ps -a -q)
-
-  docker-check-updates:
-    desc: Run Watchtower to get updated container images
-    cmds:
-      - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --run-once --cleanup --monitor-only
-
-  star-github-repos:
-    desc: Add star to all referenced GitHub repos
-    dotenv: ['docker/hosts/.env']
-    preconditions:
-      - sh: "[ ! -z \"${GITHUB_API_TOKEN}\" ]"
-        msg: GITHUB_API_TOKEN environment variable must be set (exported)
-    cmds:
-      - scripts/github-extract-links.py . | sort | uniq | scripts/github-star-repo.py`
 
   ansible-apply-homelab:
     desc: Run 'homelab' Ansible playbook

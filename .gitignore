@@ -1,5 +1,7 @@
+# Environment config
 .env*
 !.env.example
 !docker/hosts/example/*
 
+# Taskfile checksums
 .task

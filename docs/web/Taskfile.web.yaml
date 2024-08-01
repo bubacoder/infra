@@ -1,0 +1,39 @@
+version: '3'
+
+tasks:
+  docker-command:
+    internal: true
+    cmds:
+      - cd "docker/hosts/$(hostname | tr '[:upper:]' '[:lower:]')" && bash -c "source ../../common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
+
+  # Add parameters to 'docker build' for debugging: --progress=plain --no-cache
+  build:
+    desc: Build documentation site nginx container
+    dotenv: ['docker/hosts/.env']
+    cmds:
+      - |
+        SITE_DOMAIN=docs.${MYDOMAIN}
+        HUGO_BASEURL=https://${SITE_DOMAIN}
+        TAG=${SITE_DOMAIN}:latest
+        docker build -f docs/web/Dockerfile -t "${TAG}" --build-arg HUGO_BASEURL="${HUGO_BASEURL}" .
+
+  export:
+    desc: Copy documentation site content from container to docs/web/public
+    dotenv: ['docker/hosts/.env']
+    cmds:
+      - |
+        SITE_DOMAIN=docs.${MYDOMAIN}
+        TAG=${SITE_DOMAIN}:latest
+        site_container_id=$(docker create "${TAG}")
+        docker cp ${site_container_id}:/site docs/web/public
+        docker rm ${site_container_id}
+
+  deploy:
+    desc: Build and deploy documentation site as an nginx container
+    cmds:
+      - task: build
+      - task: docker-command
+        vars:
+          STACK: tools
+          SERVICE: homelab-docs
+          COMMAND: recreate
