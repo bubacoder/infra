@@ -4,7 +4,9 @@ tasks:
   build:
     internal: true
     cmds:
-      - cd ansible; docker build --platform linux/amd64 -t infra-devcontainer:{{.TAG}} -f ../Dockerfile.dev --build-arg BASE_IMAGE={{.BASE_IMAGE}} --progress=plain .
+      - |
+        cd ansible
+        docker build --platform linux/amd64 -t infra-devcontainer:{{.TAG}} -f ../.devcontainer/Dockerfile --build-arg BASE_IMAGE={{.BASE_IMAGE}} --progress=plain .
 
   build-debian:
     desc: Build Debian Bookworm based admin-/devcontainer
@@ -27,6 +29,7 @@ tasks:
     cmds:
       - task: build-debian
       - task: build-ubuntu
+      - docker images {{.CONTAINER_NAME}}
 
   run-debian:
     desc: Run Debian Bookworm based admin-/devcontainer
