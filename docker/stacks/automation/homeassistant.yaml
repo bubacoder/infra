@@ -28,8 +28,8 @@ services:
       - ${DOCKER_VOLUMES}/homeassistant:/config
     expose:
       - 8123 # Web UI
-    #devices:
-    #  - /path/to/device:/path/to/device #optional
+    # devices:
+    #   - /path/to/device:/path/to/device #optional
     labels:
       traefik.enable: true
       traefik.http.routers.homeassistant.entrypoints: websecure

@@ -2,9 +2,9 @@
 # For configuration options and examples, please see:
 # https://gethomepage.dev/en/configs/widgets
 
-#- greeting:
-#    text_size: 2x1
-#    text: Nest
+# - greeting:
+#     text_size: 2x1
+#     text: Nest
 
 - resources:
     cpu: true

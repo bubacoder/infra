@@ -116,7 +116,7 @@ http:
         stsIncludeSubdomains: true # HTTP-Strict-Transport-Security (HSTS)
         stsSeconds: 63072000 # HTTP-Strict-Transport-Security (HSTS)
         stsPreload: true # HTTP-Strict-Transport-Security (HSTS)
-        #contentSecurityPolicy: "block-all-mixed-content" # Content-Security-Policy (CSP)
+        # contentSecurityPolicy: "block-all-mixed-content" # Content-Security-Policy (CSP)
 
 
 # Only use secure ciphers - https://ssl-config.mozilla.org/#server=traefik&version=2.9&config=intermediate&guideline=5.6

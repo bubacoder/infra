@@ -15,12 +15,12 @@ services:
       PUID: ${PUID}
       PGID: ${PGID}
       TZ: ${TIMEZONE}
-      PASSWORD: #optional
-      HASHED_PASSWORD: #optional
-      SUDO_PASSWORD: ${ADMIN_PASSWORD} #optional
-      SUDO_PASSWORD_HASH:  #optional
-      PROXY_DOMAIN: code.${MYDOMAIN} #optional
-      DEFAULT_WORKSPACE: /config/workspace #optional
+      PASSWORD: # optional
+      HASHED_PASSWORD: # optional
+      SUDO_PASSWORD: ${ADMIN_PASSWORD} # optional
+      SUDO_PASSWORD_HASH:  # optional
+      PROXY_DOMAIN: code.${MYDOMAIN} # optional
+      DEFAULT_WORKSPACE: /config/workspace # optional
     volumes:
       - ${DOCKER_VOLUMES}/code-server:/config
       - ${ADMIN_HOME}/repos:/config/repos

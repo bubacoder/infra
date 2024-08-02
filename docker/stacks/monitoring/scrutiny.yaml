@@ -26,7 +26,7 @@ services:
     container_name: scrutiny-web
     restart: unless-stopped
     networks:
-     - proxy
+      - proxy
     volumes:
       - ${DOCKER_VOLUMES}/scrutiny/config:/opt/scrutiny/config
     environment:
@@ -53,5 +53,5 @@ services:
       homepage.description: Hard Drive S.M.A.R.T Monitoring
 
 networks:
- proxy:
-   external: true
+  proxy:
+    external: true

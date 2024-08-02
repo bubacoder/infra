@@ -27,7 +27,7 @@ services:
         nginx['listen_https'] = false
         nginx['listen_port'] = 80
     ports:
-     - '3022:22' # expose GitLab SSH on port 3022 on the host, as Traefik does not yet support TCP routing
+      - '3022:22' # expose GitLab SSH on port 3022 on the host, as Traefik does not yet support TCP routing
     volumes:
       - '${DOCKER_VOLUMES}/gitlab/config:/etc/gitlab'
       - '${DOCKER_VOLUMES}/gitlab/logs:/var/log/gitlab'

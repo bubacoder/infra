@@ -19,7 +19,7 @@ labels:
   type: vaultwarden
 ---
 filenames:
- - /var/log/jellyfin/log_*.log
+  - /var/log/jellyfin/log_*.log
 labels:
   type: jellyfin
 ---

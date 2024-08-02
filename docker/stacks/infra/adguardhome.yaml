@@ -15,20 +15,23 @@ services:
       - ${DOCKER_VOLUMES}/adguardhome/work:/opt/adguardhome/work
       - ${DOCKER_VOLUMES}/adguardhome/conf:/opt/adguardhome/conf
     ports:
-      - 53:53/tcp # plain DNS
-      - 53:53/udp # plain DNS
-      #- 67:67/udp # add if you intend to use AdGuard Home as a DHCP server
-      #- 68:68/udp # add if you intend to use AdGuard Home as a DHCP server
-      #- 80:80/tcp # add if you are going to use AdGuard Home's admin panel as well as run AdGuard Home as an HTTPS/DNS-over-HTTPS server
-      #- 443:443/tcp # add if you are going to use AdGuard Home's admin panel as well as run AdGuard Home as an HTTPS/DNS-over-HTTPS server
-      #- 443:443/udp # add if you are going to use AdGuard Home's admin panel as well as run AdGuard Home as an HTTPS/DNS-over-HTTPS server
+      # Fix for DNS access from containers
+      # https://github.com/AdguardTeam/AdGuardHome/discussions/6252
+      - "${MAIN_NODE_IP}:53:53/tcp" # plain DNS
+      - "${MAIN_NODE_IP}:53:53/udp" # plain DNS
+
+      # - 67:67/udp # add if you intend to use AdGuard Home as a DHCP server
+      # - 68:68/udp # add if you intend to use AdGuard Home as a DHCP server
+      # - 80:80/tcp # add if you are going to use AdGuard Home's admin panel as well as run AdGuard Home as an HTTPS/DNS-over-HTTPS server
+      # - 443:443/tcp # add if you are going to use AdGuard Home's admin panel as well as run AdGuard Home as an HTTPS/DNS-over-HTTPS server
+      # - 443:443/udp # add if you are going to use AdGuard Home's admin panel as well as run AdGuard Home as an HTTPS/DNS-over-HTTPS server
       - 3000:3000/tcp # add if you are going to use AdGuard Home's admin panel as well as run AdGuard Home as an HTTPS/DNS-over-HTTPS server - Web UI
-      #- 853:853/tcp # add if you are going to run AdGuard Home as a DNS-over-TLS server
-      #- 784:784/udp # add if you are going to run AdGuard Home as a DNS-over-QUIC server. You may only leave one or two of these
-      #- 853:853/udp # add if you are going to run AdGuard Home as a DNS-over-QUIC server. You may only leave one or two of these
-      #- 8853:8853/udp # add if you are going to run AdGuard Home as a DNS-over-QUIC server. You may only leave one or two of these
-      #- 5443:5443/tcp # add if you are going to run AdGuard Home as a DNSCrypt server
-      #- 5443:5443/udp # add if you are going to run AdGuard Home as a DNSCrypt server
+      # - 853:853/tcp # add if you are going to run AdGuard Home as a DNS-over-TLS server
+      # - 784:784/udp # add if you are going to run AdGuard Home as a DNS-over-QUIC server. You may only leave one or two of these
+      # - 853:853/udp # add if you are going to run AdGuard Home as a DNS-over-QUIC server. You may only leave one or two of these
+      # - 8853:8853/udp # add if you are going to run AdGuard Home as a DNS-over-QUIC server. You may only leave one or two of these
+      # - 5443:5443/tcp # add if you are going to run AdGuard Home as a DNSCrypt server
+      # - 5443:5443/udp # add if you are going to run AdGuard Home as a DNSCrypt server
     networks:
       - proxy
     labels:

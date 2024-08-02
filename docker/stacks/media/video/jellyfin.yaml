@@ -26,7 +26,7 @@ services:
       - 8096:8096 # Web UI - HTTP
       - 8920:8920 # Web UI - HTTPS
       - 7359:7359/udp # Auto-discovery
-      #- 1900:1900/udp # Service auto-discovery, DLNA - TODO enable
+      # - 1900:1900/udp # Service auto-discovery, DLNA - TODO enable
     networks:
       - proxy
     labels:
@@ -41,7 +41,7 @@ services:
       homepage.description: Media Management
       # homepage.widget.type: jellyfin
       # homepage.widget.url: https://jellyfin.${MYDOMAIN}
-      # # You can create an API key from inside Jellyfin at Settings > Advanced > API Keys.
+      # You can create an API key from inside Jellyfin at Settings > Advanced > API Keys.
       # homepage.widget.key: ${JELLYFIN_API_KEY}
 
 networks:
