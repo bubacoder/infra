@@ -61,11 +61,13 @@ repos:
         args: ["--args=--fix"]
 
   # ansible-lint checks playbooks for practices and behavior that could potentially be improved and can fix some of the most common ones for you.
+  # Add '-v' parameter to ansiblelint for verbose mode
   - repo: https://github.com/ansible-community/ansible-lint
     rev: v24.2.1
     hooks:
       - id: ansible-lint
         files: ^ansible/
+        entry: env ANSIBLE_ROLES_PATH=~/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:ansible/roles python3 -m ansiblelint --force-color
 
   # ShellCheck, a static analysis tool for shell scripts - https://www.shellcheck.net/
   # Ignoring errors: https://www.shellcheck.net/wiki/Ignore, `.shellcheckrc`
