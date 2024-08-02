@@ -4,7 +4,7 @@
   hosts:
     - debian
   roles:
-    - role: debian-base
+    - role: debian_base
 
 - name: Setup Docker-host
   hosts:
@@ -12,13 +12,13 @@
     - nest
     - nest2
   roles:
-    - role: debian-docker-host
+    - role: debian_docker_host
 
 - name: Setup Samba client + developer tools
   hosts:
     - nest
     - nest2
   roles:
-    - role: debian-samba-client
+    - role: debian_samba_client
     - role: markosamuli.linuxbrew
-    - role: debian-developer
+    - role: debian_developer

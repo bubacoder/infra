@@ -17,7 +17,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # Copy Ansible directory
 COPY . .
 
-### Setup debian-base role
+### Setup debian_base role
 
 ARG ADMIN_USER=admin
 # Alternative to hardcoded passwd: use adduser with --disabled-password
@@ -32,7 +32,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     echo admin_password: ${ADMIN_PASSWORD} >> $LOCAL_CONFIG && \
     echo configure_hosts_file: false >> $LOCAL_CONFIG && \
     echo configure_ssh_key: false >> $LOCAL_CONFIG && \
-    ./apply-adhoc.sh local-debian debian-base && \
+    ./apply-adhoc.sh local-debian debian_base && \
     rm -rf .fact_cache
 
 ### Setup additional roles (Linuxbrew installation is per-user)
@@ -42,6 +42,6 @@ USER ${ADMIN_USER}
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=type=cache,uid=1000,gid=1000,target=/home/${ADMIN_USER}/.cache,sharing=locked \
-    ./apply-adhoc.sh local-debian markosamuli.linuxbrew,debian-developer
+    ./apply-adhoc.sh local-debian markosamuli.linuxbrew,debian_developer
 
 WORKDIR /home/${ADMIN_USER}

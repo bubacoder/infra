@@ -2,6 +2,8 @@
 - name: Create admin user '{{ admin_user }}'
   ansible.builtin.user:
     name: "{{ admin_user }}"
+    # To create an account with a locked/disabled password on Linux systems, set this to '!' or '*'.
+    # --disabled-password
     password: "{{ admin_password | password_hash('sha512') }}"
     comment: "{{ admin_name }}"
     groups:

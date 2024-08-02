@@ -4,7 +4,7 @@
   hosts:
     - azure-vm
   roles:
-    - role: debian-base
-    - role: debian-docker-host
+    - role: debian_base
+    - role: debian_docker_host
     - role: markosamuli.linuxbrew
-    - role: debian-developer
+    - role: debian_developer

@@ -4,4 +4,4 @@
   become: true
   hosts: mac
   roles:
-    - role: mac-base
+    - role: mac_base
