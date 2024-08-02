@@ -56,8 +56,8 @@ dev_brew_packages:
   - tflint              # https://github.com/terraform-linters/tflint
   - opentofu            # https://opentofu.org/
 
-smb_hostname: nas
-smb_shares:
+debian_samba_client_nas_hostname: nas
+debian_samba_client_nas_shares:
   - media
   - family-media
   - backup

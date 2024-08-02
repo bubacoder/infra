@@ -8,7 +8,7 @@
 
 - name: Create credentials file
   ansible.builtin.copy:
-    dest: "{{ smb_credentials_file }}"
+    dest: "{{ debian_samba_client_credentials_file }}"
     content: |
       username={{ admin_user }}
       password={{ admin_password }}
@@ -18,7 +18,7 @@
 
 - name: Create mount base directory
   ansible.builtin.file:
-    path: "{{ smb_mnt_dir }}"
+    path: "{{ debian_samba_client_mnt_dir }}"
     state: directory
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
@@ -26,18 +26,18 @@
 
 - name: Create mount directories
   ansible.builtin.file:
-    path: "{{ smb_mnt_dir }}{{ item }}"
+    path: "{{ debian_samba_client_mnt_dir }}{{ item }}"
     state: directory
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: '0777'
-  loop: "{{ smb_shares }}"
+  loop: "{{ debian_samba_client_nas_shares }}"
 
 - name: Mount shares from NAS
   ansible.posix.mount:
-    src: "//{{ smb_hostname }}/{{ item }}"
-    path: "{{ smb_mnt_dir }}{{ item }}"
+    src: "//{{ debian_samba_client_nas_hostname }}/{{ item }}"
+    path: "{{ debian_samba_client_mnt_dir }}{{ item }}"
     fstype: cifs
-    opts: "{{ smb_mount_opts }}"
+    opts: "{{ debian_samba_client_mount_opts }}"
     state: mounted
-  loop: "{{ smb_shares }}"
+  loop: "{{ debian_samba_client_nas_shares }}"

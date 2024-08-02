@@ -27,7 +27,7 @@
     regexp: '^(.*)DNSStubListener(.*)$'
     line: 'DNSStubListener=no'
     backrefs: true
-  when: systemd_resolved_conf.stat.exists == true
+  when: systemd_resolved_conf.stat.exists
 
 - name: Create symbolic link to resolv.conf
   ansible.builtin.file:
@@ -37,5 +37,5 @@
     group: systemd-resolve
     state: link
     force: true
-  when: run_systemd_resolved_conf.stat.exists == true
+  when: run_systemd_resolved_conf.stat.exists
   notify: Restart service systemd-resolved

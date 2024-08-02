@@ -15,18 +15,18 @@
 - name: Configure SSH key
   when: configure_ssh_key|default(false)|bool
   block:
-  - name: Create .ssh folder for user '{{ admin_user }}'
-    ansible.builtin.file:
-      path: "~{{ admin_user }}/.ssh"
-      owner: "{{ admin_user }}"
-      group: "{{ admin_user }}"
-      state: directory
-      mode: '0700'
-  - name: Set authorized key for user '{{ admin_user }}'
-    ansible.posix.authorized_key:
-      user: "{{ admin_user }}"
-      state: present
-      key: "{{ lookup('file', ssh_key_file) }}"
+    - name: Create .ssh folder for user '{{ admin_user }}'
+      ansible.builtin.file:
+        path: "~{{ admin_user }}/.ssh"
+        owner: "{{ admin_user }}"
+        group: "{{ admin_user }}"
+        state: directory
+        mode: '0700'
+    - name: Set authorized key for user '{{ admin_user }}'
+      ansible.posix.authorized_key:
+        user: "{{ admin_user }}"
+        state: present
+        key: "{{ lookup('file', ssh_key_file) }}"
 
 - name: Set git global config for user '{{ admin_user }}'
   community.general.git_config:

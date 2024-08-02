@@ -28,6 +28,7 @@ tasks:
 
   ### Development-related tasks
 
+  # See https://pre-commit.com for more information
   lint:
     desc: Run linting tools (via pre-commit)
     cmds:

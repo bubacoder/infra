@@ -1,4 +1,4 @@
 ---
-smb_mnt_dir: "/mnt/{{ smb_hostname }}/"
-smb_credentials_file: "/root/.smbcredentials_{{ smb_hostname }}"
-smb_mount_opts: "credentials={{ smb_credentials_file }},iocharset=utf8,file_mode=0777,dir_mode=0777,gid=1000,uid=1000"
+debian_samba_client_mnt_dir: "/mnt/{{ debian_samba_client_nas_hostname }}/"
+debian_samba_client_credentials_file: "/root/.smbcredentials_{{ debian_samba_client_nas_hostname }}"
+debian_samba_client_mount_opts: "credentials={{ debian_samba_client_credentials_file }},iocharset=utf8,file_mode=0777,dir_mode=0777,gid=1000,uid=1000"
