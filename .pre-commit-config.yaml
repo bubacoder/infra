@@ -29,7 +29,7 @@ repos:
   # https://docs.kics.io/latest/commands/
   # Ignoring errors: https://docs.kics.io/latest/running-kics/#using_commands_on_scanned_files_as_comments
   - repo: https://github.com/Checkmarx/kics
-    rev: v2.1.1
+    rev: v2.1.2
     hooks:
       - id: kics-scan
         # TODO solve the high severity issues first
@@ -67,7 +67,10 @@ repos:
     hooks:
       - id: ansible-lint
         files: ^ansible/
-        entry: env ANSIBLE_ROLES_PATH=~/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:ansible/roles python3 -m ansiblelint --force-color
+        entry: >
+          env ANSIBLE_ROLES_PATH=~/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:ansible/roles
+          env ANSIBLE_COLLECTIONS_PATH=/usr/lib/python3/dist-packages:/usr/share/ansible/collections:/etc/ansible/collections:/opt/pipx/venvs/ansible-core/lib/python3.10/site-packages/ansible_collections:~/.ansible/collections:collections
+          python3 -m ansiblelint --force-color
 
   # ShellCheck, a static analysis tool for shell scripts - https://www.shellcheck.net/
   # Ignoring errors: https://www.shellcheck.net/wiki/Ignore, `.shellcheckrc`
@@ -94,4 +97,3 @@ repos:
     hooks:
       - id: hadolint-docker
         exclude: "\\.dockerignore$"
-

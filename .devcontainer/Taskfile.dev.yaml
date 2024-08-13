@@ -1,15 +1,18 @@
 version: '3'
 
+vars:
+  CONTAINER_NAME: infra-devcontainer
+
 tasks:
   build:
     internal: true
     cmds:
       - |
         cd ansible
-        docker build --platform linux/amd64 -t infra-devcontainer:{{.TAG}} -f ../.devcontainer/Dockerfile --build-arg BASE_IMAGE={{.BASE_IMAGE}} --progress=plain .
+        docker build --platform linux/amd64 --file ../.devcontainer/Dockerfile --tag {{.CONTAINER_NAME}}:{{.TAG}} --build-arg BASE_IMAGE={{.BASE_IMAGE}} --progress=plain .
 
   build-debian:
-    desc: Build Debian Bookworm based admin-/devcontainer
+    desc: Build Debian Bookworm based dev & admin container
     cmds:
       - task: build
         vars:
@@ -17,7 +20,7 @@ tasks:
           TAG: debian
 
   build-ubuntu:
-    desc: Build Ubuntu 24.04 LTS based admin-/devcontainer
+    desc: Build Ubuntu 24.04 LTS based dev & admin container
     cmds:
       - task: build
         vars:
@@ -25,18 +28,18 @@ tasks:
           TAG: ubuntu
 
   build-all:
-    desc: Build Debian and Ubuntu based admin-/devcontainers
+    desc: Build Debian and Ubuntu based dev & admin containers
     cmds:
       - task: build-debian
       - task: build-ubuntu
       - docker images {{.CONTAINER_NAME}}
 
   run-debian:
-    desc: Run Debian Bookworm based admin-/devcontainer
+    desc: Run Debian-based dev & admin container
     cmds:
-      - docker run -it infra-devcontainer:debian
+      - docker run -it -v .:/home/admin/repos/infra {{.CONTAINER_NAME}}:debian
 
   run-ubuntu:
-    desc: Run Ubuntu 24.04 LTS based admin-/devcontainer
+    desc: Run Ubuntu-based dev & admin container
     cmds:
-      - docker run -it infra-devcontainer:ubuntu
+      - docker run -it -v .:/home/admin/repos/infra {{.CONTAINER_NAME}}:ubuntu

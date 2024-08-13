@@ -91,9 +91,11 @@ tasks:
   versions:
     desc: Show software version numbers
     cmds:
-      - uname -a
       - lsb_release -a
-      - docker --version
+      - uname -a
+      - ansible --version
+      - terraform --version
+      # - docker --version
 
   ansible-apply-homelab:
     desc: Run 'homelab' Ansible playbook
