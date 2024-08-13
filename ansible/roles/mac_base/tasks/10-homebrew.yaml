@@ -16,6 +16,8 @@
   ansible.builtin.shell: /bin/bash -c "NONINTERACTIVE=true $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   become: false
   when: not homebrew_check.stat.exists
+  register: homebrew_install
+  changed_when: homebrew_install.rc == 0
 
 - name: Update Homebrew
   community.general.homebrew:

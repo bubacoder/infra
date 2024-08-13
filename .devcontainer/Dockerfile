@@ -1,4 +1,5 @@
 ARG BASE_IMAGE=debian:bookworm-slim
+# hadolint ignore=DL3006
 FROM ${BASE_IMAGE}
 
 WORKDIR /tmp/ansible-bootstrap-container
@@ -20,18 +21,15 @@ COPY . .
 ### Setup debian_base role
 
 ARG ADMIN_USER=admin
-# Alternative to hardcoded passwd: use adduser with --disabled-password
-ARG ADMIN_PASSWORD=InItIal_PswD
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=type=cache,target=/root/.cache,sharing=locked \
     mkdir -p inventory/host_vars/local-debian/ && \
     LOCAL_CONFIG=inventory/host_vars/local-debian/local.yaml && \
-    echo admin_user: ${ADMIN_USER} > $LOCAL_CONFIG && \
-    echo admin_password: ${ADMIN_PASSWORD} >> $LOCAL_CONFIG && \
-    echo configure_hosts_file: false >> $LOCAL_CONFIG && \
-    echo configure_ssh_key: false >> $LOCAL_CONFIG && \
+    echo admin_user: "${ADMIN_USER}" > "$LOCAL_CONFIG" && \
+    echo configure_hosts_file: false >> "$LOCAL_CONFIG" && \
+    echo configure_ssh_key: false >> "$LOCAL_CONFIG" && \
     ./apply-adhoc.sh local-debian debian_base && \
     rm -rf .fact_cache
 

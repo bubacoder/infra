@@ -2,15 +2,17 @@
 - name: Create admin user '{{ admin_user }}'
   ansible.builtin.user:
     name: "{{ admin_user }}"
-    # To create an account with a locked/disabled password on Linux systems, set this to '!' or '*'.
-    # --disabled-password
-    password: "{{ admin_password | password_hash('sha512') }}"
     comment: "{{ admin_name }}"
     groups:
       - sudo
     shell: '/bin/bash'
     append: true
-    update_password: on_create
+
+- name: Set password for admin user '{{ admin_user }}'
+  when: admin_password|default('') != ''
+  ansible.builtin.user:
+    name: "{{ admin_user }}"
+    password: "{{ admin_password | password_hash('sha512', password_salt) }}"
 
 - name: Configure SSH key
   when: configure_ssh_key|default(false)|bool
@@ -33,6 +35,7 @@
     name: "{{ item.name }}"
     value: "{{ item.value }}"
     scope: global
+  become: true
   become_user: "{{ admin_user }}"
   with_items:
     - name: "user.name"

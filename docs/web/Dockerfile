@@ -3,6 +3,7 @@
 #####################################################################
 FROM python:3.12-alpine3.20 AS collect
 
+WORKDIR /tmp
 COPY docs/web/requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
