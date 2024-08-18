@@ -1,0 +1,34 @@
+name: Build dev & admin container
+
+on:
+  push:
+    branches: ["main"]
+    paths: ['.github/workflows/devcontainer.yml', '.devcontainer/Dockerfile', 'ansible/**']
+  pull_request:
+    paths: ['.github/workflows/devcontainer.yml', '.devcontainer/Dockerfile', 'ansible/**']
+  workflow_dispatch:
+
+concurrency:
+  group: "devcontainer"
+  cancel-in-progress: false
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distribution:
+          - tag: debian
+            base_image: debian:bookworm-slim
+          - tag: ubuntu
+            base_image: ubuntu:24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the container image
+        run: |
+          cd ansible
+          docker build --platform linux/amd64 --file ../.devcontainer/Dockerfile \
+            --tag infra-devcontainer:${{ matrix.distribution.tag }} \
+            --build-arg BASE_IMAGE=${{ matrix.distribution.base_image }} .
+      - name: Test the container image
+        run: docker run -v .:/home/admin/repos/infra infra-devcontainer:${{ matrix.distribution.tag }} bash --login -c "cd /home/admin/repos/infra; task versions"

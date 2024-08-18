@@ -1,0 +1,36 @@
+name: Pre-commit checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+
+      - name: Setup Python
+        uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5
+        with:
+          python-version: '3.11'
+
+      - name: Install tflint
+        run: curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+
+      - name: Install terraform-docs
+        run: |
+          curl -sSLo ./terraform-docs.tar.gz https://terraform-docs.io/dl/v0.18.0/terraform-docs-v0.18.0-$(uname)-amd64.tar.gz
+          tar -xzf terraform-docs.tar.gz terraform-docs
+          chmod +x terraform-docs
+          mv terraform-docs /usr/local/bin/terraform-docs
+          rm terraform-docs.tar.gz
+
+      # Note: collections will be installed to /opt/pipx/venvs/ansible-core/lib/python3.10/site-packages/ansible_collections
+      - name: Install Ansible requirements
+        run: cd ansible && ansible-galaxy install -vv -r requirements.yml
+
+      - name: Pre-commit checks
+        uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
