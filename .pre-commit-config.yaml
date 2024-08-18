@@ -97,3 +97,9 @@ repos:
     hooks:
       - id: hadolint-docker
         exclude: "\\.dockerignore$"
+
+  # Run renovate-config-validator
+  - repo: https://github.com/renovatebot/pre-commit-hooks
+    rev: 37.433.2
+    hooks:
+      - id: renovate-config-validator

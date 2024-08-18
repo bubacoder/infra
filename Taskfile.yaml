@@ -67,6 +67,11 @@ tasks:
     cmds:
       - pre-commit autoupdate
 
+  renovate:
+    desc: Run Renovatebot locally
+    cmds:
+      - docker run --rm -v .:/usr/src/app -e LOG_LEVEL=debug renovate/renovate --platform local
+
   star-github-repos:
     desc: Add star to all referenced GitHub repos
     dotenv: ['docker/hosts/.env']
