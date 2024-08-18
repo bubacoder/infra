@@ -39,7 +39,6 @@ USER ${ADMIN_USER}
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    --mount=type=cache,uid=1000,gid=1000,target=/home/${ADMIN_USER}/.cache,sharing=locked \
     ./apply-adhoc.sh local-debian markosamuli.linuxbrew,debian_developer
 
 WORKDIR /home/${ADMIN_USER}
