@@ -1,0 +1,61 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "schedule:weekends",
+    ":rebaseStalePrs",
+    ":enablePreCommit",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "assignees": ["bubacoder"],
+  "labels": ["renovate"],
+  "docker-compose": {
+    "fileMatch": [
+      "^docker\/stacks\/.*\\.yaml$"
+    ]
+  },
+  "packageRules": [
+    {
+      "matchManagers": ["gomod", "pip_requirements", "pre-commit", "github-actions"],
+      "groupName": "{{manager}}"
+    },
+    {
+      "matchManagers": ["terraform"],
+      "groupName": "Terraform modules",
+      "groupSlug": "terraform",
+      "extends": ["schedule:monthly"]
+    },
+    {
+      "description": "Group all dependencies from the ansible directory",
+      "matchFileNames": ["ansible/**"],
+      "groupName": "Ansible",
+      "groupSlug": "ansible",
+      "extends": ["schedule:monthly"]
+    },
+    {
+      "description": "Group all dependencies from the docs/web directory",
+      "matchFileNames": ["docs/web/**"],
+      "groupName": "Documentation website dependencies",
+      "groupSlug": "docs-web"
+    },
+    {
+      "description": "Group minor and patch updates from the docker/stacks directory",
+      "matchFileNames": ["docker/stacks/**"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "Container images",
+      "groupSlug": "docker-stacks"
+    },
+    {
+      "description": "Do not group major updates from the docker/stacks directory",
+      "matchFileNames": ["docker/stacks/**"],
+      "matchUpdateTypes": ["major"],
+      "groupName": null,
+      "dependencyDashboardApproval": true
+    },
+    {
+      "matchManagers": ["docker-compose", "dockerfile"],
+      "matchPackageNames": ["lscr.io/linuxserver/jellyfin"],
+      "allowedVersions": "<2000"
+    }
+  ]
+}
