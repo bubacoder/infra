@@ -72,6 +72,12 @@ tasks:
     cmds:
       - docker run --rm -v .:/usr/src/app -e LOG_LEVEL=debug renovate/renovate --platform local
 
+  clean:
+    desc: Clear generated content and cache data
+    cmds:
+      - task: docs:clean
+      - cd terraform && make clean
+
   star-github-repos:
     desc: Add star to all referenced GitHub repos
     dotenv: ['docker/hosts/.env']

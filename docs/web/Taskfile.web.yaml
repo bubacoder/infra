@@ -37,3 +37,8 @@ tasks:
           STACK: tools
           SERVICE: homelab-docs
           COMMAND: recreate
+
+  clean:
+    desc: Clear generated content
+    cmds:
+      - rm -rf docs/web/public/
