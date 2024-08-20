@@ -1,4 +1,4 @@
-name: Deploy documentation site
+name: Documentation site
 
 # To enable Pages, set "Source" to "GitHub Actions" on "Settings" -> "Code and automation" -> "Pages"
 
