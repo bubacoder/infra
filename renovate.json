@@ -9,6 +9,7 @@
   ],
   "assignees": ["bubacoder"],
   "labels": ["renovate"],
+  "platformAutomerge": true,
   "docker-compose": {
     "fileMatch": [
       "^docker\/stacks\/.*\\.yaml$"
@@ -18,6 +19,10 @@
     {
       "matchManagers": ["gomod", "pip_requirements", "pre-commit", "github-actions"],
       "groupName": "{{manager}}"
+    },
+    {
+      "matchManagers": ["pre-commit"],
+      "automerge": true
     },
     {
       "matchManagers": ["terraform"],
