@@ -18,10 +18,6 @@ accessLog:
   filePath: /logs/traefik-access.log
   bufferingSize: 50
 
-# https://doc.traefik.io/traefik/routing/entrypoints/#http3
-experimental:
-  http3: true
-
 providers:
   providersThrottleDuration: 2s
 
@@ -36,7 +32,6 @@ providers:
     network: proxy
     # Default host rule to containername.domain.example
     defaultRule: 'Host(`{{ index .Labels "com.docker.compose.service"}}.{{env "MYDOMAIN"}}`)'
-    swarmModeRefreshSeconds: 15s
     exposedByDefault: false  # Tells Traefik not to expose containers to the outside world unless explicitly instructed to do so
 
 entryPoints:
