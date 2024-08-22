@@ -10,7 +10,7 @@
 name: kopia-nas
 services:
   kopia-nas:
-    image: kopia/kopia:latest
+    image: kopia/kopia:latest # No semantic version tags are available
     container_name: kopia-nas
     restart: "unless-stopped"
     user: "0:0"

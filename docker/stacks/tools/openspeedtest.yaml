@@ -5,7 +5,7 @@
 name: openspeedtest
 services:
   openspeedtest:
-    image: openspeedtest/latest:latest
+    image: openspeedtest/latest:v2.0.5
     container_name: openspeedtest
     restart: unless-stopped
     networks:
