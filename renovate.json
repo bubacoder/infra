@@ -57,10 +57,21 @@
       "groupName": null,
       "dependencyDashboardApproval": true
     },
+
     {
       "matchManagers": ["docker-compose", "dockerfile"],
       "matchPackageNames": ["lscr.io/linuxserver/jellyfin"],
       "allowedVersions": "<2000"
+    },
+    {
+      "matchManagers": ["docker-compose", "dockerfile"],
+      "matchPackageNames": ["lscr.io/linuxserver/calibre-web"],
+      "allowedVersions": "<2000"
+    },
+    {
+      "matchManagers": ["docker-compose", "dockerfile"],
+      "matchPackageNames": ["lscr.io/linuxserver/qbittorrent"],
+      "allowedVersions": "<5"
     }
   ]
 }

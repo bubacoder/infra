@@ -9,7 +9,7 @@
 name: wg-easy
 services:
   wg-easy:
-    image: docker.io/weejewel/wg-easy:latest
+    image: ghcr.io/wg-easy/wg-easy:14
     container_name: wg-easy
     hostname: wireguard-easy
     restart: unless-stopped

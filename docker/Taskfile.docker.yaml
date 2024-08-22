@@ -26,6 +26,11 @@ tasks:
     cmds:
       - docker image prune --all --force --filter "until=504h"
 
+  show-restarts:
+    desc: Show containers restart events
+    cmds:
+      - docker events --filter event=restart --since=60m
+
   check-updates:
     desc: Run Watchtower to get updated container images
     cmds:

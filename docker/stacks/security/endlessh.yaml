@@ -7,7 +7,7 @@
 name: endlessh
 services:
   endlessh:
-    image: lscr.io/linuxserver/endlessh:latest
+    image: lscr.io/linuxserver/endlessh:latest # No semantic version tags are available
     container_name: endlessh
     restart: unless-stopped
     environment:

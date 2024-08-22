@@ -9,7 +9,7 @@
 name: authelia
 services:
   initContainer:
-    image: dibi/envsubst:latest
+    image: dibi/envsubst:latest # TODO release date: 2020!
     environment:
       MYDOMAIN: ${MYDOMAIN}
       ADMIN_USER: ${ADMIN_USER}

@@ -12,7 +12,7 @@
 name: unifi-controller
 services:
   unifi-controller:
-    image: lscr.io/linuxserver/unifi-controller:latest
+    image: lscr.io/linuxserver/unifi-controller:8.0.24
     container_name: unifi-controller
     restart: unless-stopped
     environment:

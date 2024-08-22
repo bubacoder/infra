@@ -12,7 +12,7 @@ name: prometheus
 services:
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.54.0
     container_name: prometheus
     restart: unless-stopped
     user: "0:0"
@@ -35,7 +35,7 @@ services:
       homepage.description: "Exporters: node-exporter, cadvisor"
 
   node_exporter:
-    image: quay.io/prometheus/node-exporter:latest
+    image: quay.io/prometheus/node-exporter:v1.8.2
     container_name: node_exporter
     restart: unless-stopped
     pid: host
