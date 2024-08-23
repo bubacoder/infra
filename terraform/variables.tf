@@ -1,5 +1,10 @@
 # --- Common ---
 
+variable "subscription_id" {
+  description = "Azure subscription ID (format: '00000000-xxxx-xxxx-xxxx-xxxxxxxxxxxx')"
+  type        = string
+}
+
 variable "location" {
   description = "Location of the resources"
   default     = "westeurope"
