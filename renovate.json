@@ -35,7 +35,8 @@
       "matchFileNames": ["ansible/**"],
       "groupName": "Ansible",
       "groupSlug": "ansible",
-      "extends": ["schedule:monthly"]
+      "extends": ["schedule:monthly"],
+      "automerge": true
     },
     {
       "description": "Group all dependencies from the docs/web directory",
@@ -59,19 +60,35 @@
     },
 
     {
+      "description": "Disable invalid version tags",
       "matchManagers": ["docker-compose", "dockerfile"],
       "matchPackageNames": ["lscr.io/linuxserver/jellyfin"],
       "allowedVersions": "<2000"
     },
     {
+      "description": "Disable invalid version tags",
       "matchManagers": ["docker-compose", "dockerfile"],
       "matchPackageNames": ["lscr.io/linuxserver/calibre-web"],
       "allowedVersions": "<2000"
     },
     {
+      "description": "Disable invalid version tags",
       "matchManagers": ["docker-compose", "dockerfile"],
       "matchPackageNames": ["lscr.io/linuxserver/qbittorrent"],
       "allowedVersions": "<5"
+    },
+    {
+      "description": "Disable invalid version tags",
+      "matchManagers": ["docker-compose", "dockerfile"],
+      "matchPackageNames": ["lscr.io/linuxserver/calibre-web"],
+      "allowedVersions": "<1"
+    },
+    {
+      "description": "Updates of renovatebot are too frequent - update only to major, minor versions",
+      "matchManagers": ["pre-commit"],
+      "matchPackageNames": ["renovatebot/pre-commit-hooks"],
+      "matchUpdateTypes": ["patch"],
+      "enabled": false
     }
   ]
 }
