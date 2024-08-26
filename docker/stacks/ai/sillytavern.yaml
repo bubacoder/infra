@@ -10,7 +10,7 @@
 name: sillytavern
 services:
   sillytavern:
-    image: ghcr.io/sillytavern/sillytavern:1.12.4
+    image: ghcr.io/sillytavern/sillytavern:1.12.5
     container_name: sillytavern
     restart: unless-stopped
     volumes:
