@@ -17,42 +17,50 @@
   },
   "packageRules": [
     {
+      "description": "Group updates by manager",
       "matchManagers": ["gomod", "pip_requirements", "pre-commit", "github-actions"],
       "groupName": "{{manager}}"
     },
+
     {
+      "description": "Enable automerge (automatic checks are in place)",
+      "schedule": ["before 4am on the first day instance on saturday"],
       "matchManagers": ["pre-commit"],
       "automerge": true
     },
     {
-      "matchManagers": ["terraform"],
-      "groupName": "Terraform modules",
-      "groupSlug": "terraform",
-      "extends": ["schedule:monthly"]
-    },
-    {
-      "description": "Group all dependencies from the ansible directory",
+      "description": "Group all dependencies from the ansible directory; enable automerge (automatic checks are in place)",
+      "schedule": ["after 4am and before 8am on the first day instance on saturday"],
       "matchFileNames": ["ansible/**"],
       "groupName": "Ansible",
       "groupSlug": "ansible",
-      "extends": ["schedule:monthly"],
       "automerge": true
     },
     {
-      "description": "Group all dependencies from the docs/web directory",
+      "description": "No frequent updates are needed; manual verification",
+      "schedule": ["before 8am on the 2nd day instance on saturday"],
+      "matchManagers": ["terraform"],
+      "groupName": "Terraform modules",
+      "groupSlug": "terraform"
+    },
+    {
+      "description": "Group all dependencies from the docs/web directory; no frequent updates are needed; manual verification",
+      "schedule": ["before 8am on the 3rd day instance on saturday"],
       "matchFileNames": ["docs/web/**"],
       "groupName": "Documentation website dependencies",
       "groupSlug": "docs-web"
     },
     {
       "description": "Group minor and patch updates from the docker/stacks directory",
+      "schedule": ["after 8am on saturday"],
       "matchFileNames": ["docker/stacks/**"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "Container images",
       "groupSlug": "docker-stacks"
     },
     {
-      "description": "Do not group major updates from the docker/stacks directory",
+      "description": "Do not group major updates from the docker/stacks directory; require approval",
+      "schedule": ["after 8am on saturday"],
       "matchFileNames": ["docker/stacks/**"],
       "matchUpdateTypes": ["major"],
       "groupName": null,
@@ -84,10 +92,10 @@
       "allowedVersions": "<1"
     },
     {
-      "description": "Updates of renovatebot are too frequent - update only to major, minor versions",
+      "description": "Updates of renovatebot are too frequent - update only to major versions",
       "matchManagers": ["pre-commit"],
       "matchPackageNames": ["renovatebot/pre-commit-hooks"],
-      "matchUpdateTypes": ["patch"],
+      "matchUpdateTypes": ["minor", "patch"],
       "enabled": false
     }
   ]
