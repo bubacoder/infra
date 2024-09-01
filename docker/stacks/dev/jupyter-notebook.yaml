@@ -10,7 +10,7 @@
 name: jupyter-notebook
 services:
   jupyter-notebook:
-    image: quay.io/jupyter/minimal-notebook
+    image: quay.io/jupyter/minimal-notebook:notebook-7.2.2
     container_name: jupyter-notebook
     restart: unless-stopped
     networks:

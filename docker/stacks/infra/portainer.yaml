@@ -4,12 +4,12 @@
 # In order to generate an API key, please follow the steps outlined here: https://docs.portainer.io/api/access
 #
 # 🏠 Home: https://www.portainer.io/  
-# 📜 Source: https://github.com/portainer/portainer  
+# 📜 Source: https://github.com/portainer/portainer-ce  
 ---
 name: portainer
 services:
   portainer:
-    image: portainer/portainer:1.25.0
+    image: portainer/portainer-ce:2.20.3
     container_name: portainer
     restart: unless-stopped
     # kics-scan ignore-block
