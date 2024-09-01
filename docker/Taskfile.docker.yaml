@@ -31,6 +31,17 @@ tasks:
     cmds:
       - docker events --filter event=restart --since=60m
 
+  # Note: Escape {{ .. }} in Go templates: {{` {{ .. }} `}}
+  show-big-images:
+    desc: List the largest container images
+    cmds:
+      - docker images --format "{{`{{.ID}}\t{{.Size}}\t{{.Repository}}:{{.Tag}}`}}" | sort -k 2 -h -r | head -n 25
+
+  du:
+    desc: Show docker disk usage
+    cmds:
+      - sudo du -x -h --max-depth=1 /var/lib/docker
+
   check-updates:
     desc: Run Watchtower to get updated container images
     cmds:
