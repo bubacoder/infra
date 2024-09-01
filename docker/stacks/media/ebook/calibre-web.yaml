@@ -21,8 +21,6 @@ services:
     volumes:
       - ${DOCKER_VOLUMES}/calibre-web:/config
       - ${STORAGE_CALIBRE_LIBRARY}:/books
-    # ports:
-    #   - 8083:8083
     networks:
       - proxy
     labels:

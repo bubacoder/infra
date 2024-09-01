@@ -4,12 +4,12 @@
 # The default username is `guacadmin` with password `guacadmin`.
 #
 # 🏠 Home: https://guacamole.apache.org/  
-# 📦 Image: https://hub.docker.com/r/maxwaldorf/guacamole  
+# 📦 Image: https://hub.docker.com/r/flcontainers/guacamole  
 ---
 name: guacamole
 services:
   guacamole:
-    image: maxwaldorf/guacamole
+    image: flcontainers/guacamole:1.5.5
     container_name: guacamole
     restart: unless-stopped
     environment:

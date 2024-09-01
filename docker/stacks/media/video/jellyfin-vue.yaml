@@ -6,7 +6,7 @@
 name: jellyfin-vue
 services:
   jellyfin-vue:
-    image: jellyfin/jellyfin-vue:unstable
+    image: jellyfin/jellyfin-vue:unstable # TODO No stable version released yet
     container_name: jellyfin-vue
     restart: unless-stopped
     networks:

@@ -20,7 +20,7 @@
 name: crowdsec
 services:
   crowdsec:
-    image: crowdsecurity/crowdsec
+    image: crowdsecurity/crowdsec:v1.6.2
     container_name: crowdsec
     restart: unless-stopped
     expose:
@@ -48,7 +48,7 @@ services:
       homepage.description: "Crowdsec Security Engine"
 
   crowdsec-traefik-bouncer:
-    image: fbonalair/traefik-crowdsec-bouncer
+    image: fbonalair/traefik-crowdsec-bouncer:0.5.0 # TODO 2+ years old
     container_name: bouncer-traefik
     restart: unless-stopped
     environment:

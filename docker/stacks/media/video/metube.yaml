@@ -10,7 +10,7 @@
 name: metube
 services:
   metube:
-    image: alexta69/metube
+    image: alexta69/metube:2024-08-22
     container_name: metube
     restart: "unless-stopped"
     environment:
