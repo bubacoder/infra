@@ -5,6 +5,7 @@
 version: '3'
 
 includes:
+  ansible: ./ansible/Taskfile.ansible.yaml
   docker: ./docker/Taskfile.docker.yaml
   docs: ./docs/web/Taskfile.web.yaml
   devcontainer: ./.devcontainer/Taskfile.dev.yaml
@@ -106,14 +107,4 @@ tasks:
       - uname -a
       - ansible --version
       - terraform --version
-      # - docker --version
-
-  ansible-apply-homelab:
-    desc: Run 'homelab' Ansible playbook
-    cmds:
-      - ansible/apply-homelab.sh
-
-  ansible-apply-cloud:
-    desc: Run 'cloud' Ansible playbook
-    cmds:
-      - ansible/apply-cloud.sh
+      - docker --version || true
