@@ -1,0 +1,12 @@
+version: '3'
+
+tasks:
+  apply-homelab:
+    desc: Run 'homelab' Ansible playbook
+    cmds:
+      - ansible/apply-homelab.sh
+
+  apply-cloud:
+    desc: Run 'cloud' Ansible playbook
+    cmds:
+      - ansible/apply-cloud.sh
