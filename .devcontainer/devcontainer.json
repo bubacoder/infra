@@ -3,11 +3,19 @@
 {
 	"name": "Admin/dev",
 	"build": {
-		// Sets the run context to one level up instead of the .devcontainer folder.
+		// Sets the run context to the ansible directory instead of the .devcontainer folder.
 		"context": "../ansible",
-		// Update the 'dockerFile' property if you aren't using the standard 'Dockerfile' filename.
-		"dockerfile": "Dockerfile"
+		"dockerfile": "Dockerfile",
+		"target": "dev-final",
+		"options": [
+			"--build-arg=BASE_IMAGE=debian:bookworm-slim"
+		]
 	},
+
+	"containerEnv": {
+		"LANG": "C.UTF-8"
+	},
+
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {

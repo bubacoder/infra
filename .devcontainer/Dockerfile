@@ -1,10 +1,10 @@
+### Setup Ansible
+
 ARG BASE_IMAGE=debian:bookworm-slim
 # hadolint ignore=DL3006
-FROM ${BASE_IMAGE}
+FROM ${BASE_IMAGE} AS dev-ansible
 
 WORKDIR /tmp/ansible-bootstrap-container
-
-### Setup Ansible
 
 COPY bootstrap-ansible.sh ansible.cfg requirements.yml ./
 
@@ -20,6 +20,8 @@ COPY . .
 
 ### Setup debian_base role
 
+FROM dev-ansible AS dev-base
+
 ARG ADMIN_USER=admin
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
@@ -34,6 +36,12 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     rm -rf .fact_cache
 
 ### Setup additional roles (Linuxbrew installation is per-user)
+
+FROM dev-base AS dev-final
+
+# Note: An ARG instruction goes out of scope at the end of the build stage where it was defined.
+#   To use an arg in multiple stages, each stage must include the ARG instruction.
+ARG ADMIN_USER=admin
 
 USER ${ADMIN_USER}
 
