@@ -63,7 +63,7 @@ The long-term goal is to reduce these dependencies and provide offline alternati
 ## Development
 
 Code quality scanning tools are set up via [pre-commit](https://pre-commit.com).
-Perform the checks by running `task lint` (or `lint.sh` in the root of the repo).
+Perform the checks by running `task lint` (or `pre-commit run --all-files`).
 
 Create/update example `.env` files: `task create-example-env`.
 
