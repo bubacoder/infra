@@ -18,3 +18,7 @@ cat /var/log/cloud-init.log
 ```
 
 For the execution order of the modules, check [cloud.cfg.tmpl](https://git.launchpad.net/cloud-init/tree/config/cloud.cfg.tmpl)
+
+<!-- BEGIN_TF_DOCS -->
+
+<!-- END_TF_DOCS -->

@@ -1,5 +1,8 @@
+# Configuration reference: https://terraform-docs.io/user-guide/configuration/
+
 formatter: "markdown table"
 
 settings:
   anchor: false
   lockfile: false
+  hide-empty: true
