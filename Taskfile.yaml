@@ -42,8 +42,8 @@ tasks:
       - scripts/create-example-env.py docker/hosts/.env > docker/hosts/.env.example
       - scripts/create-example-env.py docker/hosts/${MAIN_NODE}/.env > docker/hosts/example/.env
     sources:
-      - docker/hosts/.env
-      - docker/hosts/${MAIN_NODE}/.env
+      - docker/hosts/**/.env
+      - exclude: docker/hosts/example/.env
     generates:
       - docker/hosts/.env.example
       - docker/hosts/example/.env
