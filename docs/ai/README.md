@@ -11,7 +11,7 @@
 - CPU and GPU mode is supported
 - You should have at least 8 GB of RAM available to run the 7B models, 16 GB to run the 13B models, and 32 GB to run the 33B models.
 - On Apple M1 and higher Ollama performs great with 7B models due to the [Unified memory architecture](https://en.wikipedia.org/wiki/Apple_M1#Memory)
-- High memory bandwidth (tipically GPU) is the top priority to achieve good performance
+- High memory bandwidth (typically GPU) is the top priority to achieve good performance
 
 HW performance benchmarks:
 - [Performance of llama.cpp on Apple Silicon M-series](https://github.com/ggerganov/llama.cpp/discussions/4167)
@@ -60,7 +60,7 @@ Ollama parameters: https://github.com/ollama/ollama/blob/main/docs/modelfile.md#
 
 ### JSON data output
 
-- [Instructor](https://github.com/jxnl/instructor) - structured outputs for llms
+- [Instructor](https://github.com/jxnl/instructor) - structured outputs for LLMs
 - [Outlines](https://github.com/outlines-dev/outlines) - Structured Text Generation
 - [awesome-llm-json](https://github.com/imaurer/awesome-llm-json) - Resource list for generating JSON using LLMs via function calling, tools, CFG. Libraries, Models, Notebooks, etc.
 

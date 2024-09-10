@@ -22,7 +22,7 @@ ssh root@proxmox "bash -s" -- < create-ubuntu-server-vm.sh
 
 **Quickstart:**
 
-In addition to the previous, this script also configures the installer for unattanded inatall.
+In addition to the previous, this script also configures the installer for unattended install.
 
 - Setup SSH access to the PVE host
 - Edit `create-ubuntu-server-vm.sh` to match the desired configuration

@@ -1,5 +1,10 @@
 # Home Infra<!-- omit in toc -->
 
+![GitHub License](https://img.shields.io/github/license/bubacoder/infra)
+![Docs-web workflow](https://img.shields.io/github/actions/workflow/status/bubacoder/infra/docs-web.yml?label=docs)
+![Dev Container workflow](https://img.shields.io/github/actions/workflow/status/bubacoder/infra/devcontainer.yml?label=devcontainer)
+![Pre-commit checks workflow](https://img.shields.io/github/actions/workflow/status/bubacoder/infra/pre-commit.yml?label=checks)
+
 This repository contains the Infrastructure as Code (IaC) configuration and documentation for my home infrastructure. The main goals of this ever-evolving setup are:
 - Create a local, self-hosted environment for various services and applications, minimizing reliance on external cloud providers.
 - Learning and organizing knowledge, best practices, and tool documentation into a single repository.
@@ -55,17 +60,24 @@ The long-term goal is to reduce these dependencies and provide offline alternati
 | [Azure](https://azure.microsoft.com/)                                    | Temporal VM, storage                   | Optional, not used by any lab components                                |
 | [Homepage Icons](https://github.com/walkxcode/dashboard-icons/tree/main) | Icon set for the services              | Optional, hosted on a CDN. TODO host locally                            |
 
-
 ## Getting Started
+
+The recommended configuration is to setup Proxmox VE and install a Debian- or Ubuntu-based VM to host the Docker services.
 
 -> See [Getting Started](setup)
 
 ## Development
 
+All development dependencies are available in the devcontainer or can be set up with an Ansible role.
+
+Some development workflows:
+
 Code quality scanning tools are set up via [pre-commit](https://pre-commit.com).
 Perform the checks by running `task lint` (or `pre-commit run --all-files`).
 
 Create/update example `.env` files: `task create-example-env`.
+
+Updating the container images is automated with [Renovate](https://docs.renovatebot.com/).
 
 ## EOL
 

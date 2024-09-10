@@ -2,9 +2,9 @@
 
 All the user-facing services in this lab setup are deployed using Docker Containers.
 
-https://www.docker.com/
+> [Docker](https://www.docker.com/) helps developers build, share, run, and verify applications anywhere — without tedious environment configuration or management.
 
-> Docker helps developers build, share, run, and verify applications anywhere — without tedious environment configuration or management.
+For additional services to host, check [awesome-selfhosted](https://github.com/awesome-selfhosted/awesome-selfhosted).
 
 ## Directory structure
 
@@ -44,6 +44,6 @@ Update containers having non-fixed version tags:
 
 Convert `docker run` commands to [docker compose](https://docs.docker.com/compose/compose-file/) format: [Composerize](https://www.composerize.com/).
 
-Use [ctop](commandline monitoring for containers) to monitor containers from the commandline.
+Use [ctop](commandline monitoring for containers) to monitor containers from the command-line.
 
 Use the [Docker VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) easy to build, manage, and deploy containerized applications from Visual Studio Code.

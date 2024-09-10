@@ -7,9 +7,9 @@ Playgrounds:
 - [Google AI Studio](https://ai.google.dev/aistudio)
 
 Large Language Models:
-- [ChatGPT by OpenAI](https://chat.openai.com/)
+- [ChatGPT by OpenAI](https://chatgpt.com/)
 - [Mistral by Mistral AI](https://chat.mistral.ai/)
-- [Llama by Meta](https://ai.meta.com/)
+- [Llama by Meta](https://ai.meta.com/) - open weights
 - [Claude by Anthropic](https://claude.ai/) <-- Top
 - [Gemini by Google](https://gemini.google.com/) <-- Top
 

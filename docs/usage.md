@@ -12,6 +12,6 @@ Fallback (when Traefik reverse proxy is not yet configured):
 
 - CloudFlare tunnel for web based RDP & SSH access (via [Guacamole](https://guacamole.apache.org/)): `https://connect.<domain>/`
 - Speedtest: `https://speedtest.<domain>/`
-- Wireguard VPN:
+- WireGuard VPN:
   - Admin interface: `https://vpn.<domain>/`
   - Access: host: `vpn.<domain>`, port: `51820`
