@@ -33,7 +33,7 @@ variable "vm_domain_name_label" {
 }
 
 variable "admin_user" {
-  description = "Name of the adminustrative user on the VM"
+  description = "Name of the administrative user on the VM"
   default     = "azureuser"
   type        = string
 }

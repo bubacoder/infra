@@ -1,46 +1,38 @@
 
-# Large Language Models
+# Open Source LLMs
 
-- Some models better for generic chat, others are coding-oriented
-- [Ollama - Example Models](https://github.com/ollama/ollama?tab=readme-ov-file#model-library), [Ollama - Model Library](https://ollama.com/library/)
+Some Large Language Models are more optimized for generic chat, others are coding-oriented.
 
-## Leaderboards, comparision
+This page discusses the open source (open weights) models which can be used with [Ollama](https://ollama.com/), [LM Studio](https://lmstudio.ai/) and similar tools. For proprietary, closed source models, see: [Online services](online)
+
+[Ollama - Example Models](https://github.com/ollama/ollama?tab=readme-ov-file#model-library), [Ollama - Model Library](https://ollama.com/library/)
+
+## Leaderboards, comparison
 
 - [LMSYS Chatbot Arena Leaderboard](https://chat.lmsys.org/?leaderboard)
 - [Berkeley Function Calling Leaderboard](https://gorilla.cs.berkeley.edu/leaderboard.html)
   - [blogpost](https://gorilla.cs.berkeley.edu/blogs/8_berkeley_function_calling_leaderboard.html)
 - [Mistral 7B vs Llama2: Which Performs Better and Why?](https://www.e2enetworks.com/blog/mistral-7b-vs-llama2-which-performs-better-and-why)
 
-## Closed source models
-
-- GPT by OpenAI/Microsoft
-- Gemini (1.5 Pro) by Google
-
-## Open source models
-
-- Base models
-- Fine tunes
-
-### Generic chat/instruct
+### Models for generic chat / instruct (=instruction following)
 
 - [Mistral-7B-Instruct-v0.2](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2)
-- [Dolphin-Mistral](https://ollama.com/library/dolphin-mistral:latest) - The uncensored Dolphin model based on Mistral that excels at coding tasks. Finetune of Mistral
-- [WizardLM-2](https://wizardlm.github.io/WizardLM2/) - Finetune of Mistral
-- [Llama 3 by Meta](https://ai.meta.com/blog/meta-llama-3/)  <-- Top
+- [Dolphin-Mistral](https://ollama.com/library/dolphin-mistral:latest) - The uncensored Dolphin model based on Mistral that excels at coding tasks. Fine-tune of Mistral
+- [WizardLM-2](https://wizardlm.github.io/WizardLM2/) - Fine-tune of Mistral
+- [Llama 3 by Meta](https://ai.meta.com/blog/meta-llama-3/) <-- Top
 - DBRX by Databricks
 
-### Optimied for Code
+### Optimized for Coding
 
 - [Code Llama by Meta](https://ai.meta.com/blog/code-llama-large-language-model-coding/)
 - [CodeGemma by Google](https://ai.google.dev/gemma/docs/codegemma)
 - [CodeQwen by Alibaba Cloud](https://qwenlm.github.io/blog/codeqwen1.5/), context: 64K, [HF](https://huggingface.co/Qwen/CodeQwen1.5-7B-Chat-GGUF), [Ollama](https://ollama.com/library/codeqwen:latest) <-- Top
 - DeepSeek-Coder-V2
 
-### Optimied for RAG - Retrival Augmented Generation
+### Optimized for RAG - Retrival Augmented Generation
 
 - [Command-R by Cohere](https://huggingface.co/CohereForAI/c4ai-command-r-v01) (also good for tool use)
-
-### Optimied for JSON output / function calling / tool use
+### Optimized for JSON output / function calling / tool use
 
 - [C4AI Command R+](https://huggingface.co/CohereForAI/c4ai-command-r-plus) (2024-03-20, CC-BY-NC, Cohere) is a 104B parameter multilingual model with advanced Retrieval Augmented Generation (RAG) and tool use capabilities, optimized for reasoning, summarization, and question answering across 10 languages. Supports quantization for efficient use and demonstrates unique multi-step tool integration for complex task execution.
 
@@ -54,6 +46,6 @@
 
 Source: [awesome-llm-json](https://github.com/imaurer/awesome-llm-json?tab=readme-ov-file#local-models)
 
-### Vision (multimodal)
+### Vision models (multimodal)
 
 - [LLaVA](https://ollama.com/blog/vision-models) - [details](https://llava-vl.github.io/blog/2024-01-30-llava-next/)

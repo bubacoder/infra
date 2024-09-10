@@ -37,7 +37,7 @@ This VM can be used to test/host the Docker services of this repo.
 
 **Usage:**
 
-1. Loging to Azure account (without browser access on device): `az login --use-device-code`
+1. Login to Azure account (without browser access on device): `az login --use-device-code`
 2. See the file `terraform/Makefile` for available `make` commands for deploying/connection/deleting the VM.
 
 <!-- BEGIN_TF_DOCS -->
@@ -61,7 +61,7 @@ This VM can be used to test/host the Docker services of this repo.
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | admin\_source\_address | Allow connections (SSH, ...) only from this IP | `string` | n/a | yes |
-| admin\_user | Name of the adminustrative user on the VM | `string` | `"azureuser"` | no |
+| admin\_user | Name of the administrative user on the VM | `string` | `"azureuser"` | no |
 | git\_credentials | Git credentials for accessing the infrastructure repository. Will be written to ~/.git-credentials | `string` | n/a | yes |
 | location | Location of the resources | `string` | `"westeurope"` | no |
 | repo\_directory | Name of the infrastructure repository directory | `string` | `"infra"` | no |

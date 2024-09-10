@@ -36,6 +36,18 @@ Note: a page is 4096 bytes.
 
 [Proxmox VM Watchdogs](https://tompaw.net/proxmox-vm-watchdogs/)
 
+### Force stop a VM
+
+If Proxmox is stuck terminating a VM, as last resort, the `kvm` process can be forcefully terminated.
+
+```sh
+# Get the PID of the `kvm` process of the VM:
+ps -auwx | grep <VMID>
+
+# Force kill the `kvm` process:
+kill -9 <KVM_PID>
+```
+
 ## LXC Containers
 
 Connect to terminal: `pct enter <CTID>`
@@ -46,7 +58,7 @@ proxmox_lxc_pct_provisioner.sh
 https://gist.github.com/tinoji/7e066d61a84d98374b08d2414d9524f2
 `pct create <id> /var/lib/vz/template/cache/centos-7-default_20170504_amd64.tar.xz ...`
 
-CLI examples (TODO):
+CLI examples (TODO cleanup):
 
 ```sh
 pct create <id> /data/template/cache/debian-11-standard_11.3-1_amd64.tar.zst \

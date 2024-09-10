@@ -11,7 +11,7 @@ Install (Debian Bullseye+ / Ubuntu Focal+):
 apt install git-quick-stats
 ```
 
-## Reposirory cleanup
+## Repository cleanup
 
 "[Nobody Cares About Your Git History](https://spin.atomicobject.com/git-history/)" ...but don't leave any secrets in it!
 
