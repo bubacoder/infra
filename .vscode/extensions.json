@@ -8,6 +8,7 @@
     "mhutchie.git-graph",
     "hashicorp.terraform",
     "ms-vscode.makefile-tools",
-    "ms-python.flake8"
+    "ms-python.flake8",
+    "ban.spellright"
   ]
 }
