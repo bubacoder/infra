@@ -62,6 +62,11 @@ dev_brew_packages:
   - tflint              # https://github.com/terraform-linters/tflint
   - opentofu            # https://opentofu.org/
 
+  # Kubernetes tools
+  - k9s                 # https://k9scli.io/
+  - kustomize           # https://kustomize.io/
+  - helm                # https://helm.sh/docs/intro/install/
+
 debian_samba_client_nas_hostname: nas
 debian_samba_client_nas_shares:
   - media
