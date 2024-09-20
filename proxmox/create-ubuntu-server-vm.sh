@@ -3,13 +3,13 @@ set -euo pipefail
 
 # Deploy from adminhost: `ssh root@proxmox "bash -s" -- < create-ubuntu-server-vm.sh`
 
-# Ububtu version to install
+# Ubuntu version to install. The install media is downloaded automatically and attached to thr VM.
 # Check latest version at: https://releases.ubuntu.com/
-readonly UBUNTU_VERSION="24.04"
+readonly UBUNTU_VERSION="24.04.1"
 readonly INSTALL_ISO="ubuntu-${UBUNTU_VERSION}-live-server-amd64.iso"
 
-# false: The install media is downloaded and attached. Manual installation is needed.
-# true:  The install media is downloaded and attached. Edit the autoinstall config file below. Only need to approve the start of the installer on the VM console.
+# false: Manual installation is needed.
+# true:  Edit the autoinstall config file below. Only need to approve the start of the installer on the VM console.
 readonly AUTOINSTALL=true
 
 # User settings for autoinstall
@@ -25,7 +25,7 @@ readonly VMID=150
 readonly CPU_CORES=4
 readonly MAX_MEMORY_SIZE=4096 # MB
 readonly MIN_MEMORY_SIZE=1024 # MB (memory ballooning)
-readonly DISK_SIZE=128 # GB (thin provisioned)
+readonly DISK_SIZE=256 # GB (thin provisioned)
 
 
 get_authorized_keys_config() {
