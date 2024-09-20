@@ -15,3 +15,9 @@
   ansible.builtin.apt:
     pkg: "{{ base_apt_packages }}"
     state: present
+
+- name: Install storage packages with apt
+  ansible.builtin.apt:
+    pkg: "{{ base_apt_storage_packages }}"
+    state: present
+  when: install_storage_packages|default(false)|bool
