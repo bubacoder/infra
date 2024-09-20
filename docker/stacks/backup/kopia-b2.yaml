@@ -45,7 +45,7 @@ services:
       - /etc:/sources/nest/etc:ro
       - ${DOCKER_VOLUMES}:/sources/nest/docker-volumes:ro
       - ${ADMIN_HOME}/repos:/sources/nest/repos:ro
-      - ${STORAGE_NEST_MEDIA}:/sources/nest/media:ro
+      - ${STORAGE_LOCAL_MEDIA}:/sources/nest/media:ro
 
       # NAS (source)
       - ${STORAGE_FAMILYMEDIA}:/sources/nas/family-media:ro
