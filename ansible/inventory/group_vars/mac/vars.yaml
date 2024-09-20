@@ -17,10 +17,13 @@ brew_base_tools:
   - go-task             # https://taskfile.dev/
 
 brew_cloud_tools:
+  # AWS
   - awscli              # https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
-  - azure-cli           # https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-macos
-  - vaulted             # https://github.com/miquella/vaulted
   - cfn-lint            # https://github.com/aws-cloudformation/cfn-lint
+  # Azure
+  - azure-cli           # https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-macos
+  # Generic
+  - vaulted             # https://github.com/miquella/vaulted
 
 # Note: terraform is set up by asdf
 brew_terraform_tools:
@@ -33,12 +36,13 @@ brew_terraform_tools:
 brew_kubernetes_tools:
   - docker                # https://www.docker.com/
   - derailed/k9s/k9s      # https://k9scli.io/
+  - kustomize             # https://kustomize.io/
   - helm                  # https://helm.sh/docs/intro/install/
   - kubent                # https://github.com/doitintl/kube-no-trouble
   - aws-iam-authenticator # https://github.com/kubernetes-sigs/aws-iam-authenticator
   - eksctl                # https://eksctl.io/
 
 brew_cask_packages:
-  - visual-studio-code
-  - macpass
+  - visual-studio-code     # https://code.visualstudio.com/
+  - macpass                # https://macpassapp.org/
   - session-manager-plugin # https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html
