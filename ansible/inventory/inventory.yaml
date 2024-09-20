@@ -10,7 +10,8 @@ debian:
     nas: {}
     nest: {}
     nest2:
-      ansible_host: 192.168.1.151
+      ansible_host: 192.168.1.193
+      install_storage_packages: true
 
     # Cloud. Excluded in apply-homelab.sh
     azure-vm:

@@ -17,17 +17,23 @@ base_apt_packages:
   - mc
   - vim
   - git
-  - net-tools
   - util-linux
   - screen
   - tmux
   - htop
   - tree
-  # Storage management
+  # Network
+  - curl
+  - net-tools
+
+install_storage_packages: false
+base_apt_storage_packages:
   - hdparm
   - parted
   - mdadm
   - lvm2
+  - btrfs-compsize
+  - ncdu
 
 dev_apt_packages:
   - make
