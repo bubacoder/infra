@@ -14,7 +14,12 @@ tasks:
   update:
     desc: Update and restart containers
     cmds:
-      - UPDATE=true docker/apply-local.sh
+      - MODE=UPDATE docker/apply-local.sh
+
+  pull:
+    desc: Pull container images
+    cmds:
+      - MODE=PULL docker/apply-local.sh
 
   stop-all:
     desc: Stop all running containers
@@ -37,6 +42,7 @@ tasks:
     cmds:
       - docker images --format "{{`{{.ID}}\t{{.Size}}\t{{.Repository}}:{{.Tag}}`}}" | sort -k 2 -h -r | head -n 25
 
+  # `docker system df -v` and `ncdu` is also useful
   du:
     desc: Show docker disk usage
     cmds:

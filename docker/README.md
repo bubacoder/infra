@@ -23,27 +23,36 @@ Configuration files:
 ## Services
 
 The applications/services are defined in the `docker/stacks` folder, ordered by category.  
-If possible, avoid any hardcoded configuration values in these files.
+If possible, avoid any hardcoded configuration values in these files. Use environment variables and init containers for customization.
 
 ## Start the services
 
 After configuration, execute on a Docker host to apply the local configuration (based on the hostname):
+`task docker:apply` or
 `docker/apply-local.sh`
 
 ## Updates
 
-Check for updates:
-`task docker-check-updates` or
+Updating the container image tags is automated with [Renovate](https://docs.renovatebot.com/).
+
+Check for updates (only useful for containers not having a fixed version tag):
+`task docker:check-updates` or
 `docker run --rm -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --run-once --cleanup --monitor-only`
 
 Update containers having non-fixed version tags:
-`task docker-update` or
-`UPDATE=true docker/apply-local.sh`
+`task docker:update` or
+`MODE=UPDATE docker/apply-local.sh`
 
 ## Tips
 
-Convert `docker run` commands to [docker compose](https://docs.docker.com/compose/compose-file/) format: [Composerize](https://www.composerize.com/).
+Convert `docker run` commands to [docker compose](https://docs.docker.com/compose/compose-file/) format:
+- [Composerize - online tool](https://www.composerize.com/)
+- [Composerize - CLI tool](https://github.com/composerize/composerize
 
-Use [ctop](commandline monitoring for containers) to monitor containers from the command-line.
+Use [ctop](https://github.com/bcicen/ctop) to monitor containers from the command-line.
 
-Use the [Docker VS Code extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) easy to build, manage, and deploy containerized applications from Visual Studio Code.
+Use the [Docker VS Code Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) easy to build, manage, and deploy containerized applications from Visual Studio Code.
+
+Use the [Remote - SSH VS Code Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh) to work on a remote machine.  
+Use the "Remote-SSH: Connect to Host" command to initiate a connection.  
+Read more: [Remote Development using SSH](https://code.visualstudio.com/docs/remote/ssh)
