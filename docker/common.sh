@@ -37,59 +37,75 @@ get_env_file_args() {
   echo "$env_file_args"
 }
 
-up() {
+docker_command() {
   local stack_dir="$1"
   local service_name="$2"
+  local mode="$3"
   local yaml_file="$(get_yaml_file "${stack_dir}" "${service_name}")"
   local env_file_args="$(get_env_file_args "${service_name}")"
 
-  echo ">>> Starting $stack_dir/$service_name"
+  case "$mode" in
+    UPDATE|PULL)
+      echo ">>> Pulling $stack_dir/$service_name"
+      if grep -q "build:" "$yaml_file"; then
+        # shellcheck disable=SC2086
+        docker compose -f "$yaml_file" $env_file_args build --pull
+      else
+        # shellcheck disable=SC2086
+        docker compose -f "$yaml_file" $env_file_args pull
+      fi
+      ;;&
+  esac
 
-  if [[ "${UPDATE:-false}" == "true" ]]; then
-    if grep -q "build:" "$yaml_file"; then
+  case "$mode" in
+    UP|UPDATE)
+      echo ">>> Starting $stack_dir/$service_name"
       # shellcheck disable=SC2086
-      docker compose -f "$yaml_file" $env_file_args build --pull
-    else
-      # shellcheck disable=SC2086
-      docker compose -f "$yaml_file" $env_file_args pull
-    fi
-  fi
+      docker compose -f "$yaml_file" $env_file_args up --detach
+      ;;&
 
-  # shellcheck disable=SC2086
-  docker compose -f "$yaml_file" $env_file_args up --detach
+    DOWN)
+      echo ">>> Stopping $stack_dir/$service_name"
+      # shellcheck disable=SC2086
+      docker compose -f "$yaml_file" $env_file_args down
+      ;;
+
+    RESTART)
+      echo ">>> Restarting $stack_dir/$service_name"
+      # shellcheck disable=SC2086
+      docker compose -f "$yaml_file" $env_file_args restart
+      ;;
+
+    RECREATE)
+      echo ">>> Recreating $stack_dir/$service_name"
+      # shellcheck disable=SC2086
+      docker compose -f "$yaml_file" $env_file_args up --detach --force-recreate
+      ;;
+  esac
+}
+
+up() {
+  # shellcheck disable=SC2153 # different than $mode
+  case "$MODE" in
+    UPDATE)
+      docker_command "$1" "$2" "UPDATE";;
+    PULL)
+      docker_command "$1" "$2" "PULL";;
+    *)
+      docker_command "$1" "$2" "UP";;
+  esac
 }
 
 down() {
-  local stack_dir="$1"
-  local service_name="$2"
-  local yaml_file="$(get_yaml_file "${stack_dir}" "${service_name}")"
-  local env_file_args="$(get_env_file_args "${service_name}")"
-
-  echo ">>> Stopping $stack_dir/$service_name"
-  # shellcheck disable=SC2086
-  docker compose -f "$yaml_file" $env_file_args down
+  docker_command "$1" "$2" "DOWN"
 }
 
 restart() {
-  local stack_dir="$1"
-  local service_name="$2"
-  local yaml_file="$(get_yaml_file "${stack_dir}" "${service_name}")"
-  local env_file_args="$(get_env_file_args "${service_name}")"
-
-  echo ">>> Restarting $stack_dir/$service_name"
-  # shellcheck disable=SC2086
-  docker compose -f "$yaml_file" $env_file_args restart
+  docker_command "$1" "$2" "RESTART"
 }
 
 recreate() {
-  local stack_dir="$1"
-  local service_name="$2"
-  local yaml_file="$(get_yaml_file "${stack_dir}" "${service_name}")"
-  local env_file_args="$(get_env_file_args "${service_name}")"
-
-  echo ">>> Recreating $stack_dir/$service_name"
-  # shellcheck disable=SC2086
-  docker compose -f "$yaml_file" $env_file_args up --detach --force-recreate
+  docker_command "$1" "$2" "RECREATE"
 }
 
 cleanup() {
