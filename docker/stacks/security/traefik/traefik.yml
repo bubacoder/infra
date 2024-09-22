@@ -12,7 +12,7 @@ api:
 
 log:
   filePath: /logs/traefik.log # Sets the path where Traefik will write logs
-  level: INFO # By default, the level is set to ERROR. Alternative logging levels are DEBUG, PANIC, FATAL, ERROR, WARN, and INFO.
+  level: INFO # By default, the level is set to ERROR. Alternative logging levels are TRACE, DEBUG, INFO, WARN, ERROR, FATAL, and PANIC
 
 accessLog:
   filePath: /logs/traefik-access.log
