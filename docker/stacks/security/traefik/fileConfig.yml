@@ -61,13 +61,13 @@ http:
       chain:
         middlewares:
           - https-only
-          - local-ip-whitelist
+          - local-ip-allowlist
 
     https-local-auth:
       chain:
         middlewares:
           - https-only
-          - local-ip-whitelist
+          - local-ip-allowlist
           - authelia
 
     https-only:
@@ -75,8 +75,8 @@ http:
         scheme: https
 
     # Only Allow Local networks
-    local-ip-whitelist:
-      ipWhiteList:
+    local-ip-allowlist:
+      ipAllowList:
         sourceRange:
           - 127.0.0.1/32    # localhost
           - 10.0.0.0/8      # private class A
