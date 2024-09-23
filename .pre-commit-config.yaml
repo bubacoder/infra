@@ -40,13 +40,13 @@ repos:
   # Gitleaks is a SAST tool for detecting and preventing hardcoded secrets like passwords, api keys, and tokens in git repos.
   # Gitleaks is an easy-to-use, all-in-one solution for detecting secrets, past or present, in your code.
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.18.4
+    rev: v8.19.2
     hooks:
       - id: gitleaks
 
   # pre-commit git hooks to take care of Terraform configurations
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.94.1
+    rev: v1.96.1
     hooks:
       - id: terraform_fmt
         files: ^terraform/
@@ -63,7 +63,7 @@ repos:
   # ansible-lint checks playbooks for practices and behavior that could potentially be improved and can fix some of the most common ones for you.
   # Add '-v' parameter to ansiblelint for verbose mode
   - repo: https://github.com/ansible-community/ansible-lint
-    rev: v24.7.0
+    rev: v24.9.2
     hooks:
       - id: ansible-lint
         files: ^ansible/
