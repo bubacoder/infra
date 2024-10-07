@@ -8,7 +8,7 @@
 name: prowlarr
 services:
   prowlarr:
-    image: lscr.io/linuxserver/prowlarr:1.23.1
+    image: lscr.io/linuxserver/prowlarr:1.24.3
     container_name: prowlarr
     restart: unless-stopped
     environment:
