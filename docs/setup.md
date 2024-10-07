@@ -36,11 +36,11 @@ For development and administrative purposes, a separate VM can be used with addi
 #### Option A - Use devcontainer (easy method)
 
 The repository includes a [devcontainer](https://code.visualstudio.com/docs/devcontainers/containers) configuration.
-Using Visual Studio Code, the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) and Docker the development (e.g. adding more serives, building the documentation) and administration tasks (e.g. running an Ansible playbook) can be performed on any environment without additional software installation.
+Using Visual Studio Code, the [Dev Containers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) and Docker the development (e.g. adding more services, building the documentation) and administration tasks (e.g. running an Ansible playbook) can be performed on any environment without additional software installation.
 
 Follow the [Dev Containers tutorial](https://code.visualstudio.com/docs/devcontainers/tutorial) to get started.
 
-Note: the resulting container image is pretty large (3+ GB) as it includes all software configured in `ansible/inventory/group_vars/debian/vars.yaml`.
+Note: the resulting container image is pretty large (4+ GB) as it includes all software configured in `ansible/inventory/group_vars/debian/vars.yaml`.
 
 #### Option B - Use a dev/admin host
 
@@ -66,7 +66,7 @@ Note - Alternatives:
 
 ### 4. Install and configure the required software using Ansible
 
-Required and recommended software (like Docker, tmux, ...) are installed and configured by Ansible.  
+Required and recommended software (like Docker, tmux, ...) are installed and configured by Ansible.
 For details, check the `ansible` / `inventory`|`roles`|`playbooks` folders.
 
 Execute on the admin host:
@@ -105,7 +105,7 @@ docker/hosts
 
 ### 6. Configure core services
 
-TODO Separate core services, like Traefik
+TODO Separate core services, like Traefik, Homepage
 
 TODO Describe the minimally required (core) service configuration
 
@@ -125,11 +125,17 @@ After setting up the VM, configure the following on the router:
   - WireGuard - Port 51820 UDP
 - Configure the local DNS service to resolve your domain name to the main Docker host. This is to provide uninterrupted DNS name resolution of the local services in case of the internet access fails.
 
+Note: Query and refresh IP configuration on Windows:
+```sh
+ipconfig /all
+ipconfig /release && ipconfig /renew
+```
+
 ### 9. Configure addition infrastructure services
 
 TODO Describe configuration
 
-- AdGuard
+- AdGuard: local domain, router DHCP
 - Cloudflare
 - Monitoring
 - Backup

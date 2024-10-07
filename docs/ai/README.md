@@ -1,5 +1,9 @@
 # AI
 
+> "It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness, it was the epoch of belief, it was the epoch of incredulity, it was the season of light, it was the season of darkness, it was the spring of hope, it was the winter of despair."
+>
+> --- Charles Dickens, A Tale of Two Cities
+
 ## Tutorials
 
 [A Guide to Quantization in LLMs](https://symbl.ai/developers/blog/a-guide-to-quantization-in-llms/)
@@ -41,6 +45,11 @@ https://lmstudio.ai/
 
 https://github.com/jasonppy/VoiceCraft
 
+
+> A deep learning toolkit for Text-to-Speech, battle-tested in research and production
+
+https://github.com/coqui-ai/TTS
+
 ## OpenAI parameters
 
 - Temperature: Controls randomness. Lowering the temperature means that the model produces more repetitive and deterministic responses. Increasing the temperature results in more unexpected or creative responses. Try adjusting temperature or Top P but not both.
@@ -64,7 +73,7 @@ Ollama parameters: https://github.com/ollama/ollama/blob/main/docs/modelfile.md#
 - [Outlines](https://github.com/outlines-dev/outlines) - Structured Text Generation
 - [awesome-llm-json](https://github.com/imaurer/awesome-llm-json) - Resource list for generating JSON using LLMs via function calling, tools, CFG. Libraries, Models, Notebooks, etc.
 
-### RAG - Retrival Augmented Generation
+### RAG - Retrieval Augmented Generation
 
 > Turn your enterprise data into production-ready LLM applications
 > LlamaIndex is the leading data framework for building LLM applications

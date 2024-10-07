@@ -23,6 +23,16 @@ https://github.com/joaomdmoura/crewAI
 
 https://microsoft.github.io/autogen/
 
-## AI Developer
+## AI Developer companions
 
-[OpenDevin: Code Less, Make More](https://github.com/OpenDevin/OpenDevin)
+### OpenHands
+
+> OpenHands agents can do anything a human developer can: modify code, run commands, browse the web, call APIs, and yes—even copy code snippets from StackOverflow.
+
+https://github.com/All-Hands-AI/OpenHands
+
+### Claude-dev
+
+> Autonomous coding agent right in your IDE, capable of creating/editing files, executing commands, and more with your permission every step of the way.
+
+https://github.com/saoudrizwan/claude-dev

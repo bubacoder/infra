@@ -45,14 +45,41 @@ Update containers having non-fixed version tags:
 
 ## Tips
 
+### Compose
+
 Convert `docker run` commands to [docker compose](https://docs.docker.com/compose/compose-file/) format:
-- [Composerize - online tool](https://www.composerize.com/)
-- [Composerize - CLI tool](https://github.com/composerize/composerize
+- [Composerize - Online](https://www.composerize.com/)
+- [Composerize - CLI tool](https://github.com/composerize/composerize)
+
+### Monitoring
 
 Use [ctop](https://github.com/bcicen/ctop) to monitor containers from the command-line.
+
+### Copy a Docker image from local machine to a remote host
+
+Prerequisites:
+- SSH access: Set up with `ssh-copy-id user@remotehost`
+- Docker group: Both local and remote users must be in the docker group: `sudo usermod -aG docker $USER`
+
+List images:
+```sh
+docker images
+```
+
+Transfer:
+```sh
+docker save app:1.0 | gzip | DOCKER_HOST=ssh://user@remotehost docker load
+```
+
+Replace `user@remotehost` as needed.
+This command saves, compresses, transfers, and loads the image directly on the remote host.
+
+Reference: [How to copy Docker images from one host to another without using a repository](https://stackoverflow.com/questions/23935141/how-to-copy-docker-images-from-one-host-to-another-without-using-a-repository)
+
+### Useful Visual Studio Code Extensions
 
 Use the [Docker VS Code Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) easy to build, manage, and deploy containerized applications from Visual Studio Code.
 
 Use the [Remote - SSH VS Code Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh) to work on a remote machine.  
-Use the "Remote-SSH: Connect to Host" command to initiate a connection.  
+Initiate a connection with the "Remote-SSH: Connect to Host" command.  
 Read more: [Remote Development using SSH](https://code.visualstudio.com/docs/remote/ssh)

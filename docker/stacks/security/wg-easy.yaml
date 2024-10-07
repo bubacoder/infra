@@ -3,6 +3,8 @@
 # Initially released for the Linux kernel, it is now cross-platform (Windows, macOS, BSD, iOS, Android) and widely deployable. It is currently under heavy development,
 # but already it might be regarded as the most secure, easiest to use, and simplest VPN solution in the industry.
 #
+# Android - configure application exclusion, e.g. Android Auto: Open the Wireguard app, edit the profile, click "All Applications", select the application you want to exclude.
+#
 # 🏠 Home: https://www.wireguard.com/  
 # 📜 Source: https://github.com/WeeJeWel/wg-easy  
 ---
