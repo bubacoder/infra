@@ -27,7 +27,7 @@ https://www.ansible.com/
 3. Add hosts to `inventory/inventory.yaml`
 4. Assign roles to hosts in `playbooks/`
 5. Run `apply-<playbook>.sh` to execute a playbook
-6. When the administrative user is already created, use that user in the inventory instead of root (`ansible_user: <adminuser>`). This is more secure and also required by Homebrew.
+6. When the administrative user is already created, use that user in the inventory instead of `root` (`ansible_user: <adminuser>`). This is more secure and also required by Homebrew.
 
 ## Bootstrapping hosts with authentication
 

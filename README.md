@@ -64,7 +64,7 @@ The long-term goal is to reduce these dependencies and provide offline alternati
 
 The recommended configuration is to setup Proxmox VE and install a Debian- or Ubuntu-based VM to host the Docker services.
 
--> See [Getting Started](setup)
+-> See [Getting Started](docs/setup.md)
 
 ## Development
 

@@ -12,13 +12,14 @@ Download: https://www.proxmox.com/en/downloads/proxmox-virtual-environment
 
 Post-install configuration:
 - https://pve.proxmox.com/wiki/Package_Repositories#sysadmin_no_subscription_repo
+- [Powertop](https://wiki.archlinux.org/title/Powertop) - Optimize power consumption and power management: `powertop --auto-tune`.
 - TODO
 
 ## Virtual machines
 
 VM config location: `/etc/pve/qemu-server/<ID>.conf`
 
-## Create a VM via CLI
+### Create a VM via CLI
 
 [Proxmox VE `qm` command manual](https://pve.proxmox.com/pve-docs/qm.1.html)
 
@@ -46,6 +47,24 @@ ps -auwx | grep <VMID>
 
 # Force kill the `kvm` process:
 kill -9 <KVM_PID>
+```
+
+### Scheduled VM start/shutdown
+
+To schedule starting and stopping a VM in Proxmox VE, create a file in `/etc/cron.d` e.g.:
+
+```sh
+sudo nano /etc/cron.d/vm-scheduler
+```
+
+Setup the scheduling, like:
+
+```
+# Start VM 100 at 8:00 AM
+0 8 * * * root /usr/sbin/qm start <VMID>
+
+# Stop VM 100 at 8:00 PM
+0 20 * * * root /usr/sbin/qm stop <VMID>
 ```
 
 ## LXC Containers

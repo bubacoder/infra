@@ -7,8 +7,14 @@ https://github.com/arzzen/git-quick-stats
 > Git quick statistics is a simple and efficient way to access various statistics in git repository.
 
 Install (Debian Bullseye+ / Ubuntu Focal+):
-```
+```sh
 apt install git-quick-stats
+```
+
+## List changed/untracked/ignored files
+
+```sh
+git status --ignored
 ```
 
 ## Repository cleanup
@@ -22,7 +28,7 @@ apt install git-quick-stats
 
 ### Deleting files
 
-```shell
+```sh
 git-filter-repo --use-base-name --path id_dsa --path id_rsa --invert-paths
 ```
 
@@ -40,7 +46,7 @@ otherPassword==>SomeSecureValueGoesHere
 
 ### Change author
 
-```shell
+```sh
 git-filter-repo --mailmap mailmap.txt
 ```
 

@@ -1,5 +1,5 @@
 # Static website containing the complete documentation of the lab, created from the repo.
-# Build the image by running `infra/docs/web/build.sh`
+# Build the image by running `task docs:build`
 ---
 name: homelab-docs
 services:
