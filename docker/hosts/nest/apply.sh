@@ -10,6 +10,7 @@ init
 
 set +e
 
+# Security -> TODO core
 up security crowdsec
 up security traefik
 up security authelia
@@ -17,49 +18,68 @@ up security wg-easy
 up security cloudflared
 up security endlessh
 
+# Dashboard
 up dashboard homepage
 
+# Infra
 up infra portainer
 up infra adguardhome
 up infra unifi-controller
+up infra ddclient
 
-up monitoring scrutiny # down -> clients
+# Monitoring
+up monitoring scrutiny
 up monitoring uptime-kuma
 up monitoring prometheus
 up monitoring grafana
 
-up smarthome homeassistant
+# Automation
+up automation homeassistant
+up automation n8n
+# down automation olivetin
 
 # Media
+up media/video jellyfin # NAS
+up media/video jellyfin-vue # NAS
+up media/video metube # NAS
+up media/audio navidrome # NAS
+up media/ebook calibre # NAS
+up media/ebook calibre-web # NAS
+up media/ebook kiwix-serve
 
-up media/video jellyfin
-up media/video jellyfin-vue
-up media/video metube
-
-up media/audio navidrome
-
-up media/ebook calibre
-up media/ebook calibre-web
-down media/photo photoprism
-
-up storage syncthing
+# Storage
+up storage syncthing # NAS
 up storage filebrowser
+down storage minio
+up storage webdav
+up storage bees
 
-up backup kopia-nas
-up backup kopia-b2
+# Backup
+down backup kopia-nas # NAS
+up backup kopia-b2 # NAS
 
+# Dev
 up dev code-server
 down dev gitlab
 down dev jupyter-notebook
 
+# Tools
+up tools homelab-docs
 up tools vaultwarden
 up tools openspeedtest
 up tools cyberchef
 up tools guacamole
 
-down tools olivetin # wip
-down personal misikoli-web # wip
+# AI
+up ai ollama
+up ai litellm
+up ai autogenstudio
+up ai sillytavern
 
+# Communication
+# down communication matrix-synapse
+
+# Arr
 up arr radarr
 up arr sonarr
 up arr bazarr
@@ -68,6 +88,10 @@ up arr prowlarr
 up arr jellyseerr
 up arr flaresolverr
 
-down game legendary-minecraft
+# Game
+# down game legendary-minecraft
+
+# Personal
+up personal personal-web
 
 cleanup
