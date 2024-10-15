@@ -1,0 +1,36 @@
+# Best-Effort Extent-Same, a btrfs dedupe agent
+#
+# Source: https://github.com/Zygo/bees/  
+# Docker image based on: https://github.com/theCalcaholic/bees-docker
+---
+name: bees
+services:
+  initContainer:
+    image: busybox
+    container_name: beesd-init
+    command: /bin/sh -c "echo 'UUID=${BEES_BTRFS_UUID}' > /etc/bees/disk.conf && echo 'DB_SIZE=${BEES_DB_SIZE}' >> /etc/bees/disk.conf"
+    volumes:
+      - ${DOCKER_VOLUMES}/bees:/etc/bees/
+    network_mode: none
+
+  beesd:
+    build:
+      dockerfile_inline: |
+        FROM archlinux:latest
+        RUN pacman -Sy --noconfirm bash bees btrfs-progs
+        RUN mkdir -p /mnt
+        ENTRYPOINT ["beesd"]
+    container_name: beesd
+    restart: unless-stopped
+    # kics-scan ignore-line
+    privileged: true
+    # kics-scan ignore-block
+    volumes:
+      # TODO Set to the block device containing the btrfs filesystem
+      - /dev/disk/by-uuid/96c03041-7dde-48b4-8cc1-3f72e18e1bd2:/dev/disk/by-uuid/96c03041-7dde-48b4-8cc1-3f72e18e1bd2
+      - ${DOCKER_VOLUMES}/bees:/etc/bees/
+    depends_on:
+      initContainer:
+        condition: service_completed_successfully
+    command: --verbose=5 ${BEES_BTRFS_UUID}
+    network_mode: none
