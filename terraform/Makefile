@@ -7,6 +7,11 @@ SHELL := /bin/bash
 
 # Select "terraform" or "tofu"
 TFBIN := terraform
+# Use "." for the current directory
+CONFIG_DIR := ../config/terraform
+
+TFPLAN := $(CONFIG_DIR)/tfplan
+VAR_FILE := $(CONFIG_DIR)/infra.tfvars
 
 # TODO Read params from tfvars
 RESOURCE_GROUP := HomeInfra
@@ -18,7 +23,7 @@ VM_ADMIN_USER := azureuser
 OWN_PUBLIC_IP ?= $(shell curl -s https://ipinfo.io/ip)
 GIT_CREDENTIALS ?= $(shell cat ~/.git-credentials | head -n 1)
 REPO_URL ?= $(shell git config --get remote.origin.url)
-VAR_PARAMETERS ?= -var-file="infra.tfvars" -var="admin_source_address=${OWN_PUBLIC_IP}" -var="git_credentials=${GIT_CREDENTIALS}" -var="repo_url=${REPO_URL}"
+VAR_PARAMETERS ?= -var-file="${VAR_FILE}" -var="admin_source_address=${OWN_PUBLIC_IP}" -var="git_credentials=${GIT_CREDENTIALS}" -var="repo_url=${REPO_URL}"
 
 export TF_IN_AUTOMATION = 1
 
@@ -39,12 +44,12 @@ check:
 plan:
 	${TFBIN} init
 	@echo "${TFBIN} plan..."
-	@${TFBIN} plan ${VAR_PARAMETERS} -out="tfplan"
+	@${TFBIN} plan ${VAR_PARAMETERS} -out="${TFPLAN}"
 
 .PHONY: apply
 apply: plan
 	@echo "${TFBIN} apply..."
-	@time ${TFBIN} apply --auto-approve "tfplan"
+	@time ${TFBIN} apply --auto-approve "${TFPLAN}"
 	ssh-keygen -f ~/.ssh/known_hosts -R "${VM_FQDN}" && ${TFBIN} output -raw vm_tls_private_key > ${VM_KEYFILE} && chmod 600 ${VM_KEYFILE}
 
 # TODO Use provisioner: https://www.udemy.com/course/terraform-hands-on-labs/learn/lecture/29614642#overview
