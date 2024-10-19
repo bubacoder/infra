@@ -28,6 +28,7 @@ resource "azurerm_public_ip" "vm" {
 
   domain_name_label = var.vm_domain_name_label
   allocation_method = "Dynamic"
+  sku               = "Basic"
 }
 
 # Create Network Security Group and rule
