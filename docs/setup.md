@@ -76,25 +76,23 @@ Execute on the admin host:
 
 Docker Compose's variables are defined in `.env` files with different scopes:
 
-| File                                           | Purpose                                                   |
-| ---------------------------------------------- | --------------------------------------------------------- |
-| `docker/hosts/.env`                            | Common variables, can be used in all hosts and services   |
-| `docker/hosts/.env.<service_name>`             | Variables scoped to a service                             |
-| `docker/hosts/<host_name>/.env`                | Host-specific variables                                   |
-| `docker/hosts/<host_name>/.env.<service_name>` | Variables scoped to a specific service on a specific host |
+| File                                            | Purpose                                                   |
+| ----------------------------------------------- | --------------------------------------------------------- |
+| `config/docker/.env`                            | Common variables, can be used in all hosts and services   |
+| `config/docker/.env.<service_name>`             | Variables scoped to a service                             |
+| `config/docker/<host_name>/.env`                | Host-specific variables                                   |
+| `config/docker/<host_name>/.env.<service_name>` | Variables scoped to a specific service on a specific host |
 
-Use (copy) `docker/hosts/.env.example` and `docker/hosts/example/.env` as a starting point of configuration of the Docker-based services.
+Copy `config-example/docker/*` to `config/docker/*` as a starting point of configuration of the Docker-based services.
 
-Warning: The `.env*` files are not committed to the repository (see: `.gitignore`) because they contain sensitive information. Ensure these files are backed up!
+Warning: The files in the `config` folder are not committed to the repository (see: `.gitignore`) because they contain sensitive information.
+Ensure these files are backed up! For this, use `task backup-config` and store the generated backup file securely.
 
 Sample folder structure:
 
 ```
-docker/hosts
+config/docker
 ├── .env
-├── example
-│   ├── apply.sh
-│   └── .env
 ├── nas
 │   ├── apply.sh
 │   └── .env
@@ -111,10 +109,10 @@ TODO Describe the minimally required (core) service configuration
 
 ### 7. Start the containers
 
-Edit `docker/hosts/<hostname>/apply.sh` to select which services (stacks) should be started (`up` function)
+Edit `config/docker/<hostname>/apply.sh` to select which services (stacks) should be started (`up` function)
 or stopped (`down` function).
 
-To apply the changes run run `task docker:apply` or `docker/hosts/<hostname>/apply.sh`.
+To apply the changes run run `task docker:apply` or `config/docker/<hostname>/apply.sh`.
 
 ### 8. Configure the router
 

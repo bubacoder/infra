@@ -75,7 +75,7 @@ Some development workflows:
 Code quality scanning tools are set up via [pre-commit](https://pre-commit.com).
 Perform the checks by running `task lint` (or `pre-commit run --all-files`).
 
-Create/update example `.env` files: `task create-example-env`.
+Create/update example `.env` files: `task docker:create-example-env`.
 
 Updating the container images is automated with [Renovate](https://docs.renovatebot.com/).
 

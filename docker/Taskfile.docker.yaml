@@ -4,7 +4,7 @@ tasks:
   command:
     internal: true
     cmds:
-      - cd "docker/hosts/$(hostname | tr '[:upper:]' '[:lower:]')" && bash -c "source ../../common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
+      - cd "config/docker/$(hostname | tr '[:upper:]' '[:lower:]')" && bash -c "source ../../../docker/common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
 
   apply:
     desc: Deploy locally configured containers
@@ -52,3 +52,18 @@ tasks:
     desc: Run Watchtower to get updated container images
     cmds:
       - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --run-once --cleanup --monitor-only
+
+  create-example-env:
+    desc: Create/update Docker example environment files
+    dotenv: ['config/docker/.env']
+    cmds:
+      - scripts/create-example-env.py config/docker/.env > config-example/docker/.env
+      - scripts/create-example-env.py config/docker/${MAIN_NODE}/.env > config-example/docker/myhost/.env
+      - cp config/docker/${MAIN_NODE}/apply.sh config-example/docker/myhost/apply.sh
+    sources:
+      - config/docker/**/.env
+      - config/docker/**/apply.sh
+    generates:
+      - config-example/docker/.env
+      - config-example/docker/myhost/.env
+      - config-example/docker/myhost/apply.sh
