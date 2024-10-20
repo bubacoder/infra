@@ -9,16 +9,16 @@ For additional services to host, check [awesome-selfhosted](https://github.com/a
 ## Directory structure
 
 - `docker` -- Docker-based service configuration
-  - `docker/hosts` -- Host specific service configuration
   - `docker/stacks` -- Docker Compose files organized into categories
+- `config/docker` -- Host specific service configuration
 
 ## Host-specific configuration
 
-In the `docker/hosts` subfolder multiple Docker hosts can be defined.
+In the `config/docker` subfolder multiple Docker hosts can be defined.
 
 Configuration files:
-- Host-specific settings: `docker/hosts/<hostname>/.env` -> See [Setting Started -> Configure Docker environment files][setup] for more details. (These files are not committed to the repo - backup them separately!)
-- Configure which services to start (`up` function) or stop (`down` function): `docker/hosts/<hostname>/apply.sh`
+- Host-specific settings: `config/docker/<hostname>/.env` -> See [Setting Started -> Configure Docker environment files][setup] for more details. (These files are not committed to the repo - backup them separately!)
+- Configure which services to start (`up` function) or stop (`down` function): `config/docker/<hostname>/apply.sh`
 
 ## Services
 
@@ -28,20 +28,15 @@ If possible, avoid any hardcoded configuration values in these files. Use enviro
 ## Start the services
 
 After configuration, execute on a Docker host to apply the local configuration (based on the hostname):
-`task docker:apply` or
-`docker/apply-local.sh`
+`task docker:apply` or `docker/apply-local.sh`
 
 ## Updates
 
 Updating the container image tags is automated with [Renovate](https://docs.renovatebot.com/).
 
-Check for updates (only useful for containers not having a fixed version tag):
-`task docker:check-updates` or
-`docker run --rm -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --run-once --cleanup --monitor-only`
+Check for updates (only useful for containers not having a fixed version tag): `task docker:check-updates`
 
-Update containers having non-fixed version tags:
-`task docker:update` or
-`MODE=UPDATE docker/apply-local.sh`
+Update containers having non-fixed version tags: `task docker:update`
 
 ## Tips
 

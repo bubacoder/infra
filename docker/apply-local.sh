@@ -6,5 +6,6 @@
 # Stop all containers:
 # docker stop $(docker ps -a -q)
 
+CONFIG_DIR=../config/docker
 cd "$(dirname "$0")" || exit
-cd "hosts/$(hostname | tr '[:upper:]' '[:lower:]')" && ./apply.sh
+cd "${CONFIG_DIR}/$(hostname | tr '[:upper:]' '[:lower:]')" && ./apply.sh

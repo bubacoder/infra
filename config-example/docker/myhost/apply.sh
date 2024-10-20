@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
-cd "$(dirname "$0")" || exit
+# shellcheck disable=SC2034,SC2046
+HOST_CONFIG_DIR=$(dirname $(realpath "$0"))
 # shellcheck disable=SC1091
-. ../../common.sh
-
-assert_hostname "nest"
-init
+source ../../../docker/common.sh
+init "myhost"
 
 set +e
 

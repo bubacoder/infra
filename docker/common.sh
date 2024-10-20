@@ -10,24 +10,32 @@ create_network_if_missing() {
 
 init() {
   echo "Init..."
+
+  local required_hostname="$1"
+  assert_hostname "$required_hostname"
+
+  # shellcheck disable=SC2034,SC2046
+  DOCKER_DIR=$(dirname $(realpath "${BASH_SOURCE[0]}"))
+  cd "${DOCKER_DIR}" || exit 1
+
   create_network_if_missing "proxy"
 }
 
 get_yaml_file() {
   local stack_dir="$1"
   local service_name="$2"
-  echo "../../stacks/${stack_dir}/${service_name}.yaml"
+  echo "stacks/${stack_dir}/${service_name}.yaml"
 }
 
 get_env_file_args() {
   local service_name="$1"
   local env_files=()
 
-  if [[ -f "../.env" ]]; then env_files+=("../.env"); fi  # Common .env file in docker/hosts
-  if [[ -f ".env" ]];    then env_files+=(".env");    fi  # Host-specific .env file in docker/hosts/<hostname>
+  if [[ -f "${HOST_CONFIG_DIR}/../.env" ]]; then env_files+=("${HOST_CONFIG_DIR}/../.env"); fi  # Common .env file in config/docker
+  if [[ -f "${HOST_CONFIG_DIR}/.env" ]];    then env_files+=("${HOST_CONFIG_DIR}/.env");    fi  # Host-specific .env file in config/docker/<hostname>
 
-  if [[ -f "../.env.${service_name}" ]]; then env_files+=("../.env.${service_name}"); fi  # Common service-specific .env file in docker/hosts
-  if [[ -f ".env.${service_name}" ]];    then env_files+=(".env.${service_name}");    fi  # Host- and service-specific .env file in docker/hosts/<hostname>
+  if [[ -f "${HOST_CONFIG_DIR}/../.env.${service_name}" ]]; then env_files+=("${HOST_CONFIG_DIR}/../.env.${service_name}"); fi  # Common service-specific .env file in config/docker
+  if [[ -f "${HOST_CONFIG_DIR}/.env.${service_name}" ]];    then env_files+=("${HOST_CONFIG_DIR}/.env.${service_name}");    fi  # Host- and service-specific .env file in config/docker/<hostname>
 
   local env_file_args=""
   for file in "${env_files[@]}"; do
