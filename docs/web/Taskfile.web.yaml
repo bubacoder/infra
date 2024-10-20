@@ -4,12 +4,12 @@ tasks:
   docker-command:
     internal: true
     cmds:
-      - cd "docker/hosts/$(hostname | tr '[:upper:]' '[:lower:]')" && bash -c "source ../../common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
+      - cd "config/docker/$(hostname | tr '[:upper:]' '[:lower:]')" && bash -c "source ../../../docker/common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
 
   # Add parameters to 'docker build' for debugging: --progress=plain --no-cache
   build:
     desc: Build documentation site nginx container
-    dotenv: ['docker/hosts/.env']
+    dotenv: ['config/docker/.env']
     cmds:
       - |
         SITE_DOMAIN=docs.${MYDOMAIN}
@@ -19,7 +19,7 @@ tasks:
 
   export:
     desc: Copy documentation site content from container to docs/web/public
-    dotenv: ['docker/hosts/.env']
+    dotenv: ['config/docker/.env']
     cmds:
       - |
         SITE_DOMAIN=docs.${MYDOMAIN}
