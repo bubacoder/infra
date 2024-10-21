@@ -1,5 +1,5 @@
 # kics-scan ignore-line - Missing User Instruction
-FROM python:3.12-alpine
+FROM python:3.13-alpine
 
 # hadolint ignore=DL3018
 RUN apk -U upgrade --no-cache && \
