@@ -35,19 +35,6 @@ tasks:
     cmds:
       - pre-commit run --all-files
 
-  create-example-env:
-    desc: Create/update Docker example environment files
-    dotenv: ['docker/hosts/.env']
-    cmds:
-      - scripts/create-example-env.py docker/hosts/.env > docker/hosts/.env.example
-      - scripts/create-example-env.py docker/hosts/${MAIN_NODE}/.env > docker/hosts/example/.env
-    sources:
-      - docker/hosts/**/.env
-      - exclude: docker/hosts/example/.env
-    generates:
-      - docker/hosts/.env.example
-      - docker/hosts/example/.env
-
   git-rebase-fixup:
     desc: Interactively rebase current branch to origin (stash, rebase, pop)
     cmds:
@@ -58,7 +45,7 @@ tasks:
   build:
     desc: Run all linting and build tasks
     cmds:
-      - task: create-example-env
+      - task: docker:create-example-env
       - task: docs-deploy
       - task: pre-commit-update
       - task: lint
@@ -81,7 +68,7 @@ tasks:
 
   star-github-repos:
     desc: Add star to all referenced GitHub repos
-    dotenv: ['docker/hosts/.env']
+    dotenv: ['config/docker/.env']
     preconditions:
       - sh: "[ ! -z \"${GITHUB_API_TOKEN}\" ]"
         msg: GITHUB_API_TOKEN environment variable must be set (exported)
@@ -93,7 +80,7 @@ tasks:
   docker-command:
     internal: true
     cmds:
-      - cd "docker/hosts/$(hostname | tr '[:upper:]' '[:lower:]')" && bash -c "source ../../common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
+      - cd "config/docker/$(hostname | tr '[:upper:]' '[:lower:]')" && bash -c "source ../../../docker/common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
 
   get-public-ip:
     desc: Display public IP (ipinfo.io)
@@ -108,3 +95,9 @@ tasks:
       - ansible --version
       - terraform --version
       - docker --version || true
+
+  backup-config:
+    desc: Compress the config directory
+    cmds:
+      - tar -cjf "../infra-config-$(date +%Y-%m-%d_%H-%M-%S).tar.bz2" config
+      - ls -lh ../infra-config-*.tar.bz2
