@@ -1,5 +1,11 @@
 # Configuration folder
-config/
+/config/
 
 # Taskfile checksums
-.task
+.task/
+
+# Python
+__pycache__/
+
+# Work-in-progress
+WIP/
