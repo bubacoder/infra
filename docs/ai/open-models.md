@@ -5,7 +5,9 @@ This page discusses the open source (open weights) models which can be used with
 
 Some Large Language Models are more optimized for generic chat, others are coding-oriented.
 
-[Ollama - Example Models](https://github.com/ollama/ollama?tab=readme-ov-file#model-library), [Ollama - Model Library](https://ollama.com/library/)
+Model libraries:
+- [Hugging Face](https://huggingface.co/)
+- [Ollama - Model Library](https://ollama.com/library/)
 
 ### Models for generic chat / instruct (=instruction following)
 
