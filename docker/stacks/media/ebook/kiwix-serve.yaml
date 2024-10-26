@@ -11,7 +11,7 @@
 ---
 name: kiwix-serve
 services:
-  homelab-docs:
+  kiwix-serve:
     image: ghcr.io/kiwix/kiwix-serve:3.7.0
     container_name: kiwix-serve
     command:
@@ -23,10 +23,10 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.homelab-docs.entrypoints: websecure
-      traefik.http.routers.homelab-docs.middlewares: https-local@file
-      traefik.http.routers.homelab-docs.rule: Host(`kiwix.${MYDOMAIN}`)
-      traefik.http.services.homelab-docs.loadbalancer.server.port: 8080
+      traefik.http.routers.kiwix-serve.entrypoints: websecure
+      traefik.http.routers.kiwix-serve.middlewares: https-local@file
+      traefik.http.routers.kiwix-serve.rule: Host(`kiwix.${MYDOMAIN}`)
+      traefik.http.services.kiwix-serve.loadbalancer.server.port: 8080
       homepage.group: Media
       homepage.name: Kiwix server
       homepage.icon: kiwix.png
