@@ -23,16 +23,25 @@ https://github.com/joaomdmoura/crewAI
 
 https://microsoft.github.io/autogen/
 
-## AI Developer companions
+## Assistant
 
-### OpenHands
+### Open Interpreter
 
-> OpenHands agents can do anything a human developer can: modify code, run commands, browse the web, call APIs, and yes—even copy code snippets from StackOverflow.
+> A natural language interface for computers
+>
+> Open Interpreter lets LLMs run code (Python, Javascript, Shell, and more) locally. You can chat with Open Interpreter through a ChatGPT-like interface in your terminal by running `interpreter` after installing.
+> This provides a natural-language interface to your computer's general-purpose capabilities:
+> - Create and edit photos, videos, PDFs, etc.
+> - Control a Chrome browser to perform research
+> - Plot, clean, and analyze large datasets
+> - ...etc.
 
-https://github.com/All-Hands-AI/OpenHands
+https://github.com/OpenInterpreter/open-interpreter
 
-### Claude-dev
+### LLaMA-Omni
 
-> Autonomous coding agent right in your IDE, capable of creating/editing files, executing commands, and more with your permission every step of the way.
+> LLaMA-Omni is a low-latency and high-quality end-to-end speech interaction model built upon Llama-3.1-8B-Instruct, aiming to achieve speech capabilities at the GPT-4o level.
 
-https://github.com/saoudrizwan/claude-dev
+https://github.com/ictnlp/LLaMA-Omni
+
+https://venturebeat.com/ai/llama-omni-the-open-source-ai-thats-giving-siri-and-alexa-a-run-for-their-money/
