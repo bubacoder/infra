@@ -4,7 +4,10 @@ tasks:
   command:
     internal: true
     cmds:
-      - cd "config/docker/$(hostname | tr '[:upper:]' '[:lower:]')" && bash -c "source ../../../docker/common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
+      - |
+        cd docker
+        export HOST_CONFIG_DIR="../config/docker/$(hostname | tr '[:upper:]' '[:lower:]')"
+        bash -c "source common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
 
   apply:
     desc: Deploy locally configured containers
