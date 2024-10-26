@@ -1,7 +1,7 @@
 #####################################################################
 #           Collect and convert Markdown and Compose files          #
 #####################################################################
-FROM python:3.12-alpine3.20 AS collect
+FROM python:3.13-alpine3.20 AS collect
 
 WORKDIR /tmp
 COPY docs/web/requirements.txt requirements.txt
@@ -13,7 +13,7 @@ RUN --mount=type=bind,ro,source=.,target=/repo /repo/docs/web/update-docs.py --r
 #####################################################################
 #                            Build Stage                            #
 #####################################################################
-FROM hugomods/hugo:exts-0.129.0 AS build
+FROM hugomods/hugo:exts-0.136.5 AS build
 
 # Set base URL
 ARG HUGO_BASEURL
@@ -33,8 +33,8 @@ RUN hugo --minify --gc
 #####################################################################
 #                            Final Stage                            #
 #####################################################################
-FROM hugomods/hugo:nginx-1.27.0
-
-USER nginx
+# User "nginx" is specified in /etc/nginx/nginx.conf
+# kics-scan ignore-line - Missing User Instruction
+FROM hugomods/hugo:nginx-1.27.2
 
 COPY --from=build /public /site
