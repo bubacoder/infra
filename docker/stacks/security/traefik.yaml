@@ -4,8 +4,6 @@
 # 📜 Source: https://github.com/traefik/traefik  
 # Comparison with nginx: https://blog.lrvt.de/nginx-proxy-manager-versus-traefik/  
 # Customizing error pages in Traefik: https://www.imandrea.me/blog/traefik-custom-404/  
-#
-# TODO Log rotation - https://doc.traefik.io/traefik/observability/access-logs/
 ---
 name: traefik
 services:
@@ -50,25 +48,20 @@ services:
       homepage.widget.type: traefik
       homepage.widget.url: https://traefik.${MYDOMAIN}/
 
-    # https://community.traefik.io/t/how-does-log-rotation-work-especially-when-running-traefik-in-container/21349
-    #
-    # initContainers: # Add the initContainers section
-    #   - name: logrotate
-    #     image: traefik:v2.10 # Use the same image as the traefik service
-    #     command: ["/bin/sh", "-c"]
-    #     args:
-    #       - |
-    #         apk add --no-cache logrotate
-    #         echo '/logs/*.log {
-    #             weekly
-    #             rotate 4
-    #             compress
-    #             missingok
-    #             notifempty
-    #         }' > /etc/logrotate.d/traefik
-    #     volumeMounts:
-    #       - mountPath: /logs
-    #         name: logs-volume
+  # Access Logs: https://doc.traefik.io/traefik/observability/access-logs/
+  logrotate:
+    build:
+      dockerfile_inline: |
+        FROM alpine:3.20
+        RUN apk add --no-cache logrotate
+        COPY traefik/logrotate.conf /etc/logrotate.conf
+        RUN chmod 644 /etc/logrotate.conf
+        RUN chown root:root /etc/logrotate.conf
+        CMD ["sh", "-c", "logrotate -f /etc/logrotate.conf && sleep 86400"]
+    container_name: logrotate
+    restart: unless-stopped
+    volumes:
+      - ${DOCKER_VOLUMES}/traefik/logs:/logs
 
 networks:
   proxy:
