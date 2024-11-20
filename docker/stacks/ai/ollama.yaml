@@ -20,7 +20,7 @@ services:
     #           count: 1
     #           capabilities:
     #             - gpu
-    image: ollama/ollama:0.4.0
+    image: ollama/ollama:0.4.2
     container_name: ollama
     restart: unless-stopped
     # https://docs.docker.com/config/containers/resource_constraints/#configure-the-default-cfs-scheduler
@@ -34,7 +34,7 @@ services:
       - proxy
 
   ollama-open-webui:
-    image: ghcr.io/open-webui/open-webui:0.3.35-ollama
+    image: ghcr.io/open-webui/open-webui:v0.4.1-ollama
     container_name: ollama-open-webui
     restart: unless-stopped
     volumes:
