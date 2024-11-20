@@ -26,6 +26,7 @@ services:
       CLIENT_MAX_BODY_SIZE: 100M # must end with M(egabytes) or G(igabytes)
     volumes:
       - ${STORAGE_WEBDAV}:/data
+      - ${ADMIN_HOME}/repos/infra:/data/Infra # 'infra' git repository
       - ${DOCKER_VOLUMES}/webdav/log:/var/log/nginx # error.log, access.log
     networks:
       - proxy
