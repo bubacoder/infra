@@ -30,6 +30,7 @@ export TF_IN_AUTOMATION = 1
 .PHONY: clean
 clean:
 	find . -type d -name '.terraform' -exec rm -rf {} +
+	rm -f ${TFPLAN}
 
 .PHONY: docs
 docs:
