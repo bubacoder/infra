@@ -63,7 +63,7 @@ repos:
   # ansible-lint checks playbooks for practices and behavior that could potentially be improved and can fix some of the most common ones for you.
   # Add '-v' parameter to ansiblelint for verbose mode
   - repo: https://github.com/ansible-community/ansible-lint
-    rev: v24.9.2
+    rev: v24.10.0
     hooks:
       - id: ansible-lint
         files: ^ansible/
