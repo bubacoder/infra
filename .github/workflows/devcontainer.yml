@@ -2,7 +2,7 @@ name: Build dev & admin container
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "devcontainer-deploy"]
     paths: ['.github/workflows/devcontainer.yml', '.devcontainer/Dockerfile', 'ansible/**']
   pull_request:
     paths: ['.github/workflows/devcontainer.yml', '.devcontainer/Dockerfile', 'ansible/**']
@@ -32,3 +32,27 @@ jobs:
             --build-arg BASE_IMAGE=${{ matrix.distribution.base_image }} .
       - name: Test the container image
         run: docker run -v .:/home/admin/repos/infra infra-devcontainer:${{ matrix.distribution.tag }} bash --login -c "cd /home/admin/repos/infra; task versions"
+
+  push-to-hgcr:
+    needs: build-test
+    runs-on: ubuntu-latest
+    if: success() # && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    strategy:
+      matrix:
+        distribution:
+          - tag: debian
+          - tag: ubuntu
+    steps:
+      - name: Log in to HGCR
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login hgcr.io -u ${{ github.actor }} --password-stdin
+      - name: Push container to HGCR
+        env:
+          REGISTRY_TAG: hgcr.io/bubacoder/infra-devcontainer:${{ matrix.distribution.tag }}-latest
+        run: |
+          docker tag infra-devcontainer:${{ matrix.distribution.tag }} ${{ env.REGISTRY_TAG }}
+          docker push ${{ env.REGISTRY_TAG }}
