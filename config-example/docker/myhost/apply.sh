@@ -71,6 +71,7 @@ up tools guacamole
 
 # AI
 up ai ollama
+up ai open-webui
 up ai litellm
 up ai autogenstudio
 up ai sillytavern
