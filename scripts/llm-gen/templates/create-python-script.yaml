@@ -1,0 +1,8 @@
+params:
+  model_type: code
+  chunking: disabled
+  temperature: 0.1
+prompt: |
+  Create a python script. The script must: <INPUT>.
+  Use type hints in function definitions and separate the functions with two blank lines.
+  Output only the script without any explanation, and without markdown code block formatting.

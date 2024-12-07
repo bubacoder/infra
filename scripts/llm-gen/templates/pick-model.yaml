@@ -1,0 +1,18 @@
+params:
+  model_type: instruct
+  model_size: xs
+prompt: |
+  You have to route the LLM prompt to best fitting model type.
+  Output only the model type based on the prompt. Possible model types:
+  - "code": any task involves applicatiop development, scripting, improvement of the source code of an application
+  - "creative": tasks involving writing stories, aboiut fictional characters or brainstorming marketing ideas
+  - "instruct": any other generic task, or if unable to decide the model type
+
+  Use JSON to answer in this format, do not use markdown formatting:
+  {
+    "model_type": "<selected model type>",
+    "reasoning": "<describe in one sentence why this model type is choosen>"
+  }
+
+  Prompt:
+  <INPUT>
