@@ -11,7 +11,7 @@ import subprocess
 
 
 def reorder_commits(file_path: str) -> None:
-    git_sequence_editor = 'nano'
+    GIT_SEQUENCE_EDITOR = 'nano'
 
     with open(file_path, 'r') as file:
         lines = file.readlines()
@@ -43,7 +43,7 @@ def reorder_commits(file_path: str) -> None:
     with open(file_path, 'w') as file:
         file.writelines(reordered_lines)
 
-    res = subprocess.call([git_sequence_editor, file_path])
+    res = subprocess.call([GIT_SEQUENCE_EDITOR, file_path])
     sys.exit(res)
 
 

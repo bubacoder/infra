@@ -23,10 +23,7 @@ SENSITIVE_VARS_TO_GENERALIZE = {
 
 
 def contains_any_substring(string: str, substrings: list[str]) -> bool:
-    for substring in substrings:
-        if substring in string:
-            return True
-    return False
+    return any(substring in string for substring in substrings)
 
 
 def mask_sensitive_variables(input_file: str) -> str:
