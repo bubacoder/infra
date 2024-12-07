@@ -1,0 +1,20 @@
+model_list:
+  - model_name: claude-3-5-sonnet # RECEIVED MODEL NAME
+    litellm_params: # All params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
+      model: claude-3-5-sonnet-20240620 # MODEL NAME sent to `litellm.completion()`
+      api_key: "os.environ/ANTHROPIC_API_KEY" # Does os.getenv("ANTHROPIC_API_KEY")
+
+  - model_name: ollama-local-phi
+    litellm_params:
+      model: ollama_chat/phi3.5:3.8b
+      api_base: "os.environ/LOCAL_OLLAMA_API_BASE"
+
+  - model_name: ollama-mac-mistral
+    litellm_params:
+      model: ollama_chat/mistral:7b-instruct
+      api_base: "os.environ/REMOTE_OLLAMA_API_BASE"
+
+router_settings:
+  fallbacks:
+    - ollama-mac-mistral:
+        - ollama-local-phi
