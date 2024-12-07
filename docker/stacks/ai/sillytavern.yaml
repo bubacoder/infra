@@ -1,6 +1,6 @@
 # LLM Frontend for Power Users.
 #
-# https://github.com/SillyTavern/SillyTavern  
+# Source: https://github.com/SillyTavern/SillyTavern  
 # Image: https://github.com/SillyTavern/SillyTavern/pkgs/container/sillytavern  
 # Docker setup: https://docs.sillytavern.app/installation/docker/  
 # Docker Compose: https://github.com/SillyTavern/SillyTavern/blob/release/docker/docker-compose.yml  
@@ -9,6 +9,15 @@
 ---
 name: sillytavern
 services:
+
+  initContainer:
+    image: busybox
+    container_name: sillytavern-init
+    command: grep -q '^\s*-\s*172\.18\.0\.1\/16' /home/node/app/config/config.yaml || sed -i '/whitelist:/a \ \ - 172.18.0.1\/16' /home/node/app/config/config.yaml
+    volumes:
+      - ${DOCKER_VOLUMES}/sillytavern/config:/home/node/app/config
+    network_mode: none
+
   sillytavern:
     image: ghcr.io/sillytavern/sillytavern:1.12.9
     container_name: sillytavern
@@ -19,6 +28,9 @@ services:
       - ${DOCKER_VOLUMES}/sillytavern/plugins:/home/node/app/plugins
     networks:
       - proxy
+    depends_on:
+      initContainer:
+        condition: service_completed_successfully
     labels:
       traefik.enable: true
       traefik.http.routers.sillytavern.entrypoints: websecure
