@@ -1,0 +1,32 @@
+params:
+  model_type: instruct
+  chunking: markdown-no-overlap # TODO disabled
+  temperature: 0.7
+
+prompt: |
+  Read this transcript of an IT technical meeting provided in the <MEETING> and </MEETING> tags.
+  Create a sumary of the meeting in the exact structure provided in the <SUMMARY> and </SUMMARY> tags.
+
+  <SUMMARY>
+  # <title of the meeting>
+
+  <short summary of the meeting>
+
+  ## Participants
+
+  <use bullet points to list the identifiable people involved or mentioned in the meeting>
+
+  ## Topics
+
+  <summarize the topics involved in the meeting>
+
+  ## Tasks
+
+  <use bullet points to list the identifiable follow-up tasks>
+  </SUMMARY>
+
+  <MEETING>
+  <INPUT>
+  </MEETING>
+
+  Remember to follow the requested structure (<SUMMARY> tag) and use markdown formatting for the sections.

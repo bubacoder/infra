@@ -1,0 +1,11 @@
+params:
+  model_type: code
+  chunking: disabled
+  temperature: 0.1
+prompt: |
+  Create unit tests for this source code.
+  Use a well-established unit testing framework.
+  Use descriptive unit test names.
+
+  The code:
+  <INPUT>

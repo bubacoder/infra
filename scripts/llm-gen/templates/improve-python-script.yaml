@@ -1,0 +1,12 @@
+params:
+  model_type: code
+  temperature: 0.1 # TODO
+  chunking: python-no-overlap
+  additional_prompt_if_chunked: TODO
+prompt: |
+  Improve this Python code in aspect of readability, coding best practices and language features.
+  Use recommended formatting of the PEP 8 Style Guide for Python.
+  Use type hints in function definitions and create documentation header. Separate the functions with two blank lines.
+  Output only the script without additional explanation, and without markdown code block formatting.
+  ---
+  <INPUT>
