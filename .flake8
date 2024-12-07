@@ -1,5 +1,9 @@
 # Options: https://flake8.pycqa.org/en/latest/user/options.html
 
 [flake8]
-extend-ignore = E501
+
+# Line too long (82 > 79 characters) (E501)
+# Multiple statements on one line (colon) (E701)
+extend-ignore = E501,E701
+
 exclude = .git
