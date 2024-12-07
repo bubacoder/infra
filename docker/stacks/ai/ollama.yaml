@@ -1,12 +1,6 @@
-# Get up and running with Llama 2, Mistral, Gemma, and other large language models.  
+# Get up and running with Llama 3.2, Mistral, Gemma 2, and other large language models.  
+#
 # https://github.com/ollama/ollama
-#
-# Open WebUI is an extensible, feature-rich, and user-friendly self-hosted WebUI for various LLM runners, supported LLM runners include Ollama and OpenAI-compatible APIs.  
-# https://openwebui.com/  
-# https://github.com/open-webui/open-webui/  
-# https://docs.openwebui.com/getting-started/  
-#
-# Compose file based on: https://github.com/open-webui/open-webui/blob/main/docker-compose.yaml
 ---
 name: ollama
 services:
@@ -28,37 +22,19 @@ services:
     cpu_shares: 512
     volumes:
       - ${DOCKER_VOLUMES}/ollama:/root/.ollama
-    expose:
-      - 11434
     networks:
       - proxy
-
-  ollama-open-webui:
-    image: ghcr.io/open-webui/open-webui:v0.4.6-ollama
-    container_name: ollama-open-webui
-    restart: unless-stopped
-    volumes:
-      - ${DOCKER_VOLUMES}/ollama-open-webui:/app/backend/data
-    networks:
-      - proxy
-    depends_on:
-      - ollama
-    environment:
-      OLLAMA_API_BASE_URL: http://ollama:11434/api
-      WEBUI_SECRET_KEY: ''
-    extra_hosts:
-      - host.docker.internal:host-gateway
     labels:
       traefik.enable: true
-      traefik.http.routers.ollama-open-webui.entrypoints: websecure
-      traefik.http.routers.ollama-open-webui.middlewares: https-local@file
-      traefik.http.routers.ollama-open-webui.rule: Host(`ollama.${MYDOMAIN}`)
-      traefik.http.services.ollama-open-webui.loadbalancer.server.port: 8080
+      traefik.http.routers.ollama.entrypoints: websecure
+      traefik.http.routers.ollama.middlewares: https-local@file
+      traefik.http.routers.ollama.rule: Host(`ollama.${MYDOMAIN}`)
+      traefik.http.services.ollama.loadbalancer.server.port: 11434
       homepage.group: AI
-      homepage.name: "Ollama - Open WebUI"
+      homepage.name: "Ollama"
       homepage.icon: ollama.png
       homepage.href: https://ollama.${MYDOMAIN}/
-      homepage.description: "User-friendly WebUI for LLMs (Formerly Ollama WebUI)"
+      homepage.description: "Large Language Model API"
 
 networks:
   proxy:

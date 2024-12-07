@@ -1,0 +1,38 @@
+# Open WebUI is an extensible, feature-rich, and user-friendly self-hosted WebUI for various LLM runners, supported LLM runners include Ollama and OpenAI-compatible APIs.  
+#
+# https://openwebui.com/  
+# https://github.com/open-webui/open-webui/  
+# https://docs.openwebui.com/getting-started/  
+#
+# Compose file based on: https://github.com/open-webui/open-webui/blob/main/docker-compose.yaml
+---
+name: open-webui
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:v0.4.6-ollama
+    container_name: open-webui
+    restart: unless-stopped
+    volumes:
+      - ${DOCKER_VOLUMES}/open-webui:/app/backend/data
+    networks:
+      - proxy
+    environment:
+      OLLAMA_API_BASE_URL: https://ollama.${MYDOMAIN}/api
+      WEBUI_SECRET_KEY: ''
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    labels:
+      traefik.enable: true
+      traefik.http.routers.open-webui.entrypoints: websecure
+      traefik.http.routers.open-webui.middlewares: https-local@file
+      traefik.http.routers.open-webui.rule: Host(`open-webui.${MYDOMAIN}`)
+      traefik.http.services.open-webui.loadbalancer.server.port: 8080
+      homepage.group: AI
+      homepage.name: "Open WebUI"
+      homepage.icon: open-webui.png
+      homepage.href: https://open-webui.${MYDOMAIN}/
+      homepage.description: "User-friendly WebUI for LLMs"
+
+networks:
+  proxy:
+    external: true
