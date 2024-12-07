@@ -1,0 +1,36 @@
+# Python SDK, Proxy Server (LLM Gateway) to call 100+ LLM APIs in OpenAI format - [Bedrock, Azure, OpenAI, VertexAI, Cohere, Anthropic, Sagemaker, HuggingFace, Replicate, Groq]
+#
+# https://github.com/BerriAI/litellm
+# https://docs.litellm.ai/docs/proxy/deploy
+# https://docs.litellm.ai/docs/proxy/docker_quick_start
+---
+name: litellm
+services:
+  litellm:
+    image: ghcr.io/berriai/litellm:main-v1.53.1
+    command: --config /app/config.yaml --detailed_debug
+    container_name: litellm
+    restart: unless-stopped
+    volumes:
+      - ./litellm:/app
+    networks:
+      - proxy
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      LOCAL_OLLAMA_API_BASE: https://ollama.${MYDOMAIN}
+      REMOTE_OLLAMA_API_BASE: http://localhost:11444
+    labels:
+      traefik.enable: true
+      traefik.http.routers.litellm.entrypoints: websecure
+      traefik.http.routers.litellm.middlewares: https-local@file
+      traefik.http.services.litellm.loadbalancer.server.port: 4000
+      homepage.group: AI
+      homepage.name: "LiteLLM"
+      homepage.icon: chatgpt.png
+      homepage.href: https://litellm.${MYDOMAIN}/
+      homepage.description: "LLM Gateway to call 100+ LLM APIs in OpenAI format"
+
+networks:
+  proxy:
+    external: true
