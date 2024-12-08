@@ -68,4 +68,4 @@ jobs:
           context: ansible
           file: .devcontainer/Dockerfile
           push: true # This will push the image to the registry after building
-          tags: hgcr.io/bubacoder/infra-devcontainer:${{ matrix.distribution.tag }}-latest
+          tags: ghcr.io/${{ github.repository_owner }}/infra-devcontainer:${{ matrix.distribution.tag }}-latest
