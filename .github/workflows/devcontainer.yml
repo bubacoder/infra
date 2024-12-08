@@ -23,15 +23,24 @@ jobs:
           - tag: ubuntu
             base_image: ubuntu:24.04
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-      - name: Build the container image
-        run: |
-          cd ansible
-          docker build --platform linux/amd64 --file ../.devcontainer/Dockerfile \
-            --tag infra-devcontainer:${{ matrix.distribution.tag }} \
-            --build-arg BASE_IMAGE=${{ matrix.distribution.base_image }} .
-      - name: Test the container image
-        run: docker run -v .:/home/admin/repos/infra infra-devcontainer:${{ matrix.distribution.tag }} bash --login -c "cd /home/admin/repos/infra; task versions"
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: ansible
+          file: .devcontainer/Dockerfile
+          push: false # Set to true if you want to push directly after build
+          tags: infra-devcontainer:${{ matrix.distribution.tag }}
+          build-args: |
+            BASE_IMAGE=${{ matrix.distribution.base_image }}
 
   push-to-hgcr:
     needs: build-test
@@ -48,11 +57,17 @@ jobs:
           - tag: debian
           - tag: ubuntu
     steps:
-      - name: Log in to HGCR
-        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login hgcr.io -u ${{ github.actor }} --password-stdin
-      - name: Push container to HGCR
-        env:
-          REGISTRY_TAG: hgcr.io/bubacoder/infra-devcontainer:${{ matrix.distribution.tag }}-latest
-        run: |
-          docker tag infra-devcontainer:${{ matrix.distribution.tag }} ${{ env.REGISTRY_TAG }}
-          docker push ${{ env.REGISTRY_TAG }}
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push image
+        uses: docker/build-push-action@v6
+        with:
+          context: ansible
+          file: ../.devcontainer/Dockerfile
+          push: true # This will push the image to the registry after building
+          tags: hgcr.io/bubacoder/infra-devcontainer:${{ matrix.distribution.tag }}-latest
