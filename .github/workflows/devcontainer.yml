@@ -15,6 +15,13 @@ concurrency:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
     strategy:
       matrix:
         distribution:
@@ -22,15 +29,16 @@ jobs:
             base_image: debian:bookworm-slim
           - tag: ubuntu
             base_image: ubuntu:24.04
+
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      # - name: Set up QEMU
+      #   uses: docker/setup-qemu-action@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      # - name: Set up Docker Buildx
+      #   uses: docker/setup-buildx-action@v3
 
       - name: Build image and export to Docker
         uses: docker/build-push-action@v6
@@ -45,31 +53,17 @@ jobs:
       - name: Test the image
         run: docker run --rm -v .:/home/admin/repos/infra infra-devcontainer:${{ matrix.distribution.tag }} bash --login -c "cd /home/admin/repos/infra; task versions"
 
-
-  push-to-hgcr:
-    needs: build-test
-    runs-on: ubuntu-latest
-    if: success() # && github.ref == 'refs/heads/main'
-    permissions:
-      contents: read
-      packages: write
-      attestations: write
-      id-token: write
-    strategy:
-      matrix:
-        distribution:
-          - tag: debian
-          - tag: ubuntu
-    steps:
       - name: Log in to the Container registry
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        if: success() # && github.ref == 'refs/heads/main'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push image
+      - name: Push the image
         uses: docker/build-push-action@v6
+        if: success() # && github.ref == 'refs/heads/main'
         with:
           context: ansible
           file: .devcontainer/Dockerfile
