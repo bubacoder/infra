@@ -12,7 +12,7 @@
   "platformAutomerge": true,
   "docker-compose": {
     "fileMatch": [
-      "^docker\/stacks\/.*\\.yaml$"
+      "^docker\/.*\\.yaml$"
     ]
   },
   "packageRules": [
@@ -51,17 +51,17 @@
       "groupSlug": "docs-web"
     },
     {
-      "description": "Group minor and patch updates from the docker/stacks directory",
+      "description": "Group minor and patch updates from the docker directory",
       "schedule": ["after 8am on saturday"],
-      "matchFileNames": ["docker/stacks/**"],
+      "matchFileNames": ["docker/**"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "Container images",
       "groupSlug": "docker-stacks"
     },
     {
-      "description": "Do not group major updates from the docker/stacks directory; require approval",
+      "description": "Do not group major updates from the docker directory; require approval",
       "schedule": ["after 8am on saturday"],
-      "matchFileNames": ["docker/stacks/**"],
+      "matchFileNames": ["docker/**"],
       "matchUpdateTypes": ["major"],
       "groupName": null,
       "dependencyDashboardApproval": true

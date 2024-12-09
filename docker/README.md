@@ -8,8 +8,7 @@ For additional services to host, check [awesome-selfhosted](https://github.com/a
 
 ## Directory structure
 
-- `docker` -- Docker-based service configuration
-  - `docker/stacks` -- Docker Compose files organized into categories
+- `docker` -- Docker Compose files organized into categories
 - `config/docker` -- Host specific service configuration
 
 ## Host-specific configuration
@@ -22,7 +21,7 @@ Configuration files:
 
 ## Services
 
-The applications/services are defined in the `docker/stacks` folder, ordered by category.  
+The applications/services are defined in the `docker` folder, ordered by category.  
 If possible, avoid any hardcoded configuration values in these files. Use environment variables and init containers for customization.
 
 ## Start the services

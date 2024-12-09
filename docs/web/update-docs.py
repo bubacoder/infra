@@ -217,7 +217,7 @@ if __name__ == "__main__":
     delete_directory_content(output_content_path)
 
     print("Processing Docker Compose stacks")
-    process_docker_directory(repository_path / "docker" / "stacks", output_content_path / "docker")
+    process_docker_directory(repository_path / "docker", output_content_path / "docker")
 
     for source, target, weight in MARKDOWN_LOCATIONS:
         print(f"Processing {source} ==> {target}")

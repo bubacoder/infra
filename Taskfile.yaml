@@ -9,7 +9,7 @@ includes:
   docker: ./docker/Taskfile.docker.yaml
   docs: ./docs/web/Taskfile.web.yaml
   devcontainer: ./.devcontainer/Taskfile.dev.yaml
-  crowdsec: ./docker/stacks/security/Taskfile.crowdsec.yaml
+  crowdsec: ./docker/security/Taskfile.crowdsec.yaml
 
 tasks:
   default:
