@@ -24,7 +24,7 @@ init() {
 get_yaml_file() {
   local stack_dir="$1"
   local service_name="$2"
-  echo "stacks/${stack_dir}/${service_name}.yaml"
+  echo "${stack_dir}/${service_name}.yaml"
 }
 
 get_env_file_args() {
