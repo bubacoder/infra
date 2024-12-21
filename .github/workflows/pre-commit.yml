@@ -17,12 +17,17 @@ jobs:
         with:
           python-version: '3.11'
 
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.3"
+
       - name: Install tflint
         run: curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
 
       - name: Install terraform-docs
         run: |
-          curl -sSLo ./terraform-docs.tar.gz https://terraform-docs.io/dl/v0.18.0/terraform-docs-v0.18.0-$(uname)-amd64.tar.gz
+          VERSION=0.19.0
+          curl -sSLo ./terraform-docs.tar.gz https://terraform-docs.io/dl/v${VERSION}/terraform-docs-v${VERSION}-$(uname)-amd64.tar.gz
           tar -xzf terraform-docs.tar.gz terraform-docs
           chmod +x terraform-docs
           mv terraform-docs /usr/local/bin/terraform-docs
