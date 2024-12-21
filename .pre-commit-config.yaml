@@ -69,8 +69,8 @@ repos:
         files: ^ansible/
         entry: >
           env ANSIBLE_ROLES_PATH=~/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:ansible/roles
-          env ANSIBLE_COLLECTIONS_PATH=/usr/lib/python3/dist-packages:/usr/share/ansible/collections:/etc/ansible/collections:/opt/pipx/venvs/ansible-core/lib/python3.10/site-packages/ansible_collections:~/.ansible/collections:collections
-          python3 -m ansiblelint --force-color
+          env ANSIBLE_COLLECTIONS_PATH=/usr/lib/python3/dist-packages:/usr/share/ansible/collections:/etc/ansible/collections:/opt/pipx/venvs/ansible-core/lib/python3.12/site-packages/ansible_collections:~/.ansible/collections:collections
+          python3 -m ansiblelint -v --force-color
 
   # ShellCheck, a static analysis tool for shell scripts - https://www.shellcheck.net/
   # Ignoring errors: https://www.shellcheck.net/wiki/Ignore, `.shellcheckrc`
