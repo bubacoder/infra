@@ -18,7 +18,7 @@
 name: kasm
 services:
   kasm:
-    image: lscr.io/linuxserver/kasm:1.16.1
+    image: lscr.io/linuxserver/kasm:1.120.20221218
     container_name: kasm
     restart: unless-stopped
     # kics-scan ignore-line
