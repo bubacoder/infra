@@ -1,0 +1,67 @@
+# Kasm Workspaces is a docker container streaming platform for delivering browser-based access to desktops,
+# applications, and web services. Kasm uses devops-enabled Containerized Desktop Infrastructure (CDI) to
+# create on-demand, disposable, docker containers that are accessible via web browser.
+# Example use-cases include Remote Browser Isolation (RBI), Data Loss Prevention (DLP), Desktop as a Service (DaaS),
+# Secure Remote Access Services (RAS), and Open Source Intelligence (OSINT) collections.
+#
+# **Application Setup**  
+# Access the installation wizard at https://kasm-install.${MYDOMAIN} and follow the instructions there.
+# Once setup is complete access https://kasm.${MYDOMAIN} and login with the credentials you entered during setup.
+#
+# Default users:
+# - admin@kasm.local
+# - user@kasm.local
+#
+# https://www.kasmweb.com/  
+# https://docs.linuxserver.io/images/docker-kasm/
+---
+name: kasm
+services:
+  kasm:
+    image: lscr.io/linuxserver/kasm:1.16.1
+    container_name: kasm
+    restart: unless-stopped
+    # kics-scan ignore-line
+    privileged: true
+    # Some hosts require this on top of privileged for namespacing to work properly inside the DinD layer.
+    # kics-scan ignore-line
+    security_opt:
+      - apparmor:rootlesskit
+    environment:
+      KASM_PORT: 443
+    volumes:
+      - ${DOCKER_VOLUMES}/kasm/opt:/opt
+      - ${DOCKER_VOLUMES}/kasm/profiles:/profiles
+      # - /dev/input:/dev/input # optional - for gamepad support
+      # - /run/udev/data:/run/udev/data # optional - for gamepad support
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+
+      # User interface
+      traefik.http.routers.kasm.service: kasm
+      traefik.http.routers.kasm.entrypoints: websecure
+      traefik.http.routers.kasm.middlewares: https-local@file
+      traefik.http.services.kasm.loadbalancer.server.port: 443
+      traefik.http.services.kasm.loadbalancer.server.scheme: https
+      traefik.http.services.kasm.loadbalancer.serversTransport: insecureTransport@file
+
+      # Initial setup interface
+      traefik.http.routers.kasm-install.service: kasm-install
+      traefik.http.routers.kasm-install.entrypoints: websecure
+      traefik.http.routers.kasm-install.middlewares: https-local@file
+      traefik.http.routers.kasm-install.rule: Host(`kasm-install.${MYDOMAIN}`)
+      traefik.http.services.kasm-install.loadbalancer.server.port: 3000 # https
+      traefik.http.services.kasm-install.loadbalancer.server.scheme: https
+      traefik.http.services.kasm-install.loadbalancer.serversTransport: insecureTransport@file
+
+      homepage.group: Connections
+      homepage.name: Kasm Workspaces
+      homepage.icon: kasm.png
+      homepage.href: https://kasm.${MYDOMAIN}/
+      homepage.description: "Container streaming platform"
+
+networks:
+  proxy:
+    external: true
