@@ -1,0 +1,35 @@
+# No. 1 Locally hosted web application that allows you to perform various operations on PDF files
+#
+# https://github.com/Stirling-Tools/Stirling-PDF
+---
+name: stirling-pdf
+services:
+  stirling-pdf:
+    image: stirlingtools/stirling-pdf:0.36.5
+    container_name: stirling-pdf
+    restart: unless-stopped
+    environment:
+      DOCKER_ENABLE_SECURITY: false
+      INSTALL_BOOK_AND_ADVANCED_HTML_OPS: false
+      LANGS: en_GB
+    volumes:
+      - ${DOCKER_VOLUMES}/stirling-pdf/trainingData:/usr/share/tessdata # Required for extra OCR languages
+      - ${DOCKER_VOLUMES}/stirling-pdf/extraConfigs:/configs
+      - ${DOCKER_VOLUMES}/stirling-pdf/customFiles:/customFiles/
+      - ${DOCKER_VOLUMES}/stirling-pdf/logs:/logs/
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.stirling-pdf.entrypoints: websecure
+      traefik.http.routers.stirling-pdf.middlewares: https-local@file
+      traefik.http.services.stirling-pdf.loadbalancer.server.port: 8080
+      homepage.group: Tools
+      homepage.name: Stirling PDF
+      homepage.icon: stirling-pdf.png
+      homepage.href: https://stirling-pdf.${MYDOMAIN}/
+      homepage.description: PDF operations
+
+networks:
+  proxy:
+    external: true
