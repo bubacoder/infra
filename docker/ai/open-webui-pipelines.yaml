@@ -1,0 +1,33 @@
+# Pipelines: Versatile, UI-Agnostic OpenAI-Compatible Plugin Framework
+#
+# > Welcome to Pipelines, an Open WebUI initiative. Pipelines bring modular, customizable workflows to any UI client supporting OpenAI API specs – and much more!
+# > Easily extend functionalities, integrate unique logic, and create dynamic workflows with just a few lines of code.
+#
+# https://docs.openwebui.com/pipelines/
+# https://github.com/open-webui/pipelines
+---
+name: open-webui-pipelines
+services:
+  pipelines:
+    image: ghcr.io/open-webui/pipelines:main
+    container_name: open-webui-pipelines
+    restart: on-failure:10
+    volumes:
+      - ${DOCKER_VOLUMES}/open-webui-pipelines:/app/pipelines
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.open-webui-pipelines.entrypoints: websecure
+      traefik.http.routers.open-webui-pipelines.middlewares: https-local@file
+      traefik.http.routers.open-webui-pipelines.rule: Host(`open-webui-pipelines.${MYDOMAIN}`)
+      traefik.http.services.open-webui-pipelines.loadbalancer.server.port: 9099
+      homepage.group: AI
+      homepage.name: "Open WebUI Pipelines"
+      homepage.icon: open-webui.png
+      homepage.href: https://open-webui-pipelines.${MYDOMAIN}/
+      homepage.description: "UI-Agnostic OpenAI API Plugin Framework"
+
+networks:
+  proxy:
+    external: true
