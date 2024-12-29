@@ -5,7 +5,7 @@ params:
 
 prompt: |
   Read this transcript of an IT technical meeting provided in the <MEETING> and </MEETING> tags.
-  Create a sumary of the meeting in the exact structure provided in the <SUMMARY> and </SUMMARY> tags.
+  Create a summary of the meeting in the exact structure provided in the <SUMMARY> and </SUMMARY> tags.
 
   <SUMMARY>
   # <title of the meeting>

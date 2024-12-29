@@ -12,7 +12,7 @@ prompt: |
   Use JSON to answer in this format, do not use markdown formatting:
   {
     "cloud": "<selected cloud platform, or 'unknown' if unable to determine>",
-    "reasoning": "<describe in one sentence why this model type is choosen>"
+    "reasoning": "<describe in one sentence why this model type is chosen>"
   }
 
   Message:
