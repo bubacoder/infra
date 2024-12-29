@@ -16,16 +16,25 @@ services:
       - ${DOCKER_VOLUMES}/open-webui:/app/backend/data
     networks:
       - proxy
+    # Environment Variable Configuration
+    # https://docs.openwebui.com/getting-started/advanced-topics/env-configuration/
     environment:
-      OLLAMA_API_BASE_URL: https://ollama.${MYDOMAIN}/api
-      WEBUI_SECRET_KEY: ''
+      WEBUI_SECRET_KEY: ${OPEN_WEBUI_SECRET_KEY}
+      WEBUI_URL: "https://open-webui.${MYDOMAIN}"
+      OLLAMA_API_BASE_URL: "https://ollama.${MYDOMAIN}/api"
+      # Web search using SearXNG
+      # Details: https://github.com/open-webui/docs/blob/main/docs/tutorials/integrations/web_search.md
+      ENABLE_RAG_WEB_SEARCH: true
+      RAG_WEB_SEARCH_ENGINE: "searxng"
+      RAG_WEB_SEARCH_RESULT_COUNT: 5
+      RAG_WEB_SEARCH_CONCURRENT_REQUESTS: 10
+      SEARXNG_QUERY_URL: "https://searxng.${MYDOMAIN}/search?q=<query>&format=json"
     extra_hosts:
       - host.docker.internal:host-gateway
     labels:
       traefik.enable: true
       traefik.http.routers.open-webui.entrypoints: websecure
       traefik.http.routers.open-webui.middlewares: https-local@file
-      traefik.http.routers.open-webui.rule: Host(`open-webui.${MYDOMAIN}`)
       traefik.http.services.open-webui.loadbalancer.server.port: 8080
       homepage.group: AI
       homepage.name: "Open WebUI"
