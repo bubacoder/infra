@@ -1,18 +1,38 @@
+# LiteLLM supports all the text / chat / vision models from OpenRouter
+# https://docs.litellm.ai/docs/providers/openrouter
+# https://openrouter.ai/models
+#
+# LiteLLM supports all anthropic models
+# https://docs.litellm.ai/docs/providers/anthropic
+# https://docs.anthropic.com/en/docs/about-claude/models
+#
+# LiteLLM supports all models from Ollama
+# https://docs.litellm.ai/docs/providers/ollama
+# https://github.com/ollama/ollama
+
+---
 model_list:
   - model_name: claude-3-5-sonnet # RECEIVED MODEL NAME
     litellm_params: # All params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
-      model: claude-3-5-sonnet-20240620 # MODEL NAME sent to `litellm.completion()`
+      model: anthropic/claude-3-5-sonnet-latest # MODEL NAME sent to `litellm.completion()`
       api_key: "os.environ/ANTHROPIC_API_KEY" # Does os.getenv("ANTHROPIC_API_KEY")
+
+  - model_name: gpt-4o
+    litellm_params:
+      model: openrouter/openai/gpt-4o-2024-11-20
+      api_key: "os.environ/OPENROUTER_API_KEY"
 
   - model_name: ollama-local-phi
     litellm_params:
       model: ollama_chat/phi3.5:3.8b
       api_base: "os.environ/LOCAL_OLLAMA_API_BASE"
+      api_key: "none"
 
   - model_name: ollama-mac-mistral
     litellm_params:
       model: ollama_chat/mistral:7b-instruct
       api_base: "os.environ/REMOTE_OLLAMA_API_BASE"
+      api_key: "none"
 
 router_settings:
   fallbacks:
