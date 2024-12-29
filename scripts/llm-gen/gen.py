@@ -44,6 +44,16 @@ class LLMTextProcessor(object):
 
         return {"model_types": model_types, "models": models}
 
+    def get_template_names(self) -> List[str]:
+        """Returns a list of YAML file names in the 'templates' folder without extension."""
+        templates_dir = Path("templates")
+        if not templates_dir.is_dir():
+            logging.warning(f"Templates directory not found: {templates_dir}")
+            return []
+
+        template_files = templates_dir.glob("*.yaml")
+        return [template.stem for template in template_files]
+
     def get_indexed_filename(self, filename: str, index: int) -> str:
         """Returns filename with an index appended before the extension."""
         base, ext = os.path.splitext(filename)
