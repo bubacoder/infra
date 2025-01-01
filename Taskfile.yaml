@@ -102,5 +102,5 @@ tasks:
   backup-config:
     desc: Compress the config directory
     cmds:
-      - tar -cjf "../infra-config-$(date +%Y-%m-%d_%H-%M-%S).tar.bz2" config
-      - ls -lh ../infra-config-*.tar.bz2
+      - cd config && tar -cjf "../infra-config-$(date +%Y-%m-%d_%H-%M-%S).tar.bz2" .
+      - ls -lh ../infra-config-*.tar.bz2 | tail -n 5
