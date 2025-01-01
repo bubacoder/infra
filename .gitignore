@@ -1,5 +1,6 @@
-# Configuration folder
+# Configuration folder/symlink
 /config/
+/config
 
 # Taskfile checksums
 .task/

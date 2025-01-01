@@ -2,9 +2,19 @@
 set -e
 
 # shellcheck disable=SC2034,SC2046
-HOST_CONFIG_DIR=$(dirname $(realpath "$0"))
+HOST_CONFIG_DIR=$(dirname $(realpath -s "$0"))
+
+# If the config dir is within the infra repo
+DOCKER_STACKS_DIR=${HOST_CONFIG_DIR}/../../../docker/
+
+if [ ! -d "$DOCKER_STACKS_DIR" ]; then
+  # If the config dir is a separate repo
+  DOCKER_STACKS_DIR=${HOST_CONFIG_DIR}/../../../infra/docker/
+fi
+
 # shellcheck disable=SC1091
-source ../../../docker/common.sh
+source "${DOCKER_STACKS_DIR}/common.sh"
+
 init "myhost"
 
 set +e
