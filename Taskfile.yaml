@@ -68,8 +68,19 @@ tasks:
 
   compsize:
     desc: Show btrfs compression stats
+    silent: true
     cmds:
-      - sudo compsize -x /
+      - |
+        if ! command -v compsize >/dev/null 2>&1; then
+          echo "Error: compsize is not installed. Please install it first."
+          exit 1
+        fi
+        if ! findmnt -n -o FSTYPE / | grep -q "btrfs"; then
+          echo "Error: Root filesystem is not btrfs"
+          exit 1
+        fi
+        echo "Analyzing btrfs compression stats (this may take a while)..."
+        sudo compsize -x /
 
   star-github-repos:
     desc: Add star to all referenced GitHub repos
