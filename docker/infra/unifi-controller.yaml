@@ -1,10 +1,14 @@
 # The Unifi-controller software is a powerful, enterprise wireless software engine ideal for high-density client deployments requiring low latency and high uptime performance.
 #
-# Note: this service uses an online account for logging in on the admin interface! Configure via `${UNIFI_USERNAME}` and `${UNIFI_PASSWORD}`.
-#
 # For Unifi to adopt other devices, e.g. an Access Point, it is required to change the *inform* IP address.
 # Because Unifi runs inside Docker by default it uses an IP address not accessible by other devices.
 # To change this go to Settings > System Settings > Controller Configuration and set the Controller Hostname/IP to a hostname or IP address accessible by your devices.
+#
+# For the Homepage widget use a local account that has read privileges.
+# Local account can be created on the Legacy Interface:
+# - To temporally switch to the old interface: Settings -> System -> Legacy Interface -> Enable
+# - Create the user on Settings -> Admins
+# - Set the `${UNIFI_LOCAL_VIEWONLY_USERNAME}` and `${UNIFI_LOCAL_VIEWONLY_PASSWORD}` variables
 #
 # 🏠 Home: https://ui.com/download/releases/network-server  
 # 📦 Image: https://hub.docker.com/r/linuxserver/unifi-controller  
@@ -49,8 +53,8 @@ services:
       homepage.description: Wireless software engine
       homepage.widget.type: unifi
       homepage.widget.url: https://unifi-controller.${MYDOMAIN}
-      homepage.widget.username: ${UNIFI_USERNAME}
-      homepage.widget.password: ${UNIFI_PASSWORD}
+      homepage.widget.username: ${UNIFI_LOCAL_VIEWONLY_USERNAME}
+      homepage.widget.password: ${UNIFI_LOCAL_VIEWONLY_PASSWORD}
       # - homepage.widget.site: Site Name # optional
 
 networks:
