@@ -1,0 +1,12 @@
+version: '3'
+
+tasks:
+  ollama-port-forward:
+    desc: Forward Ollama port
+    dotenv: ['config/docker/.env']
+    env:
+      REMOTE_PORT: 11444
+      LOCAL_PORT: 11434
+    cmds:
+      - echo "Forwarding remote port (${REMOTE_PORT}) to local Ollama port (${LOCAL_PORT}). Press Ctrl+C to to stop."
+      - ssh -N -o 'ExitOnForwardFailure yes' -R "*:${REMOTE_PORT}:localhost:${LOCAL_PORT}" ${ADMIN_USER}@${MAIN_NODE}
