@@ -66,6 +66,11 @@ tasks:
       - task: docs:clean
       - cd terraform && make clean
 
+  compsize:
+    desc: Show btrfs compression stats
+    cmds:
+      - sudo compsize -x /
+
   star-github-repos:
     desc: Add star to all referenced GitHub repos
     dotenv: ['config/docker/.env']
