@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+
+### Common code ###
+
 # shellcheck disable=SC2034,SC2046
 HOST_CONFIG_DIR=$(dirname $(realpath -s "$0"))
 
@@ -14,6 +17,9 @@ fi
 
 # shellcheck disable=SC1091
 source "${DOCKER_STACKS_DIR}/common.sh"
+
+
+### Host-specific configuration ###
 
 init "myhost"
 
@@ -78,13 +84,18 @@ up tools vaultwarden
 up tools openspeedtest
 up tools cyberchef
 up tools guacamole
+up tools kasm
+up tools stirling-pdf
+up tools searxng
 
 # AI
 up ai ollama
-up ai open-webui
 up ai litellm
+up ai open-webui
+up ai open-webui-pipelines
 up ai autogenstudio
 up ai sillytavern
+up ai qdrant
 
 # Communication
 # down communication matrix-synapse
@@ -103,5 +114,8 @@ up arr flaresolverr
 
 # Personal
 up personal personal-web
+
+
+### Common code ###
 
 cleanup
