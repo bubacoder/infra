@@ -45,6 +45,7 @@ up monitoring grafana
 # Automation
 up automation homeassistant
 up automation n8n
+up automation n8n-postgres
 # down automation olivetin
 
 # Media
@@ -78,13 +79,18 @@ up tools vaultwarden
 up tools openspeedtest
 up tools cyberchef
 up tools guacamole
+up tools kasm
+up tools stirling-pdf
+up tools searxng
 
 # AI
 up ai ollama
-up ai open-webui
 up ai litellm
+up ai open-webui
+up ai open-webui-pipelines
 up ai autogenstudio
 up ai sillytavern
+up ai qdrant
 
 # Communication
 # down communication matrix-synapse
