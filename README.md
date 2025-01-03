@@ -17,6 +17,7 @@ This repository contains the Infrastructure as Code (IaC) configuration and docu
   - [Cloud Services (External Dependencies)](#cloud-services-external-dependencies)
 - [Getting Started](#getting-started)
 - [Development](#development)
+  - [GitHub automations](#github-automations)
 - [EOL](#eol)
 
 ## Principles
@@ -77,7 +78,18 @@ Perform the checks by running `task lint` (or `pre-commit run --all-files`).
 
 Create/update example `.env` files: `task docker:create-example-env`.
 
-Updating the container images is automated with [Renovate](https://docs.renovatebot.com/).
+### GitHub automations
+
+- Workflows configured (see in `.github/workflows`):
+  - Pre-commit checks
+  - Build dev & admin container
+  - Build and deploy documentation site
+- Updating the container images and other components is automated with [Renovate](https://docs.renovatebot.com/)
+  - [GitHub Marketplace App](https://github.com/marketplace/renovate)
+  - Free for public and private repositories
+- AI Code Review for MRs is done with [Code Rabbit](https://www.coderabbit.ai/)
+  - [GitHub Marketplace App](https://github.com/marketplace/coderabbitai)
+  - Free for public repositories
 
 ## EOL
 

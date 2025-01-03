@@ -1,0 +1,38 @@
+# Qdrant - High-performance, massive-scale Vector Database and Vector Search Engine for the next generation of AI.
+#
+# Note as of version 1.12.5 the Quickstart on the Dashboard are using incorrect endpoint URLs.
+# To follow the tutorial, remove the `dashboard/` from the requests' URLs. Use e.g. F12 Developer Tools -> Edit and Resend feature.
+# Issue: https://github.com/qdrant/qdrant-web-ui/issues/252
+#
+# https://qdrant.tech/  
+# https://github.com/qdrant/qdrant
+---
+name: qdrant
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.12.5
+    container_name: qdrant
+    restart: unless-stopped
+    volumes:
+      - ${DOCKER_VOLUMES}/qdrant/storage:/qdrant/storage
+    networks:
+      - proxy
+    environment:
+      # Reference: https://github.com/qdrant/qdrant/blob/master/config/config.yaml
+      QDRANT__LOG_LEVEL: INFO
+      QDRANT__SERVICE__API_KEY: ${QDRANT_API_KEY:-""}
+      QDRANT__SERVICE__ENABLE_CORS: false # TODO how do restrict to https://qdrant.${MYDOMAIN} ?
+    labels:
+      traefik.enable: true
+      traefik.http.routers.qdrant.entrypoints: websecure
+      traefik.http.routers.qdrant.middlewares: https-local@file
+      traefik.http.services.qdrant.loadbalancer.server.port: 6333
+      homepage.group: AI
+      homepage.name: "Qdrant"
+      homepage.icon: qdrant.png
+      homepage.href: https://qdrant.${MYDOMAIN}/dashboard/
+      homepage.description: "Open-Source Vector Database"
+
+networks:
+  proxy:
+    external: true

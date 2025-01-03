@@ -62,7 +62,7 @@ tasks:
     cmds:
       - scripts/create-example-env.py config/docker/.env > config-example/docker/.env
       - scripts/create-example-env.py config/docker/${MAIN_NODE}/.env > config-example/docker/myhost/.env
-      - cp config/docker/${MAIN_NODE}/apply.sh config-example/docker/myhost/apply.sh
+      - cat config/docker/${MAIN_NODE}/apply.sh | sed "s/${MAIN_NODE}/myhost/g" > config-example/docker/myhost/apply.sh
     sources:
       - config/docker/**/.env
       - config/docker/**/apply.sh

@@ -31,9 +31,9 @@ Man sshd -> `GatewayPorts`:
 > The argument may be no to force remote port forwardings to be available to the local host only, yes to force remote port forwardings to bind to the wildcard address, or clientspecified to allow the client to select the address to which the forwarding is bound.
 > The default is no.
 
-My usage:
+Task to start port forwarding (execute on the machine hosting Ollama):
 ```sh
-ssh -N -o 'ExitOnForwardFailure yes' -R "*:11444:localhost:11434" buba@nest
+task app:ollama-port-forward
 ```
 
 ### Access Ollama with OpenAI compatible API
