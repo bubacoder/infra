@@ -15,7 +15,7 @@
 name: homeassistant
 services:
   homeassistant:
-    image: lscr.io/linuxserver/homeassistant:2024.12.5
+    image: lscr.io/linuxserver/homeassistant:2025.1.0
     container_name: homeassistant
     restart: unless-stopped
     network_mode: host
@@ -29,7 +29,7 @@ services:
     expose:
       - 8123 # Web UI
     # devices:
-    #   - /path/to/device:/path/to/device #optional
+    #   - /path/to/device:/path/to/device  # optional
     labels:
       traefik.enable: true
       traefik.http.routers.homeassistant.entrypoints: websecure
