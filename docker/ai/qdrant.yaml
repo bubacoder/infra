@@ -13,6 +13,15 @@ services:
     image: qdrant/qdrant:v1.12.5
     container_name: qdrant
     restart: unless-stopped
+    healthcheck:
+      # Based on: https://github.com/qdrant/qdrant/issues/4250
+      # Better would be to use `/healthz`: https://qdrant.tech/documentation/guides/monitoring/#kubernetes-health-endpoints
+      test:
+        - CMD-SHELL
+        - bash -c ':> /dev/tcp/127.0.0.1/6333' || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
     volumes:
       - ${DOCKER_VOLUMES}/qdrant/storage:/qdrant/storage
     networks:
