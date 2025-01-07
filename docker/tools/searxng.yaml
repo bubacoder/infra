@@ -31,7 +31,7 @@ services:
         max-size: "1m"
         max-file: "1"
     networks:
-      - proxy
+      - searxng-backend
 
   searxng:
     container_name: searxng
@@ -60,6 +60,7 @@ services:
         max-size: "1m"
         max-file: "1"
     networks:
+      - searxng-backend
       - proxy
     labels:
       traefik.enable: true
@@ -73,6 +74,8 @@ services:
       homepage.description: "Internet metasearch engine"
 
 networks:
+  searxng-backend:
+    external: false
   proxy:
     external: true
 
