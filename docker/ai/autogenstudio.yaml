@@ -23,7 +23,7 @@ services:
       homepage.group: AI
       homepage.name: AutoGen Studio
       homepage.icon: chatgpt.png
-      homepage.href: https://autogenstudio.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://autogenstudio.${MYDOMAIN}/
       homepage.description: "Rapidly prototype AI agents"
       com.centurylinklabs.watchtower.enable: false
 

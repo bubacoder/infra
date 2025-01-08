@@ -38,5 +38,5 @@ services:
       homepage.group: Automation
       homepage.name: HomeAssistant
       homepage.icon: home-assistant.png
-      homepage.href: https://ha.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://ha.${MYDOMAIN}/
       homepage.description: Open source home automation

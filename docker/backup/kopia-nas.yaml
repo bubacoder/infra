@@ -59,7 +59,7 @@ services:
       homepage.group: Storage
       homepage.name: Kopia - NAS
       homepage.icon: kopia.png
-      homepage.href: https://kopia-nas.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://kopia-nas.${MYDOMAIN}/
       homepage.description: "[SSO] Backups Using the Cloud Storage You Pick"
 
 networks:

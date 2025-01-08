@@ -48,7 +48,7 @@ services:
       homepage.group: Monitoring
       homepage.name: Scrutiny
       homepage.icon: scrutiny.png
-      homepage.href: https://scrutiny.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://scrutiny.${MYDOMAIN}/
       homepage.description: Hard Drive S.M.A.R.T Monitoring
 
 networks:

@@ -24,7 +24,7 @@ services:
       homepage.group: Monitoring
       homepage.name: Uptime Kuma
       homepage.icon: uptime-kuma.png
-      homepage.href: https://uptime-kuma.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://uptime-kuma.${MYDOMAIN}/
       homepage.description: "[SSO] Monitoring tool"
 
 networks:

@@ -38,7 +38,7 @@ services:
       homepage.group: AI
       homepage.name: SillyTavern
       homepage.icon: chatgpt.png
-      homepage.href: https://sillytavern.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://sillytavern.${MYDOMAIN}/
       homepage.description: "LLM Frontend for Power Users"
 
 networks:

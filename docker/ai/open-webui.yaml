@@ -20,15 +20,15 @@ services:
     # https://docs.openwebui.com/getting-started/advanced-topics/env-configuration/
     environment:
       WEBUI_SECRET_KEY: ${OPEN_WEBUI_SECRET_KEY}
-      WEBUI_URL: "https://open-webui.${MYDOMAIN}"
-      OLLAMA_API_BASE_URL: "https://ollama.${MYDOMAIN}/api"
+      WEBUI_URL: "${WEBPROTO}://open-webui.${MYDOMAIN}"
+      OLLAMA_API_BASE_URL: "${WEBPROTO}://ollama.${MYDOMAIN}/api"
       # Web search using SearXNG
       # Details: https://github.com/open-webui/docs/blob/main/docs/tutorials/integrations/web_search.md
       ENABLE_RAG_WEB_SEARCH: true
       RAG_WEB_SEARCH_ENGINE: "searxng"
       RAG_WEB_SEARCH_RESULT_COUNT: 5
       RAG_WEB_SEARCH_CONCURRENT_REQUESTS: 10
-      SEARXNG_QUERY_URL: "https://searxng.${MYDOMAIN}/search?q=<query>&format=json"
+      SEARXNG_QUERY_URL: "${WEBPROTO}://searxng.${MYDOMAIN}/search?q=<query>&format=json"
     extra_hosts:
       - host.docker.internal:host-gateway
     labels:
@@ -38,7 +38,7 @@ services:
       homepage.group: AI
       homepage.name: "Open WebUI"
       homepage.icon: open-webui.png
-      homepage.href: https://open-webui.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://open-webui.${MYDOMAIN}/
       homepage.description: "User-friendly WebUI for LLMs"
 
 networks:

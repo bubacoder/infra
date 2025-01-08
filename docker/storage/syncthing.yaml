@@ -31,5 +31,5 @@ services:
       homepage.group: Storage
       homepage.name: Syncthing
       homepage.icon: syncthing.png
-      homepage.href: https://syncthing.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://syncthing.${MYDOMAIN}/
       homepage.description: "[SSO] File Sync" # TODO solve double auth

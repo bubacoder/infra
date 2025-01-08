@@ -24,7 +24,7 @@ services:
       homepage.group: Arr
       homepage.name: Jellyseerr
       homepage.icon: jellyseerr.png
-      homepage.href: https://jellyseerr.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://jellyseerr.${MYDOMAIN}/
       homepage.description: Manage media requests
 
 networks:

@@ -38,10 +38,10 @@ services:
     environment:
       TZ: ${TIMEZONE}
       GENERIC_TIMEZONE: ${TIMEZONE}
-      WEBHOOK_URL: https://n8n.${MYDOMAIN}/
+      WEBHOOK_URL: ${WEBPROTO}://n8n.${MYDOMAIN}/
       N8N_HOST: n8n.${MYDOMAIN}
       N8N_PORT: 5678
-      N8N_PROTOCOL: https
+      N8N_PROTOCOL: ${WEBPROTO}
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       N8N_USER_MANAGEMENT_JWT_SECRET: ${N8N_USER_MANAGEMENT_JWT_SECRET}
       DB_TYPE: postgresdb
@@ -66,7 +66,7 @@ services:
       homepage.group: Automation
       homepage.name: n8n
       homepage.icon: n8n.png
-      homepage.href: https://n8n.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://n8n.${MYDOMAIN}/
       homepage.description: Workflow automation platform
 
 networks:

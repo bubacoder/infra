@@ -28,10 +28,10 @@ services:
       homepage.group: Infra
       homepage.name: Portainer
       homepage.icon: portainer.png
-      homepage.href: https://portainer.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://portainer.${MYDOMAIN}/
       homepage.description: Docker and Kubernetes management
       homepage.widget.type: portainer
-      homepage.widget.url: https://portainer.${MYDOMAIN}
+      homepage.widget.url: ${WEBPROTO}://portainer.${MYDOMAIN}
       homepage.widget.env: 2
       homepage.widget.key: ${PORTAINER_API_KEY}
 

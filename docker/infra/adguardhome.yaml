@@ -41,10 +41,10 @@ services:
       homepage.group: Infra
       homepage.name: AdGuard Home
       homepage.icon: adguard-home.png
-      homepage.href: https://adguardhome.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://adguardhome.${MYDOMAIN}/
       homepage.description: Blocking ads and tracking
       homepage.widget.type: adguard
-      homepage.widget.url: https://adguardhome.${MYDOMAIN}
+      homepage.widget.url: ${WEBPROTO}://adguardhome.${MYDOMAIN}
       homepage.widget.username: ${ADMIN_USER}
       homepage.widget.password: ${ADMIN_PASSWORD}
 

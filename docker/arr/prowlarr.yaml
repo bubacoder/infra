@@ -26,7 +26,7 @@ services:
       homepage.group: Arr
       homepage.name: Prowlarr
       homepage.icon: prowlarr.png
-      homepage.href: https://prowlarr.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://prowlarr.${MYDOMAIN}/
       homepage.description: Arr indexer manager
 
 networks:

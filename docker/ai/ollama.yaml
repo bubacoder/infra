@@ -31,7 +31,7 @@ services:
       homepage.group: AI
       homepage.name: "Ollama"
       homepage.icon: ollama.png
-      homepage.href: https://ollama.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://ollama.${MYDOMAIN}/
       homepage.description: "Large Language Model API"
 
 networks:

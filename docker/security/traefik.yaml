@@ -42,10 +42,10 @@ services:
       homepage.group: Infra
       homepage.name: Traefik
       homepage.icon: traefik.png
-      homepage.href: https://traefik.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://traefik.${MYDOMAIN}/
       homepage.description: The Cloud Native Application Proxy
       homepage.widget.type: traefik
-      homepage.widget.url: https://traefik.${MYDOMAIN}/
+      homepage.widget.url: ${WEBPROTO}://traefik.${MYDOMAIN}
 
   # Access Logs: https://doc.traefik.io/traefik/observability/access-logs/
   logrotate:

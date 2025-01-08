@@ -25,7 +25,7 @@ services:
       homepage.group: Connections
       homepage.name: Guacamole
       homepage.icon: guacamole.png
-      homepage.href: https://guacamole.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://guacamole.${MYDOMAIN}/
       homepage.description: "Remote desktop gateway"
 
 networks:

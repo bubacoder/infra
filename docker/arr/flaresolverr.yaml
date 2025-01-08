@@ -24,7 +24,7 @@ services:
       homepage.group: Arr
       homepage.name: Flaresolverr
       homepage.icon: cloudflare.png
-      homepage.href: https://flaresolverr.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://flaresolverr.${MYDOMAIN}/
       homepage.description: Bypass Cloudflare protection
 
 networks:

@@ -30,7 +30,7 @@ services:
       homepage.group: Media
       homepage.name: Calibre-web
       homepage.icon: calibre-web.png
-      homepage.href: https://calibre-web.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://calibre-web.${MYDOMAIN}/
       homepage.description: Web interface for Calibre database
 
 networks:

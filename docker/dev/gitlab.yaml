@@ -20,7 +20,7 @@ services:
     environment:
       TZ: ${TIMEZONE}
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'https://gitlab.${MYDOMAIN}'
+        external_url '${WEBPROTO}://gitlab.${MYDOMAIN}'
         # Add any other gitlab.rb configuration here, each on its own line
         gitlab_rails['gitlab_shell_ssh_port'] = 3022
         # HTTPS is handled by Traefik
@@ -44,7 +44,7 @@ services:
       homepage.group: Tools
       homepage.name: GitLab
       homepage.icon: gitlab.png
-      homepage.href: https://gitlab.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://gitlab.${MYDOMAIN}/
       homepage.description: "GitLab Community Edition"
 
   gitlab-runner:

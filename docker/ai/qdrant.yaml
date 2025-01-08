@@ -38,7 +38,7 @@ services:
       homepage.group: AI
       homepage.name: "Qdrant"
       homepage.icon: qdrant.png
-      homepage.href: https://qdrant.${MYDOMAIN}/dashboard/
+      homepage.href: ${WEBPROTO}://qdrant.${MYDOMAIN}/dashboard/
       homepage.description: "Open-Source Vector Database"
 
 networks:

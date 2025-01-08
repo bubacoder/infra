@@ -23,7 +23,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${ADMIN_USER}
       MINIO_ROOT_PASSWORD: ${ADMIN_PASSWORD}
-      MINIO_BROWSER_REDIRECT_URL: https://minio-console.${MYDOMAIN}
+      MINIO_BROWSER_REDIRECT_URL: ${WEBPROTO}://minio-console.${MYDOMAIN}
     expose:
       - "9000" # S3 API
       - "9001" # Console
@@ -54,7 +54,7 @@ services:
       homepage.group: Storage
       homepage.name: MinIO
       homepage.icon: minio.png
-      homepage.href: https://minio-console.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://minio-console.${MYDOMAIN}/
       homepage.description: High-performance, S3 compatible object store
 
 networks:

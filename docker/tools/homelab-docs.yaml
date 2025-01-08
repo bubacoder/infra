@@ -17,7 +17,7 @@ services:
       homepage.group: Tools
       homepage.name: Homelab Documentation
       homepage.icon: hugo.png
-      homepage.href: https://docs.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://docs.${MYDOMAIN}/
       homepage.description: Static website built from the repo
       com.centurylinklabs.watchtower.enable: false
 

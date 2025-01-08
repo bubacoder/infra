@@ -61,7 +61,7 @@ services:
       homepage.group: Storage
       homepage.name: Kopia - Backblaze B2
       homepage.icon: kopia.png
-      homepage.href: https://kopia-b2.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://kopia-b2.${MYDOMAIN}/
       homepage.description: "[SSO] Backups Using the Cloud Storage You Pick"
 
 networks:

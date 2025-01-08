@@ -37,7 +37,7 @@ services:
       homepage.group: Storage
       homepage.name: WebDAV
       homepage.icon: nginx.png
-      homepage.href: https://webdav.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://webdav.${MYDOMAIN}/
       homepage.description: Nginx WebDAV Server
 
 networks:

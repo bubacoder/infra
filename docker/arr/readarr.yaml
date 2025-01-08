@@ -28,7 +28,7 @@ services:
       homepage.group: Arr
       homepage.name: Readarr
       homepage.icon: readarr.png
-      homepage.href: https://readarr.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://readarr.${MYDOMAIN}/
       homepage.description: Download books
 
 networks:

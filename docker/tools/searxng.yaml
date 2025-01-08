@@ -41,7 +41,7 @@ services:
       - ${DOCKER_VOLUMES}/searxng:/etc/searxng
       - ./searxng/settings.yml:/etc/searxng/settings.yml
     environment:
-      SEARXNG_BASE_URL: https://searxng.${MYDOMAIN}/
+      SEARXNG_BASE_URL: ${WEBPROTO}://searxng.${MYDOMAIN}/
       # https://docs.searxng.org/admin/settings/settings_server.html
       SEARXNG_SECRET: ${SEARXNG_SECRET}
       # https://docs.searxng.org/admin/settings/settings_redis.html
@@ -69,7 +69,7 @@ services:
       homepage.group: Tools
       homepage.name: SearXNG
       homepage.icon: searxng.png
-      homepage.href: https://searxng.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://searxng.${MYDOMAIN}/
       homepage.description: "Internet metasearch engine"
 
 networks:
