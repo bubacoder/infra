@@ -30,7 +30,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.code.entrypoints: websecure
-      traefik.http.routers.code.middlewares: https-local-auth@file
+      traefik.http.routers.code.middlewares: localaccess-sso@file
       traefik.http.routers.code.rule: Host(`code.${MYDOMAIN}`)
       traefik.http.services.code.loadbalancer.server.port: 8443
       homepage.group: Tools

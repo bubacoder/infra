@@ -34,7 +34,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.navidrome.entrypoints: websecure
-      traefik.http.routers.navidrome.middlewares: https-local@file
+      traefik.http.routers.navidrome.middlewares: localaccess@file
       traefik.http.services.navidrome.loadbalancer.server.port: 4533
       homepage.group: Media
       homepage.name: Navidrome

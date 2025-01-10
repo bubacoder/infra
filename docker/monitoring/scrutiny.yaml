@@ -43,7 +43,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.scrutiny.entrypoints: websecure
-      traefik.http.routers.scrutiny.middlewares: https-local@file
+      traefik.http.routers.scrutiny.middlewares: localaccess@file
       traefik.http.routers.scrutiny.rule: Host(`scrutiny.${MYDOMAIN}`)
       traefik.http.services.scrutiny.loadbalancer.server.port: 8080
       homepage.group: Monitoring

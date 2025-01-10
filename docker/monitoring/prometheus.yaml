@@ -26,7 +26,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.prometheus.entrypoints: websecure
-      traefik.http.routers.prometheus.middlewares: https-local@file
+      traefik.http.routers.prometheus.middlewares: localaccess@file
       traefik.http.services.prometheus.loadbalancer.server.port: 9090
       homepage.group: Monitoring
       homepage.name: Prometheus

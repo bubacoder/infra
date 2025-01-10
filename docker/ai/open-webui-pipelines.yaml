@@ -19,7 +19,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.open-webui-pipelines.entrypoints: websecure
-      traefik.http.routers.open-webui-pipelines.middlewares: https-local@file
+      traefik.http.routers.open-webui-pipelines.middlewares: localaccess@file
       traefik.http.routers.open-webui-pipelines.rule: Host(`open-webui-pipelines.${MYDOMAIN}`)
       traefik.http.services.open-webui-pipelines.loadbalancer.server.port: 9099
       homepage.group: AI

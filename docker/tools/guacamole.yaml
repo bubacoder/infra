@@ -21,7 +21,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.guacamole.entrypoints: websecure
-      traefik.http.routers.guacamole.middlewares: https-local@file
+      traefik.http.routers.guacamole.middlewares: localaccess@file
       traefik.http.services.guacamole.loadbalancer.server.port: 8080
       homepage.group: Connections
       homepage.name: Guacamole

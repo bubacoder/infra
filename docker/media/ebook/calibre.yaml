@@ -41,7 +41,7 @@ services:
       # Desktop GUI (via KasmVNC)
       traefik.http.routers.calibre.service: calibre
       traefik.http.routers.calibre.entrypoints: websecure
-      traefik.http.routers.calibre.middlewares: https-local@file
+      traefik.http.routers.calibre.middlewares: localaccess@file
       traefik.http.services.calibre.loadbalancer.server.port: 8080
 
       # Content Server (OPDS Catalog)
@@ -49,7 +49,7 @@ services:
       # Set Preferences -> Sharing over the net -> Advanced -> Authentication: basic
       traefik.http.routers.calibre-server.service: calibre-server
       traefik.http.routers.calibre-server.entrypoints: websecure
-      traefik.http.routers.calibre-server.middlewares: https-local@file
+      traefik.http.routers.calibre-server.middlewares: localaccess@file
       traefik.http.routers.calibre-server.rule: Host(`calibre-server.${MYDOMAIN}`)
       traefik.http.services.calibre-server.loadbalancer.server.port: 8081
 
