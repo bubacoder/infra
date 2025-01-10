@@ -43,14 +43,14 @@ services:
       traefik.http.routers.minio.service: minio
       traefik.http.routers.minio.entrypoints: websecure
       traefik.http.routers.minio.rule: Host(`s3.${MYDOMAIN}`)
-      traefik.http.routers.minio.middlewares: https-local@file
+      traefik.http.routers.minio.middlewares: localaccess@file
       traefik.http.services.minio.loadbalancer.server.port: 9000
 
       # Console
       traefik.http.routers.minio-console.service: minio-console
       traefik.http.routers.minio-console.entrypoints: websecure
       traefik.http.routers.minio-console.rule: Host(`minio-console.${MYDOMAIN}`)
-      traefik.http.routers.minio-console.middlewares: https-local@file
+      traefik.http.routers.minio-console.middlewares: localaccess@file
       traefik.http.services.minio-console.loadbalancer.server.port: 9001
 
       homepage.group: Storage

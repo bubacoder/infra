@@ -20,7 +20,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.flaresolverr.entrypoints: websecure
-      traefik.http.routers.flaresolverr.middlewares: https-local@file
+      traefik.http.routers.flaresolverr.middlewares: localaccess@file
       traefik.http.services.flaresolverr.loadbalancer.server.port: 8191
       homepage.group: Arr
       homepage.name: Flaresolverr

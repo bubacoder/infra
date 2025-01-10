@@ -22,7 +22,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.prowlarr.entrypoints: websecure
-      traefik.http.routers.prowlarr.middlewares: https-local@file
+      traefik.http.routers.prowlarr.middlewares: localaccess@file
       traefik.http.services.prowlarr.loadbalancer.server.port: 9696
       homepage.group: Arr
       homepage.name: Prowlarr

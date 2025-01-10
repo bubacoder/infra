@@ -22,7 +22,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.stirling-pdf.entrypoints: websecure
-      traefik.http.routers.stirling-pdf.middlewares: https-local@file
+      traefik.http.routers.stirling-pdf.middlewares: localaccess@file
       traefik.http.services.stirling-pdf.loadbalancer.server.port: 8080
       homepage.group: Tools
       homepage.name: Stirling PDF

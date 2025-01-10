@@ -34,7 +34,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.open-webui.entrypoints: websecure
-      traefik.http.routers.open-webui.middlewares: https-local@file
+      traefik.http.routers.open-webui.middlewares: localaccess@file
       traefik.http.services.open-webui.loadbalancer.server.port: 8080
       homepage.group: AI
       homepage.name: "Open WebUI"

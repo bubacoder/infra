@@ -50,7 +50,7 @@ services:
       # User interface
       traefik.http.routers.kasm.service: kasm
       traefik.http.routers.kasm.entrypoints: websecure
-      traefik.http.routers.kasm.middlewares: https-local@file
+      traefik.http.routers.kasm.middlewares: localaccess@file
       traefik.http.services.kasm.loadbalancer.server.port: 443
       traefik.http.services.kasm.loadbalancer.server.scheme: https
       traefik.http.services.kasm.loadbalancer.serversTransport: insecureTransport@file
@@ -58,7 +58,7 @@ services:
       # Initial setup interface
       traefik.http.routers.kasm-install.service: kasm-install
       traefik.http.routers.kasm-install.entrypoints: websecure
-      traefik.http.routers.kasm-install.middlewares: https-local@file
+      traefik.http.routers.kasm-install.middlewares: localaccess@file
       traefik.http.routers.kasm-install.rule: Host(`kasm-install.${MYDOMAIN}`)
       traefik.http.services.kasm-install.loadbalancer.server.port: 3000 # https
       traefik.http.services.kasm-install.loadbalancer.server.scheme: https

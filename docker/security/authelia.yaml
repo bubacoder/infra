@@ -50,7 +50,7 @@ services:
       traefik.enable: true
       traefik.http.routers.authelia.entrypoints: websecure
       traefik.http.routers.authelia.rule: Host(`auth.${MYDOMAIN}`)
-      traefik.http.routers.authelia.middlewares: https-local@file
+      traefik.http.routers.authelia.middlewares: localaccess@file
       traefik.http.services.authelia.loadbalancer.server.port: 9091
       homepage.group: Security
       homepage.name: Authelia

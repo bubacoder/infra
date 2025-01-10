@@ -36,7 +36,7 @@ services:
       traefik.enable: true
       traefik.http.routers.wireguard.entrypoints: websecure
       traefik.http.routers.wireguard.rule: Host(`vpn.${MYDOMAIN}`)
-      traefik.http.routers.wireguard.middlewares: https-local-auth@file
+      traefik.http.routers.wireguard.middlewares: localaccess-sso@file
       traefik.http.services.wireguard.loadbalancer.server.port: 51821
       homepage.group: Security
       homepage.name: WireGuard Easy

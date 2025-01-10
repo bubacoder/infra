@@ -23,7 +23,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.litellm.entrypoints: websecure
-      traefik.http.routers.litellm.middlewares: https-local@file
+      traefik.http.routers.litellm.middlewares: localaccess@file
       traefik.http.services.litellm.loadbalancer.server.port: 4000
       homepage.group: AI
       homepage.name: "LiteLLM"

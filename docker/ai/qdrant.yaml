@@ -34,7 +34,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.qdrant.entrypoints: websecure
-      traefik.http.routers.qdrant.middlewares: https-local@file
+      traefik.http.routers.qdrant.middlewares: localaccess@file
       traefik.http.services.qdrant.loadbalancer.server.port: 6333
       homepage.group: AI
       homepage.name: "Qdrant"

@@ -12,7 +12,7 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.openspeedtest.middlewares: https-public@file
+      traefik.http.routers.openspeedtest.middlewares: publicaccess@file
       traefik.http.routers.openspeedtest.rule: Host(`speedtest.${MYDOMAIN}`)
       traefik.http.services.openspeedtest.loadbalancer.server.port: 3000
       homepage.group: Tools
