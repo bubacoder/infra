@@ -32,7 +32,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.webdav.entrypoints: websecure
       traefik.http.routers.webdav.middlewares: localaccess@file
       traefik.http.services.webdav.loadbalancer.server.port: 80
       homepage.group: Storage

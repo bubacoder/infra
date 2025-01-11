@@ -42,7 +42,6 @@ services:
       start_period: 10s
     labels:
       traefik.enable: true
-      traefik.http.routers.scrutiny.entrypoints: websecure
       traefik.http.routers.scrutiny.middlewares: localaccess@file
       traefik.http.routers.scrutiny.rule: Host(`scrutiny.${MYDOMAIN}`)
       traefik.http.services.scrutiny.loadbalancer.server.port: 8080

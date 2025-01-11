@@ -21,7 +21,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.bazarr.entrypoints: websecure
       traefik.http.routers.bazarr.middlewares: localaccess@file
       traefik.http.services.bazarr.loadbalancer.server.port: 6767
       homepage.group: Arr

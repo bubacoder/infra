@@ -33,7 +33,6 @@ services:
         condition: service_completed_successfully
     labels:
       traefik.enable: true
-      traefik.http.routers.sillytavern.entrypoints: websecure
       traefik.http.routers.sillytavern.middlewares: localaccess@file
       traefik.http.services.sillytavern.loadbalancer.server.port: 8000
       homepage.group: AI

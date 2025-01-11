@@ -36,7 +36,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.adguardhome.entrypoints: websecure
       traefik.http.routers.adguardhome.middlewares: localaccess@file
       traefik.http.services.adguardhome.loadbalancer.server.port: 3000
       homepage.group: Infra

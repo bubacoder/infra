@@ -22,7 +22,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.vault.entrypoints: websecure
       traefik.http.routers.vault.middlewares: localaccess@file
       traefik.http.routers.vault.rule: Host(`vault.${MYDOMAIN}`)
       traefik.http.services.vault.loadbalancer.server.port: 80

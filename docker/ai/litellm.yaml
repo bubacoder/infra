@@ -22,7 +22,6 @@ services:
       REMOTE_OLLAMA_API_BASE: http://localhost:11444
     labels:
       traefik.enable: true
-      traefik.http.routers.litellm.entrypoints: websecure
       traefik.http.routers.litellm.middlewares: localaccess@file
       traefik.http.services.litellm.loadbalancer.server.port: 4000
       homepage.group: AI

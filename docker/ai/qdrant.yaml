@@ -33,7 +33,6 @@ services:
       QDRANT__SERVICE__ENABLE_CORS: false # TODO how do restrict to https://qdrant.${MYDOMAIN} ?
     labels:
       traefik.enable: true
-      traefik.http.routers.qdrant.entrypoints: websecure
       traefik.http.routers.qdrant.middlewares: localaccess@file
       traefik.http.services.qdrant.loadbalancer.server.port: 6333
       homepage.group: AI

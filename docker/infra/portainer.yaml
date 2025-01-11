@@ -23,7 +23,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.portainer.entrypoints: websecure
       traefik.http.routers.portainer.middlewares: localaccess@file
       traefik.http.services.portainer.loadbalancer.server.port: 9000
       homepage.group: Infra

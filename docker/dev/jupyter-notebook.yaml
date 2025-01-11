@@ -19,7 +19,6 @@ services:
       - ${DOCKER_VOLUMES}/jupyter-notebook:/home/jovyan
     labels:
       traefik.enable: true
-      traefik.http.routers.jupyter-notebook.entrypoints: websecure
       traefik.http.routers.jupyter-notebook.middlewares: localaccess@file
       traefik.http.routers.jupyter-notebook.rule: Host(`jupyter.${MYDOMAIN}`)
       traefik.http.services.jupyter-notebook.loadbalancer.server.port: 8888

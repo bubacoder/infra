@@ -64,7 +64,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.searxng.entrypoints: websecure
       traefik.http.routers.searxng.middlewares: localaccess@file
       traefik.http.services.searxng.loadbalancer.server.port: 8080
       homepage.group: Tools
