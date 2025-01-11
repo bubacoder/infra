@@ -41,7 +41,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.unifi-controller.entrypoints: websecure
       traefik.http.routers.unifi-controller.middlewares: localaccess@file
       traefik.http.services.unifi-controller.loadbalancer.server.port: 8443
       traefik.http.services.unifi-controller.loadbalancer.server.scheme: https

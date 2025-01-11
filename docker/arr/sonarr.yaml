@@ -22,7 +22,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.sonarr.entrypoints: websecure
       traefik.http.routers.sonarr.middlewares: localaccess@file
       traefik.http.services.sonarr.loadbalancer.server.port: 8989
       homepage.group: Arr

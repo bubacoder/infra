@@ -32,7 +32,6 @@ services:
     #   - /path/to/device:/path/to/device  # optional
     labels:
       traefik.enable: true
-      traefik.http.routers.homeassistant.entrypoints: websecure
       traefik.http.routers.homeassistant.middlewares: localaccess@file
       traefik.http.routers.homeassistant.rule: Host(`ha.${MYDOMAIN}`)
       traefik.http.services.homeassistant.loadbalancer.server.port: 8123

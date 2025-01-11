@@ -19,7 +19,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.jellyseerr.entrypoints: websecure
       traefik.http.routers.jellyseerr.middlewares: localaccess@file
       traefik.http.services.jellyseerr.loadbalancer.server.port: 5055
       homepage.group: Arr

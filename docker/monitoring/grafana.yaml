@@ -26,7 +26,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.grafana.entrypoints: websecure
       traefik.http.routers.grafana.middlewares: localaccess@file
       traefik.http.services.grafana.loadbalancer.server.port: 3000
       homepage.group: Monitoring

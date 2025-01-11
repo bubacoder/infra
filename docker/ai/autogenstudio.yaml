@@ -18,7 +18,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.autogenstudio.entrypoints: websecure
       traefik.http.routers.autogenstudio.middlewares: localaccess@file
       traefik.http.services.autogenstudio.loadbalancer.server.port: 8081
       homepage.group: AI

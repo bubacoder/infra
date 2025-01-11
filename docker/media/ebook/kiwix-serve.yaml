@@ -23,7 +23,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.kiwix-serve.entrypoints: websecure
       traefik.http.routers.kiwix-serve.middlewares: localaccess@file
       traefik.http.routers.kiwix-serve.rule: Host(`kiwix.${MYDOMAIN}`)
       traefik.http.services.kiwix-serve.loadbalancer.server.port: 8080

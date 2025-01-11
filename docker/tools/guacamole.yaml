@@ -20,7 +20,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.guacamole.entrypoints: websecure
       traefik.http.routers.guacamole.middlewares: localaccess@file
       traefik.http.services.guacamole.loadbalancer.server.port: 8080
       homepage.group: Connections

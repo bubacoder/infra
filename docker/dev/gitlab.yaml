@@ -38,7 +38,6 @@ services:
 
     labels:
       traefik.enable: true
-      traefik.http.routers.gitlab.entrypoints: websecure
       traefik.http.routers.gitlab.middlewares: localaccess@file
       traefik.http.services.gitlab.loadbalancer.server.port: 80
 

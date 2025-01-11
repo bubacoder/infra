@@ -23,7 +23,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.readarr.entrypoints: websecure
       traefik.http.routers.readarr.middlewares: localaccess@file
       traefik.http.services.readarr.loadbalancer.server.port: 8787
       homepage.group: Arr

@@ -25,7 +25,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.calibre-web.entrypoints: websecure
       traefik.http.routers.calibre-web.middlewares: localaccess@file
       traefik.http.services.calibre-web.loadbalancer.server.port: 8083
       homepage.group: Media

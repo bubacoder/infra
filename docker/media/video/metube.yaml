@@ -22,7 +22,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.metube.entrypoints: websecure
       traefik.http.routers.metube.middlewares: localaccess@file
       traefik.http.services.metube.loadbalancer.server.port: 8081
       homepage.group: Media

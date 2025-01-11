@@ -5,22 +5,16 @@ http:
 
   routers:
     router:
-      entryPoints:
-        - websecure
       rule: 'Host(`router.{{env "MYDOMAIN"}}`)'
       service: router
       middlewares:
         - "https-local@file"
     proxmox:
-      entryPoints:
-        - websecure
       rule: 'Host(`proxmox.{{env "MYDOMAIN"}}`)'
       service: proxmox
       middlewares:
         - "https-local@file"
     qbittorrent:
-      entryPoints:
-        - websecure
       rule: 'Host(`qbittorrent.{{env "MYDOMAIN"}}`)'
       service: qbittorrent
       middlewares:

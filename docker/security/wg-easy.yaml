@@ -34,7 +34,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.wireguard.entrypoints: websecure
       traefik.http.routers.wireguard.rule: Host(`vpn.${MYDOMAIN}`)
       traefik.http.routers.wireguard.middlewares: localaccess-sso@file
       traefik.http.services.wireguard.loadbalancer.server.port: 51821

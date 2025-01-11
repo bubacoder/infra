@@ -21,7 +21,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.prowlarr.entrypoints: websecure
       traefik.http.routers.prowlarr.middlewares: localaccess@file
       traefik.http.services.prowlarr.loadbalancer.server.port: 9696
       homepage.group: Arr
