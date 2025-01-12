@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://json.schemastore.org/traefik-v3.json
+
+# Dynamic configuration - changes in this file are applied without restarting Traefik (https://doc.traefik.io/traefik/providers/file/#watch).
+# Configuration via environment variables: use go templating, like {{env "VARIABLENAME"}}
+
+http:
+
+  routers:
+    router:
+      rule: 'Host(`router.{{env "MYDOMAIN"}}`)'
+      service: router
+      middlewares:
+        - localaccess@file
+    proxmox:
+      rule: 'Host(`proxmox.{{env "MYDOMAIN"}}`)'
+      service: proxmox
+      middlewares:
+        - localaccess@file
+    qbittorrent:
+      rule: 'Host(`qbittorrent.{{env "MYDOMAIN"}}`)'
+      service: qbittorrent
+      middlewares:
+        - localaccess-sso@file
+
+  services:
+    router:
+      loadBalancer:
+        serversTransport: insecureTransport
+        servers:
+          - url: http://192.168.1.1:80
+    proxmox:
+      loadBalancer:
+        serversTransport: insecureTransport
+        servers:
+          - url: https://192.168.1.50:8006
+    qbittorrent:
+      loadBalancer:
+        serversTransport: insecureTransport
+        servers:
+          - url: http://nas:8080

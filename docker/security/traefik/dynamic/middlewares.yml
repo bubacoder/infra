@@ -1,74 +1,39 @@
+# yaml-language-server: $schema=https://json.schemastore.org/traefik-v3.json
+
 # Dynamic configuration - changes in this file are applied without restarting Traefik (https://doc.traefik.io/traefik/providers/file/#watch).
 # Configuration via environment variables: use go templating, like {{env "VARIABLENAME"}}
 
 http:
 
-  routers:
-    router:
-      rule: 'Host(`router.{{env "MYDOMAIN"}}`)'
-      service: router
-      middlewares:
-        - "https-local@file"
-    proxmox:
-      rule: 'Host(`proxmox.{{env "MYDOMAIN"}}`)'
-      service: proxmox
-      middlewares:
-        - "https-local@file"
-    qbittorrent:
-      rule: 'Host(`qbittorrent.{{env "MYDOMAIN"}}`)'
-      service: qbittorrent
-      middlewares:
-        - "https-local-auth@file"
-
-  services:
-    router:
-      loadBalancer:
-        serversTransport: insecureTransport
-        servers:
-          - url: http://192.168.1.1:80
-    proxmox:
-      loadBalancer:
-        serversTransport: insecureTransport
-        servers:
-          - url: https://192.168.1.50:8006
-    qbittorrent:
-      loadBalancer:
-        serversTransport: insecureTransport
-        servers:
-          - url: http://nas:8080
-
-  # allow self-signed certificates for proxied web services
+  # Allow self-signed certificates for proxied web services
   serversTransports:
     insecureTransport:
       insecureSkipVerify: true
 
   ## MIDDLEWARES ##
   middlewares:
-    https-public:
+    localaccess:
       chain:
         middlewares:
-          - https-only
-          - crowdsec-bouncer
-          # - security-headers
-
-    https-local:
-      chain:
-        middlewares:
-          - https-only
           - local-ip-allowlist
 
-    https-local-auth:
+    localaccess-sso:
       chain:
         middlewares:
-          - https-only
           - local-ip-allowlist
           - authelia
+
+    publicaccess:
+      chain:
+        middlewares:
+          - crowdsec-bouncer
+          # - security-headers
 
     https-only:
       redirectScheme:
         scheme: https
 
-    # Only Allow Local networks
+    # Allow only local networks
     local-ip-allowlist:
       ipAllowList:
         sourceRange:
@@ -88,7 +53,6 @@ http:
         address: http://bouncer-traefik:8080/api/v1/forwardAuth
         trustForwardHeader: true
 
-    # Security headers
     security-headers:
       headers:
         customResponseHeaders: # field names are case-insensitive
@@ -113,11 +77,17 @@ http:
         # contentSecurityPolicy: "block-all-mixed-content" # Content-Security-Policy (CSP)
 
 
-# Only use secure ciphers - https://ssl-config.mozilla.org/#server=traefik&version=2.9&config=intermediate&guideline=5.6
+# Only use secure ciphers
+# Generated with Mozilla SSL Configuration Generator
+# https://ssl-config.mozilla.org/#server=traefik&version=3.2.1&config=intermediate&guideline=5.7
 tls:
   options:
     default:
       minVersion: VersionTLS12
+      curvePreferences:
+        - X25519
+        - CurveP256
+        - CurveP384
       cipherSuites:
         - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
         - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
