@@ -1,12 +1,12 @@
+# yaml-language-server: $schema=https://json.schemastore.org/traefik-v3.json
+
 # Static configuration - restart Traefik to apply the changes
 # Configuration via environment variables: https://doc.traefik.io/traefik/reference/static-configuration/env/
 
-# Traefik global configuration
 global:
   checkNewVersion: false
   sendAnonymousUsage: false
 
-# Enable traefik UI dashboard
 api:
   dashboard: true
 
@@ -23,34 +23,56 @@ providers:
 
   # File provider for connecting things that are outside of docker / defining middleware
   file:
-    filename: /etc/traefik/fileConfig.yml
+    directory: /etc/traefik/dynamic
     watch: true
 
   # Docker provider for connecting all apps that are inside of the docker network
   docker:
     watch: true
     network: proxy
-    # Default host rule to containername.domain.example
-    defaultRule: 'Host(`{{ index .Labels "com.docker.compose.service"}}.{{env "MYDOMAIN"}}`)'
-    exposedByDefault: false  # Tells Traefik not to expose containers to the outside world unless explicitly instructed to do so
+    defaultRule: 'Host(`{{ index .Labels "com.docker.compose.service"}}.{{env "MYDOMAIN"}}`)'  # Default host rule: containername.domain.tld
+    exposedByDefault: false  # Do not expose containers to the outside world unless explicitly configured
 
 entryPoints:
+  # !!! If there is no TLS certificate available:
+  #   - Enable this entrypoint
+  #   - Disable the other 'web' entrypoint
+  #   - WARNING: this is an insecure configuration, not recommended to use
+  #   - Note: Additional setup is needed to enable inter-service communication, links on the dashboard, etc.
+  #     See this PR for the necessary changes: https://github.com/bubacoder/infra/pull/85
+  #
+  # HTTP entrypoint, listen on port 80, redirect to https
+  # web:
+  #   address: :80
+  #   asDefault: true
+
+  # !!! If an TLS certificate is configured:
+  #   - Enable this entrypoint (will redirect to HTTPS)
+  #   - Disable the other 'web' entrypoint
+  #
+  # HTTP entrypoint, listen on port 80, redirect all HTTP traffic to the HTTPS entrypoint
   web:
-    address: :80 # Configures the HTTP entrypoint to listen on port 80
+    address: :80
+    asDefault: false
     http:
       redirections:
         entryPoint:
-          to: websecure # Redirects all HTTP traffic to the HTTPS entrypoint
+          to: websecure
           scheme: https
+
+  # HTTPS entrypoint, listen on port 443
+  # Note: Two entrypoints cannot listen on the same port
   websecure:
-    address: :443 # Configures the HTTPS entrypoint to listen on port 443
+    address: :443
+    asDefault: true
     http3:
       advertisedPort: 443
     http:
       tls:
-        # minVersion: VersionTLS12 # Enforces TLS 1.2 or better
         certResolver: letsencrypt # Configures the HTTPS entrypoint to use certificates obtained from the Let's Encrypt CA
         # domains: -> configured by TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_DOMAINS_* env var
+      middlewares:
+        - https-only@file
 
 # https://doc.traefik.io/traefik/user-guides/docker-compose/acme-dns/
 # OVH:
