@@ -9,7 +9,7 @@
 name: portainer-agent
 services:
   agent:
-    image: portainer/agent:2.25.1
+    image: portainer/agent:2.26.1
     container_name: portainer-agent
     ports:
       - 9001:9001
