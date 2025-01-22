@@ -16,8 +16,8 @@ services:
     networks:
       - proxy
     environment:
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-""}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-""}
       LOCAL_OLLAMA_API_BASE: https://ollama.${MYDOMAIN}
       REMOTE_OLLAMA_API_BASE: http://localhost:11444
     labels:
