@@ -3,7 +3,7 @@
 # 🏠 Home: https://gethomepage.dev/  
 # 📜 Source: https://github.com/gethomepage/homepage/  
 # Docker integration: https://gethomepage.dev/en/installation/docker/  
-# Dashboard Icons: https://github.com/walkxcode/dashboard-icons/tree/main  
+# Dashboard Icons: https://github.com/homarr-labs/dashboard-icons/  
 ---
 name: homepage
 services:
@@ -16,9 +16,9 @@ services:
     environment:
       HOMEPAGE_VAR_TIMEZONE: ${TIMEZONE}
       HOMEPAGE_VAR_MYDOMAIN: ${MYDOMAIN}
-      HOMEPAGE_VAR_CITY: ${LOCATION_CITY}
-      HOMEPAGE_VAR_LATITUDE: ${LOCATION_LATITUDE}
-      HOMEPAGE_VAR_LONGITUDE: ${LOCATION_LONGITUDE}
+      HOMEPAGE_VAR_CITY: ${LOCATION_CITY:-""}
+      HOMEPAGE_VAR_LATITUDE: ${LOCATION_LATITUDE:-""}
+      HOMEPAGE_VAR_LONGITUDE: ${LOCATION_LONGITUDE:-""}
       # TODO improve security: https://gethomepage.dev/en/installation/docker/
       # PUID: ${PUID}
       # PGID: ${PGID}
