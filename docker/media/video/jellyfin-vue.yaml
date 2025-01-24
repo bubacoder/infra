@@ -18,7 +18,7 @@ services:
       homepage.group: Media
       homepage.name: Jellyfin-vue
       homepage.icon: jellyfin.png
-      homepage.href: https://jellyfin-vue.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://jellyfin-vue.${MYDOMAIN}/
       homepage.description: Media Management
 
 networks:

@@ -29,7 +29,7 @@ services:
       homepage.group: Media
       homepage.name: Kiwix server
       homepage.icon: kiwix.png
-      homepage.href: https://kiwix.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://kiwix.${MYDOMAIN}/
       homepage.description: Offline access to free educational content
 
 networks:

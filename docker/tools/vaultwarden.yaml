@@ -28,7 +28,7 @@ services:
       homepage.group: Tools
       homepage.name: Vaultwarden
       homepage.icon: vaultwarden.png
-      homepage.href: https://vault.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://vault.${MYDOMAIN}/
       homepage.description: Password Manager
 
 networks:

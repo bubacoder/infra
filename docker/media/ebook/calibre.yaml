@@ -54,7 +54,7 @@ services:
       homepage.group: Media
       homepage.name: Calibre
       homepage.icon: calibre.png
-      homepage.href: https://calibre.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://calibre.${MYDOMAIN}/
       homepage.description: e-Book Manager (Desktop GUI)
 
 networks:

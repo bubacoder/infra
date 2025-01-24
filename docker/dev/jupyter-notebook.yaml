@@ -25,7 +25,7 @@ services:
       homepage.group: Tools
       homepage.name: Jupyter Notebook
       homepage.icon: jupyter.png
-      homepage.href: https://jupyter.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://jupyter.${MYDOMAIN}/
       homepage.description: Minimal Jupyter Notebook Python Stack
 
 networks:

@@ -26,7 +26,7 @@ services:
       homepage.group: Tools
       homepage.name: Stirling PDF
       homepage.icon: stirling-pdf.png
-      homepage.href: https://stirling-pdf.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://stirling-pdf.${MYDOMAIN}/
       homepage.description: PDF operations
 
 networks:

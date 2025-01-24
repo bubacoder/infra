@@ -65,7 +65,7 @@ services:
       homepage.group: Connections
       homepage.name: Kasm Workspaces
       homepage.icon: kasm.png
-      homepage.href: https://kasm.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://kasm.${MYDOMAIN}/
       homepage.description: "Container streaming platform"
 
 networks:

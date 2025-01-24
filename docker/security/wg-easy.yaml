@@ -40,7 +40,7 @@ services:
       homepage.group: Security
       homepage.name: WireGuard Easy
       homepage.icon: wireguard.png
-      homepage.href: https://vpn.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://vpn.${MYDOMAIN}/
       homepage.description: "[SSO] VPN Service"
 
 networks:

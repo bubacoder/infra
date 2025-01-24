@@ -18,7 +18,7 @@ services:
       homepage.group: Tools
       homepage.name: Cyberchef
       homepage.icon: cyberchef.png
-      homepage.href: https://cyberchef.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://cyberchef.${MYDOMAIN}/
       homepage.description: Swiss Army Knife web app for data analysis
 
 networks:

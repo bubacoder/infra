@@ -38,7 +38,7 @@ services:
       homepage.group: Media
       homepage.name: Navidrome
       homepage.icon: navidrome.png
-      homepage.href: https://navidrome.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://navidrome.${MYDOMAIN}/
       homepage.description: Music collection
 
 networks:
