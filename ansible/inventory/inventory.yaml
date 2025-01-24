@@ -8,6 +8,8 @@ debian:
     proxmox:
       ansible_host: 192.168.1.50
     nas: {}
+    hive:
+      ansible_host: 192.168.1.243
     nest:
       install_storage_packages: true
 
