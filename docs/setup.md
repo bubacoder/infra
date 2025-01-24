@@ -122,6 +122,7 @@ After setting up the VM, configure the following on the router:
   - HTTPS - Port 443 TCP & UDP
   - WireGuard - Port 51820 UDP
 - Configure the local DNS service to resolve your domain name to the main Docker host. This is to provide uninterrupted DNS name resolution of the local services in case of the internet access fails.
+  - In AdGuard Home: Filters -> DNS Rewrites -> Add <hostname> AND *.<hostname>
 
 Note: Query and refresh IP configuration on Windows:
 ```sh

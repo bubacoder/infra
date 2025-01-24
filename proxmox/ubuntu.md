@@ -30,7 +30,7 @@ In addition to the previous, this script also configures the installer for unatt
 ```
 ssh root@proxmox "bash -s" -- < create-ubuntu-server-vm.sh
 ```
-- Start the VM and confirm the installation
+- Start the VM and confirm the installation ("Continue with autoinstall?" prompt)
 
 **Details:**
 

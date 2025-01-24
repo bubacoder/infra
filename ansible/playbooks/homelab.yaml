@@ -10,14 +10,13 @@
   hosts:
     - nas
     - nest
-    - nest2
+    - hive
   roles:
     - role: debian_docker_host
 
 - name: Setup Samba client + developer tools
   hosts:
     - nest
-    - nest2
   roles:
     - role: debian_samba_client
     - role: markosamuli.linuxbrew
