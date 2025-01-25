@@ -20,7 +20,8 @@ install_ansible_on_ubuntu() {
   add-apt-repository --yes --update ppa:ansible/ansible
   apt-get install --yes --no-install-recommends ansible python3-pip
 
-  pip install passlib ansible-lint --break-system-packages
+  # "--ignore-installed" is added to fix error "Cannot uninstall PyYAML 6.0.1 ... The package was installed by debian."
+  pip install passlib ansible-lint --ignore-installed --break-system-packages
   ansible-galaxy install -r "${ANSIBLE_DIR}/requirements.yml"
 }
 
