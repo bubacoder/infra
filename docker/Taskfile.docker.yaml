@@ -24,6 +24,11 @@ tasks:
     cmds:
       - MODE=PULL docker/apply-local.sh
 
+  stop:
+    desc: Stop configured containers
+    cmds:
+      - MODE=DOWN docker/apply-local.sh
+
   stop-all:
     desc: Stop all running containers
     cmds:

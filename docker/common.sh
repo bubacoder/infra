@@ -52,6 +52,12 @@ docker_command() {
   local yaml_file="$(get_yaml_file "${stack_dir}" "${service_name}")"
   local env_file_args="$(get_env_file_args "${service_name}")"
 
+  # shellcheck disable=SC2153 # different than $mode
+  local mode_override="$MODE"
+  if [[ -n "$mode_override" ]]; then
+    mode="$mode_override"
+  fi
+
   case "$mode" in
     UPDATE|PULL)
       echo ">>> Pulling $stack_dir/$service_name"
@@ -93,15 +99,7 @@ docker_command() {
 }
 
 up() {
-  # shellcheck disable=SC2153 # different than $mode
-  case "$MODE" in
-    UPDATE)
-      docker_command "$1" "$2" "UPDATE";;
-    PULL)
-      docker_command "$1" "$2" "PULL";;
-    *)
-      docker_command "$1" "$2" "UP";;
-  esac
+  docker_command "$1" "$2" "UP"
 }
 
 down() {
