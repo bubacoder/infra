@@ -12,7 +12,7 @@
 name: webdav
 services:
   webdav:
-    image: dgraziotin/nginx-webdav-nononsense:1.27.2
+    image: dgraziotin/nginx-webdav-nononsense:1.27.3
     container_name: webdav
     restart: unless-stopped
     environment:
