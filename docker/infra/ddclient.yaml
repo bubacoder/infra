@@ -2,6 +2,7 @@
 # It has the capability to update more than just dyndns and it can fetch your WAN-ipaddress in a few different ways.
 #
 # https://ddclient.net/  
+# https://github.com/ddclient/ddclient  
 # https://docs.linuxserver.io/images/docker-ddclient/  
 ---
 name: ddclient
@@ -20,7 +21,7 @@ services:
       - ${DOCKER_VOLUMES}/ddclient:/processed
 
   ddclient:
-    image: lscr.io/linuxserver/ddclient:3.11.2
+    image: lscr.io/linuxserver/ddclient:4.0.0
     container_name: ddclient
     environment:
       PUID: ${PUID}
