@@ -6,7 +6,7 @@
 name: radarr
 services:
   radarr:
-    image: lscr.io/linuxserver/radarr:5.17.2
+    image: lscr.io/linuxserver/radarr:5.18.4
     container_name: radarr
     restart: unless-stopped
     environment:
