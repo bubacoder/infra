@@ -26,7 +26,7 @@ services:
       homepage.group: Arr
       homepage.name: Bazarr
       homepage.icon: bazarr.png
-      homepage.href: https://bazarr.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://bazarr.${MYDOMAIN}/
       homepage.description: Manage and download subtitles
 
 networks:

@@ -27,7 +27,7 @@ services:
       homepage.group: Arr
       homepage.name: Sonarr
       homepage.icon: sonarr.png
-      homepage.href: https://sonarr.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://sonarr.${MYDOMAIN}/
       homepage.description: Download series
 
 networks:

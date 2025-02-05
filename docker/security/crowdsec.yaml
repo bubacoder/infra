@@ -44,7 +44,7 @@ services:
       homepage.group: Security
       homepage.name: Crowdsec
       homepage.icon: crowdsec.png
-      homepage.href: https://app.crowdsec.net/
+      homepage.href: ${WEBPROTO}://app.crowdsec.net/
       homepage.description: "Crowdsec Security Engine"
 
   # TODO Deprecated! Last image update: october 2022

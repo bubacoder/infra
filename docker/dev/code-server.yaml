@@ -35,7 +35,7 @@ services:
       homepage.group: Tools
       homepage.name: Code-Server
       homepage.icon: code.png
-      homepage.href: https://code.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://code.${MYDOMAIN}/
       homepage.description: "[SSO] Visual Studio Code"
 
 networks:
