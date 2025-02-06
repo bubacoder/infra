@@ -29,7 +29,7 @@ repos:
   # https://docs.kics.io/latest/commands/
   # Ignoring errors: https://docs.kics.io/latest/running-kics/#using_commands_on_scanned_files_as_comments
   - repo: https://github.com/Checkmarx/kics
-    rev: v2.1.4
+    rev: v2.1.5
     hooks:
       - id: kics-scan
         # TODO solve the high severity issues first
@@ -40,13 +40,13 @@ repos:
   # Gitleaks is a SAST tool for detecting and preventing hardcoded secrets like passwords, api keys, and tokens in git repos.
   # Gitleaks is an easy-to-use, all-in-one solution for detecting secrets, past or present, in your code.
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.23.1
+    rev: v8.23.3
     hooks:
       - id: gitleaks
 
   # pre-commit git hooks to take care of Terraform configurations
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.97.0
+    rev: v1.97.3
     hooks:
       - id: terraform_fmt
         files: ^terraform/
@@ -63,7 +63,7 @@ repos:
   # ansible-lint checks playbooks for practices and behavior that could potentially be improved and can fix some of the most common ones for you.
   # Add '-v' parameter to ansiblelint for verbose mode
   - repo: https://github.com/ansible-community/ansible-lint
-    rev: v25.1.1
+    rev: v25.1.2
     hooks:
       - id: ansible-lint
         files: ^ansible/
