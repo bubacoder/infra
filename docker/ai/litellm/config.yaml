@@ -2,7 +2,7 @@
 # https://docs.litellm.ai/docs/providers/openrouter
 # https://openrouter.ai/models
 #
-# LiteLLM supports all anthropic models
+# LiteLLM supports all Anthropic models
 # https://docs.litellm.ai/docs/providers/anthropic
 # https://docs.anthropic.com/en/docs/about-claude/models
 #
@@ -17,9 +17,34 @@ model_list:
       model: anthropic/claude-3-5-sonnet-latest # MODEL NAME sent to `litellm.completion()`
       api_key: "os.environ/ANTHROPIC_API_KEY" # Does os.getenv("ANTHROPIC_API_KEY")
 
+  # https://openrouter.ai/openai/gpt-4o-2024-11-20
   - model_name: gpt-4o
     litellm_params:
       model: openrouter/openai/gpt-4o-2024-11-20
+      api_key: "os.environ/OPENROUTER_API_KEY"
+
+  # https://openrouter.ai/openai/gpt-4o-mini
+  - model_name: gpt-4o-mini
+    litellm_params:
+      model: openrouter/openai/gpt-4o-mini
+      api_key: "os.environ/OPENROUTER_API_KEY"
+
+  # https://openrouter.ai/meta-llama/llama-3.3-70b-instruct
+  - model_name: llama-3.3-70b-instruct
+    litellm_params:
+      model: openrouter/meta-llama/llama-3.3-70b-instruct
+      api_key: "os.environ/OPENROUTER_API_KEY"
+
+  # https://openrouter.ai/deepseek/deepseek-r1-distill-llama-70b
+  - model_name: deepseek-r1-distill-llama-70b
+    litellm_params:
+      model: openrouter/deepseek/deepseek-r1-distill-llama-70b
+      api_key: "os.environ/OPENROUTER_API_KEY"
+
+  # https://openrouter.ai/deepseek/deepseek-r1
+  - model_name: deepseek-r1
+    litellm_params:
+      model: openrouter/deepseek/deepseek-r1
       api_key: "os.environ/OPENROUTER_API_KEY"
 
   - model_name: ollama-local-phi
