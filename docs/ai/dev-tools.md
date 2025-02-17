@@ -36,6 +36,14 @@ https://github.com/All-Hands-AI/OpenHands
 
 https://github.com/cline/cline
 
+### Roo Code (formerly Roo Cline, fork of Cline)
+
+> Roo Code is an AI-powered autonomous coding agent that lives in your editor.
+
+https://github.com/RooVetGit/Roo-Code
+
+[Visual Studio Code Extension](https://marketplace.visualstudio.com/items?itemName=RooVeterinaryInc.roo-cline)
+
 ### Aider
 
 > aider is AI pair programming in your terminal
