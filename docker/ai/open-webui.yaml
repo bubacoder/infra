@@ -9,7 +9,7 @@
 name: open-webui
 services:
   open-webui:
-    image: ghcr.io/open-webui/open-webui:0.5.7
+    image: ghcr.io/open-webui/open-webui:v0.5.14
     container_name: open-webui
     restart: unless-stopped
     volumes:
