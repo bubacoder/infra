@@ -14,7 +14,7 @@ services:
     #           count: 1
     #           capabilities:
     #             - gpu
-    image: ollama/ollama:0.5.11
+    image: ollama/ollama:0.5.12
     container_name: ollama
     restart: unless-stopped
     # https://docs.docker.com/config/containers/resource_constraints/#configure-the-default-cfs-scheduler
