@@ -27,7 +27,7 @@ services:
       homepage.group: Media
       homepage.name: Metube
       homepage.icon: metube.png
-      homepage.href: https://metube.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://metube.${MYDOMAIN}/
       homepage.description: Video downloader
 
 networks:

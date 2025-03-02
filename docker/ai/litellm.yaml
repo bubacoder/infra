@@ -18,7 +18,7 @@ services:
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-""}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-""}
-      LOCAL_OLLAMA_API_BASE: https://ollama.${MYDOMAIN}
+      LOCAL_OLLAMA_API_BASE: ${WEBPROTO}://ollama.${MYDOMAIN}
       REMOTE_OLLAMA_API_BASE: http://localhost:11444
     labels:
       traefik.enable: true
@@ -27,7 +27,7 @@ services:
       homepage.group: AI
       homepage.name: "LiteLLM"
       homepage.icon: chatgpt.png
-      homepage.href: https://litellm.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://litellm.${MYDOMAIN}/
       homepage.description: "LLM Gateway to call 100+ LLM APIs in OpenAI format"
 
 networks:

@@ -54,7 +54,7 @@ services:
       homepage.group: Security
       homepage.name: Authelia
       homepage.icon: authelia.png
-      homepage.href: https://auth.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://auth.${MYDOMAIN}/
       homepage.description: "[SSO] Open-source authentication and authorization"
 
 networks:

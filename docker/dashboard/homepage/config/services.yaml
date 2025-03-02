@@ -4,30 +4,30 @@
 
 - Connections:
     - Router Web UI:
-        href: https://router.{{HOMEPAGE_VAR_MYDOMAIN}}/cgi-bin/luci/
-        siteMonitor: https://router.{{HOMEPAGE_VAR_MYDOMAIN}}/
+        href: "{{HOMEPAGE_VAR_WEBPROTO}}://router.{{HOMEPAGE_VAR_MYDOMAIN}}/cgi-bin/luci/"
+        siteMonitor: "{{HOMEPAGE_VAR_WEBPROTO}}://router.{{HOMEPAGE_VAR_MYDOMAIN}}/"
         description: OpenWRT LuCi
         icon: router.png
     - Proxmox Web UI:
-        href: https://proxmox.{{HOMEPAGE_VAR_MYDOMAIN}}/
+        href: "{{HOMEPAGE_VAR_WEBPROTO}}://proxmox.{{HOMEPAGE_VAR_MYDOMAIN}}/"
         description: Proxmox Virtual Environment
         icon: proxmox.png
     - Nest SSH:
-        href: https://guacamole.{{HOMEPAGE_VAR_MYDOMAIN}}/#/client/MQBjAHBvc3RncmVzcWw
+        href: "{{HOMEPAGE_VAR_WEBPROTO}}://guacamole.{{HOMEPAGE_VAR_MYDOMAIN}}/#/client/MQBjAHBvc3RncmVzcWw"
         description: SSH connection
         icon: ubuntu.png
     - NAS SSH:
-        href: https://guacamole.{{HOMEPAGE_VAR_MYDOMAIN}}/#/client/MgBjAHBvc3RncmVzcWw
+        href: "{{HOMEPAGE_VAR_WEBPROTO}}://guacamole.{{HOMEPAGE_VAR_MYDOMAIN}}/#/client/MgBjAHBvc3RncmVzcWw"
         description: SSH connection
         icon: debian.png
     - Vostro RDP:
-        href: https://guacamole.{{HOMEPAGE_VAR_MYDOMAIN}}/#/client/NgBjAHBvc3RncmVzcWw
+        href: "{{HOMEPAGE_VAR_WEBPROTO}}://guacamole.{{HOMEPAGE_VAR_MYDOMAIN}}/#/client/NgBjAHBvc3RncmVzcWw"
         description: Remote Desktop connection
         icon: windows-10.png
 
 - Arr:
     - qBittorrent @ NAS:
-        href: https://qbittorrent.{{HOMEPAGE_VAR_MYDOMAIN}}/
-        siteMonitor: https://qbittorrent.{{HOMEPAGE_VAR_MYDOMAIN}}/
+        href: "{{HOMEPAGE_VAR_WEBPROTO}}://qbittorrent.{{HOMEPAGE_VAR_MYDOMAIN}}/"
+        siteMonitor: "{{HOMEPAGE_VAR_WEBPROTO}}://qbittorrent.{{HOMEPAGE_VAR_MYDOMAIN}}/"
         description: "BitTorrent client"
         icon: qbittorrent.png

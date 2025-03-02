@@ -31,7 +31,7 @@ services:
       homepage.group: Monitoring
       homepage.name: Grafana
       homepage.icon: grafana.png
-      homepage.href: https://grafana.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://grafana.${MYDOMAIN}/
       homepage.description: "Monitoring dashboard"
 
 networks:

@@ -48,10 +48,10 @@ services:
       homepage.group: Infra
       homepage.name: Unifi Controller
       homepage.icon: unifi-controller.png
-      homepage.href: https://unifi-controller.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://unifi-controller.${MYDOMAIN}/
       homepage.description: Wireless software engine
       homepage.widget.type: unifi
-      homepage.widget.url: https://unifi-controller.${MYDOMAIN}
+      homepage.widget.url: ${WEBPROTO}://unifi-controller.${MYDOMAIN}
       homepage.widget.username: ${UNIFI_LOCAL_VIEWONLY_USERNAME}
       homepage.widget.password: ${UNIFI_LOCAL_VIEWONLY_PASSWORD}
       # - homepage.widget.site: Site Name # optional

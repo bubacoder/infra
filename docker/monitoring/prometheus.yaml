@@ -30,7 +30,7 @@ services:
       homepage.group: Monitoring
       homepage.name: Prometheus
       homepage.icon: prometheus.png
-      homepage.href: https://prometheus.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://prometheus.${MYDOMAIN}/
       homepage.description: "Exporters: node-exporter, cadvisor"
 
   node_exporter:

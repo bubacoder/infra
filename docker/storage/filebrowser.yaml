@@ -28,7 +28,7 @@ services:
       homepage.group: Storage
       homepage.name: Filebrowser
       homepage.icon: filebrowser.png
-      homepage.href: https://filebrowser.${MYDOMAIN}/
+      homepage.href: ${WEBPROTO}://filebrowser.${MYDOMAIN}/
       homepage.description: File Management
 
 networks:
