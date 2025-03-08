@@ -37,7 +37,7 @@ services:
       traefik.http.services.qdrant.loadbalancer.server.port: 6333
       homepage.group: AI
       homepage.name: "Qdrant"
-      homepage.icon: qdrant.png
+      homepage.icon: chatgpt.png
       homepage.href: https://qdrant.${MYDOMAIN}/dashboard/
       homepage.description: "Open-Source Vector Database"
 
