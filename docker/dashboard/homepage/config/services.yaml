@@ -15,11 +15,11 @@
     - Nest SSH:
         href: https://guacamole.{{HOMEPAGE_VAR_MYDOMAIN}}/#/client/MQBjAHBvc3RncmVzcWw
         description: SSH connection
-        icon: ubuntu.png
+        icon: ubuntu-linux.png
     - NAS SSH:
         href: https://guacamole.{{HOMEPAGE_VAR_MYDOMAIN}}/#/client/MgBjAHBvc3RncmVzcWw
         description: SSH connection
-        icon: debian.png
+        icon: debian-linux.png
     - Vostro RDP:
         href: https://guacamole.{{HOMEPAGE_VAR_MYDOMAIN}}/#/client/NgBjAHBvc3RncmVzcWw
         description: Remote Desktop connection

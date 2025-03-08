@@ -3,7 +3,9 @@
 # 🏠 Home: https://gethomepage.dev/  
 # 📜 Source: https://github.com/gethomepage/homepage/  
 # Docker integration: https://gethomepage.dev/en/installation/docker/  
+#
 # Dashboard Icons: https://github.com/homarr-labs/dashboard-icons/  
+# Search for Dashboard Icons: https://andrzej-zuralovic.github.io/dashboard-icons-searcher/
 ---
 name: homepage
 services:
