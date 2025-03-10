@@ -12,7 +12,7 @@ name: prometheus
 services:
 
   prometheus:
-    image: prom/prometheus:v2.55.1
+    image: prom/prometheus:v3.2.1
     container_name: prometheus
     restart: unless-stopped
     user: "0:0"
