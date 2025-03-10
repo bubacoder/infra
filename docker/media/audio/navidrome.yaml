@@ -16,7 +16,7 @@
 name: navidrome
 services:
   navidrome:
-    image: deluan/navidrome:0.54.5
+    image: deluan/navidrome:0.55.0
     container_name: navidrome
     user: ${PUID}:${PGID} # Should be owner of volumes
     restart: unless-stopped
