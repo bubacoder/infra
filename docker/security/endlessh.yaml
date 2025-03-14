@@ -7,6 +7,9 @@
 name: endlessh
 services:
   endlessh:
+    # linuxserver.io:
+    # This image is deprecated. We will not offer support for this image and it will not be updated.
+    # We recommend looking at an alternative implementation such as: https://github.com/shizunge/endlessh-go/⁠
     image: lscr.io/linuxserver/endlessh:latest # No semantic version tags are available
     container_name: endlessh
     restart: unless-stopped
