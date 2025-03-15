@@ -7,6 +7,7 @@
 # Recommended collectors:
 # - https://hub.docker.com/r/prom/node-exporter/
 # - https://github.com/google/cadvisor/
+# - https://github.com/shizunge/endlessh-go/
 ---
 name: prometheus
 services:
