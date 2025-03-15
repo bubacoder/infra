@@ -10,14 +10,18 @@
 name: metube
 services:
   metube:
-    image: alexta69/metube:2024-08-22
+    image: ghcr.io/alexta69/metube:2025-03-07
     container_name: metube
     restart: "unless-stopped"
     environment:
       UID: ${PUID}
       GID: ${PGID}
+      # Using browser cookies:
+      # https://github.com/alexta69/metube?tab=readme-ov-file#using-browser-cookies
+      YTDL_OPTIONS: "{\"cookiefile\":\"/cookies/cookies.txt\"}"
     volumes:
       - ${STORAGE_DOWNLOADS}/youtube:/downloads
+      - ${INFRA_CONFIG_PATH:-"./metube"}/metube-cookies.txt:/cookies/cookies.txt
     networks:
       - proxy
     labels:
