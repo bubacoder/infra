@@ -12,13 +12,21 @@ scrape_configs:
   - job_name: 'prometheus'
     scrape_interval: 120s
     static_configs:
-      - targets: ['localhost:9090'] # Nest
+      - targets:
+          - 'localhost:9090' # Main node
 
   - job_name: 'node_exporter'
     static_configs:
-      - targets: ['node_exporter:9100'] # Nest
-      - targets: ['192.168.1.10:9100']  # NAS
+      - targets:
+          - 'node_exporter:9100' # Main node
+          - '192.168.1.10:9100'  # "NAS" host
 
   - job_name: 'cadvisor'
     static_configs:
-      - targets: ['cadvisor:8080'] # Nest
+      - targets:
+          - 'cadvisor:8080' # Main node
+
+  - job_name: 'endlessh'
+    static_configs:
+      - targets:
+          - 'endlessh:2112' # Main node
