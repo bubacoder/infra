@@ -1,33 +1,46 @@
 # Endlessh is an SSH tarpit that very slowly sends an endless, random SSH banner. It keeps SSH clients locked up for hours or even days at a time.
 # The purpose is to put your real SSH server on another port and then let the script kiddies get stuck in this tarpit instead of bothering a real server.
 #
-# 📜 Source: https://github.com/skeeto/endlessh  
-# Setup: https://docs.linuxserver.io/images/docker-endlessh/#application-setup  
+# endlessh-go is a golang implementation of endlessh exporting Prometheus metrics, visualized by a Grafana dashboard.
+#
+# 📜 Source: https://github.com/shizunge/endlessh-go/  
+# C implementation: https://github.com/skeeto/endlessh/  
+# Developer's blogpost: https://nullprogram.com/blog/2019/03/22/  
+#
+# Setup Grafana dashboard:
+# - https://github.com/shizunge/endlessh-go/?tab=readme-ov-file#dashboard
+# - https://grafana.com/grafana/dashboards/15156-endlessh/
 ---
 name: endlessh
 services:
   endlessh:
-    # linuxserver.io:
-    # This image is deprecated. We will not offer support for this image and it will not be updated.
-    # We recommend looking at an alternative implementation such as: https://github.com/shizunge/endlessh-go/⁠
-    image: lscr.io/linuxserver/endlessh:latest # No semantic version tags are available
+    image: shizunge/endlessh-go:2024.1106.0
     container_name: endlessh
     restart: unless-stopped
+    command:
+      - -port=2222
+      - -alsologtostderr
+      - -v=1
+      - -log_dir=/config/logs/endlessh/
+      - -enable_prometheus
+      - -geoip_supplier=ip-api
     environment:
       PUID: ${PUID}
       PGID: ${PGID}
       TZ: ${TIMEZONE}
-      MSDELAY: 10000
-      MAXLINES: 32
-      MAXCLIENTS: 4096
-      LOGFILE: true # /config/logs/endlessh/
-      BINDFAMILY:
     volumes:
       - ${DOCKER_VOLUMES}/endlessh:/config
     ports:
       - 2222:2222
+      # Prometheus metrics port: 2112
+    networks:
+      - proxy
     labels:
       homepage.group: Security
       homepage.name: Endlessh
       homepage.icon: terminal.png
       homepage.description: "SSH tarpit (port 2222)"
+
+networks:
+  proxy:
+    external: true
