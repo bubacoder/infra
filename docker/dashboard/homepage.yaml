@@ -10,7 +10,7 @@
 name: homepage
 services:
   homepage:
-    image: ghcr.io/gethomepage/homepage:v0.10.9
+    image: ghcr.io/gethomepage/homepage:v1.0.3
     container_name: homepage
     restart: unless-stopped
     # Using Environment Secrets:
@@ -21,6 +21,8 @@ services:
       HOMEPAGE_VAR_CITY: ${LOCATION_CITY:-""}
       HOMEPAGE_VAR_LATITUDE: ${LOCATION_LATITUDE:-""}
       HOMEPAGE_VAR_LONGITUDE: ${LOCATION_LONGITUDE:-""}
+      # https://gethomepage.dev/installation/#homepage_allowed_hosts
+      HOMEPAGE_ALLOWED_HOSTS: home.${MYDOMAIN}
       # TODO improve security: https://gethomepage.dev/en/installation/docker/
       # PUID: ${PUID}
       # PGID: ${PGID}
