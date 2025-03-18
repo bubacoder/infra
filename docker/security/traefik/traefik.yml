@@ -91,3 +91,11 @@ certificatesResolvers:
         resolvers:
           - "1.1.1.1:53" # Specifies a list of DNS resolvers to use for the DNS queries
           - "8.8.8.8:53"
+
+experimental:
+  plugins:
+    # Crowdsec Bouncer Traefik Plugin
+    # https://plugins.traefik.io/plugins/6335346ca4caa9ddeffda116/crowdsec-bouncer-traefik-plugin
+    crowdsec-bouncer-traefik-plugin:
+      moduleName: "github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin"
+      version: "v1.4.1"
