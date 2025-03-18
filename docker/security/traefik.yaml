@@ -16,6 +16,8 @@ services:
       MYDOMAIN: ${MYDOMAIN}
       MAIN_NODE_IP: ${MAIN_NODE_IP}
       CLOUDFLARE_DNS_API_TOKEN: ${CLOUDFLARE_DNS_API_TOKEN}
+      # Generate key within the crowdsec container: cscli bouncers add traefik-bouncer
+      CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_API_KEY}
       # Used in static configuration (traefik.yml)
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_DOMAINS_0_MAIN: "${MYDOMAIN}"
       TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_DOMAINS_0_SANS: "*.${MYDOMAIN}"

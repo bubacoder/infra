@@ -49,9 +49,14 @@ http:
         trustForwardHeader: true
 
     crowdsec-bouncer:
-      forwardAuth:
-        address: http://bouncer-traefik:8080/api/v1/forwardAuth
-        trustForwardHeader: true
+      plugin:
+        # Crowdsec Bouncer Traefik Plugin
+        # https://plugins.traefik.io/plugins/6335346ca4caa9ddeffda116/crowdsec-bouncer-traefik-plugin
+        crowdsec-bouncer-traefik-plugin:
+          Enabled: "true"
+          CrowdsecLapiKey: '{{env "CROWDSEC_BOUNCER_API_KEY"}}'
+          CrowdsecLapiHost: crowdsec:8080
+          CrowdsecMode: "live"
 
     security-headers:
       headers:
