@@ -53,7 +53,7 @@ services:
   logrotate:
     build:
       dockerfile_inline: |
-        FROM alpine:3.20
+        FROM alpine:3.21
         RUN apk add --no-cache logrotate
         COPY traefik/logrotate.conf /etc/logrotate.conf
         RUN chmod 644 /etc/logrotate.conf
