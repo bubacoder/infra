@@ -1,0 +1,24 @@
+# Based on:
+# https://packagecloud.io/crowdsec/crowdsec/install#manual-deb
+# https://docs.crowdsec.net/u/bouncers/firewall/
+# https://github.com/papanito/ansible-role-crowdsec/
+#
+# Configuration file: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
+# Logs: /var/log/crowdsec-firewall-bouncer.log
+---
+- name: Add crowdsec apt-key
+  ansible.builtin.apt_key:
+    url: https://packagecloud.io/crowdsec/crowdsec/gpgkey
+    state: present
+
+- name: Add crowdsec apt repository
+  ansible.builtin.apt_repository:
+    repo: deb https://packagecloud.io/crowdsec/crowdsec/{{ ansible_distribution | lower }}/ {{ ansible_distribution_release }} main
+    state: present
+    filename: crowdsec
+    update_cache: true
+
+- name: Install iptables bouncer
+  ansible.builtin.apt:
+    name: crowdsec-firewall-bouncer-iptables
+    state: present
