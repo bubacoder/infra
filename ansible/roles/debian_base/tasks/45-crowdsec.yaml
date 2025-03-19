@@ -1,0 +1,49 @@
+# Based on:
+# https://packagecloud.io/crowdsec/crowdsec/install#manual-deb
+# https://docs.crowdsec.net/u/bouncers/firewall/
+# https://github.com/papanito/ansible-role-crowdsec/
+#
+# Configuration file: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
+# Logs: /var/log/crowdsec-firewall-bouncer.log
+---
+- name: Add crowdsec apt-key
+  ansible.builtin.apt_key:
+    url: https://packagecloud.io/crowdsec/crowdsec/gpgkey
+    state: present
+
+- name: Add crowdsec apt repository
+  ansible.builtin.apt_repository:
+    repo: deb https://packagecloud.io/crowdsec/crowdsec/{{ ansible_distribution | lower }}/ {{ ansible_distribution_release }} main
+    state: present
+    filename: crowdsec
+    update_cache: true
+
+- name: Install crowdsec iptables bouncer
+  ansible.builtin.apt:
+    name: crowdsec-firewall-bouncer-iptables
+    state: present
+
+- name: Set crowdsec api_url for iptables bouncer
+  ansible.builtin.lineinfile:
+    path: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
+    regexp: "^api_url:"
+    line: "api_url: {{ crowdsec_local_api_url }}"
+  when: crowdsec_local_api_url|default('') != ''
+  notify: Restart service crowdsec-firewall-bouncer
+
+- name: Set crowdsec api_key for iptables bouncer
+  ansible.builtin.lineinfile:
+    path: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
+    regexp: "^api_key:"
+    line: "api_key: {{ crowdsec_local_api_key }}"
+  when: crowdsec_local_api_key|default('') != ''
+  notify: Restart service crowdsec-firewall-bouncer
+
+- name: Enable service crowdsec-firewall-bouncer
+  ansible.builtin.service:
+    name: crowdsec-firewall-bouncer
+    enabled: true
+    state: started
+  when:
+    - crowdsec_local_api_url|default('') != ''
+    - crowdsec_local_api_key|default('') != ''
