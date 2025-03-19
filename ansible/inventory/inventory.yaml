@@ -5,13 +5,18 @@ debian:
     ansible_conection: ssh
     ansible_user: buba
   hosts:
+    nas: {}
     proxmox:
       ansible_host: 192.168.1.50
-    nas: {}
     hive:
       ansible_host: 192.168.1.243
     nest:
       install_storage_packages: true
+
+      # Crowdsec - configure docker/security/crowdsec.yaml and
+      #   set 'crowdsec_local_api_key' in group_vars/debian/secret.yaml
+      install_crowdsec_bouncer: true
+      crowdsec_local_api_url: http://127.0.0.1:7080/
 
     # Cloud. Excluded in apply-homelab.sh
     azure-vm:

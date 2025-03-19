@@ -5,7 +5,8 @@
 # 📜 Source: https://github.com/crowdsecurity/example-docker-compose  
 # Tutorial: https://docs.ibracorp.io/crowdsec/  
 #
-# Register to dashboard, subscribe to blocklists: https://app.crowdsec.net/
+# Register to dashboard, subscribe to blocklists: https://app.crowdsec.net/  
+# Configure iptables bouncer with Ansible: `ansible/roles/debian_base/tasks/45-crowdsec.yaml`
 #
 # Useful commands - execute within the container like `docker exec crowdsec <command>`:
 # - `cscli collections list`
@@ -13,9 +14,6 @@
 # - `cscli decisions list`
 # - `cscli alerts list`
 # - `cscli metrics`
-#
-# TODO Install firewall Bouncer:
-#   https://www.smarthomebeginner.com/crowdsec-docker-compose-1-fw-bouncer/
 ---
 name: crowdsec
 services:
@@ -23,8 +21,9 @@ services:
     image: crowdsecurity/crowdsec:v1.6.5
     container_name: crowdsec
     restart: unless-stopped
-    expose:
-      - 8080
+    ports:
+      # Host port 7080 for API access
+      - 7080:8080/tcp
     environment:
       PGID: "1000"
       # https://app.crowdsec.net/hub/collections
@@ -44,6 +43,10 @@ services:
     networks:
       - proxy
     labels:
+      traefik.enable: true
+      traefik.http.routers.crowdsec.rule: Host(`crowdsec.${MYDOMAIN}`)
+      traefik.http.routers.crowdsec.middlewares: localaccess@file
+      traefik.http.services.crowdsec.loadbalancer.server.port: 8080
       homepage.group: Security
       homepage.name: Crowdsec
       homepage.icon: crowdsec.png
