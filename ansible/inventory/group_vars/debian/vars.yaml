@@ -9,6 +9,8 @@ ssh_key_file: "~/.ssh/id_ed25519.pub"
 
 configure_hosts_file: true
 
+install_crowdsec_bouncer: false
+
 linuxbrew_use_installer: true
 linuxbrew_init_shell: true
 
