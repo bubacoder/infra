@@ -10,7 +10,7 @@
 name: homepage
 services:
   homepage:
-    image: ghcr.io/gethomepage/homepage:v1.0.3
+    image: ghcr.io/gethomepage/homepage:v1.0.4
     container_name: homepage
     restart: unless-stopped
     # Using Environment Secrets:
