@@ -24,7 +24,7 @@ services:
 
   authelia:
     container_name: authelia
-    image: authelia/authelia:4.38
+    image: authelia/authelia:4.39
     restart: unless-stopped
     environment:
       TZ: ${TIMEZONE}
