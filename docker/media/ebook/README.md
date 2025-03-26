@@ -18,19 +18,19 @@ Follow the instructions on https://pgaskin.net/NickelMenu/:
 
 ## Calibre-Web - Kobo Integration
 
-https://github.com/janeczku/calibre-web/wiki/Kobo-Integration
+Based on: [Calibre-Web - Kobo Integration](https://github.com/janeczku/calibre-web/wiki/Kobo-Integration)
 
-Basic configuration >> Feature Configuration page
+Open Calibre-Web -> Admin -> Edit Basic configuration -> Feature Configuration:
 - Enable Kobo sync checkbox: ON
 - Server External Port (for port forwarded API calls): 443
 - Click "Save"
 
-You can see latest device logs fromall apps in Settings - Logs or more specific app logs using the command line in SSH terminal
+You can see latest device logs from all apps in Settings - Logs or more specific app logs using the command line in SSH terminal
 
-The Kobo eReader.conf file found under the .kobo/Kobo directory on Kobo devices is used to configure which URL the device uses for syncing books. By default, the config file contains the following row:
+The Kobo `eReader.conf` file found under the `.kobo/Kobo` directory on Kobo devices is used to configure which URL the device uses for syncing books. By default, the config file contains the following row:
 
 `api_endpoint=https://storeapi.kobo.com`
 
-If the row does not exist it must be created under the [OneStoreServices] group.
+If the row does not exist it must be created under the `[OneStoreServices]` group.
 
-Users can generate a URL to sync with Calibre-Web instead by clicking the Create/View button under their Calibre-Web profile page.
+Users can generate a URL to sync with Calibre-Web instead by clicking the `Kobo Sync Token` -> `Create/View` button under their Calibre-Web profile page.
