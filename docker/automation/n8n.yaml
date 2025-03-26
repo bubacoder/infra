@@ -2,7 +2,7 @@
 #
 # 🏠 Home: https://n8n.io/  
 # Install: https://docs.n8n.io/hosting/installation/docker/  
-# Compose based on: https://github.com/n8n-io/n8n/commit/db5c587cc8690201c8715977b234f6d053b80897#diff-687bca9db184257d4d3b884ab2ac7dca4f357376bce6c3142241f20e24660e01
+# Compose based on: https://github.com/n8n-io/n8n-hosting/blob/main/docker-compose/withPostgres/docker-compose.yml
 ---
 name: n8n
 services:
