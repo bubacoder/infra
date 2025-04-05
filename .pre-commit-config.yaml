@@ -63,7 +63,7 @@ repos:
   # ansible-lint checks playbooks for practices and behavior that could potentially be improved and can fix some of the most common ones for you.
   # Add '-v' parameter to ansiblelint for verbose mode
   - repo: https://github.com/ansible-community/ansible-lint
-    rev: v25.1.3
+    rev: v25.2.1
     hooks:
       - id: ansible-lint
         files: ^ansible/
@@ -82,7 +82,7 @@ repos:
   # flake8 is a python tool that glues together pycodestyle, pyflakes, mccabe, and third-party plugins to check the style and quality of some python code.
   # Third-party scripts are excluded.
   - repo: https://github.com/PyCQA/flake8
-    rev: 7.1.2
+    rev: 7.2.0
     hooks:
       - id: flake8
         exclude: |
