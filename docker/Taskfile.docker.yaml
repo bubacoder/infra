@@ -24,6 +24,13 @@ tasks:
     cmds:
       - MODE=PULL docker/apply-local.sh
 
+  pull-update:
+    desc: Pull, update and restart containers, then show restarts
+    cmds:
+      - task: update
+      - task: pull
+      - task: show-restarts
+
   stop:
     desc: Stop configured containers
     cmds:
