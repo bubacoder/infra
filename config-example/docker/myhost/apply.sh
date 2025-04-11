@@ -7,6 +7,9 @@ set -e
 # shellcheck disable=SC2034,SC2046
 HOST_CONFIG_DIR=$(dirname $(realpath -s "$0"))
 
+# Create 'localhost' link
+(cd "$HOST_CONFIG_DIR/.." && ln -sf "$(hostname)/" "localhost")
+
 # If the config dir is within the infra repo
 DOCKER_STACKS_DIR=${HOST_CONFIG_DIR}/../../../docker/
 
