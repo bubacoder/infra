@@ -121,3 +121,14 @@ tasks:
     cmds:
       - cd config && tar -cjf "../infra-config-$(date +%Y-%m-%d_%H-%M-%S).tar.bz2" .
       - ls -lh ../infra-config-*.tar.bz2 | tail -n 5
+
+  get-offline-data:
+    desc: Download data files for offline use
+    dotenv:
+      - 'config/docker/.env'
+      - 'config/docker/localhost/.env'
+    cmds:
+      - scripts/get-offline-data-ollama.sh
+      - docker exec ollama ollama list
+      - scripts/get-offline-data-kiwix.sh $STORAGE_KIWIX
+      - ls -lh $STORAGE_KIWIX

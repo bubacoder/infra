@@ -58,6 +58,8 @@ docker_command() {
     mode="$mode_override"
   fi
 
+  echo # empty line for separation
+
   case "$mode" in
     UPDATE|PULL)
       echo ">>> Pulling $stack_dir/$service_name"
