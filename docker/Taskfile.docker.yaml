@@ -47,8 +47,9 @@ tasks:
       - docker image prune --all --force --filter "until=504h"
 
   show-restarts:
-    desc: Show containers restart events
+    desc: Show restarting containers and restart events
     cmds:
+      - docker container list --filter status=restarting
       - docker events --filter event=restart --since=60m
 
   # Note: Escape {{ .. }} in Go templates: {{` {{ .. }} `}}
