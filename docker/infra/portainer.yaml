@@ -9,7 +9,7 @@
 name: portainer
 services:
   portainer:
-    image: portainer/portainer-ce:2.28.1
+    image: portainer/portainer-ce:2.29.1
     container_name: portainer
     restart: unless-stopped
     # kics-scan ignore-block
