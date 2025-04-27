@@ -64,8 +64,9 @@ docker_command() {
     UPDATE|PULL)
       echo ">>> Pulling $stack_dir/$service_name"
       if grep -q "build:" "$yaml_file"; then
+        # Bake: https://docs.docker.com/guides/compose-bake/
         # shellcheck disable=SC2086
-        docker compose -f "$yaml_file" $env_file_args build --pull
+        COMPOSE_BAKE=true docker compose -f "$yaml_file" $env_file_args build --pull
       else
         # shellcheck disable=SC2086
         docker compose -f "$yaml_file" $env_file_args pull
