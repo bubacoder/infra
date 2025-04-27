@@ -16,7 +16,7 @@
 name: grafana
 services:
   grafana:
-    image: grafana/grafana-oss:11.6.0
+    image: grafana/grafana-oss:11.6.1
     container_name: grafana
     restart: unless-stopped
     user: "0:0"
