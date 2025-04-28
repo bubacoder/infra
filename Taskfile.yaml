@@ -124,6 +124,12 @@ tasks:
 
   get-offline-data:
     desc: Download data files for offline use
+    cmds:
+      - task: get-offline-data-local
+      - task: get-offline-data-proxmox
+
+  get-offline-data-local:
+    desc: Download data files for offline use - files on localhost
     dotenv:
       - 'config/docker/.env'
       - 'config/docker/localhost/.env'
@@ -132,3 +138,13 @@ tasks:
       - docker exec ollama ollama list
       - scripts/get-offline-data-kiwix.sh $STORAGE_KIWIX
       - ls -lh $STORAGE_KIWIX
+
+  get-offline-data-proxmox:
+    desc: Download data files for offline use - files on proxmox
+    env:
+      PROXMOX: "root@proxmox"
+    cmds:
+      - ssh ${PROXMOX} "bash -s" -- --download-only < proxmox/create-openwrt-vm.sh
+      - ssh ${PROXMOX} "bash -s" -- --download-only < proxmox/create-ubuntu-server-vm.sh
+      # TODO Add Proxmox ISO
+      # TODO Add Linux Mint ISO

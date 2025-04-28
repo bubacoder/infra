@@ -27,6 +27,8 @@ readonly MAX_MEMORY_SIZE=4096 # MB
 readonly MIN_MEMORY_SIZE=1024 # MB (memory ballooning)
 readonly DISK_SIZE=256 # GB (thin provisioned)
 
+# Flag to control download-only behavior
+DOWNLOAD_ONLY=false
 
 get_authorized_keys_config() {
     AUTHORIZED_KEYS_FILE=~/.ssh/authorized_keys
@@ -102,15 +104,35 @@ create_vm() {
         qm set ${VMID} --ide0 local-lvm:cloudinit
         qm set ${VMID} --cicustom "vendor=local:snippets/${AUTOINSTALL_CONFIG_FILE}"
     fi
+
+    echo "VM created successfully!"
 }
 
 
-# Main
+# Parse command-line arguments
+for arg in "$@"; do
+    case $arg in
+        --download-only)
+            DOWNLOAD_ONLY=true
+            shift
+            ;;
+        *)
+            echo "Unknown argument: ${arg}"
+            exit 1
+            ;;
+    esac
+done
 
+
+# Main logic
 download_installer
+
+if [ "$DOWNLOAD_ONLY" = true ]; then
+    echo "--download-only flag provided. Exiting after downloading the installer."
+    exit 0
+fi
+
 create_vm
 
-echo "VM created successfully!"
-
-# start the VM
+# Start the VM
 # qm start ${VMID}
