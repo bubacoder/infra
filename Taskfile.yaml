@@ -136,8 +136,17 @@ tasks:
     cmds:
       - scripts/get-offline-data-ollama.sh
       - docker exec ollama ollama list
-      - scripts/get-offline-data-kiwix.sh $STORAGE_KIWIX
+      - |
+        scripts/get-offline-data-file.sh $STORAGE_KIWIX "https://download.kiwix.org/zim/wikipedia/" "wikipedia_hu_top_maxi_[0-9]{4}-[0-9]{2}\.zim"
+        scripts/get-offline-data-file.sh $STORAGE_KIWIX "https://download.kiwix.org/zim/wikipedia/" "wikipedia_en_top_maxi_[0-9]{4}-[0-9]{2}\.zim"
+        scripts/get-offline-data-file.sh $STORAGE_KIWIX "https://download.kiwix.org/zim/other/" "zimgit-post-disaster_en_[0-9]{4}-[0-9]{2}\.zim"
+        scripts/get-offline-data-file.sh $STORAGE_KIWIX "https://download.kiwix.org/zim/zimit/" "www.ready.gov_en_[0-9]{4}-[0-9]{2}\.zim"
       - ls -lh $STORAGE_KIWIX
+      - |
+        mkdir -p $STORAGE_KIWIX/app
+        scripts/get-offline-data-file.sh $STORAGE_KIWIX/app "https://download.kiwix.org/release/kiwix-android/" "kiwix-[0-9]+\.[0-9]+\.[0-9]+\.apk"
+        scripts/get-offline-data-file.sh $STORAGE_KIWIX/app "https://download.kiwix.org/release/kiwix-desktop/" "kiwix-desktop_windows_x64_[0-9]+\.[0-9]+\.[0-9]+\.zip"
+      - ls -lh $STORAGE_KIWIX/app
 
   get-offline-data-proxmox:
     desc: Download data files for offline use - files on proxmox
