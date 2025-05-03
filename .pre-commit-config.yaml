@@ -100,6 +100,6 @@ repos:
 
   # Run renovate-config-validator
   - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 39.21.1
+    rev: 40.1.1
     hooks:
       - id: renovate-config-validator
