@@ -27,7 +27,7 @@ resource "azurerm_public_ip" "vm" {
   resource_group_name = var.resourcegroup
 
   domain_name_label = var.vm_domain_name_label
-  allocation_method = "Dynamic"
+  allocation_method = "Static"
   sku               = "Standard"
 }
 
