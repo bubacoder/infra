@@ -7,102 +7,169 @@
     ":enablePreCommit",
     "helpers:pinGitHubActionDigests"
   ],
-  "assignees": ["bubacoder"],
-  "labels": ["renovate"],
+  "assignees": [
+    "bubacoder"
+  ],
+  "labels": [
+    "renovate"
+  ],
   "platformAutomerge": true,
   "docker-compose": {
-    "fileMatch": [
-      "^docker\/.*\\.yaml$"
+    "managerFilePatterns": [
+      "/^docker/.*\\.yaml$/"
     ]
   },
   "packageRules": [
     {
       "description": "Group updates by manager",
-      "matchManagers": ["gomod", "pip_requirements", "pre-commit", "github-actions"],
+      "matchManagers": [
+        "gomod",
+        "pip_requirements",
+        "pre-commit",
+        "github-actions"
+      ],
       "groupName": "{{manager}}"
     },
-
     {
       "description": "Enable automerge (automatic checks are in place)",
-      "schedule": ["before 4am on the first day instance on saturday"],
-      "matchManagers": ["pre-commit"],
+      "schedule": [
+        "before 4am on the first day instance on saturday"
+      ],
+      "matchManagers": [
+        "pre-commit"
+      ],
       "automerge": true
     },
     {
       "description": "Group all dependencies from the ansible directory; enable automerge (automatic checks are in place)",
-      "schedule": ["after 4am and before 8am on the first day instance on saturday"],
-      "matchFileNames": ["ansible/**"],
+      "schedule": [
+        "after 4am and before 8am on the first day instance on saturday"
+      ],
+      "matchFileNames": [
+        "ansible/**"
+      ],
       "groupName": "Ansible",
       "groupSlug": "ansible",
       "automerge": true
     },
     {
       "description": "No frequent updates are needed; manual verification",
-      "schedule": ["before 8am on the 2nd day instance on saturday"],
-      "matchManagers": ["terraform"],
+      "schedule": [
+        "before 8am on the 2nd day instance on saturday"
+      ],
+      "matchManagers": [
+        "terraform"
+      ],
       "groupName": "Terraform modules",
       "groupSlug": "terraform"
     },
     {
       "description": "Group all dependencies from the docs/web directory; no frequent updates are needed; manual verification",
-      "schedule": ["before 8am on the 3rd day instance on saturday"],
-      "matchFileNames": ["docs/web/**"],
+      "schedule": [
+        "before 8am on the 3rd day instance on saturday"
+      ],
+      "matchFileNames": [
+        "docs/web/**"
+      ],
       "groupName": "Documentation website dependencies",
       "groupSlug": "docs-web"
     },
     {
       "description": "Group minor and patch updates from the docker directory",
-      "schedule": ["after 8am on saturday"],
-      "matchFileNames": ["docker/**"],
-      "matchUpdateTypes": ["minor", "patch"],
+      "schedule": [
+        "after 8am on saturday"
+      ],
+      "matchFileNames": [
+        "docker/**"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "groupName": "Container images",
       "groupSlug": "docker-stacks"
     },
     {
       "description": "Do not group major updates from the docker directory; require approval",
-      "schedule": ["after 8am on saturday"],
-      "matchFileNames": ["docker/**"],
-      "matchUpdateTypes": ["major"],
+      "schedule": [
+        "after 8am on saturday"
+      ],
+      "matchFileNames": [
+        "docker/**"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
       "groupName": null,
       "dependencyDashboardApproval": true
     },
-
     {
       "description": "Disable invalid version tags",
-      "matchManagers": ["docker-compose", "dockerfile"],
-      "matchPackageNames": ["lscr.io/linuxserver/jellyfin"],
+      "matchManagers": [
+        "docker-compose",
+        "dockerfile"
+      ],
+      "matchPackageNames": [
+        "lscr.io/linuxserver/jellyfin"
+      ],
       "allowedVersions": "<2000"
     },
     {
       "description": "Disable invalid version tags",
-      "matchManagers": ["docker-compose", "dockerfile"],
-      "matchPackageNames": ["lscr.io/linuxserver/calibre-web"],
+      "matchManagers": [
+        "docker-compose",
+        "dockerfile"
+      ],
+      "matchPackageNames": [
+        "lscr.io/linuxserver/calibre-web"
+      ],
       "allowedVersions": "<2000"
     },
     {
       "description": "Disable invalid version tags",
-      "matchManagers": ["docker-compose", "dockerfile"],
-      "matchPackageNames": ["lscr.io/linuxserver/qbittorrent"],
+      "matchManagers": [
+        "docker-compose",
+        "dockerfile"
+      ],
+      "matchPackageNames": [
+        "lscr.io/linuxserver/qbittorrent"
+      ],
       "allowedVersions": "<5"
     },
     {
       "description": "Disable invalid version tags",
-      "matchManagers": ["docker-compose", "dockerfile"],
-      "matchPackageNames": ["lscr.io/linuxserver/calibre-web"],
+      "matchManagers": [
+        "docker-compose",
+        "dockerfile"
+      ],
+      "matchPackageNames": [
+        "lscr.io/linuxserver/calibre-web"
+      ],
       "allowedVersions": "<1"
     },
     {
       "description": "Disable invalid version tags",
-      "matchManagers": ["docker-compose", "dockerfile"],
-      "matchPackageNames": ["lscr.io/linuxserver/kasm"],
+      "matchManagers": [
+        "docker-compose",
+        "dockerfile"
+      ],
+      "matchPackageNames": [
+        "lscr.io/linuxserver/kasm"
+      ],
       "allowedVersions": "<1.120"
     },
-
     {
       "description": "Updates of renovatebot are too frequent - update only to major versions",
-      "matchManagers": ["pre-commit"],
-      "matchPackageNames": ["renovatebot/pre-commit-hooks"],
-      "matchUpdateTypes": ["minor", "patch"],
+      "matchManagers": [
+        "pre-commit"
+      ],
+      "matchPackageNames": [
+        "renovatebot/pre-commit-hooks"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "enabled": false
     }
   ]
