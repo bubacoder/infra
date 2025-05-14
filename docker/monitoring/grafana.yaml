@@ -7,7 +7,8 @@
 #
 # 🏠 Home: https://grafana.com/grafana/  
 # 📦 Image: https://hub.docker.com/r/grafana/grafana-oss  
-# Getting Started: https://grafana.com/docs/grafana/latest/getting-started/getting-started/
+# Getting Started: https://grafana.com/docs/grafana/latest/getting-started/getting-started/  
+# New in v12: https://grafana.com/docs/grafana/latest/whatsnew/whats-new-in-v12-0/
 #
 # Recommended dashboards to import:
 # - https://grafana.com/grafana/dashboards/1860-node-exporter-full/
@@ -16,7 +17,7 @@
 name: grafana
 services:
   grafana:
-    image: grafana/grafana-oss:11.6.1
+    image: grafana/grafana-oss:12.0.0
     container_name: grafana
     restart: unless-stopped
     user: "0:0"
