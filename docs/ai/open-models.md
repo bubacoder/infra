@@ -9,6 +9,12 @@ Model libraries:
 - [Hugging Face](https://huggingface.co/)
 - [Ollama - Model Library](https://ollama.com/library/)
 
+Tools for limited GPU resources:
+- [LLM RAM Calculator](https://llm-calc.rayfernando.ai/)
+- [GPU-Poor LLM Arena](https://huggingface.co/spaces/k-mktr/gpu-poor-llm-arena) (models with maximum 14B parameters)
+
+TODO: Update the list of best models
+
 ### Models for generic chat / instruct (=instruction following)
 
 - [Mistral-7B-Instruct-v0.2](https://huggingface.co/mistralai/Mistral-7B-Instruct-v0.2)
@@ -18,6 +24,8 @@ Model libraries:
 - [DBRX by Databricks](https://ollama.com/library/dbrx)
 
 ### Optimized for Coding
+
+Note: As of 2025, general-purpose (proprietary) models are also excellent for coding. Check [Aider LLM Leaderboards](https://aider.chat/docs/leaderboards/).
 
 - [Code Llama by Meta](https://ai.meta.com/blog/code-llama-large-language-model-coding/)
 - [CodeGemma by Google](https://ai.google.dev/gemma/docs/codegemma)
