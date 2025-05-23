@@ -2,7 +2,7 @@
   "recommendations": [
     "editorconfig.editorconfig",
     "yzhang.markdown-all-in-one",
-    "ms-azuretools.vscode-docker",
+    "ms-azuretools.vscode-containers",
     "redhat.ansible",
     "redhat.vscode-yaml",
     "mhutchie.git-graph",
