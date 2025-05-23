@@ -157,3 +157,8 @@ tasks:
       - ssh ${PROXMOX} "bash -s" -- --download-only < proxmox/create-ubuntu-server-vm.sh
       # TODO Add Proxmox ISO
       # TODO Add Linux Mint ISO
+
+  show-remote-mounts:
+    desc: Display mounted SMB shares
+    cmds:
+      - mount | grep --color cifs
