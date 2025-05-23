@@ -161,4 +161,4 @@ tasks:
   show-remote-mounts:
     desc: Display mounted SMB shares
     cmds:
-      - mount | grep --color cifs
+      - findmnt -t cifs
