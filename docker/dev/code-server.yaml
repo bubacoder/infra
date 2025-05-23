@@ -3,6 +3,10 @@
 # 📦 Image: https://hub.docker.com/r/linuxserver/code-server  
 # 📜 Source: https://github.com/coder/code-server  
 # FAQ: https://github.com/coder/code-server/blob/main/docs/FAQ.md  
+#
+# Alternative: OpenVSCode Server
+# - https://github.com/gitpod-io/openvscode-server
+# - https://docs.linuxserver.io/images/docker-openvscode-server/
 ---
 name: code-server
 services:
