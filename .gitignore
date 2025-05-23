@@ -10,3 +10,6 @@ __pycache__/
 
 # Work-in-progress
 WIP/
+
+# Aider
+.aider*
