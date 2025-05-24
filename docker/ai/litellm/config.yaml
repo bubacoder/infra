@@ -12,21 +12,49 @@
 
 ---
 model_list:
+
+  # --- Via Anthropic API
+  # --- https://docs.anthropic.com/en/docs/about-claude/models/overview
+
   - model_name: claude-3-5-sonnet # RECEIVED MODEL NAME
     litellm_params: # All params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
       model: anthropic/claude-3-5-sonnet-latest # MODEL NAME sent to `litellm.completion()`
       api_key: "os.environ/ANTHROPIC_API_KEY" # Does os.getenv("ANTHROPIC_API_KEY")
 
-  # https://openrouter.ai/openai/gpt-4o-2024-11-20
+  - model_name: claude-3-7-sonnet
+    litellm_params:
+      model: anthropic/claude-3-7-sonnet-latest
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+
+  - model_name: claude-opus-4-0
+    litellm_params:
+      model: anthropic/claude-opus-4-0
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+
+  - model_name: claude-sonnet-4-0
+    litellm_params:
+      model: anthropic/claude-sonnet-4-0
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+
+  # --- Via Openrouter
+  # --- https://openrouter.ai/models
+
+  # https://openrouter.ai/openai/openai/gpt-4o
   - model_name: gpt-4o
     litellm_params:
-      model: openrouter/openai/gpt-4o-2024-11-20
+      model: openrouter/openai/gpt-4o
       api_key: "os.environ/OPENROUTER_API_KEY"
 
   # https://openrouter.ai/openai/gpt-4o-mini
   - model_name: gpt-4o-mini
     litellm_params:
       model: openrouter/openai/gpt-4o-mini
+      api_key: "os.environ/OPENROUTER_API_KEY"
+
+  # https://openrouter.ai/openai/o4-mini-high
+  - model_name: o4-mini-high
+    litellm_params:
+      model: openrouter/openai/o4-mini-high
       api_key: "os.environ/OPENROUTER_API_KEY"
 
   # https://openrouter.ai/meta-llama/llama-3.3-70b-instruct
@@ -47,12 +75,17 @@ model_list:
       model: openrouter/deepseek/deepseek-r1
       api_key: "os.environ/OPENROUTER_API_KEY"
 
+  # --- Local models
+  # --- https://ollama.com/search
+
+  # Local model - Phi 3.5
   - model_name: ollama-local-phi
     litellm_params:
       model: ollama_chat/phi3.5:3.8b
       api_base: "os.environ/LOCAL_OLLAMA_API_BASE"
       api_key: "none"
 
+  # Local model - Mistral 7b
   - model_name: ollama-mac-mistral
     litellm_params:
       model: ollama_chat/mistral:7b-instruct
