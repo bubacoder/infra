@@ -1,8 +1,8 @@
 # SearXNG is a free internet metasearch engine which aggregates results from various search services and databases.
 # Users are neither tracked nor profiled.
 #
-# https://github.com/searxng/searxng  
-# https://github.com/searxng/searxng-docker
+# Source: https://github.com/searxng/searxng  
+# Compose: https://github.com/searxng/searxng-docker
 ---
 name: searxng
 services:
@@ -48,12 +48,6 @@ services:
       SEARXNG_REDIS_URL: "redis://searxng-redis:6379/0"
       UWSGI_WORKERS: ${SEARXNG_UWSGI_WORKERS:-4}
       UWSGI_THREADS: ${SEARXNG_UWSGI_THREADS:-4}
-    cap_drop:
-      - ALL
-    cap_add:
-      - CHOWN
-      - SETGID
-      - SETUID
     logging:
       driver: "json-file"
       options:
