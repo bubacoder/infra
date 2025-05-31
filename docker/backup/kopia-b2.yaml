@@ -10,7 +10,7 @@
 name: kopia-b2
 services:
   kopia-b2:
-    image: kopia/kopia:latest # No semantic version tags are available
+    image: kopia/kopia:0.20.1
     container_name: kopia-b2
     restart: "unless-stopped"
     user: "0:0"
