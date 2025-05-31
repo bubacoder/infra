@@ -35,7 +35,7 @@ services:
 
   searxng:
     container_name: searxng
-    image: docker.io/searxng/searxng:latest
+    image: docker.io/searxng/searxng:2025.5.30-37d851f
     restart: unless-stopped
     volumes:
       - ${DOCKER_VOLUMES}/searxng:/etc/searxng
