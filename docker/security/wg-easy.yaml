@@ -6,12 +6,13 @@
 # Android - configure application exclusion, e.g. Android Auto: Open the Wireguard app, edit the profile, click "All Applications", select the application you want to exclude.
 #
 # 🏠 Home: https://www.wireguard.com/  
-# 📜 Source: https://github.com/WeeJeWel/wg-easy  
+# 📜 Source: https://github.com/wg-easy/wg-easy  
+# Migration Guide: [Migrate from v14 to v15](https://wg-easy.github.io/wg-easy/latest/advanced/migrate/from-14-to-15/)  
 ---
 name: wg-easy
 services:
   wg-easy:
-    image: ghcr.io/wg-easy/wg-easy:14
+    image: ghcr.io/wg-easy/wg-easy:14 # TODO Upgrade to 15.0.0
     container_name: wg-easy
     hostname: wireguard-easy
     restart: unless-stopped
