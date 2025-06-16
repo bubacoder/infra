@@ -71,6 +71,7 @@ up storage filebrowser
 down storage minio
 up storage webdav
 up storage bees
+up storage couchdb
 
 # Backup
 down backup kopia-nas # NAS

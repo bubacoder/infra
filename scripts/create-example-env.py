@@ -5,6 +5,7 @@ import sys
 SENSITIVE_VARS_TO_MASK = [
     'KEY',
     'PASSWORD',
+    'PASSPHRASE',
     'TOKEN',
     'SECRET',
     'SENSITIVE',
