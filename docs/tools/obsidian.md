@@ -20,7 +20,7 @@ https://obsidian.md/
   - The folders in your sidebar correspond directly to your file system
   - File names in Obsidian match the actual file names, making it easy to switch between editors and locate files
 
-### [Remotely Save](https://github.com/remotely-save/remotely-save)
+### Synchronization: [Remotely Save](https://github.com/remotely-save/remotely-save)
 
 > Yet another unofficial Obsidian plugin allowing users to synchronize notes between local device and the cloud service. Supports S3, Dropbox, OneDrive, webdav.
 
@@ -31,16 +31,29 @@ Backends available in the homelab repo:
 Configuration:
 - Vault name: Infra
 - Remote service type: Webdav
-- Server address: `https://webdav.<MYDOMAIN>.li`
+- Server address: `https://webdav.<MYDOMAIN>`
 - Username
 - Password
 
-### Alternative: [Self-hosted LiveSync](https://github.com/vrtmrz/obsidian-livesync)
+### Synchronization: [Self-hosted LiveSync](https://github.com/vrtmrz/obsidian-livesync)
 
 > Self-hosted LiveSync is a community-implemented synchronization plugin, available on every obsidian-compatible platform and using CouchDB or Object Storage (e.g., MinIO, S3, R2, etc.) as the server.
 
 Backends available in the homelab repo:
+- [CouchDB](https://github.com/apache/couchdb)
 - [MinIO](https://github.com/minio/minio) - S3 compatible
+
+Configuration:
+- Setup CouchDB: `docs/tools/obsidian-livesync/init-couchdb.sh`
+- Generate configuration URL: `docs/tools/obsidian-livesync/generate-setupuri.sh`
+  - Details of the process: [Setup a CouchDB server](https://github.com/vrtmrz/obsidian-livesync/blob/main/docs/setup_own_server.md)
+- Configure Obsidian:
+  - Install and enable the "Self-hosted LiveSync" plugin
+  - On the "Welcome to Self-hosted LiveSync" screen, "Do you have Setup URL?" answer "Yes, I have"
+  - Paste the generated configuration URL (obsidian://setuplivesync?settings=.....) and passphrase
+  - Confirm importing the configuration
+  - Reload app without saving
+
 
 ### [Excalidraw](https://github.com/zsviczian/obsidian-excalidraw-plugin)
 
