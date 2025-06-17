@@ -18,7 +18,6 @@ if [ ! -d "$DOCKER_STACKS_DIR" ]; then
   DOCKER_STACKS_DIR=${HOST_CONFIG_DIR}/../../../infra/docker/
 fi
 
-# shellcheck disable=SC1091
 source "${DOCKER_STACKS_DIR}/common.sh"
 
 
@@ -35,6 +34,7 @@ up security authelia
 up security wg-easy
 up security cloudflared
 up security endlessh
+up security watchyourlan
 
 # Dashboard
 up dashboard homepage
@@ -80,7 +80,7 @@ up backup kopia-b2 # NAS
 # Dev
 up dev code-server
 down dev gitlab
-down dev jupyter-notebook
+up dev jupyter-notebook
 
 # Tools
 up tools homelab-docs
@@ -118,6 +118,7 @@ up arr flaresolverr
 
 # Personal
 up personal personal-web
+up personal tales
 
 
 ### Common code ###
