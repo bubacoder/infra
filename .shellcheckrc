@@ -1,3 +1,6 @@
 # https://www.shellcheck.net/wiki/Ignore
 
-disable=SC2155 # Declare and assign separately to avoid masking return values.
+# SC2155: Declare and assign separately to avoid masking return values.
+# SC1091: Not following: (error message here)
+
+disable=SC2155,SC1091
