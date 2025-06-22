@@ -10,9 +10,12 @@ roles:
 
 # Install collections from Ansible Galaxy
 collections:
+  # Source: https://github.com/ansible-collections/community.general
   - name: community.general
-    version: 10.7.1
+    version: 11.0.0
+  # Source: https://github.com/ansible-collections/community.docker
   - name: community.docker
     version: 4.6.1
+  # Source: https://github.com/ansible-collections/ansible.posix
   - name: ansible.posix
     version: 2.0.0
