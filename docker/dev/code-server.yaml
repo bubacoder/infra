@@ -11,7 +11,7 @@
 name: code-server
 services:
   code-server:
-    image: lscr.io/linuxserver/code-server:4.100.3
+    image: lscr.io/linuxserver/code-server:4.101.2
     container_name: code-server
     hostname: code-server
     restart: unless-stopped
