@@ -159,6 +159,17 @@
       "allowedVersions": "<1.120"
     },
     {
+      "description": "Disable invalid version tags",
+      "matchManagers": [
+        "docker-compose",
+        "dockerfile"
+      ],
+      "matchPackageNames": [
+        "kopia/kopia"
+      ],
+      "allowedVersions": "<2000"
+    },
+    {
       "description": "Updates of renovatebot are too frequent - update only to major versions",
       "matchManagers": [
         "pre-commit"
