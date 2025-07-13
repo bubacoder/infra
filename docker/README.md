@@ -17,7 +17,7 @@ In the `config/docker` subfolder multiple Docker hosts can be defined.
 
 Configuration files:
 - Host-specific settings: `config/docker/<hostname>/.env` -> See [Setting Started -> Configure Docker environment files][setup] for more details. (These files are not committed to the repo - backup them separately!)
-- Configure which services to start (`up` function) or stop (`down` function): `config/docker/<hostname>/apply.sh`
+- Configure which services to start (`state: up`) or stop (`state: down`): `config/docker/<hostname>/services.yaml`
 
 ## Services
 
@@ -27,7 +27,7 @@ If possible, avoid any hardcoded configuration values in these files. Use enviro
 ## Start the services
 
 After configuration, execute on a Docker host to apply the local configuration (based on the hostname):
-`task docker:apply` or `docker/apply-local.sh`
+`task docker:apply` or `docker/labctl.py config apply`
 
 ## Updates
 

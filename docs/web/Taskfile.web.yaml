@@ -4,10 +4,7 @@ tasks:
   docker-command:
     internal: true
     cmds:
-      - |
-        cd docker
-        export HOST_CONFIG_DIR="../config/docker/$(hostname | tr '[:upper:]' '[:lower:]')"
-        bash -c "source common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
+      - docker/labctl.py service {{.COMMAND}} {{.SERVICE}}
 
   # Add parameters to 'docker build' for debugging: --progress=plain --no-cache
   build:
@@ -37,8 +34,7 @@ tasks:
       - task: build
       - task: docker-command
         vars:
-          STACK: tools
-          SERVICE: homelab-docs
+          SERVICE: tools/homelab-docs
           COMMAND: recreate
 
   clean:

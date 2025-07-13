@@ -53,7 +53,7 @@ Steps:
 - Clone the repository on a supported OS: `git clone <repository url>`
 - Install Ansible with: `ansible/bootstrap-ansible.sh`
 - Edit `ansible/inventory/inventory.yaml` and `ansible/playbooks/homelab.yaml`, include your host with `markosamuli.linuxbrew` and `debian_developer` roles
-- Run `docker/apply-local.sh`
+- Run `ansible/apply-homelab.sh`
 
 ### 3. Install Ubuntu Server VM (Docker host)
 
@@ -94,10 +94,10 @@ Sample folder structure:
 config/docker
 ├── .env
 ├── nas
-│   ├── apply.sh
+│   ├── services.yaml
 │   └── .env
 └── nest
-    ├── apply.sh
+    ├── services.yaml
     └── .env
 ```
 
@@ -109,10 +109,10 @@ TODO Describe the minimally required (core) service configuration
 
 ### 7. Start the containers
 
-Edit `config/docker/<hostname>/apply.sh` to select which services (stacks) should be started (`up` function)
-or stopped (`down` function).
+Edit `config/docker/<hostname>/services.yaml` to select which services (stacks) should be started (`state: up`)
+or stopped (`state: down`).
 
-To apply the changes run run `task docker:apply` or `config/docker/<hostname>/apply.sh`.
+To apply the changes run `task docker:apply` or `docker/labctl.py config apply`.
 
 ### 8. Configure the router
 

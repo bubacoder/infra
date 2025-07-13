@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DOCKER_VOLUMES="/srv/docker-volumes"
+DOCKER_VOLUMES="/srv/docker-volumes" # TODO configure
 BACKUP_FILE="docker-volumes-$(date +'%Y-%m-%d').tar.bz2"
 BACKUP_PATH="$HOME/$BACKUP_FILE"
 
@@ -11,7 +11,7 @@ stop_all_containers() {
 }
 
 start_selected_containers() {
-  ./apply-local.sh
+  "$(dirname "${BASH_SOURCE[0]}")/labctl.py" config apply
 }
 
 kopia_backup_docker_volumes() {
