@@ -97,10 +97,7 @@ tasks:
   docker-command:
     internal: true
     cmds:
-      - |
-        cd docker
-        export HOST_CONFIG_DIR="../config/docker/$(hostname | tr '[:upper:]' '[:lower:]')"
-        bash -c "source common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
+      - docker/labctl.py service {{.COMMAND}} {{.SERVICE}}
 
   get-public-ip:
     desc: Display public IP (ipinfo.io)

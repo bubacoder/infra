@@ -1,0 +1,172 @@
+# Docker service configuration for myhost
+---
+services:
+  - security:
+      - name: crowdsec
+        state: up
+      - name: traefik
+        state: up
+      - name: authelia
+        state: up
+      - name: wg-easy
+        state: up
+      - name: cloudflared
+        state: up
+      - name: endlessh
+        state: up
+      - name: watchyourlan
+        state: up
+
+  - dashboard:
+      - name: homepage
+        state: up
+
+  - infra:
+      - name: portainer
+        state: up
+      - name: adguardhome
+        state: up
+      - name: unifi-controller
+        state: up
+      - name: ddclient
+        state: up
+
+  - monitoring:
+      - name: scrutiny
+        state: up
+      - name: uptime-kuma
+        state: up
+      - name: prometheus
+        state: up
+      - name: grafana
+        state: up
+
+  - automation:
+      - name: homeassistant
+        state: up
+      - name: n8n
+        state: up
+      - name: olivetin
+        state: down
+
+  - media/video:
+      - name: jellyfin
+        state: up
+        note: Storage on NAS
+      - name: jellyfin-vue
+        state: up
+        note: Storage on NAS
+      - name: metube
+        state: up
+        note: Storage on NAS
+
+  - media/audio:
+      - name: navidrome
+        state: up
+        note: Storage on NAS
+
+  - media/ebook:
+      - name: calibre
+        state: up
+        note: Storage on NAS
+      - name: calibre-web
+        state: up
+        note: Storage on NAS
+      - name: kiwix-serve
+        state: up
+
+  - storage:
+      - name: syncthing
+        state: up
+        note: Storage on NAS
+      - name: filebrowser
+        state: up
+      - name: minio
+        state: down
+      - name: webdav
+        state: up
+      - name: bees
+        state: up
+      - name: couchdb
+        state: up
+
+  - backup:
+      - name: kopia-nas
+        state: down
+        note: Storage on NAS
+      - name: kopia-b2
+        state: up
+        note: Storage on NAS
+
+  - dev:
+      - name: code-server
+        state: up
+      - name: gitlab
+        state: down
+      - name: jupyter-notebook
+        state: up
+
+  - tools:
+      # - name: homelab-docs
+      #   state: up
+      - name: vaultwarden
+        state: up
+      - name: openspeedtest
+        state: up
+      - name: cyberchef
+        state: up
+      - name: guacamole
+        state: up
+      - name: kasm
+        state: up
+      - name: stirling-pdf
+        state: up
+      - name: searxng
+        state: up
+
+  - ai:
+      - name: ollama
+        state: up
+      - name: litellm
+        state: up
+      - name: open-webui
+        state: up
+      - name: open-webui-pipelines
+        state: up
+      - name: autogenstudio
+        state: up
+      - name: sillytavern
+        state: up
+      - name: qdrant
+        state: up
+
+  # - communication:
+  #     - name: matrix-synapse
+  #       state: down
+
+  - arr:
+      - name: radarr
+        state: up
+      - name: sonarr
+        state: up
+      - name: bazarr
+        state: up
+      # TODO replace with Lazy Librarian
+      # - name: readarr
+      #   state: up
+      - name: prowlarr
+        state: up
+      - name: jellyseerr
+        state: up
+      - name: flaresolverr
+        state: up
+
+  # - game:
+  #     - name: legendary-minecraft
+  #       state: down
+
+  - personal:
+      - name: personal-web
+        state: up
+      - name: tales
+        state: up

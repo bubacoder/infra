@@ -4,25 +4,22 @@ tasks:
   command:
     internal: true
     cmds:
-      - |
-        cd docker
-        export HOST_CONFIG_DIR="../config/docker/$(hostname | tr '[:upper:]' '[:lower:]')"
-        bash -c "source common.sh; {{.COMMAND}} {{.STACK}} {{.SERVICE}}"
+      - docker/labctl.py docker/labctl.py service {{.COMMAND}} {{.SERVICE}}
 
   apply:
     desc: Deploy locally configured containers
     cmds:
-      - docker/apply-local.sh
+      - docker/labctl.py config apply
 
   update:
     desc: Update and restart containers
     cmds:
-      - MODE=UPDATE docker/apply-local.sh
+      - docker/labctl.py config apply --mode=update
 
   pull:
     desc: Pull container images
     cmds:
-      - MODE=PULL docker/apply-local.sh
+      - docker/labctl.py config apply --mode=pull
 
   pull-update:
     desc: Pull, update and restart containers, then show restarts
@@ -34,7 +31,7 @@ tasks:
   stop:
     desc: Stop configured containers
     cmds:
-      - MODE=DOWN docker/apply-local.sh
+      - docker/labctl.py config apply --mode=down
 
   stop-all:
     desc: Stop all running containers
@@ -75,11 +72,11 @@ tasks:
     cmds:
       - scripts/create-example-env.py config/docker/.env > config-example/docker/.env
       - scripts/create-example-env.py config/docker/${MAIN_NODE}/.env > config-example/docker/myhost/.env
-      - cat config/docker/${MAIN_NODE}/apply.sh | sed "s/${MAIN_NODE}/myhost/g" > config-example/docker/myhost/apply.sh
+      - cat config/docker/${MAIN_NODE}/services.yaml | sed "s/${MAIN_NODE}/myhost/g" > config-example/docker/myhost/services.yaml
     sources:
       - config/docker/**/.env
-      - config/docker/**/apply.sh
+      - config/docker/**/services.yaml
     generates:
       - config-example/docker/.env
       - config-example/docker/myhost/.env
-      - config-example/docker/myhost/apply.sh
+      - config-example/docker/myhost/services.yaml
