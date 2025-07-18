@@ -1,0 +1,18 @@
+---
+# Markdown files to be included in the website
+# Fields: [source, target, weight]
+# - source: "filename" or "directory/"
+# - target: "filename" or "directory/"
+# - weight: in the menu structure
+locations:
+  - ["README.md", "_index.md", 0]
+  - ["docs/setup.md", "setup.md", 10]
+  - ["docs/usage.md", "usage.md", 20]
+  - ["docs/learning.md", "learning.md", 30]
+  - ["docs/ai/", "ai/", 40]
+  - ["ansible/README.md", "tools/ansible.md", 0]
+  - ["terraform/README.md", "tools/terraform.md", 0]
+  - ["proxmox/", "proxmox/", 60]
+  - ["docker/README.md", "docker/_index.md", 70]
+  - ["docs/tools/", "tools/", 75]
+  - ["docs/web/README.md", "docs.md", 80]
