@@ -6,6 +6,21 @@ tasks:
     cmds:
       - docker/labctl.py service {{.COMMAND}} {{.SERVICE}}
 
+  collect:
+    desc: Collect markdown and yaml files for the documentation site, copy them to docs/web/public/content
+    dotenv: ['config/docker/.env']
+    cmds:
+      - |
+        # build
+        SITE_DOMAIN=docs.${MYDOMAIN}
+        TAG=${SITE_DOMAIN}:collect
+        docker build -f docs/web/Dockerfile -t "${TAG}" --target collect --progress=plain --no-cache .
+        # export
+        site_container_id=$(docker create "${TAG}")
+        mkdir -p docs/web/public
+        docker cp ${site_container_id}:/src/content docs/web/public
+        docker rm ${site_container_id}
+
   # Add parameters to 'docker build' for debugging: --progress=plain --no-cache
   build:
     desc: Build documentation site nginx container
@@ -18,13 +33,14 @@ tasks:
         docker build -f docs/web/Dockerfile -t "${TAG}" --build-arg HUGO_BASEURL="${HUGO_BASEURL}" .
 
   export:
-    desc: Copy documentation site content from container to docs/web/public
+    desc: Copy documentation site content from container to docs/web/public/site
     dotenv: ['config/docker/.env']
     cmds:
       - |
         SITE_DOMAIN=docs.${MYDOMAIN}
         TAG=${SITE_DOMAIN}:latest
         site_container_id=$(docker create "${TAG}")
+        mkdir -p docs/web/public
         docker cp ${site_container_id}:/site docs/web/public
         docker rm ${site_container_id}
 
