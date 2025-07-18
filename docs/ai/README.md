@@ -24,7 +24,7 @@ HW performance benchmarks:
 
 ### Which model to choose?
 
--> See [models](models.md)
+-> See [Open Source LLMs](open-models.md)
 
 ## AI LLM Frameworks
 
