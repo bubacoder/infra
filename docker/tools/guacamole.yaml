@@ -9,7 +9,7 @@
 name: guacamole
 services:
   guacamole:
-    image: flcontainers/guacamole:1.5.5
+    image: flcontainers/guacamole:1.6.0
     container_name: guacamole
     restart: unless-stopped
     environment:
