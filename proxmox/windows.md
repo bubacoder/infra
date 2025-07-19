@@ -19,3 +19,13 @@
 
 **Installation:**
 Microsoft Store -> [App Installer](https://www.microsoft.com/p/app-installer/9nblggh4nns1) package.
+
+#### UniGetUI
+
+> The Graphical Interface for your package managers. Could be terribly described as a package manager manager to manage your package managers
+
+- [Homepage](https://www.marticliment.com/unigetui/)
+- [GitHub project](https://github.com/marticliment/UniGetUI)
+- Microsoft Store -> [UniGetUI](https://apps.microsoft.com/detail/xpfftq032ptphf)
+
+> The main goal of this project is to create an intuitive GUI for the most common CLI package managers for Windows 10 and 11, such as WinGet, Scoop, Chocolatey, PIP, NPM, .NET Tool, PowerShell Gallery and more. With this app, you can easily download, install, update, and uninstall any software published on the supported package managers — and much more!

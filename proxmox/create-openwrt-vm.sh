@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Deploy from adminhost: `ssh root@proxmox "bash -s" -- < create-openwrt-vm.sh`
+
 # OpenWRT version to install
 # Check latest version at: https://downloads.openwrt.org/releases/
 readonly OPENWRT_VERSION=24.10.1

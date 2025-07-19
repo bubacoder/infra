@@ -13,8 +13,11 @@
 ---
 model_list:
 
-  # --- Via Anthropic API
-  # --- https://docs.anthropic.com/en/docs/about-claude/models/overview
+  # --- Via Anthropic
+  #  LiteLLM provider: https://docs.litellm.ai/docs/providers/anthropic
+  #  Models: https://docs.anthropic.com/en/docs/about-claude/models/overview
+  #  Create API key: https://console.anthropic.com/settings/keys
+  #  Buy credits: https://console.anthropic.com/settings/billing
 
   - model_name: claude-3-5-sonnet # RECEIVED MODEL NAME
     litellm_params: # All params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
@@ -36,8 +39,21 @@ model_list:
       model: anthropic/claude-sonnet-4-0
       api_key: "os.environ/ANTHROPIC_API_KEY"
 
+  # --- Via Google
+  #  LiteLLM provider: https://docs.litellm.ai/docs/providers/gemini
+  #  Models: https://ai.google.dev/gemini-api/docs/models
+  #  Create API key: https://aistudio.google.com/apikey
+  #  Buy credits: https://aistudio.google.com/apikey -> "Set up billing"
+  - model_name: gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: "os.environ/GEMINI_API_KEY"
+
   # --- Via Openrouter
-  # --- https://openrouter.ai/models
+  #  LiteLLM provider: https://docs.litellm.ai/docs/providers/openrouter
+  #  Models: https://openrouter.ai/models
+  #  Create API Key: https://openrouter.ai/settings/keys
+  #  Buy credits: https://openrouter.ai/settings/credits
 
   # https://openrouter.ai/openai/openai/gpt-4o
   - model_name: gpt-4o
@@ -75,8 +91,9 @@ model_list:
       model: openrouter/deepseek/deepseek-r1
       api_key: "os.environ/OPENROUTER_API_KEY"
 
-  # --- Local models
-  # --- https://ollama.com/search
+  # --- Local models (Ollama)
+  #  LiteLLM provider: https://docs.litellm.ai/docs/providers/ollama#using-ollama-apichat
+  #  Models: https://ollama.com/search
 
   # Local model - Phi 3.5
   - model_name: ollama-local-phi
