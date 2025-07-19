@@ -24,8 +24,8 @@ tasks:
   pull-update:
     desc: Pull, update and restart containers, then show restarts
     cmds:
-      - task: update
       - task: pull
+      - task: update
       - task: show-restarts
 
   stop:
