@@ -103,3 +103,5 @@ repos:
     rev: 41.1.4
     hooks:
       - id: renovate-config-validator
+        # TODO Old nodeenv (v0.13.4) does not support "lts" - remove after Ubuntu upgrade
+        language_version: "22.17.1"
