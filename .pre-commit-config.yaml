@@ -29,7 +29,7 @@ repos:
   # https://docs.kics.io/latest/commands/
   # Ignoring errors: https://docs.kics.io/latest/running-kics/#using_commands_on_scanned_files_as_comments
   - repo: https://github.com/Checkmarx/kics
-    rev: v2.1.10
+    rev: v2.1.11
     hooks:
       - id: kics-scan
         # TODO solve the high severity issues first
@@ -46,7 +46,7 @@ repos:
 
   # pre-commit git hooks to take care of Terraform configurations
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.99.4
+    rev: v1.99.5
     hooks:
       - id: terraform_fmt
         files: ^terraform/
