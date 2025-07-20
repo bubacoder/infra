@@ -1,0 +1,10 @@
+// https://code.visualstudio.com/docs/copilot/chat/mcp-servers
+
+{
+  "servers": {
+    // The "servers" section defines the MCP servers you want to use.
+    "homelab-infra": {
+        "url": "http://127.0.0.1:9876/mcp/"
+    }
+  }
+}
