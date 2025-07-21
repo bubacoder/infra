@@ -17,9 +17,9 @@
           href: https://portal.azure.com/
 
 - Docs:
-    - HomeServers Doc:
-        - abbr: DOC
-          href: https://docs.google.com/document/d/1HqpccyslwNdUV7VZWK4-lWE5nGbsXb8iFa_9x0J2xmg/edit
+    - Infra (on GitHub):
+        - abbr: GH
+          href: https://bubacoder.github.io/infra/
     - r/selfhosted:
         - abbr: R/S
           href: https://www.reddit.com/r/selfhosted/
