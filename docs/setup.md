@@ -39,6 +39,7 @@ The repository includes a [devcontainer](https://code.visualstudio.com/docs/devc
 Using Visual Studio Code, the [Dev Containers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) and Docker the development (e.g. adding more services, building the documentation) and administration tasks (e.g. running an Ansible playbook) can be performed on any environment without additional software installation.
 
 Follow the [Dev Containers tutorial](https://code.visualstudio.com/docs/devcontainers/tutorial) to get started.
+For troubleshooting, tips and tricks see [Dev Containers](../.devcontainer/README.md).
 
 Note: the resulting container image is pretty large (4+ GB) as it includes all software configured in `ansible/inventory/group_vars/debian/vars.yaml`.
 
