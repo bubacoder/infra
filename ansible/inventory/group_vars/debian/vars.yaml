@@ -41,6 +41,7 @@ dev_apt_packages:
   - make
   - python3-pip
   - python3-venv
+  - pipx
   - pre-commit
   - shellcheck
   - tshark
