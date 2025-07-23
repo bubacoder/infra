@@ -1,10 +1,51 @@
 // https://code.visualstudio.com/docs/copilot/chat/mcp-servers
 
 {
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "github-personal-access-token",
+      "description": "GitHub personal access token",
+      "password": true
+    },
+    {
+      "type": "promptString",
+      "id": "postgresql-database-url",
+      "description": "PostgreSQL database URL (e.g. postgres://user:password@localhost:5432/dbname)",
+      "password": true
+    }
+  ],
   "servers": {
-    // The "servers" section defines the MCP servers you want to use.
     "homelab-infra": {
-        "url": "http://127.0.0.1:9876/mcp/"
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--directory", "scripts/task-mcp", "server.py"]
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "github": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${input:github-personal-access-token}"
+      }
+    },
+    "postgres": {
+      "type": "stdio",
+      "command": "docker",
+      "args": ["run", "--rm", "-i", "-e", "POSTGRES_URL", "docker.io/mcp/postgres:latest", "${input:postgresql-database-url}"],
+      "env": {
+        "POSTGRES_URL": "${input:postgresql-database-url}"
+      }
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"]
     }
   }
 }
