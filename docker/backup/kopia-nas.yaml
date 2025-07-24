@@ -10,7 +10,7 @@
 name: kopia-nas
 services:
   kopia-nas:
-    image: kopia/kopia:0.20.1
+    image: kopia/kopia:0.21.1
     container_name: kopia-nas
     restart: "unless-stopped"
     user: "0:0"
