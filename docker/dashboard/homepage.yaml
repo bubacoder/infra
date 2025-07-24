@@ -2,7 +2,7 @@
 #
 # 🏠 Home: https://gethomepage.dev/  
 # 📜 Source: https://github.com/gethomepage/homepage/  
-# Docker integration: https://gethomepage.dev/en/installation/docker/  
+# Docker integration: https://gethomepage.dev/installation/docker/
 #
 # Dashboard Icons: https://github.com/homarr-labs/dashboard-icons/  
 # Search for Dashboard Icons: https://andrzej-zuralovic.github.io/dashboard-icons-searcher/
@@ -13,9 +13,11 @@ services:
     image: ghcr.io/gethomepage/homepage:v1.4.0
     container_name: homepage
     restart: unless-stopped
-    # Using Environment Secrets:
-    #  https://gethomepage.dev/latest/installation/docker/#using-environment-secrets
     environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      # Using Environment Secrets:
+      #  https://gethomepage.dev/latest/installation/docker/#using-environment-secrets
       HOMEPAGE_VAR_TIMEZONE: ${TIMEZONE}
       HOMEPAGE_VAR_MYDOMAIN: ${MYDOMAIN}
       HOMEPAGE_VAR_CITY: ${LOCATION_CITY:-""}
@@ -23,22 +25,40 @@ services:
       HOMEPAGE_VAR_LONGITUDE: ${LOCATION_LONGITUDE:-""}
       # https://gethomepage.dev/installation/#homepage_allowed_hosts
       HOMEPAGE_ALLOWED_HOSTS: home.${MYDOMAIN}
-      # TODO improve security: https://gethomepage.dev/en/installation/docker/
-      # PUID: ${PUID}
-      # PGID: ${PGID}
     volumes:
       - ./homepage/config:/app/config
       - ./homepage/icons:/app/public/icons
       - ${DOCKER_VOLUMES}/homepage/logs:/app/logs
-      # kics-scan ignore-line
-      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       - proxy
+    depends_on:
+      - dockerproxy
     labels:
       traefik.enable: true
       traefik.http.routers.homepage.rule: Host(`home.${MYDOMAIN}`)
       traefik.http.routers.homepage.middlewares: localaccess@file
       traefik.http.services.homepage.loadbalancer.server.port: 3000
+
+  # Due to security concerns with exposing the docker socket directly, you can use a
+  #  docker-socket-proxy container to expose the docker socket on a more restricted and secure API.
+  #  https://gethomepage.dev/configs/docker/#using-docker-socket-proxy
+  dockerproxy:
+    image: ghcr.io/tecnativa/docker-socket-proxy:0.3.0
+    container_name: dockerproxy
+    restart: unless-stopped
+    environment:
+      - CONTAINERS=1 # Allow access to viewing containers
+      - SERVICES=1 # Allow access to viewing services (necessary when using Docker Swarm)
+      - TASKS=1 # Allow access to viewing tasks (necessary when using Docker Swarm)
+      - POST=0 # Disallow any POST operations (effectively read-only)
+    volumes:
+      # kics-scan ignore-line
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    # Enable only if access is needed from localhost
+    # ports:
+    #   - 127.0.0.1:2375:2375
+    networks:
+      - proxy
 
 networks:
   proxy:
