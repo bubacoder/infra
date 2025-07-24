@@ -1,12 +1,30 @@
 ---
-- name: Install aptitude
+# Workaround - https://github.com/ansible/ansible/issues/79206
+- name: Check if apt cache has ever been updated before
+  ansible.builtin.stat:
+    path: /var/lib/apt/lists/partial
+  register: apt_dir_partial
+
+- name: Ensure /var/lib/apt/lists exists
+  ansible.builtin.file:
+    path: /var/lib/apt/lists
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: not apt_dir_partial.stat.exists
+
+- name: Update apt cache for the very first time
   ansible.builtin.apt:
-    name: aptitude
-    state: present
+    update_cache: true
+  when: not apt_dir_partial.stat.exists
+
+- name: Apt update
+  ansible.builtin.apt:
     update_cache: true
     cache_valid_time: 28800 # 8h
 
-- name: Apt update & upgrade
+- name: Apt upgrade
   ansible.builtin.apt:
     upgrade: true
     autoremove: true
