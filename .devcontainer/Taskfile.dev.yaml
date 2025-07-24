@@ -35,11 +35,11 @@ tasks:
       - docker images {{.CONTAINER_NAME}}
 
   run-debian:
-    desc: Run Debian-based dev & admin container
+    desc: Run Debian-based dev & admin container (interactive)
     cmds:
       - docker run -it -v .:/home/admin/repos/infra {{.CONTAINER_NAME}}:debian
 
   run-ubuntu:
-    desc: Run Ubuntu-based dev & admin container
+    desc: Run Ubuntu-based dev & admin container (interactive)
     cmds:
       - docker run -it -v .:/home/admin/repos/infra {{.CONTAINER_NAME}}:ubuntu

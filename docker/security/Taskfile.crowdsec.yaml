@@ -2,7 +2,7 @@ version: '3'
 
 tasks:
   collections:
-    desc: CrowdSec - List collection(s)
+    desc: CrowdSec - List collections
     cmds:
       - docker exec crowdsec cscli collections list
 
@@ -22,7 +22,7 @@ tasks:
       - docker exec crowdsec cscli alerts list
 
   metrics:
-    desc: CrowdSec - Fetch metrics from the prometheus server
+    desc: CrowdSec - Fetch metrics from the Prometheus server
     cmds:
       - docker exec crowdsec cscli metrics
 

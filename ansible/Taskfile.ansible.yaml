@@ -2,11 +2,11 @@ version: '3'
 
 tasks:
   apply-homelab:
-    desc: Run 'homelab' Ansible playbook
+    desc: Run 'homelab' Ansible playbook (apply configuration to local servers)
     cmds:
       - ansible/apply-homelab.sh
 
   apply-cloud:
-    desc: Run 'cloud' Ansible playbook
+    desc: Run 'cloud' Ansible playbook (apply configuration to cloud servers)
     cmds:
       - ansible/apply-cloud.sh

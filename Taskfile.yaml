@@ -62,13 +62,13 @@ tasks:
       - docker run --rm -v .:/usr/src/app -e LOG_LEVEL=debug renovate/renovate --platform local
 
   clean:
-    desc: Clear generated content and cache data
+    desc: Clear generated files and cache data
     cmds:
       - task: docs:clean
       - cd terraform && make clean
 
-  compsize:
-    desc: Show btrfs compression stats
+  btrfs-compsize:
+    desc: Show btrfs compression statistics
     silent: true
     cmds:
       - |
@@ -84,13 +84,13 @@ tasks:
         sudo compsize -x /
 
   star-github-repos:
-    desc: Add star to all referenced GitHub repos
+    desc: Add star to all GitHub repositories referenced in documentation/configuration
     dotenv: ['config/docker/.env']
     preconditions:
       - sh: "[ ! -z \"${GITHUB_API_TOKEN}\" ]"
         msg: GITHUB_API_TOKEN environment variable must be set (exported)
     cmds:
-      - scripts/github-extract-links.py . | sort | uniq | scripts/github-star-repo.py`
+      - scripts/github-extract-links.py . | sort | uniq | scripts/github-star-repo.py
 
   ### Operations-related tasks
 
@@ -100,12 +100,12 @@ tasks:
       - docker/labctl.py service {{.COMMAND}} {{.SERVICE}}
 
   get-public-ip:
-    desc: Display public IP (ipinfo.io)
+    desc: Display the public IP of the server (using ipinfo.io)
     cmds:
       - curl -s https://ipinfo.io/ip
 
   versions:
-    desc: Show software version numbers
+    desc: Show version numbers of the installed software
     cmds:
       - lsb_release -a
       - uname -a
@@ -114,19 +114,20 @@ tasks:
       - docker --version || true
 
   backup-config:
-    desc: Compress the config directory
+    desc: Create a compressed backup of the configuration directory
     cmds:
-      - cd config && tar -cjf "../infra-config-$(date +%Y-%m-%d_%H-%M-%S).tar.bz2" .
-      - ls -lh ../infra-config-*.tar.bz2 | tail -n 5
+      - mkdir -p ../infra-config-backup
+      - cd config && tar -cjf "../infra-config-backup/infra-config-$(date +%Y-%m-%d_%H-%M-%S).tar.bz2" .
+      - ls -lh ../infra-config-backup/infra-config-*.tar.bz2 | tail -n 5
 
   get-offline-data:
-    desc: Download data files for offline use
+    desc: Download data files for offline use (stored both local and on Proxmox)
     cmds:
       - task: get-offline-data-local
       - task: get-offline-data-proxmox
 
   get-offline-data-local:
-    desc: Download data files for offline use - files on localhost
+    desc: Download data files for offline use (files stored on localhost)
     dotenv:
       - 'config/docker/.env'
       - 'config/docker/localhost/.env'
@@ -146,7 +147,7 @@ tasks:
       - ls -lh $STORAGE_KIWIX/app
 
   get-offline-data-proxmox:
-    desc: Download data files for offline use - files on proxmox
+    desc: Download data files for offline use (files stored on proxmox host)
     env:
       PROXMOX: "root@proxmox"
     cmds:
@@ -156,6 +157,6 @@ tasks:
       # TODO Add Linux Mint ISO
 
   show-remote-mounts:
-    desc: Display mounted SMB shares
+    desc: Display mounted SMB network shares
     cmds:
       - findmnt -t cifs

@@ -54,6 +54,6 @@ tasks:
           COMMAND: recreate
 
   clean:
-    desc: Clear generated content
+    desc: Clear generated documentation content
     cmds:
       - rm -rf docs/web/public/

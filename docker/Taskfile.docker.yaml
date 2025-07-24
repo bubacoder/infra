@@ -7,7 +7,7 @@ tasks:
       - docker/labctl.py docker/labctl.py service {{.COMMAND}} {{.SERVICE}}
 
   apply:
-    desc: Deploy locally configured containers
+    desc: Deploy configured containers
     cmds:
       - docker/labctl.py config apply
 
@@ -39,7 +39,7 @@ tasks:
       - docker stop $(docker ps -a -q)
 
   prune:
-    desc: Remove unused and dangling images
+    desc: Remove unused and dangling container images
     cmds:
       - docker image prune --all --force --filter "until=504h"
 
@@ -57,7 +57,7 @@ tasks:
 
   # `docker system df -v` and `ncdu` is also useful
   du:
-    desc: Show docker disk usage
+    desc: Show Docker disk usage
     cmds:
       - sudo du -x -h --max-depth=1 /var/lib/docker
 
@@ -67,7 +67,7 @@ tasks:
       - docker run --rm -v /var/run/docker.sock:/var/run/docker.sock containrrr/watchtower --run-once --cleanup --monitor-only
 
   create-example-env:
-    desc: Create/update Docker example environment files
+    desc: Create/update Docker example environment configuration files
     dotenv: ['config/docker/.env']
     cmds:
       - scripts/create-example-env.py config/docker/.env > config-example/docker/.env
