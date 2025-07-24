@@ -2,7 +2,7 @@ version: '3'
 
 tasks:
   ollama-port-forward:
-    desc: Forward Ollama port
+    desc: Forward remote Ollama port to localhost
     dotenv: ['config/docker/.env']
     env:
       REMOTE_PORT: 11444
