@@ -4,7 +4,7 @@
 name: homelab-docs
 services:
   homelab-docs:
-    image: docs.${MYDOMAIN}:latest
+    image: local/docs.${MYDOMAIN}:latest
     container_name: homelab-docs
     restart: unless-stopped
     networks:
