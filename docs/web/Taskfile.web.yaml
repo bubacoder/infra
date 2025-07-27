@@ -13,7 +13,7 @@ tasks:
       - |
         # build
         SITE_DOMAIN=docs.${MYDOMAIN}
-        TAG=${SITE_DOMAIN}:collect
+        TAG=local/${SITE_DOMAIN}:collect
         docker build -f docs/web/Dockerfile -t "${TAG}" --target collect --progress=plain --no-cache .
         # export
         site_container_id=$(docker create "${TAG}")
@@ -29,7 +29,7 @@ tasks:
       - |
         SITE_DOMAIN=docs.${MYDOMAIN}
         HUGO_BASEURL=https://${SITE_DOMAIN}
-        TAG=${SITE_DOMAIN}:latest
+        TAG=local/${SITE_DOMAIN}:latest
         docker build -f docs/web/Dockerfile -t "${TAG}" --build-arg HUGO_BASEURL="${HUGO_BASEURL}" .
 
   export:

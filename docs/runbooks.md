@@ -3,7 +3,7 @@
 ## Reinstall a Docker host
 
 Note: This method is a bit unconventional but simplifies the deployment (and possible rollback) procedure a lot.
-A new VM is used to deploy the OS, then the new system disk is attached to the old VM, which is already configured.
+A new VM is used to deploy the OS, then the new system disk is attached to the old VM, which is already configured (MAC address, start at boot, start order, protection, USB devices...)
 
 Hosts involved:
 - `OLD`: perform on the old host
@@ -14,7 +14,7 @@ Steps:
 
 - OLD: Install the new host using `proxmox/create-ubuntu-server-vm.sh`
 - OLD: Apply ansible using `ansible/apply-homelab.sh`
-- OLD: Transfer container images to save bandwidth (Optional, see: [Docker](docker))
+- OLD: Transfer container images to save bandwidth (Optional, see: [Docker](../docker/README.md))
 
 Optional: copy **Server Host Key**, an RSA, ED25519, or ECDSA private key
 
