@@ -18,3 +18,8 @@ output "tls_private_key" {
 output "public_key_fingerprint_sha256" {
   value = tls_private_key.vm_ssh.public_key_fingerprint_sha256
 }
+
+output "identity_principal_id" {
+  value       = azurerm_linux_virtual_machine.vm.identity[0].principal_id
+  description = "Principal ID of the VM's managed identity"
+}

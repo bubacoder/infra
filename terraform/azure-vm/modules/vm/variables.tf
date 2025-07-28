@@ -66,9 +66,16 @@ variable "admin_source_address" {
   type        = string
 }
 
-variable "git_credentials" {
-  description = "Git credentials for accessing the infrastructure repository. Will be written to ~/.git-credentials"
+variable "key_vault_id" {
+  description = "Id of the Azure Key Vault containing the git credentials"
   type        = string
+  sensitive   = true
+}
+
+variable "git_credentials_secret_id" {
+  description = "Id of the git credentials secret"
+  type        = string
+  sensitive   = true
 }
 
 variable "repo_url" {

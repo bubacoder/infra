@@ -8,7 +8,7 @@ SHELL := /bin/bash
 # Select "terraform" or "tofu"
 TFBIN := terraform
 # Use "." for the current directory
-CONFIG_DIR := ../config/terraform
+CONFIG_DIR := ../../config/terraform/azure-vm
 
 TFPLAN := $(CONFIG_DIR)/tfplan
 VAR_FILE := $(CONFIG_DIR)/infra.tfvars
@@ -21,7 +21,8 @@ VM_FQDN ?= $(shell ${TFBIN} output -raw vm_fqdn)
 VM_ADMIN_USER := azureuser
 
 OWN_PUBLIC_IP ?= $(shell curl -s https://ipinfo.io/ip)
-GIT_CREDENTIALS ?= $(shell cat ~/.git-credentials | head -n 1)
+# Read git credentials securely, do not expose in shell history or environment
+GIT_CREDENTIALS ?= $(shell { cat ~/.git-credentials 2>/dev/null || true; } | head -n 1)
 REPO_URL ?= $(shell git config --get remote.origin.url)
 VAR_PARAMETERS ?= -var-file="${VAR_FILE}" -var="admin_source_address=${OWN_PUBLIC_IP}" -var="git_credentials=${GIT_CREDENTIALS}" -var="repo_url=${REPO_URL}"
 
@@ -71,7 +72,17 @@ connect-vm:
 
 .PHONY: config-vm
 config-vm:
-	cd ../ansible; ./apply-cloud.sh
+	cd ../../ansible; ./apply-cloud.sh
+
+.PHONY: keyvault-info
+keyvault-info:
+	@echo "Key Vault Name: ${shell ${TFBIN} output -raw key_vault_name}"
+	@echo ""
+	@echo "=== How to retrieve git credentials from Key Vault ==="
+	@echo "1. Login to Azure: az login"
+	@echo "2. Get credentials: az keyvault secret show --vault-name \"$$(${TFBIN} output -raw key_vault_name)\" --name \"git-credentials\" --query \"value\" -o tsv"
+	@echo ""
+	@echo "For security, credentials are now stored securely in Azure Key Vault"
 
 .PHONY: start-vm
 start-vm:

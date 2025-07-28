@@ -1,5 +1,5 @@
 terraform {
   backend "local" {
-    path = "../config/terraform/terraform.tfstate"
+    path = "../../config/terraform/azure-vm/terraform.tfstate"
   }
 }

@@ -73,6 +73,7 @@ variable "admin_source_address" {
 variable "git_credentials" {
   description = "Git credentials for accessing the infrastructure repository. Will be written to ~/.git-credentials"
   type        = string
+  sensitive   = true
 }
 
 variable "repo_url" {
