@@ -96,6 +96,7 @@ The infrastructure is designed around the following components:
    - `docker/`: Contains Docker Compose definitions for all services
    - `docs/`: Documentation and usage instructions
    - `terraform/`: IaC for cloud provisioning
+     - `azure-vm/`: Azure Virtual Machine deployment with CloudInit
    - `proxmox/`: Scripts for VM creation and management
    - `scripts/`: Utility scripts for various tasks
    - `config/`: Host-specific configuration (not in repository)
@@ -129,6 +130,7 @@ Key directories and their purposes:
 │   └── monitoring/  # Monitoring services
 ├── docs/            # Documentation
 ├── terraform/       # Terraform configurations
+│   └── azure-vm/    # Azure VM deployment with CloudInit
 └── scripts/         # Utility scripts
 ```
 
