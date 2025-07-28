@@ -11,6 +11,9 @@ configure_hosts_file: true
 
 install_crowdsec_bouncer: false
 
+# https://github.com/go-task/task/releases
+go_task_version: "v3.44.1"
+
 linuxbrew_use_installer: true
 linuxbrew_init_shell: true
 

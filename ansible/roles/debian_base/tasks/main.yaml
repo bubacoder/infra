@@ -13,9 +13,13 @@
 
 - name: Install Crowdsec iptables bouncer
   when: install_crowdsec_bouncer|default(false)|bool
-  ansible.builtin.import_tasks: 45-crowdsec.yaml
+  ansible.builtin.import_tasks: 50-crowdsec.yaml
+  become: true
+
+- name: Install go-task
+  ansible.builtin.import_tasks: 60-go-task.yaml
   become: true
 
 - name: Configure admin user
-  ansible.builtin.import_tasks: 50-user.yaml
+  ansible.builtin.import_tasks: 70-user.yaml
   become: true
