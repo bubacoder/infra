@@ -65,7 +65,7 @@ tasks:
     desc: Clear generated files and cache data
     cmds:
       - task: docs:clean
-      - cd terraform && make clean
+      - cd terraform/azure-vm && make clean
 
   btrfs-compsize:
     desc: Show btrfs compression statistics

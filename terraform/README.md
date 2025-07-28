@@ -30,15 +30,15 @@ Releases: https://github.com/opentofu/opentofu/releases
 | `terraform state list`          | List all resources in the Terraform state                                                   |
 | `terraform apply -replace "id"` | Force replacement of a resource                                                             |
 
-## Azure VM module
+## Azure VM module (terraform/azure-vm)
 
-The modules in the `terraform/modules` folder are implementing a Virtual Machine with the associated network setup and storage.
+The modules in the `terraform/azure-vm/modules` folder are implementing a Virtual Machine with the associated network setup and storage.
 This VM can be used to test/host the Docker services of this repo.
 
 **Usage:**
 
 1. Login to Azure account (without browser access on device): `az login --use-device-code`
-2. See the file `terraform/Makefile` for available `make` commands for deploying/connection/deleting the VM.
+2. See the file `terraform/azure-vm/Makefile` for available `make` commands for deploying/connection/deleting the VM.
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
