@@ -125,6 +125,11 @@ resource "azurerm_linux_virtual_machine" "vm" {
   boot_diagnostics {
     storage_account_uri = azurerm_storage_account.vm_storage_account.primary_blob_endpoint
   }
+
+  # Add system-assigned managed identity to the VM
+  identity {
+    type = "SystemAssigned"
+  }
 }
 
 resource "azurerm_virtual_machine_data_disk_attachment" "vm_data" {
@@ -132,4 +137,18 @@ resource "azurerm_virtual_machine_data_disk_attachment" "vm_data" {
   virtual_machine_id = azurerm_linux_virtual_machine.vm.id
   lun                = "10"
   caching            = "ReadWrite"
+}
+
+data "azurerm_client_config" "current" {}
+
+# Enable Key Vault access to the VM's managed identity
+resource "azurerm_key_vault_access_policy" "vm" {
+  key_vault_id = var.key_vault_id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = azurerm_linux_virtual_machine.vm.identity[0].principal_id
+
+  secret_permissions = [
+    "Get",
+    "List"
+  ]
 }

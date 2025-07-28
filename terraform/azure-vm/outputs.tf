@@ -18,3 +18,8 @@ output "vm_tls_private_key" {
 output "vm_public_key_fingerprint_sha256" {
   value = module.vm.public_key_fingerprint_sha256
 }
+
+output "key_vault_name" {
+  value       = local.keyvault_name
+  description = "The name of the Key Vault containing git credentials"
+}

@@ -15,9 +15,9 @@ data "cloudinit_config" "vm_config" {
     content_type = "text/x-shellscript"
     filename     = "repo-setup.sh"
     content = templatefile("${path.module}/cloud-init/repo-setup.sh.tpl", {
-      GIT_CREDENTIALS = var.git_credentials
-      REPO_URL        = var.repo_url
-      REPO_DIR        = var.repo_directory
+      GIT_CREDENTIALS_SECRET_ID = var.git_credentials_secret_id
+      REPO_URL                  = var.repo_url
+      REPO_DIR                  = var.repo_directory
     })
   }
 
