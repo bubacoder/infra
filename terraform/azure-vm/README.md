@@ -6,7 +6,10 @@ This VM can be used to test/host the Docker services of this repo.
 **Usage:**
 
 1. Login to Azure account (without browser access on device): `az login --use-device-code`
-2. See the file `terraform/azure-vm/Makefile` for available `make` commands for deploying/connection/deleting the VM.
+2. See the file `terraform/azure-vm/Taskfile.yaml` for available `task` commands for deploying/connection/deleting the VM.
+3. Execute commands like `task plan` (in this folder) or `task azure-vm:plan` (anywhere within the repo).
+
+Note: for the previous `Makefile` (which was replaced by `Taskfile`) see [MR #168](https://github.com/bubacoder/infra/pull/168).
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements

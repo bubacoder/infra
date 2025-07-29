@@ -1,0 +1,114 @@
+version: '3'
+
+vars:
+  TFBIN: terraform # Select "terraform" or "tofu"
+  CONFIG_DIR: ../../config/terraform/azure-vm
+  TFPLAN: '{{.CONFIG_DIR}}/tfplan'
+  VAR_FILE: '{{.CONFIG_DIR}}/infra.tfvars'
+  RESOURCE_GROUP: HomeInfra
+  VM_NAME: nest
+  VM_KEYFILE: ~/.ssh/id_rsa_azure_vm
+  VM_ADMIN_USER: azureuser
+
+  OWN_PUBLIC_IP:
+    sh: curl -s https://ipinfo.io/ip
+  GIT_CREDENTIALS:
+    sh: cat ~/.git-credentials 2>/dev/null | head -n 1 || true
+  REPO_URL:
+    sh: git config --get remote.origin.url
+  VM_FQDN:
+    sh: '{{.TFBIN}} output -raw vm_fqdn || echo ""'
+
+env:
+  TF_IN_AUTOMATION: 1
+  TF_VAR_admin_source_address: "{{.OWN_PUBLIC_IP}}"
+  TF_VAR_git_credentials: "{{.GIT_CREDENTIALS}}"
+  TF_VAR_repo_url: "{{.REPO_URL}}"
+
+tasks:
+  clean:
+    desc: Clean Terraform files and plans
+    cmds:
+      - find . -type d -name '.terraform' -exec rm -rf {} +
+      - rm -f {{.TFPLAN}}
+
+  docs:
+    desc: Update Terraform module documentation
+    cmds:
+      - echo 'Updating Terraform module documentation'
+      - find . -name 'README.md' -not -path '*/.terragrunt-cache/*' -execdir terraform-docs markdown table --output-file README.md --output-mode inject . \;
+
+  check:
+    desc: Validate Terraform configuration and run security checks
+    cmds:
+      - '{{.TFBIN}} init -backend=false'
+      - '{{.TFBIN}} validate'
+      - tfsec
+
+  plan:
+    desc: Create Terraform plan
+    cmds:
+      - '{{.TFBIN}} init'
+      - echo "{{.TFBIN}} plan..."
+      - '{{.TFBIN}} plan -var-file="{{.VAR_FILE}}" -out="{{.TFPLAN}}"'
+
+  apply:
+    desc: Apply Terraform plan and configure SSH key
+    deps: [plan]
+    cmds:
+      - echo "{{.TFBIN}} apply..."
+      - time {{.TFBIN}} apply --auto-approve "{{.TFPLAN}}"
+      - |
+        HOSTNAME=$({{.TFBIN}} output -raw vm_fqdn)
+        ssh-keygen -f ~/.ssh/known_hosts -R "$HOSTNAME" || true
+        {{.TFBIN}} output -raw vm_tls_private_key > {{.VM_KEYFILE}}
+        chmod 600 {{.VM_KEYFILE}}
+
+  destroy:
+    desc: Destroy all resources and remove VM key
+    cmds:
+      - echo "{{.TFBIN}} destroy..."
+      - '{{.TFBIN}} destroy --auto-approve -var-file="{{.VAR_FILE}}" && rm -f {{.VM_KEYFILE}}'
+
+  destroy-vm:
+    desc: Destroy only the VM instance and remove VM key
+    cmds:
+      - echo "{{.TFBIN}} destroy..."
+      - '{{.TFBIN}} destroy --auto-approve -var-file="{{.VAR_FILE}}" --target module.vm.azurerm_linux_virtual_machine.vm && rm -f {{.VM_KEYFILE}}'
+
+  connect-vm:
+    desc: SSH to the Azure VM
+    cmds:
+      - ssh -i {{.VM_KEYFILE}} {{.VM_ADMIN_USER}}@{{.VM_FQDN}}
+
+  config-vm:
+    desc: Run Ansible configuration on the Azure VM
+    cmds:
+      - cd ../../ansible; ./apply-cloud.sh
+
+  keyvault-info:
+    desc: Display Key Vault information and instructions
+    cmds:
+      - |
+        echo "Key Vault Name: $({{.TFBIN}} output -raw key_vault_name)"
+        echo ""
+        echo "=== How to retrieve git credentials from Key Vault ==="
+        echo "1. Login to Azure: az login"
+        echo "2. Get credentials: az keyvault secret show --vault-name \"$({{.TFBIN}} output -raw key_vault_name)\" --name \"git-credentials\" --query \"value\" -o tsv"
+        echo ""
+        echo "For security, git credentials are stored securely in Azure Key Vault"
+
+  start-vm:
+    desc: Start the Azure VM
+    cmds:
+      - az vm start -g {{.RESOURCE_GROUP}} -n {{.VM_NAME}}
+
+  stop-vm:
+    desc: Stop the Azure VM
+    cmds:
+      - az vm stop -g {{.RESOURCE_GROUP}} -n {{.VM_NAME}}
+
+  deallocate-vm:
+    desc: Deallocate the Azure VM (stops billing)
+    cmds:
+      - az vm deallocate -g {{.RESOURCE_GROUP}} -n {{.VM_NAME}}

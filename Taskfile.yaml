@@ -11,6 +11,9 @@ includes:
   crowdsec: ./docker/security/Taskfile.crowdsec.yaml
   docs: ./docs/web/Taskfile.web.yaml
   devcontainer: ./.devcontainer/Taskfile.dev.yaml
+  azure-vm:
+    taskfile: ./terraform/azure-vm/Taskfile.yaml
+    dir: ./terraform/azure-vm
 
 tasks:
   default:
@@ -65,7 +68,7 @@ tasks:
     desc: Clear generated files and cache data
     cmds:
       - task: docs:clean
-      - cd terraform/azure-vm && make clean
+      - task: azure-vm:clean
 
   btrfs-compsize:
     desc: Show btrfs compression statistics
