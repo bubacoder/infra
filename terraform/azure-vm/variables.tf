@@ -53,14 +53,14 @@ variable "vm_size" {
 
 # List of available values: az vm image list-offers -p "Canonical" -l "<location>" --output table
 variable "vm_ubuntu_server_offer" {
-  default     = "0001-com-ubuntu-server-jammy"
+  default     = "ubuntu-24_04-lts"
   description = "Offer of the VM"
   type        = string
 }
 
-# List of available values: az vm image list-skus -p "Canonical" -l "<location>" -f 0001-com-ubuntu-server-jammy --output table
+# List of available values: az vm image list-skus -p "Canonical" -l "<location>" -f ubuntu-24_04-lts --output table
 variable "vm_ubuntu_server_sku" {
-  default     = "22_04-lts-gen2"
+  default     = "server"
   description = "SKU of the VM"
   type        = string
 }
