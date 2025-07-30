@@ -1,0 +1,108 @@
+version: '3'
+
+vars:
+  TFBIN: terraform # Select "terraform" or "tofu"
+  CONFIG_DIR: ../../config/terraform/aws-vm
+  TFPLAN: '{{.CONFIG_DIR}}/tfplan'
+  VAR_FILE: '{{.CONFIG_DIR}}/infra.tfvars'
+  VM_NAME: nest
+  VM_KEYFILE: ~/.ssh/id_rsa_aws_vm
+  VM_ADMIN_USER: ec2-user
+
+  OWN_PUBLIC_IP:
+    sh: curl -s https://ipinfo.io/ip
+  GIT_CREDENTIALS:
+    sh: cat ~/.git-credentials 2>/dev/null | head -n 1 || true
+  REPO_URL:
+    sh: git config --get remote.origin.url
+  VM_FQDN:
+    sh: '{{.TFBIN}} output -raw vm_fqdn || echo ""'
+
+env:
+  TF_IN_AUTOMATION: 1
+  TF_VAR_admin_source_address: "{{.OWN_PUBLIC_IP}}"
+  TF_VAR_git_credentials: "{{.GIT_CREDENTIALS}}"
+  TF_VAR_repo_url: "{{.REPO_URL}}"
+
+tasks:
+  clean:
+    desc: Clean Terraform files and plans
+    cmds:
+      - find . -type d -name '.terraform' -exec rm -rf {} +
+      - rm -f {{.TFPLAN}}
+
+  docs:
+    desc: Update Terraform module documentation
+    cmds:
+      - echo 'Updating Terraform module documentation'
+      - find . -name 'README.md' -not -path '*/.terragrunt-cache/*' -execdir terraform-docs markdown table --output-file README.md --output-mode inject . \;
+
+  check:
+    desc: Validate Terraform configuration and run security checks
+    cmds:
+      - '{{.TFBIN}} init -backend=false'
+      - '{{.TFBIN}} validate'
+      - tfsec
+
+  plan:
+    desc: Create Terraform plan
+    cmds:
+      - '{{.TFBIN}} init'
+      - echo "{{.TFBIN}} plan..."
+      - '{{.TFBIN}} plan -var-file="{{.VAR_FILE}}" -out="{{.TFPLAN}}"'
+
+  apply:
+    desc: Apply Terraform plan and configure SSH key
+    deps: [plan]
+    cmds:
+      - echo "{{.TFBIN}} apply..."
+      - time {{.TFBIN}} apply --auto-approve "{{.TFPLAN}}"
+      - |
+        HOSTNAME=$({{.TFBIN}} output -raw vm_fqdn)
+        ssh-keygen -f ~/.ssh/known_hosts -R "$HOSTNAME" || true
+        {{.TFBIN}} output -raw vm_tls_private_key > {{.VM_KEYFILE}}
+        chmod 600 {{.VM_KEYFILE}}
+
+  destroy:
+    desc: Destroy all resources and remove VM key
+    cmds:
+      - echo "{{.TFBIN}} destroy..."
+      - '{{.TFBIN}} destroy --auto-approve -var-file="{{.VAR_FILE}}" && rm -f {{.VM_KEYFILE}}'
+
+  destroy-vm:
+    desc: Destroy only the VM instance and remove VM key
+    cmds:
+      - echo "{{.TFBIN}} destroy..."
+      - '{{.TFBIN}} destroy --auto-approve -var-file="{{.VAR_FILE}}" --target module.vm.aws_instance.vm && rm -f {{.VM_KEYFILE}}'
+
+  connect-vm:
+    desc: SSH to the AWS VM
+    cmds:
+      - ssh -i {{.VM_KEYFILE}} {{.VM_ADMIN_USER}}@{{.VM_FQDN}}
+
+  config-vm:
+    desc: Run Ansible configuration on the AWS VM
+    cmds:
+      - cd ../../ansible; ./apply-cloud.sh
+
+  secrets-info:
+    desc: Display Secrets Manager information and instructions
+    cmds:
+      - |
+        echo "Secrets Manager Name: $({{.TFBIN}} output -raw secrets_manager_name)"
+        echo ""
+        echo "=== How to retrieve git credentials from Secrets Manager ==="
+        echo "1. Configure AWS CLI: aws configure"
+        echo "2. Get credentials: aws secretsmanager get-secret-value --secret-id \"$({{.TFBIN}} output -raw secrets_manager_name)\" --query 'SecretString' --output text | jq -r '.[\"git-credentials\"]'"
+        echo ""
+        echo "For security, git credentials are stored securely in AWS Secrets Manager"
+
+  start-vm:
+    desc: Start the AWS VM
+    cmds:
+      - aws ec2 start-instances --instance-ids $({{.TFBIN}} output -raw instance_id)
+
+  stop-vm:
+    desc: Stop the AWS VM
+    cmds:
+      - aws ec2 stop-instances --instance-ids $({{.TFBIN}} output -raw instance_id)
