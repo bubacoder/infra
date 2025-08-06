@@ -10,20 +10,8 @@ vars:
   VM_KEYFILE: ~/.ssh/id_rsa_azure_vm
   VM_ADMIN_USER: azureuser
 
-  OWN_PUBLIC_IP:
-    sh: curl -s https://ipinfo.io/ip
-  GIT_CREDENTIALS:
-    sh: cat ~/.git-credentials 2>/dev/null | head -n 1 || true
-  REPO_URL:
-    sh: git config --get remote.origin.url
-  VM_FQDN:
-    sh: '{{.TFBIN}} output -raw vm_fqdn || echo ""'
-
 env:
   TF_IN_AUTOMATION: 1
-  TF_VAR_admin_source_address: "{{.OWN_PUBLIC_IP}}"
-  TF_VAR_git_credentials: "{{.GIT_CREDENTIALS}}"
-  TF_VAR_repo_url: "{{.REPO_URL}}"
 
 tasks:
   clean:
@@ -47,6 +35,17 @@ tasks:
 
   plan:
     desc: Create Terraform plan
+    vars:
+      OWN_PUBLIC_IP:
+        sh: curl -s https://ipinfo.io/ip
+      GIT_CREDENTIALS:
+        sh: cat ~/.git-credentials 2>/dev/null | head -n 1 || true
+      REPO_URL:
+        sh: git config --get remote.origin.url
+    env:
+      TF_VAR_admin_source_address: "{{.OWN_PUBLIC_IP}}"
+      TF_VAR_git_credentials: "{{.GIT_CREDENTIALS}}"
+      TF_VAR_repo_url: "{{.REPO_URL}}"
     cmds:
       - '{{.TFBIN}} init'
       - echo "{{.TFBIN}} plan..."
@@ -59,8 +58,8 @@ tasks:
       - echo "{{.TFBIN}} apply..."
       - time {{.TFBIN}} apply --auto-approve "{{.TFPLAN}}"
       - |
-        HOSTNAME=$({{.TFBIN}} output -raw vm_fqdn)
-        ssh-keygen -f ~/.ssh/known_hosts -R "$HOSTNAME" || true
+        VM_FQDN=$({{.TFBIN}} output -raw vm_fqdn)
+        ssh-keygen -f ~/.ssh/known_hosts -R "$VM_FQDN" || true
         {{.TFBIN}} output -raw vm_tls_private_key > {{.VM_KEYFILE}}
         chmod 600 {{.VM_KEYFILE}}
 
@@ -79,7 +78,9 @@ tasks:
   connect-vm:
     desc: SSH to the Azure VM
     cmds:
-      - ssh -i {{.VM_KEYFILE}} {{.VM_ADMIN_USER}}@{{.VM_FQDN}}
+      - |
+        VM_FQDN=$({{.TFBIN}} output -raw vm_fqdn)
+        ssh -i {{.VM_KEYFILE}} {{.VM_ADMIN_USER}}@{{.VM_FQDN}}
 
   config-vm:
     desc: Run Ansible configuration on the Azure VM
