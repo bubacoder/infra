@@ -88,7 +88,8 @@ tasks:
 
   star-github-repos:
     desc: Add star to all GitHub repositories referenced in documentation/configuration
-    dotenv: ['config/docker/.env']
+    dotenv:
+      - "config/docker/.env"
     preconditions:
       - sh: "[ ! -z \"${GITHUB_API_TOKEN}\" ]"
         msg: GITHUB_API_TOKEN environment variable must be set (exported)
@@ -132,8 +133,8 @@ tasks:
   get-offline-data-local:
     desc: Download data files for offline use (files stored on localhost)
     dotenv:
-      - 'config/docker/.env'
-      - 'config/docker/localhost/.env'
+      - "config/docker/.env"
+      - "config/docker/localhost/.env"
     cmds:
       - scripts/get-offline-data-ollama.sh
       - docker exec ollama ollama list

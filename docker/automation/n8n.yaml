@@ -19,7 +19,7 @@ services:
     volumes:
       - n8n_postgres_storage:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -h localhost -U ${N8N_POSTGRES_USER} -d ${N8N_POSTGRES_DB}']
+      test: ["CMD-SHELL", "pg_isready -h localhost -U ${N8N_POSTGRES_USER} -d ${N8N_POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -27,7 +27,7 @@ services:
   initContainer:
     image: busybox
     container_name: n8n-init
-    command: ['sh', '-c', 'chown -R 1000:1000 /home/node/.n8n']
+    command: ["sh", "-c", "chown -R 1000:1000 /home/node/.n8n"]
     volumes:
       - ${DOCKER_VOLUMES}/n8n:/home/node/.n8n
 
