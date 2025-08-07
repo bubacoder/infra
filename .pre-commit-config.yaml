@@ -61,6 +61,7 @@ repos:
         args: ["--args=--fix"]
 
   # ansible-lint checks playbooks for practices and behavior that could potentially be improved and can fix some of the most common ones for you.
+  # Add '--fix' parameter to ansiblelint to fix (some) issues - https://ansible.readthedocs.io/projects/lint/autofix/
   # Add '-v' parameter to ansiblelint for verbose mode
   - repo: https://github.com/ansible-community/ansible-lint
     rev: v25.7.0
@@ -70,7 +71,7 @@ repos:
         entry: >
           env ANSIBLE_ROLES_PATH=~/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:ansible/roles
           env ANSIBLE_COLLECTIONS_PATH=/usr/lib/python3/dist-packages:/usr/share/ansible/collections:/etc/ansible/collections:/opt/pipx/venvs/ansible-core/lib/python3.12/site-packages/ansible_collections:~/.ansible/collections:collections
-          python3 -m ansiblelint -v --force-color
+          python3 -m ansiblelint --force-color
 
   # ShellCheck, a static analysis tool for shell scripts - https://www.shellcheck.net/
   # Ignoring errors: https://www.shellcheck.net/wiki/Ignore, `.shellcheckrc`

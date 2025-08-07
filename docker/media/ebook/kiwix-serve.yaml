@@ -18,8 +18,7 @@ services:
   kiwix-serve:
     image: ghcr.io/kiwix/kiwix-serve:3.7.0
     container_name: kiwix-serve
-    command:
-      '*.zim'
+    command: "*.zim"
     restart: unless-stopped
     volumes:
       - ${STORAGE_KIWIX}:/data

@@ -30,7 +30,7 @@ services:
     volumes:
       - ${DOCKER_VOLUMES}/scrutiny/config:/opt/scrutiny/config
     environment:
-      SCRUTINY_WEB_INFLUXDB_HOST: 'scrutiny-influxdb'
+      SCRUTINY_WEB_INFLUXDB_HOST: "scrutiny-influxdb"
     depends_on:
       scrutiny-influxdb:
         condition: service_healthy
