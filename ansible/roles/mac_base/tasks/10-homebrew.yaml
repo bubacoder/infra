@@ -3,26 +3,26 @@
 - name: Check if Homebrew is installed
   ansible.builtin.stat:
     path: /home/linuxbrew/.linuxbrew/bin/brew
-  register: homebrew_check
+  register: mac_base_homebrew_check
   when: ansible_system == "Linux"
 
 - name: Check if Homebrew is installed
   ansible.builtin.stat:
     path: /opt/homebrew/bin/brew
-  register: homebrew_check
+  register: mac_base_homebrew_check
   when: ansible_system == "Darwin"
 
 - name: Install Homebrew
   ansible.builtin.shell: /bin/bash -c "NONINTERACTIVE=true $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   become: false
-  when: not homebrew_check.stat.exists
-  register: homebrew_install
-  changed_when: homebrew_install.rc == 0
+  when: not mac_base_homebrew_check.stat.exists
+  register: mac_base_homebrew_install
+  changed_when: mac_base_homebrew_install.rc == 0
 
 - name: Update Homebrew
   community.general.homebrew:
     update_homebrew: true
-  when: homebrew_check.stat.exists
+  when: mac_base_homebrew_check.stat.exists
   become: false
 
 - name: Install Homebrew packages
