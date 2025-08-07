@@ -13,12 +13,12 @@
 - name: Check if /etc/systemd/resolved.conf exists
   ansible.builtin.stat:
     path: /etc/systemd/resolved.conf
-  register: systemd_resolved_conf
+  register: debian_base_systemd_resolved_conf
 
 - name: Check if /run/systemd/resolve/resolv.conf exists
   ansible.builtin.stat:
     path: /run/systemd/resolve/resolv.conf
-  register: run_systemd_resolved_conf
+  register: debian_base_run_systemd_resolved_conf
 
 # https://www.linuxuprising.com/2020/07/ubuntu-how-to-free-up-port-53-used-by.html
 - name: Disable DNSStubListener
@@ -27,7 +27,7 @@
     regexp: '^(.*)DNSStubListener(.*)$'
     line: 'DNSStubListener=no'
     backrefs: true
-  when: systemd_resolved_conf.stat.exists
+  when: debian_base_systemd_resolved_conf.stat.exists
 
 - name: Create symbolic link to resolv.conf
   ansible.builtin.file:
@@ -37,5 +37,5 @@
     group: systemd-resolve
     state: link
     force: true
-  when: run_systemd_resolved_conf.stat.exists
+  when: debian_base_run_systemd_resolved_conf.stat.exists
   notify: Restart service systemd-resolved

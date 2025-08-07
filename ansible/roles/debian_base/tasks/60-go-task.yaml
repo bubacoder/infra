@@ -1,7 +1,7 @@
 ---
 - name: Check if go-task is already installed
   ansible.builtin.command: task --version
-  register: task_version_check
+  register: debian_base_task_version_check
   changed_when: false
   failed_when: false
 
@@ -9,39 +9,39 @@
   ansible.builtin.file:
     path: /tmp/go-task
     state: directory
-    mode: '0755'
-  when: task_version_check.rc != 0
+    mode: "0755"
+  when: debian_base_task_version_check.rc != 0
 
 - name: Set go-task architecture for arm
   ansible.builtin.set_fact:
-    task_arch: "arm"
+    debian_base_task_arch: "arm"
   when: ansible_architecture == "armv7l"
 
 - name: Set go-task architecture for amd64
   ansible.builtin.set_fact:
-    task_arch: "amd64"
+    debian_base_task_arch: "amd64"
   when: ansible_architecture == "x86_64"
 
 - name: Set go-task architecture for arm64
   ansible.builtin.set_fact:
-    task_arch: "arm64"
+    debian_base_task_arch: "arm64"
   when: ansible_architecture == "aarch64"
 
 - name: Download go-task .deb package
   ansible.builtin.get_url:
-    url: "https://github.com/go-task/task/releases/download/{{ go_task_version | default('v3.44.1') }}/task_linux_{{ task_arch }}.deb"
-    dest: "/tmp/go-task/task_linux_{{ task_arch }}.deb"
-    mode: '0644'
-  when: task_version_check.rc != 0
+    url: "https://github.com/go-task/task/releases/download/{{ go_task_version | default('v3.44.1') }}/task_linux_{{ debian_base_task_arch }}.deb"
+    dest: "/tmp/go-task/task_linux_{{ debian_base_task_arch }}.deb"
+    mode: "0644"
+  when: debian_base_task_version_check.rc != 0
 
 - name: Install go-task from downloaded .deb package
   ansible.builtin.apt:
-    deb: "/tmp/go-task/task_linux_{{ task_arch }}.deb"
+    deb: "/tmp/go-task/task_linux_{{ debian_base_task_arch }}.deb"
     state: present
-  when: task_version_check.rc != 0
+  when: debian_base_task_version_check.rc != 0
 
 - name: Clean up temporary files
   ansible.builtin.file:
     path: /tmp/go-task
     state: absent
-  when: task_version_check.rc != 0
+  when: debian_base_task_version_check.rc != 0
