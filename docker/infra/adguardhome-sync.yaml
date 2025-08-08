@@ -1,0 +1,47 @@
+# Synchronize AdGuard Home config to replicas
+#
+# Prerequisites: Both the origin instance and replica(s) must be initially set up with AdguardHome via the AdguardHome installation wizard.
+#
+# Note:
+# > While Windows will prioritize the first DNS provider, systemd-based Linux distributions will enact a "parallel probe" of all servers and pick the fastest responder.
+# > The same goes for Android, macOS, and iOS, where all servers are questioned at once, and the fastest to answer is considered correct.
+# See more: https://www.xda-developers.com/two-pi-holes-spare-resources-recommend/
+#
+# Source: https://github.com/bakito/adguardhome-sync
+---
+name: adguardhome-sync
+services:
+  adguardhome-sync:
+    image: ghcr.io/bakito/adguardhome-sync:v0.7.8
+    container_name: adguardhome-sync
+    command: run
+    restart: unless-stopped
+    environment:
+      # Config reference: https://github.com/bakito/adguardhome-sync?tab=readme-ov-file#config-via-environment-variables
+      CRON: "0 */2 * * *"
+      ORIGIN_URL: "http://${MAIN_NODE_IP}:3000"
+      ORIGIN_USERNAME: ${ADGUARDHOME_USERNAME}
+      ORIGIN_PASSWORD: ${ADGUARDHOME_PASSWORD}
+      REPLICA1_URL: "http://${SECOND_NODE_IP}:3000"
+      REPLICA1_USERNAME: ${ADGUARDHOME_USERNAME}
+      REPLICA1_PASSWORD: ${ADGUARDHOME_PASSWORD}
+      API_PORT: 8080
+      API_DARK_MODE: true
+      API_METRICS_ENABLED: true
+      API_METRICS_SCRAPE_INTERVAL: 600s
+      API_METRICS_QUERY_LOG_LIMIT: 10000
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.adguardhome-sync.middlewares: localaccess@file
+      traefik.http.services.adguardhome-sync.loadbalancer.server.port: 8080
+      homepage.group: Tools
+      homepage.name: AdGuard Home sync
+      homepage.icon: adguard-home.png
+      homepage.href: https://adguardhome-sync.${MYDOMAIN}/
+      homepage.description: Synchronize AdGuard Home config to replicas
+
+networks:
+  proxy:
+    external: true

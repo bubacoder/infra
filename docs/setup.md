@@ -122,6 +122,7 @@ After setting up the VM, configure the following on the router:
 - To enable external access to selected services: Port forward to the VM (In OpenWrt: Network -> Firewall -> Port Forwards)
   - HTTPS - Port 443 TCP & UDP
   - WireGuard - Port 51820 UDP
+- DHCP settings: set the DNS server address to the IP of your AdGuard Home service (set both instances if you are using AdGuard Home Sync)
 - Configure the local DNS service to resolve your domain name to the main Docker host. This is to provide uninterrupted DNS name resolution of the local services in case of the internet access fails.
   - In AdGuard Home: Filters -> DNS Rewrites -> Add <hostname> AND *.<hostname>
 

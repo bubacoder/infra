@@ -26,6 +26,8 @@ services:
         state: up
       - name: adguardhome
         state: up
+      - name: adguardhome-sync
+        state: up
       - name: unifi-controller
         state: up
       - name: ddclient
