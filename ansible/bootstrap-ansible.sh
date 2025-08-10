@@ -36,6 +36,9 @@ install_ansible_on_debian() {
 
   # Determine the Ubuntu codename based on Debian version
   case "$DEBIAN_VERSION" in
+    trixie*|13*)
+      UBUNTU_CODENAME="noble"
+      ;;
     12*)
       UBUNTU_CODENAME="jammy"
       ;;

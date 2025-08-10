@@ -32,7 +32,7 @@ jobs:
       matrix:
         distribution:
           - tag: debian
-            base_image: debian:bookworm-slim
+            base_image: debian:trixie-slim
           - tag: ubuntu
             base_image: ubuntu:24.04
 
