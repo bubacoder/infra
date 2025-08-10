@@ -1,6 +1,6 @@
 ### Setup Ansible
 
-ARG BASE_IMAGE=debian:bookworm-slim
+ARG BASE_IMAGE=debian:trixie-slim
 # hadolint ignore=DL3006
 FROM ${BASE_IMAGE} AS dev-ansible
 

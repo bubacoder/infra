@@ -8,7 +8,7 @@
 		"dockerfile": "Dockerfile",
 		"target": "dev-final",
 		"options": [
-			"--build-arg=BASE_IMAGE=debian:bookworm-slim"
+			"--build-arg=BASE_IMAGE=debian:trixie-slim"
 		]
 	},
 

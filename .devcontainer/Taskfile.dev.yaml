@@ -12,11 +12,11 @@ tasks:
         docker build --platform linux/amd64 --file ../.devcontainer/Dockerfile --tag {{.CONTAINER_NAME}}:{{.TAG}} --build-arg BASE_IMAGE={{.BASE_IMAGE}} --progress=plain .
 
   build-debian:
-    desc: Build Debian Bookworm based dev & admin container
+    desc: Build Debian trixie based dev & admin container
     cmds:
       - task: build
         vars:
-          BASE_IMAGE: "debian:bookworm-slim"
+          BASE_IMAGE: "debian:trixie-slim"
           TAG: debian
 
   build-ubuntu:
