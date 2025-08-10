@@ -13,7 +13,14 @@ Download: https://www.proxmox.com/en/downloads/proxmox-virtual-environment
 Post-install configuration:
 - https://pve.proxmox.com/wiki/Package_Repositories#sysadmin_no_subscription_repo
 - [Powertop](https://wiki.archlinux.org/title/Powertop) - Optimize power consumption and power management: `powertop --auto-tune`.
-- TODO
+
+## Upgrade to Proxmox v9
+
+[Upgrade from 8 to 9](https://pve.proxmox.com/wiki/Upgrade_from_8_to_9)
+
+Highlights:
+- In-place upgrade is available
+- Check configuration before and after upgrade: `pve8to9 --full`
 
 ## Virtual machines
 
