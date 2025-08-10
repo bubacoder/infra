@@ -5,7 +5,7 @@ set -euo pipefail
 
 # Ubuntu version to install. The install media is downloaded automatically and attached to the VM.
 # Check latest LTS version at: https://releases.ubuntu.com/
-readonly UBUNTU_VERSION="24.04.2"
+readonly UBUNTU_VERSION="24.04.3"
 readonly INSTALL_ISO="ubuntu-${UBUNTU_VERSION}-live-server-amd64.iso"
 
 # false: Manual installation is needed.
@@ -31,7 +31,7 @@ readonly DISK_SIZE=256 # GB (thin provisioned)
 DOWNLOAD_ONLY=false
 
 get_authorized_keys_config() {
-    AUTHORIZED_KEYS_FILE=~/.ssh/authorized_keys
+    local AUTHORIZED_KEYS_FILE=~/.ssh/authorized_keys
     if [ -s "$AUTHORIZED_KEYS_FILE" ]; then
         echo "    authorized-keys:"
         sed 's/^/\      - "/; s/$/"/' "$AUTHORIZED_KEYS_FILE"
@@ -76,12 +76,22 @@ EOF
 }
 
 download_installer() {
-    readonly INSTALL_ISO_PATH="/var/lib/vz/template/iso/${INSTALL_ISO}"
+    readonly ISO_DIR="/var/lib/vz/template/iso"
+    readonly INSTALL_ISO_PATH="${ISO_DIR}/${INSTALL_ISO}"
     if [ -e "${INSTALL_ISO_PATH}" ]; then
         echo "Installer ISO ${INSTALL_ISO} already downloaded"
     else
+        cd "${ISO_DIR}"
         echo "Downloading installer ISO ${INSTALL_ISO}"
-        wget -O ${INSTALL_ISO_PATH} https://releases.ubuntu.com/${UBUNTU_VERSION}/${INSTALL_ISO}
+        local -r BASE_URL="https://releases.ubuntu.com/${UBUNTU_VERSION}"
+        wget -q --show-progress -O "${INSTALL_ISO_PATH}" "${BASE_URL}/${INSTALL_ISO}"
+        echo "Verifying SHA256 checksum..."
+        wget -q -O /tmp/SHA256SUMS "${BASE_URL}/SHA256SUMS"
+        if ! sha256sum -c /tmp/SHA256SUMS --ignore-missing | grep -q "${INSTALL_ISO}: OK"; then
+            echo "Checksum verification failed for ${INSTALL_ISO}" >&2
+            exit 1
+        fi
+        # Optional: also verify GPG signature with SHA256SUMS.gpg and Ubuntu keys
     fi
 }
 
@@ -99,7 +109,7 @@ create_vm() {
       --scsi0 local-lvm:${DISK_SIZE},ssd=1 \
       --ide2 local:iso/${INSTALL_ISO},media=cdrom
 
-    if $AUTOINSTALL; then
+    if [ "$AUTOINSTALL" = true ]; then
         create_autoinstall_config
         qm set ${VMID} --ide0 local-lvm:cloudinit
         qm set ${VMID} --cicustom "vendor=local:snippets/${AUTOINSTALL_CONFIG_FILE}"
@@ -110,14 +120,14 @@ create_vm() {
 
 
 # Parse command-line arguments
-for arg in "$@"; do
-    case $arg in
+while [[ $# -gt 0 ]]; do
+    case "$1" in
         --download-only)
             DOWNLOAD_ONLY=true
             shift
             ;;
         *)
-            echo "Unknown argument: ${arg}"
+            echo "Unknown argument: $1"
             exit 1
             ;;
     esac
