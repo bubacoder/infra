@@ -5,7 +5,7 @@ set -euo pipefail
 
 # OpenWRT version to install
 # Check latest version at: https://downloads.openwrt.org/releases/
-readonly OPENWRT_VERSION=24.10.1
+readonly OPENWRT_VERSION=24.10.2
 
 # VM params
 readonly VMNAME="openwrt"
@@ -18,20 +18,28 @@ readonly DISK_SIZE=512 # MB
 DOWNLOAD_ONLY=false
 
 download_installer() {
-    readonly IMAGE_PATH="openwrt-${OPENWRT_VERSION}.img.gz"
-    readonly DOWNLOAD_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/x86/64/openwrt-${OPENWRT_VERSION}-x86-64-generic-ext4-combined.img.gz"
+    local -r IMAGE_PATH="openwrt-${OPENWRT_VERSION}.img.gz"
+    local -r DOWNLOAD_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/x86/64/openwrt-${OPENWRT_VERSION}-x86-64-generic-ext4-combined.img.gz"
+    local -r SHA256SUMS_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/x86/64/sha256sums"
 
     if [ -e "${IMAGE_PATH}" ]; then
         echo "OpenWRT disk image ${IMAGE_PATH} already downloaded"
     else
         echo "Downloading OpenWRT disk image ${IMAGE_PATH}"
-        wget -O "${IMAGE_PATH}" "${DOWNLOAD_URL}"
+        wget -q --show-progress -O "${IMAGE_PATH}" "${DOWNLOAD_URL}"
+        echo "Verifying SHA256 checksum..."
+        EXPECTED_SHA256="$(wget -qO- "${SHA256SUMS_URL}" | awk '/generic-ext4-combined\.img\.gz$/ {print $1; exit}')"
+        if [ -z "$EXPECTED_SHA256" ]; then
+            echo "Failed to retrieve expected SHA256 from ${SHA256SUMS_URL}" >&2
+            exit 1
+        fi
+        echo "${EXPECTED_SHA256}  ${IMAGE_PATH}" | sha256sum -c -
     fi
 }
 
 create_vm() {
     # extract disk image
-    readonly VM_IMG="openwrt-${OPENWRT_VERSION}-vm-${VMID}.img"
+    local -r VM_IMG="openwrt-${OPENWRT_VERSION}-vm-${VMID}.img"
     cp "openwrt-${OPENWRT_VERSION}.img.gz" "${VM_IMG}.gz"
     gunzip -f "./${VM_IMG}.gz" || true
 
@@ -59,14 +67,14 @@ create_vm() {
 }
 
 # Parse command-line arguments
-for arg in "$@"; do
-    case $arg in
+while [[ $# -gt 0 ]]; do
+    case "$1" in
         --download-only)
             DOWNLOAD_ONLY=true
             shift
             ;;
         *)
-            echo "Unknown argument: ${arg}"
+            echo "Unknown argument: $1"
             exit 1
             ;;
     esac
