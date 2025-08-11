@@ -14,6 +14,7 @@ from fastmcp import FastMCP
 from fastmcp.tools import Tool
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
+from find_app_icon import AppIconFinder
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -156,6 +157,26 @@ def control_container_service(operation: str, service_name: str) -> str:
         return result.stdout or "(No output)"
     except subprocess.CalledProcessError as e:
         return f"Error running operation: {e.stderr or str(e)}"
+
+
+@mcp.tool(name="find-app-icon")
+def find_app_icon(app_name: str, homepage_url: str) -> str:
+    """
+    Find an application icon from either the dashboard-icons repository or by extracting favicon from the app's homepage.
+
+    Args:
+        app_name (str): The name of the application.
+        homepage_url (str): The URL of the application's homepage.
+
+    Returns:
+        str: Either the name of the application icon or a favicon URL.
+    """
+    icon_finder = AppIconFinder()
+    try:
+        return icon_finder.get_app_icon(app_name, homepage_url)
+    except Exception as e:
+        logger.exception("find-app-icon failed for app_name=%r homepage_url=%r: %s", app_name, homepage_url, e)
+        return "default"
 
 
 @mcp.custom_route("/healthz", methods=["GET"])
