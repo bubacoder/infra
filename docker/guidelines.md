@@ -164,8 +164,8 @@ When creating a new service, use this template:
 # Brief description of the service
 #
 # 🏠 Home: https://service-homepage.com/
-# 📜 Source: https://github.com/vendor/service
-# Documentation: https://docs.service.com/
+# 📦 Source: https://github.com/vendor/service
+# 📜 Docs: https://docs.service.com/
 ---
 name: service-name
 services:
@@ -183,7 +183,6 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.service-name.rule: Host(`service.${MYDOMAIN}`)
       traefik.http.routers.service-name.middlewares: middleware-name@file
       traefik.http.services.service-name.loadbalancer.server.port: PORT
       homepage.group: Category
