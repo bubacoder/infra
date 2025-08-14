@@ -40,11 +40,24 @@ tasks:
       - pre-commit run --all-files
 
   git-rebase-fixup:
-    desc: Interactively rebase current branch to origin (stash, rebase, pop)
+    desc: Interactively rebase current branch to origin/main (stash, rebase, pop)
+    aliases: [rebase]
+    silent: true
     cmds:
-      - git stash
-      - GIT_SEQUENCE_EDITOR=scripts/git-rebase-fixup.py git rebase -i origin/$(git branch --show-current)
-      - git stash pop
+      - |
+        STASH_NAME="Automatic-stash-before-rebasing-$(date +%s)"
+        if git stash push --include-untracked -m "${STASH_NAME}"; then
+            STASH_SUCCEEDED=true
+        else
+            STASH_SUCCEEDED=false
+        fi
+
+        # Would be possible to use "--autostash", but "--include-untracked" is not supported
+        GIT_SEQUENCE_EDITOR=scripts/git-rebase-fixup.py git rebase --interactive origin/main
+
+        if [ "$STASH_SUCCEEDED" = true ] && [ "$(git stash list | grep ${STASH_NAME} | wc -l)" -gt 0 ]; then
+            git stash pop --quiet
+        fi
 
   build:
     desc: Run all linting and build tasks
