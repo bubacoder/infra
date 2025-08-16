@@ -1,8 +1,12 @@
 {
   "permissions": {
     "allow": [
+      "mcp__ide__getDiagnostics",
       "WebFetch(domain:github.com)",
-      "mcp__ide__getDiagnostics"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(pre-commit run:*)",
+      "Bash(docker/labctl.py service config *)",
+      "Bash(docker/labctl.py service pull *)"
     ],
     "deny": [
       "Read(config/**)"

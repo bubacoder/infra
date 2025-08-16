@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+
 import requests
 import sys
 import re
+import argparse
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
@@ -28,7 +31,7 @@ class AppIconFinder:
             homepage_url (str): The URL of the application's homepage.
 
         Returns:
-            str: Either the normalized app_name (if found in dashboard-icons),
+            str: Either the icon filename (e.g., "github.png") if found in the dashboard-icons set,
                  a favicon URL, or "default" if no icon is found.
         """
         # First check if the icon exists in dashboard-icons
@@ -46,7 +49,8 @@ class AppIconFinder:
 
     def _find_dashboard_icon(self, app_name):
         normalized_name = app_name.lower().replace(" ", "-")
-        url = f"https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/{normalized_name}.png"
+        icon_name = f"{normalized_name}.png"
+        url = f"https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/{icon_name}"
         try:
             response = requests.head(
                 url,
@@ -54,8 +58,14 @@ class AppIconFinder:
                 timeout=10,
                 allow_redirects=True
             )
-            if response.status_code == 200:
-                return normalized_name
+            if response.ok:
+                return icon_name
+            # Some CDNs/origins may disallow HEAD or require GET.
+            if response.status_code in (403, 405):
+                # Use GET fallback for servers that disallow HEAD; ensure connection is closed.
+                with requests.get(url, headers=self.headers, timeout=10) as probe:
+                    if probe.ok:
+                        return icon_name
             return None
         except requests.RequestException:
             return None
@@ -112,11 +122,11 @@ class AppIconFinder:
             return None
 
 
-def main():
+def test_icon_finder():
     """
-    Test the AppIconFinder with some popular applications.
+    Run a small battery of real-world lookups and print results.
+    Intended for manual/local diagnostics; not a unit test.
     """
-    # Create an instance of AppIconFinder
     icon_finder = AppIconFinder()
 
     # Test cases - popular applications and their homepages
@@ -131,10 +141,32 @@ def main():
         ("HUP", "hup.hu")
     ]
 
-    # Test each application
     for app_name, homepage in test_cases:
         icon_result = icon_finder.get_app_icon(app_name, homepage)
         print(f"App: {app_name}, Homepage: {homepage}, Icon: {icon_result}")
+
+
+def main():
+    """
+    Process command line arguments and run the application.
+    """
+    parser = argparse.ArgumentParser(prog="find_app_icon.py", description="Find dashboard icon filename or favicon URL.")
+    parser.add_argument("--test", "-t", action="store_true", help="Run a small built-in test battery and print results.")
+    parser.add_argument("app_name", nargs="?", help="Application name")
+    parser.add_argument("homepage", nargs="?", help="Homepage URL (with or without scheme)")
+    args = parser.parse_args()
+
+    if args.test:
+        test_icon_finder()
+        return
+
+    if not args.app_name or not args.homepage:
+        print("Error: Two parameters required: app_name homepage", file=sys.stderr)
+        sys.exit(1)
+
+    icon_finder = AppIconFinder()
+    result = icon_finder.get_app_icon(args.app_name, args.homepage)
+    print(result)
 
 
 if __name__ == "__main__":

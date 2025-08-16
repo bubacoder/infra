@@ -98,8 +98,6 @@ labels:
   homepage.icon: icon-name.png
   homepage.href: https://service.${MYDOMAIN}/
   homepage.description: "Service description"
-  homepage.widget.type: widget-type  # Optional
-  homepage.widget.url: https://service.${MYDOMAIN}/  # Optional
 ```
 
 ## Environment Variables Management
@@ -161,7 +159,7 @@ Services are organized into logical categories:
 When creating a new service, use this template:
 
 ```yaml
-# Brief description of the service
+# Brief description of the service (more than the name)
 #
 # 🏠 Home: https://service-homepage.com/
 # 📦 Source: https://github.com/vendor/service
