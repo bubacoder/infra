@@ -76,3 +76,20 @@ aider --model sonnet --api-key anthropic=<key>
 # o3-mini
 aider --model o3-mini --api-key openai=<key>
 ```
+
+### Claude Code
+
+> Your code’s new collaborator - Unleash Claude’s raw power directly in your terminal. Search million-line codebases instantly. Turn hours-long workflows into a single command. Your tools. Your workflow. Your codebase, evolving at thought speed.
+
+Agentic, requires subscription.
+
+- Homepage: [anthropic.com/claude-code](https://www.anthropic.com/claude-code)
+- Quickstart: [docs.anthropic.com → Claude Code Quickstart](https://docs.anthropic.com/en/docs/claude-code/quickstart)
+- Awesome Claude Code: [Github → awesome-claude-code](https://github.com/hesreallyhim/awesome-claude-code)
+
+Install:
+
+```sh
+sudo apt install npm
+npm install -g @anthropic-ai/claude-code
+```

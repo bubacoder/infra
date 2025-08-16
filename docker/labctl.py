@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 # Global variables
 docker_stacks_dir: Path = Path(__file__).parent.absolute()
-
+ALLOWED_STATES: tuple[str, ...] = ('up', 'update', 'pull', 'down', 'restart', 'recreate', 'config')
 
 def create_network_if_missing(network_name: str) -> None:
     """Create Docker network if it doesn't exist."""
@@ -91,7 +91,7 @@ def docker(cmd: list[str], env=None, stdin=None, stdout=None, stderr=None) -> No
 
 def docker_command(host_config_dir: Path, stack_dir: Path, service_name: str, action: str) -> None:
     """Execute Docker Compose command for a service."""
-    print()  # empty line for separation
+    logger.info("")  # separation
 
     compose_file = get_compose_file(stack_dir, service_name)
     if not compose_file.exists():
@@ -130,6 +130,10 @@ def docker_command(host_config_dir: Path, stack_dir: Path, service_name: str, ac
             logger.info(f">>> Recreating {stack_dir}/{service_name}")
             docker(["compose", "-f", compose_file, *env_file_args, "up", "--detach", "--force-recreate"])
 
+        case "config":
+            logger.info(f">>> Checking {stack_dir}/{service_name}")
+            docker(["compose", "-f", compose_file, *env_file_args, "config"])
+
 
 def load_services_config(config_file: str) -> dict:
     """Load services configuration from YAML file."""
@@ -167,8 +171,8 @@ def process_services(host_config_dir: Path, config: dict, state_override: str | 
                 logger.warning(f"Skipping invalid service entry in category {category}: missing name")
                 continue
 
-            state = state_override or service.get('state', 'up')
-            if state not in ('up', 'update', 'pull', 'down', 'restart', 'recreate'):
+            state = (state_override or service.get('state', 'up')).lower()
+            if state not in ALLOWED_STATES:
                 logger.warning(f"Unknown state '{state}' for service {category}/{name}")
                 continue
 
@@ -238,11 +242,11 @@ def main() -> None:
     # Config apply command
     config_apply_parser = config_subparsers.add_parser('apply', help='Apply service configurations')
     config_apply_parser.add_argument('--config', '-c', help='Path to the YAML configuration file')
-    config_apply_parser.add_argument('--mode', '-m', help='Override state for all services (up, down, restart, recreate, update, pull)')
+    config_apply_parser.add_argument('--mode', '-m', choices=list(ALLOWED_STATES), help='Override state for all services')
 
     # Service command
     service_parser = subparsers.add_parser('service', help='Manage individual services')
-    service_parser.add_argument('operation', choices=['up', 'down', 'restart', 'recreate', 'update', 'pull'], help='Operation to perform on the service')
+    service_parser.add_argument('operation', choices=list(ALLOWED_STATES), help='Operation to perform on the service')
     service_parser.add_argument('name', help='Service name in format category/name or category/subcategory/name')
 
     args = parser.parse_args()
