@@ -47,24 +47,59 @@ task docker:pull-update
 # Stop configured containers
 task docker:stop
 
-# Remove unused and dangling images
-task docker:prune
+# Create/update Docker example environment configuration files
+task docker:create-example-env
+```
 
-# Show docker disk usage
-task docker:du
+### Service Management
+
+```bash
+# Manage individual Docker service (up, down, restart, recreate, update, pull, config)
+docker/labctl.py service [operation] [category/service-name]
+
+# Examples:
+docker/labctl.py service up security/traefik
+docker/labctl.py service restart ai/ollama
+docker/labctl.py service update media/video/jellyfin
 ```
 
 ### Ansible Commands
 
 ```bash
 # Run Ansible for homelab setup
-ansible/apply-homelab.sh
+task ansible:apply-homelab
 
 # Run Ansible for cloud setup
-ansible/apply-cloud.sh
+task ansible:apply-cloud
+```
 
-# Run Ansible for Mac workstation setup
-ansible/apply-mac-workstation.sh
+### Terraform Management
+
+```bash
+# Apply Azure VM Terraform configuration
+task azure-vm:apply
+
+# Plan Azure VM Terraform changes
+task azure-vm:plan
+
+# Destroy Azure VM Terraform resources
+task azure-vm:destroy
+```
+
+### Utility Commands
+
+```bash
+# Show public IP of the server
+task get-public-ip
+
+# Show version numbers of installed software
+task versions
+
+# Create a compressed backup of the configuration directory
+task backup-config
+
+# Download data files for offline use
+task get-offline-data
 ```
 
 ## Architecture Overview
@@ -100,13 +135,37 @@ The infrastructure is designed around the following components:
 
 This project uses:
 - **Task** (taskfile.dev) as a task runner/build tool
-- **Pre-commit** for code quality and security checks
+- **Pre-commit** for code quality and security checks:
+  - Shell script validation with ShellCheck
+  - YAML linting and validation
+  - Terraform validation and formatting
+  - Ansible linting
+  - Python linting with Ruff
+  - Dockerfile linting with Hadolint
+  - Security scanning with Gitleaks and KICS
 - **Docker** and Docker Compose for containerized services
+- **Python** for service management via the `docker/labctl.py` tool
 - **GitHub Actions** for CI/CD workflows:
   - Pre-commit checks
   - Building devcontainer
   - Building and deploying documentation site
 - **Renovate** for automated dependency updates
+
+## Docker Service Management
+
+The repository uses a custom Python script (`docker/labctl.py`) to manage Docker services defined in YAML files:
+
+1. Services are organized by category (security, media, tools, etc.)
+2. Each service has a YAML definition file with container specifications
+3. Host-specific configuration is defined in `config/docker/<hostname>/services.yaml`
+4. Environment variables are loaded from `.env` files in the config directory
+5. The `labctl.py` script supports operations: up, down, restart, recreate, update, pull, config.
+
+When adding or modifying services:
+1. Create or edit the YAML file in the appropriate category directory
+2. Add the service to the host configuration in `config/docker/<hostname>/services.yaml`
+3. Provide any required environment variables in the appropriate `.env` files
+4. Deploy using `task docker:apply` or using the specific service command
 
 ## File Structure
 
@@ -121,7 +180,10 @@ Key directories and their purposes:
 │   ├── security/    # Auth and security services
 │   ├── media/       # Media services
 │   ├── storage/     # Storage services
-│   └── monitoring/  # Monitoring services
+│   ├── monitoring/  # Monitoring services
+│   ├── ai/          # AI-related services
+│   ├── tools/       # Various utility services
+│   └── labctl.py    # Python script for service management
 ├── docs/            # Documentation
 ├── terraform/       # Terraform configurations
 │   └── azure-vm/    # Azure VM deployment with CloudInit

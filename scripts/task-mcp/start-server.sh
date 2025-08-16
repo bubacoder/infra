@@ -15,7 +15,7 @@ source .venv/bin/activate
 
 # Install or update dependencies
 echo "Installing dependencies..."
-uv pip install -r requirements.txt
+uv sync
 
 # Start the MCP server
 echo "Starting Task MCP server..."
