@@ -2,8 +2,8 @@
 
 # This Python script reorders git commits containing the "[FIXUP]" text to be right after their counterpart commit in a given file, modifies the command to "fixup" for these lines, and then opens the modified file in the nano text editor for review or further changes.
 
-# GIT_SEQUENCE_EDITOR=~/repos/infra/scripts/git-rebase-fixup.py git rebase -i abcdef1234
-# alias rebase-fixup="GIT_SEQUENCE_EDITOR=~/repos/infra/scripts/git-rebase-fixup.py git rebase -i"
+# GIT_SEQUENCE_EDITOR=~/repos/infra/scripts/git-reorder-fixup.py git rebase -i abcdef1234
+# alias rebase-fixup="GIT_SEQUENCE_EDITOR=~/repos/infra/scripts/git-reorder-fixup.py git rebase -i"
 # git config --global sequence.editor "code --wait"
 
 import sys

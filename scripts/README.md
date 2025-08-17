@@ -1,9 +1,5 @@
 # Scripts
 
-Own scripts:
-- git-rebase-fixup.py
-- jellyfin-rescan.sh
-
 Third-party scripts:
 - git-filter-repo.py
     - Quickly rewrite git repository history (filter-branch replacement)
