@@ -40,11 +40,10 @@ tasks:
       - pre-commit run --all-files
 
   git-rebase-fixup:
-    desc: Interactively rebase current branch to origin (stash, rebase, pop)
+    desc: Interactively rebase current branch to origin/main (stash, rebase, pop)
+    aliases: [rebase]
     cmds:
-      - git stash
-      - GIT_SEQUENCE_EDITOR=scripts/git-rebase-fixup.py git rebase -i origin/$(git branch --show-current)
-      - git stash pop
+      - scripts/git-rebase-to-main.sh
 
   build:
     desc: Run all linting and build tasks
