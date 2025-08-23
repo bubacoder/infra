@@ -14,8 +14,6 @@ services:
         state: up
       - name: endlessh
         state: up
-      - name: watchyourlan
-        state: up
 
   - dashboard:
       - name: homepage
@@ -148,20 +146,20 @@ services:
 
   - arr:
       - name: radarr
-        state: up
+        state: down
       - name: sonarr
-        state: up
+        state: down
       - name: bazarr
-        state: up
+        state: down
       # TODO replace with Lazy Librarian
-      # - name: readarr
-      #   state: up
+      - name: readarr
+        state: down
       - name: prowlarr
-        state: up
+        state: down
       - name: jellyseerr
-        state: up
+        state: down
       - name: flaresolverr
-        state: up
+        state: down
 
   # - game:
   #     - name: legendary-minecraft
@@ -171,4 +169,4 @@ services:
       - name: personal-web
         state: up
       - name: tales
-        state: up
+        state: down
