@@ -48,7 +48,7 @@ services:
       homepage.description: "GitLab Community Edition"
 
   gitlab-runner:
-    image: gitlab/gitlab-runner:v17.11.3
+    image: gitlab/gitlab-runner:v17.11.4
     container_name: gitlab-runner
     restart: unless-stopped
     environment:
