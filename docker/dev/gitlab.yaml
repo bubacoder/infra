@@ -41,7 +41,7 @@ services:
       traefik.http.routers.gitlab.middlewares: localaccess@file
       traefik.http.services.gitlab.loadbalancer.server.port: 80
 
-      homepage.group: Tools
+      homepage.group: Development
       homepage.name: GitLab
       homepage.icon: gitlab.png
       homepage.href: https://gitlab.${MYDOMAIN}/

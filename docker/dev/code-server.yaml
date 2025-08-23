@@ -36,7 +36,7 @@ services:
       traefik.http.routers.code.middlewares: localaccess-sso@file
       traefik.http.routers.code.rule: Host(`code.${MYDOMAIN}`)
       traefik.http.services.code.loadbalancer.server.port: 8443
-      homepage.group: Tools
+      homepage.group: Development
       homepage.name: Code-Server
       homepage.icon: code.png
       homepage.href: https://code.${MYDOMAIN}/

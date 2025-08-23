@@ -24,6 +24,9 @@ layout:
   Tools:
     style: row
     columns: 4
+  Development:
+    style: row
+    columns: 4
   Connections:
     style: row
     columns: 4
