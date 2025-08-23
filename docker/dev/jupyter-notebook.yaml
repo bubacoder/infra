@@ -22,7 +22,7 @@ services:
       traefik.http.routers.jupyter-notebook.middlewares: localaccess@file
       traefik.http.routers.jupyter-notebook.rule: Host(`jupyter.${MYDOMAIN}`)
       traefik.http.services.jupyter-notebook.loadbalancer.server.port: 8888
-      homepage.group: Tools
+      homepage.group: Development
       homepage.name: Jupyter Notebook
       homepage.icon: jupyter.png
       homepage.href: https://jupyter.${MYDOMAIN}/
