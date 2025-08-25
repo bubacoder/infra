@@ -132,6 +132,10 @@ def docker_command(stack_dir: str, service_name: str, action: str) -> None:
             logger.info(f">>> Recreating {stack_dir}/{service_name}")
             docker(["compose", "-f", compose_file, *env_file_args, "up", "--detach", "--force-recreate"])
 
+        case "config":
+            logger.info(f">>> Checking {stack_dir}/{service_name}")
+            docker(["compose", "-f", compose_file, *env_file_args, "config"])
+
 
 def load_services_config(config_file: str) -> Dict:
     """Load services configuration from YAML file."""
@@ -170,7 +174,7 @@ def process_services(config: Dict, state_override: Optional[str] = None) -> None
                 continue
 
             state = state_override or service.get('state', 'up')
-            if state not in ('up', 'update', 'pull', 'down', 'restart', 'recreate'):
+            if state not in ('up', 'update', 'pull', 'down', 'restart', 'recreate', 'config'):
                 logger.warning(f"Unknown state '{state}' for service {category}/{name}")
                 continue
 
@@ -247,11 +251,11 @@ def main() -> None:
     # Config apply command
     config_apply_parser = config_subparsers.add_parser('apply', help='Apply service configurations')
     config_apply_parser.add_argument('--config', '-c', help='Path to the YAML configuration file')
-    config_apply_parser.add_argument('--mode', '-m', help='Override state for all services (up, down, restart, recreate, update, pull)')
+    config_apply_parser.add_argument('--mode', '-m', help='Override state for all services (up, down, restart, recreate, update, pull, config)')
 
     # Service command
     service_parser = subparsers.add_parser('service', help='Manage individual services')
-    service_parser.add_argument('operation', choices=['up', 'down', 'restart', 'recreate', 'update', 'pull'], help='Operation to perform on the service')
+    service_parser.add_argument('operation', choices=['up', 'down', 'restart', 'recreate', 'update', 'pull', 'config'], help='Operation to perform on the service')
     service_parser.add_argument('name', help='Service name in format category/name or category/subcategory/name')
 
     args = parser.parse_args()

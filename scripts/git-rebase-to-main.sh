@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eu
 
 BASE_REF="$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || echo 'origin/main')"
 STASH_NAME="Automatic-stash-before-rebasing-$(date +%s)"
 
 if git stash push --include-untracked -m "${STASH_NAME}"; then
-    STASH_SUCCEEDED=true
+  STASH_SUCCEEDED=true
 else
-    STASH_SUCCEEDED=false
+  STASH_SUCCEEDED=false
 fi
 
 # Would be possible to use "--autostash", but "--include-untracked" is not supported
@@ -15,5 +15,5 @@ git rebase --interactive --autosquash "${BASE_REF}"
 
 # Not possible to reference stash by name, so the first stash will be popped if the name matches
 if [ "$STASH_SUCCEEDED" = true ] && git stash list --format=%gs | head -1 | grep -q "${STASH_NAME}"; then
-    git stash pop --quiet
+  git stash pop --quiet
 fi
