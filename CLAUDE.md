@@ -19,17 +19,11 @@ task --list-all
 # Run all linting and build tasks
 task build
 
-# Run linting tools (via pre-commit)
+# Run linting tools on all files (via pre-commit)
 task lint
 
 # Open TaskUI (terminal UI for executing tasks)
 task ui
-
-# Update pre-commit hooks
-task pre-commit-update
-
-# Run renovatebot locally
-task renovate
 
 # Clear generated content and cache data
 task clean

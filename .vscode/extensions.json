@@ -8,7 +8,7 @@
     "mhutchie.git-graph",
     "hashicorp.terraform",
     "ms-vscode.makefile-tools",
-    "ms-python.flake8",
+    "charliermarsh.ruff",
     "ban.spellright"
   ]
 }
