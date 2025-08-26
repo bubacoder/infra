@@ -24,25 +24,45 @@ repos:
         args: ["--allow-missing-credentials"]
       - id: detect-private-key
 
-  # Find security vulnerabilities, compliance issues, and infrastructure misconfigurations early in the development cycle of your infrastructure-as-code with KICS by Checkmarx.
-  # KICS stands for Keeping Infrastructure as Code Secure, it is open source and is a must-have for any cloud native project.
-  # https://docs.kics.io/latest/commands/
-  # Ignoring errors: https://docs.kics.io/latest/running-kics/#using_commands_on_scanned_files_as_comments
-  - repo: https://github.com/Checkmarx/kics
-    rev: v2.1.13
-    hooks:
-      - id: kics-scan
-        # TODO solve the high severity issues first
-        args: ["--exclude-severities", "info,low,medium"]
-        pass_filenames: false
-        always_run: true
-
   # Gitleaks is a SAST tool for detecting and preventing hardcoded secrets like passwords, api keys, and tokens in git repos.
   # Gitleaks is an easy-to-use, all-in-one solution for detecting secrets, past or present, in your code.
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.28.0
     hooks:
       - id: gitleaks
+
+  # ShellCheck, a static analysis tool for shell scripts - https://www.shellcheck.net/
+  # Ignoring errors: https://www.shellcheck.net/wiki/Ignore, `.shellcheckrc`
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+
+  # Ruff is an extremely fast Python linter and code formatter, written in Rust.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.10
+    hooks:
+      # Linter - https://docs.astral.sh/ruff/linter/
+      - id: ruff-check
+        args: ["--fix"]
+      # TODO Enable after pendling MRs are merged
+      # Formatter - https://docs.astral.sh/ruff/formatter/
+      # - id: ruff-format
+
+  # Dockerfile linter, validate inline bash, written in Haskell
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.13.0-beta
+    hooks:
+      - id: hadolint-docker
+        exclude: "\\.dockerignore$"
+
+  # Run renovate-config-validator
+  - repo: https://github.com/renovatebot/pre-commit-hooks
+    rev: 41.1.4
+    hooks:
+      - id: renovate-config-validator
+        # TODO Old nodeenv (v0.13.4) does not support "lts" - remove after Ubuntu upgrade
+        language_version: "22.17.1"
 
   # pre-commit git hooks to take care of Terraform configurations
   - repo: https://github.com/antonbabenko/pre-commit-terraform
@@ -68,41 +88,21 @@ repos:
     hooks:
       - id: ansible-lint
         files: ^ansible/
+        always_run: false
         entry: >
           env ANSIBLE_ROLES_PATH=~/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:ansible/roles
           env ANSIBLE_COLLECTIONS_PATH=/usr/lib/python3/dist-packages:/usr/share/ansible/collections:/etc/ansible/collections:/opt/pipx/venvs/ansible-core/lib/python3.12/site-packages/ansible_collections:~/.ansible/collections:collections
           python3 -m ansiblelint --force-color
 
-  # ShellCheck, a static analysis tool for shell scripts - https://www.shellcheck.net/
-  # Ignoring errors: https://www.shellcheck.net/wiki/Ignore, `.shellcheckrc`
-  - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.10.0.1
+  # Find security vulnerabilities, compliance issues, and infrastructure misconfigurations early in the development cycle of your infrastructure-as-code with KICS by Checkmarx.
+  # KICS stands for Keeping Infrastructure as Code Secure, it is open source and is a must-have for any cloud native project.
+  # https://docs.kics.io/latest/commands/
+  # Ignoring errors: https://docs.kics.io/latest/running-kics/#using_commands_on_scanned_files_as_comments
+  - repo: https://github.com/Checkmarx/kics
+    rev: v2.1.13
     hooks:
-      - id: shellcheck
-
-  # flake8 is a python tool that glues together pycodestyle, pyflakes, mccabe, and third-party plugins to check the style and quality of some python code.
-  # Third-party scripts are excluded.
-  - repo: https://github.com/PyCQA/flake8
-    rev: 7.3.0
-    hooks:
-      - id: flake8
-        exclude: |
-            (?x)^(
-                scripts/git-filter-repo.py|
-                scripts/test-colors.py
-            )$
-
-  # Dockerfile linter, validate inline bash, written in Haskell
-  - repo: https://github.com/hadolint/hadolint
-    rev: v2.13.0-beta
-    hooks:
-      - id: hadolint-docker
-        exclude: "\\.dockerignore$"
-
-  # Run renovate-config-validator
-  - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 41.1.4
-    hooks:
-      - id: renovate-config-validator
-        # TODO Old nodeenv (v0.13.4) does not support "lts" - remove after Ubuntu upgrade
-        language_version: "22.17.1"
+      - id: kics-scan
+        # TODO solve the high severity issues first
+        args: ["--exclude-severities", "info,low,medium"]
+        pass_filenames: false
+        always_run: false
