@@ -1,8 +1,9 @@
-import requests
-import sys
 import re
-from bs4 import BeautifulSoup
+import sys
 from urllib.parse import urljoin
+
+import requests
+from bs4 import BeautifulSoup
 
 
 class AppIconFinder:

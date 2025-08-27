@@ -5,15 +5,17 @@ Dynamically creates tools from the output of 'task --list-all'.
 """
 
 import logging
+import os
 import re
 import subprocess
 import sys
-import os
 from typing import Callable, Dict, List
+
 from fastmcp import FastMCP
 from fastmcp.tools import Tool
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
+
 from tools.find_app_icon import AppIconFinder
 
 # Configure logging

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import sys
 
-
 SENSITIVE_VARS_TO_MASK = [
     'KEY',
     'USERNAME',
