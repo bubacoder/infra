@@ -33,7 +33,7 @@ class ProxyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         post_data = self.rfile.read(content_length) if content_length > 0 else None
 
         # Create headers for the target request
-        headers = {key: value for key, value in self.headers.items()}
+        headers = dict(self.headers.items())
 
         print("\nHeaders:")
         print(headers)
