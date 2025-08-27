@@ -9,7 +9,7 @@ import os
 import re
 import subprocess
 import sys
-from typing import Callable, Dict, List
+from collections.abc import Callable
 
 from fastmcp import FastMCP
 from fastmcp.tools import Tool
@@ -36,7 +36,7 @@ def get_git_root() -> str:
             ["git", "rev-parse", "--show-toplevel"],
             stdout=subprocess.PIPE,
             check=True,
-            universal_newlines=True,
+            text=True,
         )
     except FileNotFoundError:
         raise RuntimeError("Git executable not found. Please install Git and ensure it is on your PATH.") from None
@@ -45,7 +45,7 @@ def get_git_root() -> str:
     return result.stdout.strip()
 
 
-def get_task_list() -> List[Dict[str, str]]:
+def get_task_list() -> list[dict[str, str]]:
     """
     Get the list of available tasks by running 'task --list-all'.
 

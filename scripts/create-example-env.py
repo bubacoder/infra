@@ -28,7 +28,7 @@ def contains_any_substring(string: str, substrings: list[str]) -> bool:
 
 
 def mask_sensitive_variables(input_file: str) -> str:
-    with open(input_file, 'r') as f:
+    with open(input_file) as f:
         lines = f.readlines()
 
     output_lines = []
