@@ -14,7 +14,7 @@ from fastmcp import FastMCP
 from fastmcp.tools import Tool
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
-from find_app_icon import AppIconFinder
+from tools.find_app_icon import AppIconFinder
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
