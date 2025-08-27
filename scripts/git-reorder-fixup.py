@@ -6,8 +6,8 @@
 # alias rebase-fixup="GIT_SEQUENCE_EDITOR=~/repos/infra/scripts/git-reorder-fixup.py git rebase -i"
 # git config --global sequence.editor "code --wait"
 
-import sys
 import subprocess
+import sys
 
 
 def reorder_commits(file_path: str) -> None:

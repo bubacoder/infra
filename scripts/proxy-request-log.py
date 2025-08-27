@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
+import http.client
 import http.server
 import socketserver
-import http.client
 from urllib.parse import urlparse, urlunparse
 
 

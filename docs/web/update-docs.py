@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 
+import argparse
+import logging
 import os
+import re
 import shutil
 import subprocess
 import sys
-import yaml
-import argparse
-import re
-import logging
 from pathlib import Path
+
+import yaml
 
 
 class DocsProcessor:

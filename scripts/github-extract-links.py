@@ -3,7 +3,7 @@
 import os
 import re
 import sys
-from typing import Set, List
+from typing import List, Set
 
 
 def extract_github_links(directory: str) -> List[str]:

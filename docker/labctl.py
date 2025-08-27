@@ -4,15 +4,16 @@ Docker services management script.
 Uses YAML configuration to manage Docker services.
 """
 
-import os
-import sys
 import argparse
-import socket
-import yaml
 import logging
+import os
+import socket
 import subprocess
+import sys
 from pathlib import Path
 from typing import Dict, Optional
+
+import yaml
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(message)s")

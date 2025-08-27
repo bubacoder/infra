@@ -5,8 +5,9 @@
 #   `./github-extract-links.py ~/repos/infra | ./github-star-repo.py`
 
 import os
+from urllib.parse import unquote, urlparse
+
 import requests
-from urllib.parse import urlparse, unquote
 
 
 def star_github_repo(repo_url: str) -> None:
