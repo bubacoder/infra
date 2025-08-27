@@ -7,7 +7,7 @@ import sys
 
 def extract_github_links(directory: str) -> list[str]:
     github_links: set[str] = set()
-    for root, dirs, files in os.walk(directory):
+    for root, _dirs, files in os.walk(directory):
         for file in files:
             if file.endswith(".md") or file.endswith(".yml") or file.endswith(".yaml") or file.endswith(".sh") or file.startswith("Dockerfile"):
                 file_path = os.path.join(root, file)
@@ -31,10 +31,7 @@ def trim_git_ending(links: list[str]) -> list[str]:
 
 
 def main():
-    if len(sys.argv) > 1:
-        directory = sys.argv[1]
-    else:
-        directory = os.getcwd()
+    directory = sys.argv[1] if len(sys.argv) > 1 else os.getcwd()
 
     links = extract_github_links(directory)
     for link in links:

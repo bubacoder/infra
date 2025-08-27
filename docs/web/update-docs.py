@@ -383,15 +383,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Get repository and output paths
-    if args.repository_path:
-        repository_path = Path(args.repository_path)
-    else:
-        repository_path = Path(get_git_root())
-
-    if args.output_content_path:
-        output_content_path = Path(args.output_content_path)
-    else:
-        output_content_path = repository_path / "docs" / "web" / "src" / "content"
+    repository_path = Path(args.repository_path) if args.repository_path else Path(get_git_root())
+    output_content_path = Path(args.output_content_path) if args.output_content_path else repository_path / "docs" / "web" / "src" / "content"
 
     # Create and run the docs processor
     processor = DocsProcessor(repository_path, output_content_path, args.verbose)
