@@ -3,16 +3,15 @@
 import os
 import re
 import sys
-from typing import List, Set
 
 
-def extract_github_links(directory: str) -> List[str]:
-    github_links: Set[str] = set()
+def extract_github_links(directory: str) -> list[str]:
+    github_links: set[str] = set()
     for root, dirs, files in os.walk(directory):
         for file in files:
             if file.endswith(".md") or file.endswith(".yml") or file.endswith(".yaml") or file.endswith(".sh") or file.startswith("Dockerfile"):
                 file_path = os.path.join(root, file)
-                with open(file_path, "r") as f:
+                with open(file_path) as f:
                     content = f.read()
                     # Usernames for user accounts on GitHub can only contain alphanumeric characters and dashes ( - ).
                     links = re.findall(r"https://github.com/([\w.\-\_]+/[\w.\-\_]+)", content)
@@ -21,8 +20,8 @@ def extract_github_links(directory: str) -> List[str]:
     return list(github_links)
 
 
-def trim_git_ending(links: List[str]) -> List[str]:
-    trimmed_links: List[str] = []
+def trim_git_ending(links: list[str]) -> list[str]:
+    trimmed_links: list[str] = []
     for link in links:
         if link.endswith(".git"):
             trimmed_links.append(link[:-4])

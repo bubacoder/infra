@@ -13,7 +13,7 @@ import sys
 def reorder_commits(file_path: str) -> None:
     GIT_SEQUENCE_EDITOR = 'nano'
 
-    with open(file_path, 'r') as file:
+    with open(file_path) as file:
         lines = file.readlines()
 
     reordered_lines = []

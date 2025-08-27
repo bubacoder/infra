@@ -11,7 +11,6 @@ import socket
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, Optional
 
 import yaml
 
@@ -20,7 +19,7 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 # Global variables
-host_config_dir: Optional[Path] = None
+host_config_dir: Path | None = None
 docker_stacks_dir: Path = Path(__file__).parent.absolute()
 
 
@@ -62,7 +61,7 @@ def get_compose_file(stack_dir: str, service_name: str) -> str:
 
 def has_build_directive(compose_file: str) -> bool:
     """Check if the service uses a build directive."""
-    with open(compose_file, "r") as f:
+    with open(compose_file) as f:
         yaml_content = yaml.safe_load(f)
         if yaml_content and 'services' in yaml_content:
             for service_config in yaml_content['services'].values():
@@ -134,10 +133,10 @@ def docker_command(stack_dir: str, service_name: str, action: str) -> None:
             docker(["compose", "-f", compose_file, *env_file_args, "up", "--detach", "--force-recreate"])
 
 
-def load_services_config(config_file: str) -> Dict:
+def load_services_config(config_file: str) -> dict:
     """Load services configuration from YAML file."""
     try:
-        with open(config_file, 'r') as file:
+        with open(config_file) as file:
             config = yaml.safe_load(file)
             return config
     except Exception as e:
@@ -145,7 +144,7 @@ def load_services_config(config_file: str) -> Dict:
         sys.exit(1)
 
 
-def process_services(config: Dict, state_override: Optional[str] = None) -> None:
+def process_services(config: dict, state_override: str | None = None) -> None:
     """Process services based on the configuration."""
     if not config or 'services' not in config:
         logger.error("Error: Invalid configuration format. 'services' key not found.")

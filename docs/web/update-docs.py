@@ -46,7 +46,7 @@ class DocsProcessor:
         """Load markdown locations from YAML file."""
         yaml_path = self.repository_path / "docs" / "web" / "update-docs-config.yaml"
         try:
-            with open(yaml_path, "r") as yaml_file:
+            with open(yaml_path) as yaml_file:
                 data = yaml.safe_load(yaml_file)
                 return data.get("locations", [])
         except (FileNotFoundError, yaml.YAMLError) as e:
@@ -199,7 +199,7 @@ class DocsProcessor:
 
     def copy_markdown_file(self, source_file_path, target_file_path, weight=0):
         """Copy and process a markdown file, adding frontmatter and fixing links."""
-        with open(source_file_path, "r") as readme_file:
+        with open(source_file_path) as readme_file:
             content = readme_file.read()
             lines = content.splitlines(True)  # Keep line endings
 
@@ -267,7 +267,7 @@ class DocsProcessor:
     def get_compose_metadata(self, file_path):
         """Extract metadata from a docker-compose file."""
         try:
-            with open(file_path, "r") as stream:
+            with open(file_path) as stream:
                 compose_dict = yaml.safe_load(stream)
                 if compose_dict is None:
                     return {}
@@ -309,7 +309,7 @@ class DocsProcessor:
         metadata = self.get_compose_metadata(source_file_path)
         metadata.setdefault("name", source_file_path.stem.capitalize())
 
-        with open(source_file_path, "r") as compose_file:
+        with open(source_file_path) as compose_file:
             lines = compose_file.readlines()
 
         yaml_started = False
@@ -371,7 +371,7 @@ def get_git_root():
         ["git", "rev-parse", "--show-toplevel"],
         stdout=subprocess.PIPE,
         check=True,
-        universal_newlines=True,
+        text=True,
     ).stdout.strip()
 
 
