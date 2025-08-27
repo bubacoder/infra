@@ -19,7 +19,6 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 # Global variables
-host_config_dir: Path | None = None
 docker_stacks_dir: Path = Path(__file__).parent.absolute()
 
 
@@ -32,12 +31,11 @@ def create_network_if_missing(network_name: str) -> None:
         docker(["network", "create", "--driver", "bridge", network_name])
 
 
-def create_localhost_link() -> None:
+def create_localhost_link(docker_config_dir: Path) -> None:
     """Create 'localhost' symlink in the parent directory."""
-    parent_dir = Path(host_config_dir).parent
     hostname = socket.gethostname()
-    localhost_link = parent_dir / "localhost"
-    hostname_dir = parent_dir / hostname
+    localhost_link = docker_config_dir / "localhost"
+    hostname_dir = docker_config_dir / hostname
 
     if hostname_dir.exists() and hostname_dir.is_dir():
         # Create or update the localhost symlink
@@ -54,12 +52,12 @@ def create_localhost_link() -> None:
             logger.error(f"Error creating localhost symlink: {e}")
 
 
-def get_compose_file(stack_dir: str, service_name: str) -> str:
+def get_compose_file(stack_dir: Path, service_name: str) -> Path:
     """Get the yaml file path for a service."""
-    return str(Path(stack_dir) / f"{service_name}.yaml")
+    return stack_dir / f"{service_name}.yaml"
 
 
-def has_build_directive(compose_file: str) -> bool:
+def has_build_directive(compose_file: Path) -> bool:
     """Check if the service uses a build directive."""
     with open(compose_file) as f:
         yaml_content = yaml.safe_load(f)
@@ -70,7 +68,7 @@ def has_build_directive(compose_file: str) -> bool:
     return False
 
 
-def get_env_file_args(service_name: str) -> list[str]:
+def get_env_file_args(host_config_dir: Path, service_name: str) -> list[str]:
     """Get environment file arguments for Docker Compose with normalized paths."""
     env_paths = [
         host_config_dir.parent / ".env",                  # Common .env file in config/docker
@@ -81,9 +79,9 @@ def get_env_file_args(service_name: str) -> list[str]:
 
     args = []
     for file in env_paths:
-        norm_file = os.path.normpath(file)
-        if os.path.isfile(norm_file):
-            args.extend(["--env-file", norm_file])
+        absolute_path = file.resolve()
+        if absolute_path.is_file():
+            args.extend(["--env-file", str(absolute_path)])
     return args
 
 
@@ -91,16 +89,16 @@ def docker(cmd: list[str], env=None, stdin=None, stdout=None, stderr=None) -> No
     subprocess.run(["docker"] + cmd, env=env, stdin=stdin, stdout=stdout, stderr=stderr, check=True)
 
 
-def docker_command(stack_dir: str, service_name: str, action: str) -> None:
+def docker_command(host_config_dir: Path, stack_dir: Path, service_name: str, action: str) -> None:
     """Execute Docker Compose command for a service."""
     print()  # empty line for separation
 
     compose_file = get_compose_file(stack_dir, service_name)
-    if not os.path.exists(compose_file):
+    if not compose_file.exists():
         logger.error(f"Compose file not found: {compose_file}")
         return
 
-    env_file_args = get_env_file_args(service_name)
+    env_file_args = get_env_file_args(host_config_dir, service_name)
 
     # Handle pull operations
     if action in ["update", "pull"]:
@@ -144,7 +142,7 @@ def load_services_config(config_file: str) -> dict:
         sys.exit(1)
 
 
-def process_services(config: dict, state_override: str | None = None) -> None:
+def process_services(host_config_dir: Path, config: dict, state_override: str | None = None) -> None:
     """Process services based on the configuration."""
     if not config or 'services' not in config:
         logger.error("Error: Invalid configuration format. 'services' key not found.")
@@ -174,21 +172,18 @@ def process_services(config: dict, state_override: str | None = None) -> None:
                 logger.warning(f"Unknown state '{state}' for service {category}/{name}")
                 continue
 
-            stack_dir = os.path.join(docker_stacks_dir, category)
-            docker_command(stack_dir, name, state)
+            docker_command(host_config_dir, docker_stacks_dir / category, name, state)
 
 
 def get_host_config_dir() -> Path:
     hostname = socket.gethostname().lower()
     script_dir = Path(__file__).parent.absolute()
-    config_dir = script_dir.parent / "config" / "docker"
-    return config_dir / hostname
+    docker_config_dir = script_dir.parent / "config" / "docker"
+    return docker_config_dir / hostname
 
 
 def cmd_config_apply(args) -> None:
     """Apply configuration to Docker services."""
-    global host_config_dir
-
     if args.config:
         config_file = args.config
         host_config_dir = Path(config_file).parent
@@ -199,11 +194,11 @@ def cmd_config_apply(args) -> None:
 
     logger.info("Init...")
     config = load_services_config(config_file)
-    create_localhost_link()
+    create_localhost_link(host_config_dir.parent)
     create_network_if_missing("proxy")
 
     # Process services with optional mode override
-    process_services(config, args.mode)
+    process_services(host_config_dir, config, args.mode)
 
     # Cleanup old images if enabled in config and in update mode
     if args.mode == 'update':
@@ -214,9 +209,6 @@ def cmd_config_apply(args) -> None:
 
 def cmd_service(args) -> None:
     """Manage individual Docker services."""
-    global host_config_dir
-    host_config_dir = get_host_config_dir()
-
     if not args.name:
         logger.error("Service name is required")
         sys.exit(1)
@@ -232,8 +224,7 @@ def cmd_service(args) -> None:
     # Everything before the last part is the category path
     category_path = '/'.join(name_parts[:-1])
 
-    stack_dir = os.path.join(docker_stacks_dir, category_path)
-    docker_command(stack_dir, service_name, args.operation)
+    docker_command(get_host_config_dir(), docker_stacks_dir / category_path, service_name, args.operation)
 
 
 def main() -> None:
