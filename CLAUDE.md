@@ -55,12 +55,12 @@ task docker:create-example-env
 
 ```bash
 # Manage individual Docker service (up, down, restart, recreate, update, pull, config)
-docker/labctl.py service [operation] [category/service-name]
+scripts/labctl.py service [operation] [category/service-name]
 
 # Examples:
-docker/labctl.py service up security/traefik
-docker/labctl.py service restart ai/ollama
-docker/labctl.py service update media/video/jellyfin
+scripts/labctl.py service up security/traefik
+scripts/labctl.py service restart ai/ollama
+scripts/labctl.py service update media/video/jellyfin
 ```
 
 ### Ansible Commands
@@ -144,7 +144,7 @@ This project uses:
   - Dockerfile linting with Hadolint
   - Security scanning with Gitleaks and KICS
 - **Docker** and Docker Compose for containerized services
-- **Python** for service management via the `docker/labctl.py` tool
+- **Python** for service management via the `scripts/labctl.py` tool
 - **GitHub Actions** for CI/CD workflows:
   - Pre-commit checks
   - Building devcontainer
@@ -153,7 +153,7 @@ This project uses:
 
 ## Docker Service Management
 
-The repository uses a custom Python script (`docker/labctl.py`) to manage Docker services defined in YAML files:
+The repository uses a custom Python script (`scripts/labctl.py`) to manage Docker services defined in YAML files:
 
 1. Services are organized by category (security, media, tools, etc.)
 2. Each service has a YAML definition file with container specifications
@@ -182,8 +182,7 @@ Key directories and their purposes:
 │   ├── storage/     # Storage services
 │   ├── monitoring/  # Monitoring services
 │   ├── ai/          # AI-related services
-│   ├── tools/       # Various utility services
-│   └── labctl.py    # Python script for service management
+│   └── tools/       # Various utility services
 ├── docs/            # Documentation
 ├── terraform/       # Terraform configurations
 │   └── azure-vm/    # Azure VM deployment with CloudInit

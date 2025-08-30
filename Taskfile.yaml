@@ -105,7 +105,7 @@ tasks:
   docker-command:
     internal: true
     cmds:
-      - docker/labctl.py service {{.COMMAND}} {{.SERVICE}}
+      - scripts/labctl.py service {{.COMMAND}} {{.SERVICE}}
 
   get-public-ip:
     desc: Display the public IP of the server (using ipinfo.io)

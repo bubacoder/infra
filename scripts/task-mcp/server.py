@@ -143,7 +143,7 @@ def control_container_service(operation: str, service_name: str) -> str:
 
     cmd = [
         sys.executable,
-        os.path.join(repository_root_path, "docker", "labctl.py"),
+        os.path.join(repository_root_path, "scripts", "labctl.py"),
         "service",
         operation,
         service_name

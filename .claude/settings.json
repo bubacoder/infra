@@ -5,8 +5,8 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
       "Bash(pre-commit run:*)",
-      "Bash(docker/labctl.py service config *)",
-      "Bash(docker/labctl.py service pull *)"
+      "Bash(scripts/labctl.py service config *)",
+      "Bash(scripts/labctl.py service pull *)"
     ],
     "deny": [
       "Read(config/**)"

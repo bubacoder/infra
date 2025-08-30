@@ -113,7 +113,7 @@ TODO Describe the minimally required (core) service configuration
 Edit `config/docker/<hostname>/services.yaml` to select which services (stacks) should be started (`state: up`)
 or stopped (`state: down`).
 
-To apply the changes run `task docker:apply` or `docker/labctl.py config apply`.
+To apply the changes run `task docker:apply`.
 
 ### 8. Configure the router
 

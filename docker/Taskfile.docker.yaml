@@ -4,22 +4,22 @@ tasks:
   command:
     internal: true
     cmds:
-      - docker/labctl.py docker/labctl.py service {{.COMMAND}} {{.SERVICE}}
+      - scripts/labctl.py service {{.COMMAND}} {{.SERVICE}}
 
   apply:
     desc: Deploy configured containers
     cmds:
-      - docker/labctl.py config apply
+      - scripts/labctl.py config apply
 
   update:
     desc: Update and restart containers
     cmds:
-      - docker/labctl.py config apply --mode=update
+      - scripts/labctl.py config apply --mode=update
 
   pull:
     desc: Pull container images
     cmds:
-      - docker/labctl.py config apply --mode=pull
+      - scripts/labctl.py config apply --mode=pull
 
   pull-update:
     desc: Pull, update and restart containers, then show restarts
@@ -31,7 +31,7 @@ tasks:
   stop:
     desc: Stop configured containers
     cmds:
-      - docker/labctl.py config apply --mode=down
+      - scripts/labctl.py config apply --mode=down
 
   stop-all:
     desc: Stop all running containers

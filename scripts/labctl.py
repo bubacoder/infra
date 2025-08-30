@@ -19,8 +19,9 @@ logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 # Global variables
-docker_stacks_dir: Path = Path(__file__).parent.absolute()
+docker_stacks_dir: Path = (Path(__file__).resolve().parent.parent / "docker").resolve()
 ALLOWED_STATES: tuple[str, ...] = ('up', 'update', 'pull', 'down', 'restart', 'recreate', 'config')
+
 
 def create_network_if_missing(network_name: str) -> None:
     """Create Docker network if it doesn't exist."""
