@@ -54,13 +54,13 @@ task docker:create-example-env
 ### Service Management
 
 ```bash
-# Manage individual Docker service (up, down, restart, recreate, update, pull, config)
+# Manage individual Docker service (pull, up, down, restart, recreate, config)
 scripts/labctl.py service [operation] [category/service-name]
 
 # Examples:
 scripts/labctl.py service up security/traefik
 scripts/labctl.py service restart ai/ollama
-scripts/labctl.py service update media/video/jellyfin
+scripts/labctl.py service pull media/video/jellyfin
 ```
 
 ### Ansible Commands

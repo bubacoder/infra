@@ -133,7 +133,7 @@ Services are deployed using the Taskfile system:
 ```
 task docker:apply       # Deploy all containers
 task docker:update      # Update and restart containers
-task docker:pull        # Pull latest container images
+task docker:pull-all    # Pull latest container images
 task docker:stop        # Stop configured containers
 ```
 
