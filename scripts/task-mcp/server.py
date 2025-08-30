@@ -123,16 +123,16 @@ def create_task_function(task_name: str) -> Callable[[], str]:
 @mcp.tool(name="control-container-service")
 def control_container_service(operation: str, service_name: str) -> str:
     """
-    Execute one operation ('up', 'down', 'restart', 'recreate', 'update', 'pull' or 'config') on the specified service and return the output
+    Execute one operation ('pull', 'up', 'down', 'restart', 'recreate', 'config') on the specified service and return the output
 
     Args:
-        operation: One of 'up', 'down', 'restart', 'recreate', 'update', 'pull', 'config'
+        operation: One of 'pull', 'up', 'down', 'restart', 'recreate', 'config'
         service_name: Service name in format category/name or category/subcategory/name
 
     Returns:
         The command output as a string
     """
-    allowed_operations = ['up', 'down', 'restart', 'recreate', 'update', 'pull', 'config']
+    allowed_operations = ['pull', 'up', 'down', 'restart', 'recreate', 'config']
 
     if operation not in allowed_operations:
         return f"Invalid operation: {operation}. Allowed: {', '.join(allowed_operations)}"

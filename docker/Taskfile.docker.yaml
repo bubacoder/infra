@@ -11,21 +11,21 @@ tasks:
     cmds:
       - scripts/labctl.py config apply
 
-  update:
-    desc: Update and restart containers
-    cmds:
-      - scripts/labctl.py config apply --mode=update
-
-  pull:
-    desc: Pull container images
+  pull-all:
+    desc: Pull all (even not enabled) container images
     cmds:
       - scripts/labctl.py config apply --mode=pull
 
-  pull-update:
-    desc: Pull, update and restart containers, then show restarts
+  update:
+    desc: Update containers (pull before start)
     cmds:
-      - task: pull
+      - scripts/labctl.py config apply --pull-before-start
+
+  apply-update:
+    desc: Update containers (pull before start), then prune old images and show restart events
+    cmds:
       - task: update
+      - task: prune
       - task: show-restarts
 
   stop:
@@ -39,7 +39,7 @@ tasks:
       - docker stop $(docker ps -a -q)
 
   prune:
-    desc: Remove unused and dangling container images
+    desc: Remove unused and dangling container images created before given timestamp (21 days)
     cmds:
       - docker image prune --all --force --filter "until=504h"
 
