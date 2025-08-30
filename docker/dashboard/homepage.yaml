@@ -10,7 +10,7 @@
 name: homepage
 services:
   homepage:
-    image: ghcr.io/gethomepage/homepage:v1.4.5
+    image: ghcr.io/gethomepage/homepage:v1.4.6
     container_name: homepage
     restart: unless-stopped
     environment:
@@ -43,7 +43,7 @@ services:
   #  docker-socket-proxy container to expose the docker socket on a more restricted and secure API.
   #  https://gethomepage.dev/configs/docker/#using-docker-socket-proxy
   dockerproxy:
-    image: ghcr.io/tecnativa/docker-socket-proxy:0.3.0
+    image: ghcr.io/tecnativa/docker-socket-proxy:v0.4.0
     container_name: dockerproxy
     restart: unless-stopped
     environment:
