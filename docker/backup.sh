@@ -11,7 +11,7 @@ stop_all_containers() {
 }
 
 start_selected_containers() {
-  "$(dirname "${BASH_SOURCE[0]}")/labctl.py" config apply
+  task docker:apply
 }
 
 kopia_backup_docker_volumes() {

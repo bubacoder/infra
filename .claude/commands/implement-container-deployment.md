@@ -22,5 +22,5 @@ Follow closely the architectural patterns described in the `docker/guidelines.md
 ### Part 2 - Finishing steps
 
 - After writing the compose file, run `pre-commit run --files <docker-compose-filename>` and resolve any reported issues.
-- Validate the compose file with `docker/labctl.py service config <category>/<application>` and fix any errors or warnings.
-- Pull the container image(s) with the command `docker/labctl.py service pull <category>/<application>` and verify success.
+- Validate the compose file with `scripts/labctl.py service config <category>/<application>` and fix any errors or warnings.
+- Pull the container image(s) with the command `scripts/labctl.py service pull <category>/<application>` and verify success.

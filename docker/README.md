@@ -27,7 +27,7 @@ If possible, avoid any hardcoded configuration values in these files. Use enviro
 ## Start the services
 
 After configuration, execute on a Docker host to apply the local configuration (based on the hostname):
-`task docker:apply` or `docker/labctl.py config apply`
+`task docker:apply`
 
 ## Updates
 
