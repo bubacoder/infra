@@ -18,9 +18,11 @@
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
+		// https://github.com/devcontainers/features/tree/main/src/docker-outside-of-docker
 		"ghcr.io/devcontainers/features/docker-outside-of-docker:1": {
 			"version": "latest",
-			"dockerDashComposeVersion": "v2"
+			"dockerDashComposeVersion": "v2",
+			"moby": false
 		}
 	}
 
