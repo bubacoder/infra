@@ -30,6 +30,7 @@ services:
       - ${DOCKER_VOLUMES}/webdav/log:/var/log/nginx # error.log, access.log
     networks:
       - proxy
+      - webdav-backend
     labels:
       traefik.enable: true
       traefik.http.routers.webdav.middlewares: localaccess@file
@@ -43,3 +44,5 @@ services:
 networks:
   proxy:
     external: true
+  webdav-backend:
+    external: false

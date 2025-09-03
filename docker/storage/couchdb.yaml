@@ -19,6 +19,7 @@ services:
       - ${DOCKER_VOLUMES}/couchdb/etc:/opt/couchdb/etc/local.d
     networks:
       - proxy
+      - couchdb-backend
     labels:
       traefik.enable: true
       traefik.http.routers.couchdb.middlewares: localaccess@file
@@ -32,3 +33,5 @@ services:
 networks:
   proxy:
     external: true
+  couchdb-backend:
+    external: false

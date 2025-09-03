@@ -34,6 +34,9 @@ services:
       - 443:443/udp # HTTP/3 - QUIC
     networks:
       - proxy
+      - vaultwarden-proxy
+      - authelia-proxy
+      - minio-proxy
     extra_hosts:
       - host.docker.internal:host-gateway
     labels:
@@ -66,4 +69,10 @@ services:
 
 networks:
   proxy:
+    external: true
+  vaultwarden-proxy:
+    external: true
+  authelia-proxy:
+    external: true
+  minio-proxy:
     external: true

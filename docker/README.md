@@ -24,6 +24,10 @@ Configuration files:
 The applications/services are defined in the `docker` folder, ordered by category.  
 If possible, avoid any hardcoded configuration values in these files. Use environment variables and init containers for customization.
 
+### Network Isolation
+
+Sensitive services use dedicated networks to enhance security and limit container-to-container communication. See [NETWORK-ISOLATION.md](NETWORK-ISOLATION.md) for details on the network architecture and security benefits.
+
 ## Start the services
 
 After configuration, execute on a Docker host to apply the local configuration (based on the hostname):

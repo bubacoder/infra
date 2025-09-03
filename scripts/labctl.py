@@ -22,6 +22,26 @@ logger = logging.getLogger(__name__)
 docker_stacks_dir: Path = (Path(__file__).resolve().parent.parent / "docker").resolve()
 ALLOWED_STATES: tuple[str, ...] = ('pull', 'up', 'down', 'restart', 'recreate', 'config')
 
+# Define sensitive services that need dedicated proxy networks
+SENSITIVE_SERVICES = [
+    'vaultwarden',
+    'authelia',
+    'minio',
+    'couchdb',
+    'webdav',
+    'filebrowser',
+]
+
+# Define category-based network mapping
+CATEGORY_NETWORKS = {
+    'security': 'security-proxy',
+    'storage': 'storage-proxy',
+    'media': 'media-proxy',
+    'monitoring': 'monitoring-proxy',
+    'tools': 'tools-proxy',
+    'ai': 'ai-proxy',
+}
+
 
 def create_network_if_missing(network_name: str) -> None:
     """Create Docker network if it doesn't exist."""
@@ -30,6 +50,46 @@ def create_network_if_missing(network_name: str) -> None:
     except subprocess.CalledProcessError:
         logger.info(f"Creating network: {network_name}")
         docker(["network", "create", "--driver", "bridge", network_name])
+
+
+def create_networks_for_service(service_name: str, category: str) -> None:
+    """Create all required networks for a service based on sensitivity and category."""
+    # Create default proxy network
+    create_network_if_missing('proxy')
+    
+    # For sensitive services, create service-specific proxy network
+    if service_name in SENSITIVE_SERVICES:
+        create_network_if_missing(f"{service_name}-proxy")
+    
+    # Create category-based proxy network if defined
+    if category in CATEGORY_NETWORKS:
+        create_network_if_missing(CATEGORY_NETWORKS[category])
+    
+    # Create service-specific backend network
+    create_network_if_missing(f"{service_name}-backend")
+
+
+def create_service_networks(compose_file: Path, service_name: str = None, category: str = None) -> None:
+    """Create networks defined in a service's compose file and service-specific networks."""
+    # First, create service-specific networks if the service name is provided
+    if service_name:
+        create_networks_for_service(service_name, category or "")
+    
+    # Then create networks defined in the compose file that aren't marked as external
+    try:
+        with open(compose_file) as f:
+            yaml_content = yaml.safe_load(f)
+            if yaml_content and 'networks' in yaml_content:
+                for network_name, network_config in yaml_content['networks'].items():
+                    # Skip external networks as they should be created separately
+                    if isinstance(network_config, dict) and network_config.get('external', False):
+                        # For service-specific proxy networks, ensure they exist
+                        if network_name.endswith('-proxy'):
+                            create_network_if_missing(network_name)
+                        continue
+                    create_network_if_missing(network_name)
+    except Exception as e:
+        logger.warning(f"Error processing networks in {compose_file}: {e}")
 
 
 def create_localhost_link(docker_config_dir: Path) -> None:
@@ -112,6 +172,12 @@ def docker_command(host_config_dir: Path, stack_dir: Path, service_name: str, ac
         return
 
     env_file_args = get_env_file_args(host_config_dir, service_name)
+
+    # Ensure networks are created before operating on services
+    if action in ["up", "recreate"]:
+        # Extract category from stack_dir (e.g., docker/security -> security)
+        category = stack_dir.name
+        create_service_networks(compose_file, service_name, category)
 
     # Handle other operations
     match action:
@@ -209,7 +275,17 @@ def cmd_config_apply(args) -> None:
     logger.info("Init...")
     config = load_services_config(config_file)
     create_localhost_link(host_config_dir.parent)
+    
+    # Create default proxy network
     create_network_if_missing("proxy")
+    
+    # Create category proxy networks
+    for category, network in CATEGORY_NETWORKS.items():
+        create_network_if_missing(network)
+    
+    # Create service-specific proxy networks for sensitive services
+    for service in SENSITIVE_SERVICES:
+        create_network_if_missing(f"{service}-proxy")
 
     # Process services with optional mode override
     process_services(host_config_dir, config, args.mode, args.pull_before_start)

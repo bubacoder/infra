@@ -35,9 +35,11 @@ services:
     volumes:
       - ${DOCKER_VOLUMES}/minio:/data
     networks:
-      - proxy
+      - minio-proxy
+      - minio-backend
     labels:
       traefik.enable: true
+      traefik.docker.network: minio-proxy
 
       # S3 API
       traefik.http.routers.minio.service: minio
@@ -58,5 +60,7 @@ services:
       homepage.description: High-performance, S3 compatible object store
 
 networks:
-  proxy:
+  minio-proxy:
     external: true
+  minio-backend:
+    external: false

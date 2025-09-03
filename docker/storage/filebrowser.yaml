@@ -21,6 +21,7 @@ services:
       - ${DOCKER_VOLUMES}/filebrowser/settings.json:/config/settings.json
     networks:
       - proxy
+      - filebrowser-backend
     labels:
       traefik.enable: true
       traefik.http.routers.filebrowser.middlewares: localaccess@file
@@ -34,3 +35,5 @@ services:
 networks:
   proxy:
     external: true
+  filebrowser-backend:
+    external: false
