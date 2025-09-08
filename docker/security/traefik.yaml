@@ -34,6 +34,11 @@ services:
       - 443:443/udp # HTTP/3 - QUIC
     networks:
       - proxy
+      - security-authelia
+      - security-wg-easy
+      - dev-code-server
+      - tools-vaultwarden
+      - backup-kopia
     extra_hosts:
       - host.docker.internal:host-gateway
     labels:
@@ -66,4 +71,14 @@ services:
 
 networks:
   proxy:
+    external: true
+  security-authelia:
+    external: true
+  security-wg-easy:
+    external: true
+  dev-code-server:
+    external: true
+  tools-vaultwarden:
+    external: true
+  backup-kopia:
     external: true

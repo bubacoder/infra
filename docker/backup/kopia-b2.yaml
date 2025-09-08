@@ -52,10 +52,11 @@ services:
       - ${STORAGE_MEDIA}:/sources/nas/media:ro
 
     networks:
-      - proxy
+      - backup-kopia
 
     labels:
       traefik.enable: true
+      traefik.docker.network: backup-kopia
       traefik.http.routers.kopia-b2.middlewares: localaccess-sso@file
       traefik.http.services.kopia-b2.loadbalancer.server.port: 80
       homepage.group: Storage
@@ -65,5 +66,5 @@ services:
       homepage.description: "[SSO] Backups Using the Cloud Storage You Pick"
 
 networks:
-  proxy:
+  backup-kopia:
     external: true
