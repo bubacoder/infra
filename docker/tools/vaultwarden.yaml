@@ -19,9 +19,10 @@ services:
     volumes:
       - ${DOCKER_VOLUMES}/vaultwarden:/data
     networks:
-      - proxy
+      - tools-vaultwarden
     labels:
       traefik.enable: true
+      traefik.docker.network: tools-vaultwarden
       traefik.http.routers.vault.middlewares: localaccess@file
       traefik.http.routers.vault.rule: Host(`vault.${MYDOMAIN}`)
       traefik.http.services.vault.loadbalancer.server.port: 80
@@ -32,5 +33,5 @@ services:
       homepage.description: Password Manager
 
 networks:
-  proxy:
+  tools-vaultwarden:
     external: true

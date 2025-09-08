@@ -35,13 +35,72 @@ networks:
 
 ### Networking
 
-All services use a shared external `proxy` network for communication:
+#### Shared Proxy Network
+
+By default, most services connect to the shared external `proxy` network for communication:
 
 ```yaml
 networks:
   proxy:
     external: true
 ```
+
+#### Isolated Networks for Sensitive Services
+
+Sensitive services (like backup systems, password managers, VPN services) should use isolated networks to prevent direct communication between services, with only Traefik able to connect to them:
+
+```yaml
+# Service YAML file - isolated network definition
+networks:
+  service-category-name:
+    external: true
+
+# Service configuration
+services:
+  service:
+    # ... other configuration
+    networks:
+      - service-category-name  # Instead of 'proxy'
+    labels:
+      traefik.enable: true
+      traefik.docker.network: service-category-name  # Tell Traefik which network to use
+      # ... other labels
+```
+
+Traefik must be connected to all isolated networks to route traffic:
+
+```yaml
+# traefik.yaml
+services:
+  traefik:
+    # ... other configuration
+    networks:
+      - proxy  # Main network
+      - security-authelia  # Isolated service networks
+      - security-wg-easy
+      - tools-vaultwarden
+      # ... other isolated networks
+```
+
+And in the networks section of the same file, all these external networks must be defined:
+
+```yaml
+networks:
+  proxy:  # Main network
+    external: true
+  security-authelia:  # Isolated service networks
+    external: true
+  security-wg-easy:
+    external: true
+  tools-vaultwarden:
+    external: true
+  # ... other isolated networks
+```
+
+This architecture ensures that:
+1. Sensitive services can only communicate with Traefik, not with each other
+2. Services in isolated networks are not reachable from the shared proxy network
+3. All external access still flows through Traefik's security controls
 
 ### Traefik Reverse Proxy
 
@@ -178,9 +237,11 @@ services:
       - ${DOCKER_VOLUMES}/service-name:/data
       - ./service-name/config:/config  # If needed
     networks:
-      - proxy
+      - proxy  # Or service-specific network for sensitive services
     labels:
       traefik.enable: true
+      # If using isolated network, specify which network Traefik should use
+      # traefik.docker.network: service-category-name
       traefik.http.routers.service-name.middlewares: middleware-name@file
       traefik.http.services.service-name.loadbalancer.server.port: PORT
       homepage.group: Category
@@ -190,6 +251,6 @@ services:
       homepage.description: "Service description"
 
 networks:
-  proxy:
+  proxy:  # Or service-specific network for sensitive services
     external: true
 ```

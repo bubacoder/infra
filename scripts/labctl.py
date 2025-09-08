@@ -32,6 +32,40 @@ def create_network_if_missing(network_name: str) -> None:
         docker(["network", "create", "--driver", "bridge", network_name])
 
 
+def get_external_networks(compose_file: Path) -> list[str]:
+    """Extract external networks from a Docker Compose file."""
+    networks: list[str] = []
+    try:
+        with open(compose_file) as f:
+            yaml_content = yaml.safe_load(f) or {}
+        networks_def = yaml_content.get("networks") or {}
+        if isinstance(networks_def, dict):
+            for key, cfg in networks_def.items():
+                if not isinstance(cfg, dict):
+                    continue
+                ext = cfg.get("external", False)
+                # Support: external: true | external: {name: "..."} | name: "..."
+                name_override = cfg.get("name")
+                if ext is True:
+                    networks.append(name_override or key)
+                elif isinstance(ext, dict):
+                    networks.append(ext.get("name") or name_override or key)
+    except (FileNotFoundError, yaml.YAMLError, OSError) as e:
+        logger.warning(f"Error extracting networks from {compose_file}: {e}")
+    return networks
+
+
+def create_service_networks(compose_file: Path) -> None:
+    """Create all external networks required by a service.
+
+    Args:
+        compose_file: Path to the Docker Compose file
+    """
+    networks = get_external_networks(compose_file)
+    for network_name in networks:
+        create_network_if_missing(network_name)
+
+
 def create_localhost_link(docker_config_dir: Path) -> None:
     """Create 'localhost' symlink in the parent directory."""
     hostname = socket.gethostname()
@@ -110,6 +144,9 @@ def docker_command(host_config_dir: Path, stack_dir: Path, service_name: str, ac
     if not compose_file.exists():
         logger.error(f"Compose file not found: {compose_file}")
         return
+
+    # Ensure all required networks exist before executing any Docker Compose command
+    create_service_networks(compose_file)
 
     env_file_args = get_env_file_args(host_config_dir, service_name)
 
@@ -209,7 +246,6 @@ def cmd_config_apply(args) -> None:
     logger.info("Init...")
     config = load_services_config(config_file)
     create_localhost_link(host_config_dir.parent)
-    create_network_if_missing("proxy")
 
     # Process services with optional mode override
     process_services(host_config_dir, config, args.mode, args.pull_before_start)

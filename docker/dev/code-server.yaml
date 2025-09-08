@@ -30,9 +30,10 @@ services:
       - ${ADMIN_HOME}/repos:/config/repos
       - ${ADMIN_HOME}/.ssh:/config/.ssh
     networks:
-      - proxy
+      - dev-code-server
     labels:
       traefik.enable: true
+      traefik.docker.network: dev-code-server
       traefik.http.routers.code.middlewares: localaccess-sso@file
       traefik.http.routers.code.rule: Host(`code.${MYDOMAIN}`)
       traefik.http.services.code.loadbalancer.server.port: 8443
@@ -43,5 +44,5 @@ services:
       homepage.description: "[SSO] Visual Studio Code"
 
 networks:
-  proxy:
+  dev-code-server:
     external: true

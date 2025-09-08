@@ -32,9 +32,10 @@ services:
     volumes:
       - ${DOCKER_VOLUMES}/wg-easy:/etc/wireguard
     networks:
-      - proxy
+      - security-wg-easy
     labels:
       traefik.enable: true
+      traefik.docker.network: security-wg-easy
       traefik.http.routers.wireguard.rule: Host(`vpn.${MYDOMAIN}`)
       traefik.http.routers.wireguard.middlewares: localaccess-sso@file
       traefik.http.services.wireguard.loadbalancer.server.port: 51821
@@ -45,5 +46,5 @@ services:
       homepage.description: "[SSO] VPN Service"
 
 networks:
-  proxy:
+  security-wg-easy:
     external: true
