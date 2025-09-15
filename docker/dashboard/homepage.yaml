@@ -43,7 +43,7 @@ services:
   #  docker-socket-proxy container to expose the docker socket on a more restricted and secure API.
   #  https://gethomepage.dev/configs/docker/#using-docker-socket-proxy
   dockerproxy:
-    image: ghcr.io/tecnativa/docker-socket-proxy:v0.4.0
+    image: ghcr.io/tecnativa/docker-socket-proxy:v0.4.1
     container_name: dockerproxy
     restart: unless-stopped
     environment:
