@@ -14,7 +14,7 @@
 name: endlessh
 services:
   endlessh:
-    image: shizunge/endlessh-go:2024.1106.0
+    image: shizunge/endlessh-go:2025.0914.0
     container_name: endlessh
     restart: unless-stopped
     command:
