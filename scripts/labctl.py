@@ -10,6 +10,7 @@ import os
 import socket
 import subprocess
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 import yaml
@@ -17,6 +18,14 @@ import yaml
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class DockerOptions:
+    """Configuration options for Docker operations."""
+    pull_before_start: bool = False
+    quiet: bool = False
+
 
 # Global variables
 docker_stacks_dir: Path = (Path(__file__).resolve().parent.parent / "docker").resolve()
@@ -124,20 +133,28 @@ def docker(cmd: list[str], env=None, stdin=None, stdout=None, stderr=None) -> No
     subprocess.run(["docker"] + cmd, env=env, stdin=stdin, stdout=stdout, stderr=stderr, check=True)
 
 
-def docker_pull(stack_dir: Path, service_name: str, compose_file: Path, env_file_args: list[str]) -> None:
+def docker_pull(stack_dir: Path, service_name: str, compose_file: Path, env_file_args: list[str], quiet: bool = False) -> None:
     """Pull Docker images for a service."""
     logger.info(f">>> Pulling {stack_dir}/{service_name}")
     if has_build_directive(compose_file):
         # Bake: https://docs.docker.com/guides/compose-bake/
         env = os.environ.copy()
         env["COMPOSE_BAKE"] = "true"
-        docker(["compose", "-f", compose_file, *env_file_args, "build", "--pull"], env=env)
+        build_cmd = ["compose", "-f", compose_file, *env_file_args, "build", "--pull"]
+        if quiet:
+            build_cmd.append("--quiet")
+        docker(build_cmd, env=env)
     else:
-        docker(["compose", "-f", compose_file, *env_file_args, "pull"])
+        pull_cmd = ["compose", "-f", compose_file, *env_file_args, "pull"]
+        if quiet:
+            pull_cmd.append("--quiet")
+        docker(pull_cmd)
 
 
-def docker_command(host_config_dir: Path, stack_dir: Path, service_name: str, action: str, pull_before_start: bool = False) -> None:
+def docker_command(host_config_dir: Path, stack_dir: Path, service_name: str, action: str, options: DockerOptions = None) -> None:
     """Execute Docker Compose command for a service."""
+    if options is None:
+        options = DockerOptions()
     logger.info("")  # separation
 
     compose_file = get_compose_file(stack_dir, service_name)
@@ -153,11 +170,11 @@ def docker_command(host_config_dir: Path, stack_dir: Path, service_name: str, ac
     # Handle other operations
     match action:
         case "pull":
-            docker_pull(stack_dir, service_name, compose_file, env_file_args)
+            docker_pull(stack_dir, service_name, compose_file, env_file_args, options.quiet)
 
         case "up":
-            if pull_before_start:
-                docker_pull(stack_dir, service_name, compose_file, env_file_args)
+            if options.pull_before_start:
+                docker_pull(stack_dir, service_name, compose_file, env_file_args, options.quiet)
 
             logger.info(f">>> Starting {stack_dir}/{service_name}")
             docker(["compose", "-f", compose_file, *env_file_args, "up", "--detach"])
@@ -171,8 +188,8 @@ def docker_command(host_config_dir: Path, stack_dir: Path, service_name: str, ac
             docker(["compose", "-f", compose_file, *env_file_args, "restart"])
 
         case "recreate":
-            if pull_before_start:
-                docker_pull(stack_dir, service_name, compose_file, env_file_args)
+            if options.pull_before_start:
+                docker_pull(stack_dir, service_name, compose_file, env_file_args, options.quiet)
 
             logger.info(f">>> Recreating {stack_dir}/{service_name}")
             docker(["compose", "-f", compose_file, *env_file_args, "up", "--detach", "--force-recreate"])
@@ -193,7 +210,7 @@ def load_services_config(config_file: str) -> dict:
         sys.exit(1)
 
 
-def process_services(host_config_dir: Path, config: dict, state_override: str | None = None, pull_before_start: bool = False) -> None:
+def process_services(host_config_dir: Path, config: dict, state_override: str | None = None, pull_before_start: bool = False, quiet: bool = False) -> None:
     """Process services based on the configuration."""
     if not config or 'services' not in config:
         logger.error("Error: Invalid configuration format. 'services' key not found.")
@@ -223,7 +240,7 @@ def process_services(host_config_dir: Path, config: dict, state_override: str | 
                 logger.warning(f"Unknown state '{state}' for service {category}/{name}")
                 continue
 
-            docker_command(host_config_dir, docker_stacks_dir / category, name, state, pull_before_start)
+            docker_command(host_config_dir, docker_stacks_dir / category, name, state, DockerOptions(pull_before_start, quiet))
 
 
 def get_host_config_dir() -> Path:
@@ -248,7 +265,7 @@ def cmd_config_apply(args) -> None:
     create_localhost_link(host_config_dir.parent)
 
     # Process services with optional mode override
-    process_services(host_config_dir, config, args.mode, args.pull_before_start)
+    process_services(host_config_dir, config, args.mode, args.pull_before_start, args.quiet)
 
 
 def cmd_service(args) -> None:
@@ -268,7 +285,7 @@ def cmd_service(args) -> None:
     # Everything before the last part is the category path
     category_path = '/'.join(name_parts[:-1])
 
-    docker_command(get_host_config_dir(), docker_stacks_dir / category_path, service_name, args.operation, args.pull_before_start)
+    docker_command(get_host_config_dir(), docker_stacks_dir / category_path, service_name, args.operation, DockerOptions(args.pull_before_start, args.quiet))
 
 
 def main() -> None:
@@ -284,12 +301,14 @@ def main() -> None:
     config_apply_parser.add_argument('--config', '-c', help='Path to the YAML configuration file')
     config_apply_parser.add_argument('--mode', '-m', choices=list(ALLOWED_STATES), help='Override state for all services')
     config_apply_parser.add_argument('--pull-before-start', action='store_true', default=False, help='Pull images before starting services')
+    config_apply_parser.add_argument('--quiet', action='store_true', default=False, help='Use quiet mode for docker operations')
 
     # Service command
     service_parser = subparsers.add_parser('service', help='Manage individual services')
     service_parser.add_argument('operation', choices=list(ALLOWED_STATES), help='Operation to perform on the service')
     service_parser.add_argument('name', help='Service name in format category/name or category/subcategory/name')
     service_parser.add_argument('--pull-before-start', action='store_true', default=False, help='Pull images before starting the service')
+    service_parser.add_argument('--quiet', action='store_true', default=False, help='Use quiet mode for docker operations')
 
     args = parser.parse_args()
 
