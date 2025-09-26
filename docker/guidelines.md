@@ -170,8 +170,10 @@ Environment variables are managed through `.env` files in a cascading priority:
 
 Common environment variables include:
 
-- `MYDOMAIN`: Base domain for all services
+- `PUID`: User Id on the host machine
+- `PGID`: Group Id on the host machine
 - `TIMEZONE`: Timezone setting
+- `MYDOMAIN`: Base domain for all services
 - `DOCKER_VOLUMES`: Base path for persistent volumes
 - Service-specific credentials and API keys
 
@@ -226,16 +228,18 @@ When creating a new service, use this template:
 ---
 name: service-name
 services:
-  service:
+  service-name:
     image: vendor/service:tag
     container_name: service-name
     restart: unless-stopped
     environment:
       TZ: ${TIMEZONE}
+      PUID: ${PUID}  # Host user ID for file ownership (if image supports it)
+      PGID: ${PGID}  # Host group ID for file ownership (if image supports it)
       # Service-specific variables
     volumes:
       - ${DOCKER_VOLUMES}/service-name:/data
-      - ./service-name/config:/config  # If needed
+      - ./service-name/config:/config  # Local configuration files, committed to the repository (if needed)
     networks:
       - proxy  # Or service-specific network for sensitive services
     labels:

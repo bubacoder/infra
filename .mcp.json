@@ -3,6 +3,20 @@
     "context7": {
       "type": "http",
       "url": "https://mcp.context7.com/mcp"
+    },
+    "infra-mcp": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "scripts/infra-mcp",
+        "server.py"
+      ],
+      "env": {
+        "ENABLE_TASK_TOOLS": "false",
+        "ENABLE_CONTAINER_TOOLS": "true"
+      }
     }
   }
 }

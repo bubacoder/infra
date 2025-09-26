@@ -19,7 +19,7 @@
     "homelab-infra": {
       "type": "stdio",
       "command": "uv",
-      "args": ["run", "--directory", "scripts/task-mcp", "server.py"]
+      "args": ["run", "--directory", "scripts/infra-mcp", "server.py"]
     },
     "context7": {
       "type": "stdio",

@@ -1,4 +1,4 @@
-# Task MCP Server
+# Infra MCP Server
 
 This is an MCP server implementation using the FastMCP library that dynamically creates tools from your taskfile tasks.
 
@@ -20,7 +20,7 @@ This is an MCP server implementation using the FastMCP library that dynamically 
 2. Setup a virtual environment and install dependencies:
 
 ```bash
-cd scripts/task-mcp
+cd scripts/infra-mcp
 uv venv
 uv sync # or: uv pip install -r requirements.txt
 ```

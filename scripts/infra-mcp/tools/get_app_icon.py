@@ -67,7 +67,10 @@ class AppIconFinder:
                 with requests.get(url, headers=self.headers, timeout=10) as probe:
                     if probe.ok:
                         return icon_name
-            return None
+                    else:
+                        return None
+            else:
+                return None
         except requests.RequestException:
             return None
 
@@ -117,7 +120,8 @@ class AppIconFinder:
             favicon_response = requests.head(default_favicon, headers=self.headers, timeout=5)
             if favicon_response.status_code == 200:
                 return default_favicon
-            return None
+            else:
+                return None
         except Exception as e:
             print(f"Error finding favicon: {e}", file=sys.stderr)
             return None
@@ -151,7 +155,7 @@ def main():
     """
     Process command line arguments and run the application.
     """
-    parser = argparse.ArgumentParser(prog="find_app_icon.py", description="Find dashboard icon filename or favicon URL.")
+    parser = argparse.ArgumentParser(prog="get_app_icon.py", description="Find dashboard icon filename or favicon URL.")
     parser.add_argument("--test", "-t", action="store_true", help="Run a small built-in test battery and print results.")
     parser.add_argument("app_name", nargs="?", help="Application name")
     parser.add_argument("homepage", nargs="?", help="Homepage URL (with or without scheme)")

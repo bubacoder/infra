@@ -1,13 +1,14 @@
 [project]
-name = "task-mcp"
+name = "infra-mcp"
 version = "0.1.0"
 description = "MCP server for task runner integration"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 dependencies = [
     "fastmcp>=2.10.0,<3",
     "requests>=2.32.4,<3",
-    "beautifulsoup4>=4.13,<5"
+    "beautifulsoup4>=4.13,<5",
+    "pyyaml>=6.0.2,<7",
 ]
 
 [project.scripts]
-task-mcp = "server:main"
+infra-mcp = "server:main"
