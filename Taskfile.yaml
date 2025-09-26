@@ -39,10 +39,12 @@ tasks:
     cmds:
       - pre-commit run --all-files
 
-  lint-stashed:
-    desc: Run linting tools on stashed files (via pre-commit)
+  lint-app:
+    desc: Run linting tools on all files skipping infrastructure-related checks
+    env:
+      SKIP: "renovate-config-validator,terraform_fmt,terraform_docs,terraform_validate,terraform_tflint,ansible-lint,kics-scan"
     cmds:
-      - pre-commit run
+      - pre-commit run --all-files
 
   git-rebase-fixup:
     desc: Interactively rebase current branch to origin/main (stash, rebase, pop)

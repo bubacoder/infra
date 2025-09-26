@@ -171,7 +171,7 @@ When adding or modifying services:
 
 Key directories and their purposes:
 
-```
+```text
 /
 ├── ansible/         # Ansible configuration for server setup
 │   ├── playbooks/   # Main playbooks for different environments
