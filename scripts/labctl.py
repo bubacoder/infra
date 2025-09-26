@@ -7,6 +7,7 @@ Uses YAML configuration to manage Docker services.
 import argparse
 import logging
 import os
+import shutil
 import socket
 import subprocess
 import sys
@@ -33,7 +34,11 @@ ALLOWED_STATES: tuple[str, ...] = ('pull', 'up', 'down', 'restart', 'recreate', 
 
 
 def create_network_if_missing(network_name: str) -> None:
-    """Create Docker network if it doesn't exist."""
+    """Create Docker network if it doesn't exist.
+
+    Args:
+        network_name: The name of the Docker network to check/create
+    """
     try:
         docker(["network", "inspect", network_name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError:
@@ -61,7 +66,8 @@ def get_external_networks(compose_file: Path) -> list[str]:
                     networks.append(ext.get("name") or name_override or key)
     except (FileNotFoundError, yaml.YAMLError, OSError) as e:
         logger.warning(f"Error extracting networks from {compose_file}: {e}")
-    return networks
+
+    return list(dict.fromkeys(networks))
 
 
 def create_service_networks(compose_file: Path) -> None:
@@ -76,7 +82,13 @@ def create_service_networks(compose_file: Path) -> None:
 
 
 def create_localhost_link(docker_config_dir: Path) -> None:
-    """Create 'localhost' symlink in the parent directory."""
+    """Create 'localhost' symlink in the parent directory.
+
+    Creates a symbolic link named 'localhost' that points to the current hostname directory.
+
+    Args:
+        docker_config_dir: The Docker configuration directory containing hostname subdirectories
+    """
     hostname = socket.gethostname()
     localhost_link = docker_config_dir / "localhost"
     hostname_dir = docker_config_dir / hostname
@@ -92,17 +104,32 @@ def create_localhost_link(docker_config_dir: Path) -> None:
 
         try:
             os.symlink(f"{hostname}/", localhost_link, target_is_directory=True)
-        except Exception as e:
-            logger.error(f"Error creating localhost symlink: {e}")
+        except Exception:
+            logger.exception("Error creating localhost symlink")
 
 
 def get_compose_file(stack_dir: Path, service_name: str) -> Path:
-    """Get the yaml file path for a service."""
+    """Get the yaml file path for a service.
+
+    Args:
+        stack_dir: Directory containing service definitions
+        service_name: Name of the service
+
+    Returns:
+        Path: The path to the service's compose file
+    """
     return stack_dir / f"{service_name}.yaml"
 
 
 def has_build_directive(compose_file: Path) -> bool:
-    """Check if the service uses a build directive."""
+    """Check if the service uses a build directive.
+
+    Args:
+        compose_file: Path to the Docker Compose file
+
+    Returns:
+        bool: True if the compose file contains any build directives
+    """
     with open(compose_file) as f:
         yaml_content = yaml.safe_load(f)
         if yaml_content and 'services' in yaml_content:
@@ -130,11 +157,31 @@ def get_env_file_args(host_config_dir: Path, service_name: str) -> list[str]:
 
 
 def docker(cmd: list[str], env=None, stdin=None, stdout=None, stderr=None) -> None:
-    subprocess.run(["docker"] + cmd, env=env, stdin=stdin, stdout=stdout, stderr=stderr, check=True)
+    """Execute a docker command with the given arguments.
+
+    Args:
+        cmd: List of command arguments to pass to docker
+        env: Environment variables for the subprocess
+        stdin: Standard input for the subprocess
+        stdout: Standard output for the subprocess
+        stderr: Standard error for the subprocess
+    """
+    docker_bin = shutil.which("docker")
+    if docker_bin is None:
+        raise RuntimeError("Docker executable not found on PATH.") from None
+    subprocess.run([docker_bin, *cmd], env=env, stdin=stdin, stdout=stdout, stderr=stderr, check=True)  # noqa: S603
 
 
 def docker_pull(stack_dir: Path, service_name: str, compose_file: Path, env_file_args: list[str], quiet: bool = False) -> None:
-    """Pull Docker images for a service."""
+    """Pull Docker images for a service.
+
+    Args:
+        stack_dir: Directory containing the service definition
+        service_name: Name of the service
+        compose_file: Path to the Docker Compose file
+        env_file_args: List of environment file arguments
+        quiet: Whether to use quiet mode (default: False)
+    """
     logger.info(f">>> Pulling {stack_dir}/{service_name}")
     if has_build_directive(compose_file):
         # Bake: https://docs.docker.com/guides/compose-bake/
@@ -152,7 +199,15 @@ def docker_pull(stack_dir: Path, service_name: str, compose_file: Path, env_file
 
 
 def docker_command(host_config_dir: Path, stack_dir: Path, service_name: str, action: str, options: DockerOptions = None) -> None:
-    """Execute Docker Compose command for a service."""
+    """Execute Docker Compose command for a service.
+
+    Args:
+        host_config_dir: Path to the host-specific configuration directory
+        stack_dir: Path to the service category directory
+        service_name: Name of the service to operate on
+        action: The action to perform (pull, up, down, restart, recreate, config)
+        options: Docker operation options (default: None)
+    """
     if options is None:
         options = DockerOptions()
     logger.info("")  # separation
@@ -162,8 +217,9 @@ def docker_command(host_config_dir: Path, stack_dir: Path, service_name: str, ac
         logger.error(f"Compose file not found: {compose_file}")
         return
 
-    # Ensure all required networks exist before executing any Docker Compose command
-    create_service_networks(compose_file)
+    # Ensure external networks exist only when (re)starting containers
+    if action in {"up", "recreate"}:
+        create_service_networks(compose_file)
 
     env_file_args = get_env_file_args(host_config_dir, service_name)
 
@@ -205,13 +261,21 @@ def load_services_config(config_file: str) -> dict:
         with open(config_file) as file:
             config = yaml.safe_load(file)
             return config
-    except Exception as e:
-        logger.error(f"Error loading configuration file {config_file}: {e}")
+    except Exception:
+        logger.exception(f"Error loading configuration file {config_file}")
         sys.exit(1)
 
 
 def process_services(host_config_dir: Path, config: dict, state_override: str | None = None, pull_before_start: bool = False, quiet: bool = False) -> None:
-    """Process services based on the configuration."""
+    """Process services based on the configuration.
+
+    Args:
+        host_config_dir: Path to the host-specific configuration directory
+        config: Dictionary containing service configurations
+        state_override: State to override for all services (pull, up, down, etc.)
+        pull_before_start: Whether to pull images before starting services
+        quiet: Whether to use quiet mode for docker operations
+    """
     if not config or 'services' not in config:
         logger.error("Error: Invalid configuration format. 'services' key not found.")
         return

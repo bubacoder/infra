@@ -2,14 +2,27 @@
   "permissions": {
     "allow": [
       "mcp__ide__getDiagnostics",
+      "mcp__infra-mcp__get-most-specific-container-tag",
+      "mcp__infra-mcp__get-container-categories",
+      "mcp__infra-mcp__get-dashboard-groups",
+      "mcp__infra-mcp__get-app-icon",
+      "WebSearch",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:hub.docker.com)",
+      "WebFetch(domain:docs.linuxserver.io)",
+      "Bash(scripts/labctl.py service config:*)",
+      "Bash(scripts/labctl.py service pull:*)",
       "Bash(pre-commit run:*)",
-      "Bash(scripts/labctl.py service config *)",
-      "Bash(scripts/labctl.py service pull *)"
+      "Bash(task lint-app)",
+      "Bash(task lint)"
     ],
     "deny": [
       "Read(config/**)"
     ]
+  },
+  "env": {
+    "BASH_DEFAULT_TIMEOUT_MS": "600000",
+    "BASH_MAX_TIMEOUT_MS": "1800000"
   }
 }
