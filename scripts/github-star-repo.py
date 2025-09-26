@@ -33,7 +33,7 @@ def star_github_repo(repo_url: str) -> None:
             "Authorization": f"Bearer {github_token}",
             "Accept": "application/vnd.github+json"
         }
-        response = requests.put(api_url, headers=headers)
+        response = requests.put(api_url, headers=headers, timeout=30)
 
         # Check the response status code
         if response.status_code == 204:
