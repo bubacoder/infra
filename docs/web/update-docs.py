@@ -49,8 +49,8 @@ class DocsProcessor:
             with open(yaml_path) as yaml_file:
                 data = yaml.safe_load(yaml_file)
                 return data.get("locations", [])
-        except (FileNotFoundError, yaml.YAMLError) as e:
-            self.logger.error(f"Error loading update-docs-config.yaml: {e}")
+        except (FileNotFoundError, yaml.YAMLError):
+            self.logger.exception("Error loading update-docs-config.yaml")
             sys.exit(1)
 
     def log_copy(self, source_file_path, target_file_path):
@@ -287,10 +287,10 @@ class DocsProcessor:
                         "icon": homepage_icon,
                     }
 
-            return {}
-
-        except yaml.YAMLError as ex:
-            self.logger.error(f"YAML parsing error: {ex}")
+            # No matching labels found in any service
+            return {}  # noqa: TRY300
+        except yaml.YAMLError:
+            self.logger.exception("YAML parsing error")
             return {}
 
     def process_docker_compose_file(self, source_dir, target_dir, root, file):
@@ -365,14 +365,30 @@ class DocsProcessor:
             self.process_location(source, target, weight)
 
 
-def get_git_root():
-    """Get the git repository root directory."""
-    return subprocess.run(
-        ["git", "rev-parse", "--show-toplevel"],
-        stdout=subprocess.PIPE,
-        check=True,
-        text=True,
-    ).stdout.strip()
+def get_git_root() -> str:
+    """Get the git repository root directory.
+
+    Returns:
+        str: The absolute path to the git repository root directory.
+
+    Raises:
+        RuntimeError: If git executable is not found or not in a git repository.
+    """
+    git_cmd = shutil.which("git")
+    if git_cmd is None:
+        raise RuntimeError("Git not found on PATH") from None
+    try:
+        result = subprocess.run(  # noqa: S603
+            [git_cmd, "rev-parse", "--show-toplevel"],
+            stdout=subprocess.PIPE,
+            check=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        raise RuntimeError("Git executable not found. Please install Git and ensure it is on your PATH.") from None
+    except subprocess.CalledProcessError:
+        raise RuntimeError("Unable to locate git repository. Are you running this inside a Git repo?") from None
+    return result.stdout.strip()
 
 
 if __name__ == "__main__":
