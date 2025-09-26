@@ -5,23 +5,26 @@ line-length = 120
 
 [lint]
 select = [
-  "E",    # pycodestyle
-  "F",    # Pyflakes
-  "PL",   # Pylint
-  "UP",   # pyupgrade
-  "A",    # flake8-builtins
-  "B",    # flake8-bugbear
-  "SIM",  # flake8-simplify
-  "C4",   # flake8-comprehensions
-  "PT",   # flake8-pytest-style
-  "N",    # pep8-naming
-  "FAST", # FastAPI
-  "I",    # isort
+  "E",    # pycodestyle - PEP 8 style guide errors and conventions
+  "F",    # Pyflakes - Logical errors and unused code detection
+  "PL",   # Pylint - Code quality, complexity and bug detection
+  "UP",   # pyupgrade - Modernizes Python syntax for newer versions
+  "A",    # flake8-builtins - Prevents shadowing of Python built-in names
+  "B",    # flake8-bugbear - Catches common bugs and coding mistakes
+  "S",    # flake8-bandit - Security issue and vulnerability detection
+  "SIM",  # flake8-simplify - Code simplification suggestions
+  "C4",   # flake8-comprehensions - List/dict/set comprehension optimization
+  "PT",   # flake8-pytest-style - Pytest best practices and conventions
+  "TRY",  # tryceratops - Better exception handling patterns
+  "N",    # pep8-naming - PEP 8 naming convention enforcement
+  "I",    # isort - Import statement sorting and organization
+  "FAST", # FastAPI - FastAPI-specific best practices
 ]
 
 ignore = [
   "E501",    # Line too long
   "PLR2004", # Magic value used in comparison
+  "TRY003",  # Avoid specifying long messages outside the exception class
 ]
 
 # Exclude third-party scripts
@@ -34,6 +37,7 @@ exclude = [
 known-first-party = [
   "src",
   "tools",
+  "utils",
 ]
 
 [format]
