@@ -40,7 +40,7 @@ repos:
 
   # Ruff is an extremely fast Python linter and code formatter, written in Rust.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.12
+    rev: v0.13.2
     hooks:
       # Linter - https://docs.astral.sh/ruff/linter/
       - id: ruff-check
@@ -51,7 +51,7 @@ repos:
 
   # Dockerfile linter, validate inline bash, written in Haskell
   - repo: https://github.com/hadolint/hadolint
-    rev: v2.13.1
+    rev: v2.14.0
     hooks:
       - id: hadolint-docker
         exclude: "\\.dockerignore$"
@@ -66,7 +66,7 @@ repos:
 
   # pre-commit git hooks to take care of Terraform configurations
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.100.0
+    rev: v1.100.1
     hooks:
       - id: terraform_fmt
         files: ^terraform/
@@ -84,7 +84,7 @@ repos:
   # Add '--fix' parameter to ansiblelint to fix (some) issues - https://ansible.readthedocs.io/projects/lint/autofix/
   # Add '-v' parameter to ansiblelint for verbose mode
   - repo: https://github.com/ansible-community/ansible-lint
-    rev: v25.8.2
+    rev: v25.9.0
     hooks:
       - id: ansible-lint
         files: ^ansible/
@@ -99,7 +99,7 @@ repos:
   # https://docs.kics.io/latest/commands/
   # Ignoring errors: https://docs.kics.io/latest/running-kics/#using_commands_on_scanned_files_as_comments
   - repo: https://github.com/Checkmarx/kics
-    rev: v2.1.13
+    rev: v2.1.14
     hooks:
       - id: kics-scan
         # TODO solve the high severity issues first
