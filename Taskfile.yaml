@@ -56,7 +56,7 @@ tasks:
   build:
     desc: Run all linting and build tasks
     cmds:
-      - task: docker:create-example-env
+      - task: docker:update-example-env
       - task: docs-deploy
       - task: pre-commit-update
       - task: lint
