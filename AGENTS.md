@@ -48,7 +48,7 @@ task docker:pull-update
 task docker:stop
 
 # Create/update Docker example environment configuration files
-task docker:create-example-env
+task docker:update-example-env
 ```
 
 ### Service Management
