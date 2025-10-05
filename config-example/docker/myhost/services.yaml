@@ -1,4 +1,5 @@
 # Docker service configuration for myhost
+# yaml-language-server: $schema=../services-schema.yaml
 ---
 services:
   - security:
@@ -153,9 +154,9 @@ services:
         state: down
       - name: bazarr
         state: down
-      # TODO replace with Lazy Librarian
-      - name: readarr
-        state: down
+      # TODO Deprecated - replace with Lazy Librarian - https://lazylibrarian.gitlab.io/
+      # - name: readarr
+      #   state: down
       - name: prowlarr
         state: down
       - name: jellyseerr

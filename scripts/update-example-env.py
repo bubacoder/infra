@@ -49,7 +49,7 @@ def mask_sensitive_variables(input_file: str) -> str:
 
 def main() -> None:
     if len(sys.argv) < 2:
-        print("Usage: ./create-example-env.py <input_env_file>")
+        print("Usage: ./update-example-env.py <input_env_file>")
         return
 
     input_file = sys.argv[1]
