@@ -123,6 +123,8 @@ services:
         state: up
       - name: searxng
         state: up
+      - name: obsidian
+        state: up
 
   - ai:
       - name: ollama
