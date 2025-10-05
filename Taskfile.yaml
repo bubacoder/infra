@@ -9,6 +9,7 @@ includes:
   docker: ./docker/Taskfile.docker.yaml
   app: ./docker/Taskfile.apps.yaml
   crowdsec: ./docker/security/Taskfile.crowdsec.yaml
+  obsidian: ./docker/tools/Taskfile.obsidian.yaml
   docs: ./docs/web/Taskfile.web.yaml
   devcontainer: ./.devcontainer/Taskfile.dev.yaml
   azure-vm:
@@ -129,6 +130,20 @@ tasks:
       - mkdir -p ../infra-config-backup
       - cd config && tar -cjf "../infra-config-backup/infra-config-$(date +%Y-%m-%d_%H-%M-%S).tar.bz2" .
       - ls -lh ../infra-config-backup/infra-config-*.tar.bz2 | tail -n 5
+
+  # Setup scheduling with command `crontab -e`, add this line:
+  # 0 1 * * * cd /home/buba/repos/infra && /home/linuxbrew/.linuxbrew/bin/task backup >> config/log/infra-backup.log 2>&1
+  backup:
+    desc: Create backup of the configuration directory and the Obsidian vault
+    silent: true
+    cmds:
+      - echo "=== Backup started at $(date) ==="
+      - task: backup-config
+      - task: obsidian:repo-backup
+      - |
+        if [ -f "config/sync-backup-to-remote.sh" ]; then
+            bash "config/sync-backup-to-remote.sh"
+        fi
 
   get-offline-data:
     desc: Download data files for offline use (stored both local and on Proxmox)

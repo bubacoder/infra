@@ -1,0 +1,52 @@
+version: '3'
+
+env:
+  OBSIDIAN_VAULT_NAME: "Today"
+
+tasks:
+  repo-sync:
+    desc: Sync Obsidian vault to git repository
+    dotenv: ['config/docker/localhost/.env']
+    silent: true
+    cmds:
+      - |
+        VAULT_PATH="${STORAGE_OBSIDIAN}/${OBSIDIAN_VAULT_NAME}/"
+        REPO_NAME="$(printf '%s' "${OBSIDIAN_VAULT_NAME}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')"
+        REPO_PATH="$(realpath -s "../${REPO_NAME}")"
+        echo "Git repository path: ${REPO_PATH}"
+
+        cd "${REPO_PATH}" || { echo "Failed to cd to ${REPO_PATH}"; exit 1; }
+        if [ ! -d ".git" ]; then
+          echo "Error: .git folder not found in ${REPO_PATH}"
+          exit 1
+        fi
+
+        rsync --verbose --archive --delete --exclude ".obsidian/" --exclude ".git/" "${VAULT_PATH}" .
+        git status
+
+  repo-commit:
+    desc: Commit changes in Obsidian git repository
+    dotenv: ['config/docker/localhost/.env']
+    silent: true
+    cmds:
+      - |
+        REPO_NAME="$(printf '%s' "${OBSIDIAN_VAULT_NAME}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')"
+        REPO_PATH="$(realpath -s "../${REPO_NAME}")"
+        cd "${REPO_PATH}" || { echo "Failed to cd to ${REPO_PATH}"; exit 1; }
+        git add --all
+        if git diff --cached --quiet; then
+          echo "No changes to commit."
+        else
+          git commit -m "Automatic sync"
+        fi
+        if ! git remote get-url origin 2>/dev/null; then
+          echo "No remote origin URL is configured. Skipping push."
+        else
+          git push
+        fi
+
+  repo-backup:
+    desc: Sync Obsidian vault to git repository and commit changes
+    cmds:
+      - task: repo-sync
+      - task: repo-commit
