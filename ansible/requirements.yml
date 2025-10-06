@@ -12,10 +12,10 @@ roles:
 collections:
   # Source: https://github.com/ansible-collections/community.general
   - name: community.general
-    version: 11.2.1
+    version: 11.3.0
   # Source: https://github.com/ansible-collections/community.docker
   - name: community.docker
-    version: 4.7.0
+    version: 4.8.1
   # Source: https://github.com/ansible-collections/ansible.posix
   - name: ansible.posix
     version: 2.1.0
