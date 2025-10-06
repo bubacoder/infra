@@ -1,0 +1,44 @@
+# A powerful knowledge base that works on top of a local folder of plain text Markdown files.
+# Obsidian is a free and flexible app for your private thoughts that stores notes locally
+# with extensive plugin support and open file formats.
+#
+# 🏠 Home: https://obsidian.md
+# 📦 Source: https://github.com/obsidianmd
+# 📜 Docs: https://docs.linuxserver.io/images/docker-obsidian/
+#
+# TODO: Set up regular backups of the /config/vaults volume containing vault data
+# TODO: Consider GPU acceleration configuration if needed for advanced use cases
+---
+name: obsidian
+services:
+  obsidian:
+    image: lscr.io/linuxserver/obsidian:latest
+    container_name: obsidian
+    restart: unless-stopped
+    environment:
+      TZ: ${TIMEZONE}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      CUSTOM_USER: ${OBSIDIAN_CUSTOM_USER:-}
+      PASSWORD: ${OBSIDIAN_PASSWORD:-}
+      LC_ALL: ${OBSIDIAN_LC_ALL:-}
+    volumes:
+      - ${DOCKER_VOLUMES}/obsidian:/config
+      - ${STORAGE_OBSIDIAN}:/config/vaults
+    shm_size: "1gb"
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.obsidian.rule: Host(`obsidian.${MYDOMAIN}`)
+      traefik.http.routers.obsidian.middlewares: localaccess-sso@file
+      traefik.http.services.obsidian.loadbalancer.server.port: 3000
+      homepage.group: Tools
+      homepage.name: Obsidian
+      homepage.icon: obsidian.png
+      homepage.href: https://obsidian.${MYDOMAIN}/
+      homepage.description: "Knowledge base for Markdown files"
+
+networks:
+  proxy:
+    external: true

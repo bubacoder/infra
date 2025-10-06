@@ -1,4 +1,5 @@
 # Docker service configuration for myhost
+# yaml-language-server: $schema=../services-schema.yaml
 ---
 services:
   - security:
@@ -46,8 +47,8 @@ services:
         state: up
       - name: n8n
         state: up
-      - name: olivetin
-        state: down
+      - name: mosquitto
+        state: up
 
   - media/video:
       - name: jellyfin
@@ -123,6 +124,8 @@ services:
         state: up
       - name: searxng
         state: up
+      - name: obsidian
+        state: up
 
   - ai:
       - name: ollama
@@ -151,9 +154,9 @@ services:
         state: down
       - name: bazarr
         state: down
-      # TODO replace with Lazy Librarian
-      - name: readarr
-        state: down
+      # TODO Deprecated - replace with Lazy Librarian - https://lazylibrarian.gitlab.io/
+      # - name: readarr
+      #   state: down
       - name: prowlarr
         state: down
       - name: jellyseerr

@@ -1,0 +1,51 @@
+# YAML Schema definition for the Docker service configuration file
+
+$schema: http://json-schema.org/draft-07/schema#
+title: Docker Service Configuration
+description: Configuration schema for Docker services in a homelab environment
+type: object
+
+properties:
+  services:
+    type: array
+    description: Categories of Docker services
+    items:
+      type: object
+      additionalProperties:
+        type: array
+        description: List of services in a specific category
+        items:
+          type: object
+          required:
+            - name
+            - state
+          properties:
+            name:
+              type: string
+              description: Name of the Docker service
+            state:
+              type: string
+              description: Current state of the service
+              enum:
+                - up
+                - down
+            note:
+              type: string
+              description: Optional note about the service
+
+examples:
+  - services:
+      - security:
+          - name: crowdsec
+            state: up
+          - name: traefik
+            state: up
+      - dashboard:
+          - name: homepage
+            state: up
+      - media/video:
+          - name: jellyfin
+            state: up
+            note: Storage on NAS
+
+additionalProperties: false
