@@ -46,8 +46,8 @@ services:
         state: up
       - name: n8n
         state: up
-      - name: olivetin
-        state: down
+      - name: mosquitto
+        state: up
 
   - media/video:
       - name: jellyfin
