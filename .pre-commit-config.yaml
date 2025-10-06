@@ -10,7 +10,11 @@ repos:
       - id: trailing-whitespace
         args: ["--markdown-linebreak-ext=md,yaml"]
       - id: end-of-file-fixer
-        exclude: "docker/security/authelia/"
+        exclude: |
+            (?x)^(
+                docker/security/authelia/|
+                docker/automation/mosquitto/
+            )
       - id: mixed-line-ending
       - id: fix-byte-order-marker
       - id: check-merge-conflict
