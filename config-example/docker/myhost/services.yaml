@@ -102,6 +102,8 @@ services:
   - dev:
       - name: code-server
         state: up
+      - name: gitea
+        state: up
       - name: gitlab
         state: down
       - name: jupyter-notebook
