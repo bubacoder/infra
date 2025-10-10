@@ -49,6 +49,8 @@ services:
         state: up
       - name: mosquitto
         state: up
+      - name: esphome-device-builder
+        state: up
 
   - media/video:
       - name: jellyfin

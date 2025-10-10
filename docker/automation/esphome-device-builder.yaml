@@ -1,0 +1,44 @@
+# ESPHome Device Builder is a tool for creating custom firmware for ESP8266/ESP32 microcontrollers
+# through simple YAML configuration files and managing them through Home Automation systems like Home Assistant.
+#
+# 🏠 Home: https://esphome.io
+# 📦 Source: https://github.com/esphome/esphome
+# 📜 Docs: https://esphome.io/guides/getting_started_command_line/#bonus-esphome-device-builder
+# Docker: https://hub.docker.com/r/esphome/esphome
+#
+# TODO: Consider implementing non-privileged mode with specific device permissions for improved security
+# TODO: Set up udev rules for automatic USB device discovery
+---
+name: esphome-device-builder
+services:
+  esphome-device-builder:
+    image: esphome/esphome:2025.9
+    container_name: esphome-device-builder
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      TZ: ${TIMEZONE}
+      PUID: ${PUID}
+      PGID: ${PGID}
+    # kics-scan ignore-block
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    # Not needed due to 'network_mode: host'
+    # ports:
+    #   - "6052:6052"
+    # Required for USB device access
+    # kics-scan ignore-line
+    # privileged: true
+    # For USB device passthrough (uncomment and adjust as needed):
+    # devices:
+    #  - /dev/ttyUSB0:/dev/ttyUSB0
+    labels:
+      traefik.enable: true
+      traefik.http.routers.esphome-device-builder.rule: Host(`esphome.${MYDOMAIN}`)
+      traefik.http.routers.esphome-device-builder.middlewares: localaccess@file
+      traefik.http.services.esphome-device-builder.loadbalancer.server.port: 6052
+      homepage.group: Automation
+      homepage.name: ESPHome Builder
+      homepage.icon: esphome.png
+      homepage.href: https://esphome.${MYDOMAIN}/
+      homepage.description: "Firmware builder for ESP devices"
