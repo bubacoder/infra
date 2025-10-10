@@ -13,7 +13,7 @@ Follow closely the architectural patterns described in the `docker/guidelines.md
 ### Part 1 - Create Docker Compose file
 
 - Read the `docker/guidelines.md` file for the architectural patterns you must follow.
-- Read the INSTALL_INSTRUCTIONS_FILE file and use its content to create the compose file in the required structure.
+- Read the INSTALL_INSTRUCTIONS_FILE file and use its content to create the compose file in the required structure. Abort if the file is not specified or does not exist.
 - Based on these patterns and the found examples on the installation instructions page, create the Docker Compose file and save it as `docker/<category>/<application>.yaml`.
 - Ensure the compose file contains a brief description of the project and links to the homepage, GitHub page, and any Docker or Docker Compose setup example (if available).
 - If the installation guide suggests enhancements (e.g., using an optional external database instead of a built-in one, or enabling SSO), add TODOs at the top of the compose file.
