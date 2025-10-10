@@ -26,11 +26,16 @@ class DockerOptions:
     """Configuration options for Docker operations."""
     pull_before_start: bool = False
     quiet: bool = False
+    # Log options
+    follow: bool = False
+    tail: str = "all"
+    since: str | None = None
+    timestamps: bool = False
 
 
 # Global variables
 docker_stacks_dir: Path = (Path(__file__).resolve().parent.parent / "docker").resolve()
-ALLOWED_STATES: tuple[str, ...] = ('pull', 'up', 'down', 'restart', 'recreate', 'config')
+ALLOWED_STATES: tuple[str, ...] = ('pull', 'up', 'down', 'restart', 'recreate', 'config', 'logs')
 
 
 def create_network_if_missing(network_name: str) -> None:
@@ -198,6 +203,27 @@ def docker_pull(stack_dir: Path, service_name: str, compose_file: Path, env_file
         docker(pull_cmd)
 
 
+def build_log_command_flags(options: DockerOptions) -> list[str]:
+    """Build Docker Compose log command flags based on options.
+
+    Args:
+        options: Docker operation options containing log-specific settings
+
+    Returns:
+        list[str]: List of command flags for docker compose logs
+    """
+    flags = []
+    if options.follow:
+        flags.append("--follow")
+    if options.tail and options.tail != "all":
+        flags.extend(["--tail", options.tail])
+    if options.since:
+        flags.extend(["--since", options.since])
+    if options.timestamps:
+        flags.append("--timestamps")
+    return flags
+
+
 def docker_command(host_config_dir: Path, stack_dir: Path, service_name: str, action: str, options: DockerOptions = None) -> None:
     """Execute Docker Compose command for a service.
 
@@ -205,7 +231,7 @@ def docker_command(host_config_dir: Path, stack_dir: Path, service_name: str, ac
         host_config_dir: Path to the host-specific configuration directory
         stack_dir: Path to the service category directory
         service_name: Name of the service to operate on
-        action: The action to perform (pull, up, down, restart, recreate, config)
+        action: The action to perform (pull, up, down, restart, recreate, config, logs)
         options: Docker operation options (default: None)
     """
     if options is None:
@@ -253,6 +279,13 @@ def docker_command(host_config_dir: Path, stack_dir: Path, service_name: str, ac
         case "config":
             logger.info(f">>> Checking {stack_dir}/{service_name}")
             docker(["compose", "-f", compose_file, *env_file_args, "config"])
+
+        case "logs":
+            logger.info(f">>> Showing logs for {stack_dir}/{service_name}")
+            log_cmd = ["compose", "-f", compose_file, *env_file_args, "logs"]
+            log_cmd.extend(build_log_command_flags(options))
+            log_cmd.append(service_name)
+            docker(log_cmd)
 
 
 def load_services_config(config_file: str) -> dict:
@@ -349,7 +382,24 @@ def cmd_service(args) -> None:
     # Everything before the last part is the category path
     category_path = '/'.join(name_parts[:-1])
 
-    docker_command(get_host_config_dir(), docker_stacks_dir / category_path, service_name, args.operation, DockerOptions(args.pull_before_start, args.quiet))
+    # Create options with all parameters
+    options = DockerOptions(
+        pull_before_start=args.pull_before_start,
+        quiet=args.quiet
+    )
+
+    # Add log options if they exist in args and operation is 'logs'
+    if args.operation == 'logs':
+        if hasattr(args, 'follow'):
+            options.follow = args.follow
+        if hasattr(args, 'tail'):
+            options.tail = args.tail
+        if hasattr(args, 'since'):
+            options.since = args.since
+        if hasattr(args, 'timestamps'):
+            options.timestamps = args.timestamps
+
+    docker_command(get_host_config_dir(), docker_stacks_dir / category_path, service_name, args.operation, options)
 
 
 def main() -> None:
@@ -373,6 +423,11 @@ def main() -> None:
     service_parser.add_argument('name', help='Service name in format category/name or category/subcategory/name')
     service_parser.add_argument('--pull-before-start', action='store_true', default=False, help='Pull images before starting the service')
     service_parser.add_argument('--quiet', action='store_true', default=False, help='Use quiet mode for docker operations')
+    # Log-specific options
+    service_parser.add_argument('--follow', '-f', action='store_true', help='Follow log output (like tail -f)')
+    service_parser.add_argument('--tail', '-n', default="all", help='Number of lines to show from the end of logs (default: all)')
+    service_parser.add_argument('--since', '-s', help='Show logs since timestamp (e.g., "10m" for last 10 minutes)')
+    service_parser.add_argument('--timestamps', '-t', action='store_true', help='Show timestamps with log entries')
 
     args = parser.parse_args()
 
