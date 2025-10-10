@@ -183,9 +183,11 @@ Persistent data is stored in volumes following this pattern:
 
 ```yaml
 volumes:
-  - ${DOCKER_VOLUMES}/service-name:/data  # Volumes for data storage, not part of the repository
   - ./service-name/config:/config  # Local configuration files, committed to the repository
+  - ${DOCKER_VOLUMES}/service-name:/data  # Volumes for data storage, not part of the repository
 ```
+
+For data-heavy applications, like database servers, use named volumes instead of bind mounts.
 
 ## Deployment Workflow
 
@@ -225,6 +227,8 @@ When creating a new service, use this template:
 # 🏠 Home: https://service-homepage.com/
 # 📦 Source: https://github.com/vendor/service
 # 📜 Docs: https://docs.service.com/
+#
+# TODO: List additional configuration tasks, possible enhancements
 ---
 name: service-name
 services:
