@@ -92,6 +92,8 @@ services:
         state: up
       - name: couchdb
         state: up
+      - name: mssql-server
+        state: up
 
   - backup:
       - name: kopia-nas
