@@ -1,0 +1,39 @@
+# Microsoft SQL Server 2025 - AI-ready enterprise relational database with best-in-class performance and security
+#
+# 🏠 Home: https://www.microsoft.com/en-us/sql-server
+# 📜 Docs: https://learn.microsoft.com/en-us/sql/linux/quickstart-install-connect-docker
+# 🐳 Image: https://hub.docker.com/_/microsoft-mssql-server
+#
+# TODO: Implement health checks to monitor SQL Server availability
+# TODO: Set resource limits (CPU and memory) appropriate for workload
+# TODO: Implement automated backup strategy
+# TODO: Integrate with monitoring solutions (Prometheus, Grafana) for performance metrics
+---
+name: mssql-server
+services:
+  mssql-server:
+    image: mcr.microsoft.com/mssql/server:2025-latest
+    container_name: mssql-server
+    hostname: mssql
+    restart: unless-stopped
+    # kics-scan ignore-block
+    environment:
+      TZ: ${TIMEZONE}
+      ACCEPT_EULA: Y
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?MSSQL SA password must be set}
+      MSSQL_COLLATION: ${MSSQL_COLLATION:-SQL_Latin1_General_CP1_CI_AS}
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+    labels:
+      traefik.enable: false
+      homepage.group: Storage
+      homepage.name: Microsoft SQL Server
+      homepage.icon: microsoft-sql-server.png
+      homepage.href: mssql://${LOCAL_NODE_IP:-127.0.0.1}:1433
+      homepage.description: Enterprise relational database
+
+volumes:
+  mssql_data:
