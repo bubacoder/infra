@@ -12,7 +12,7 @@
 name: esphome-device-builder
 services:
   esphome-device-builder:
-    image: esphome/esphome:2025.9
+    image: esphome/esphome:2025.10
     container_name: esphome-device-builder
     restart: unless-stopped
     network_mode: host
