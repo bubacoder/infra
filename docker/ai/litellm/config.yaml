@@ -16,22 +16,28 @@ model_list:
   # --- Via Anthropic
   #  LiteLLM provider: https://docs.litellm.ai/docs/providers/anthropic
   #  Models: https://docs.anthropic.com/en/docs/about-claude/models/overview
-  #  Create API key: https://console.anthropic.com/settings/keys
-  #  Buy credits: https://console.anthropic.com/settings/billing
+  #  Model pricing: https://docs.claude.com/en/docs/about-claude/pricing
+  #  Create API key: https://platform.claude.com/settings/keys
+  #  Buy credits: https://platform.claude.com/settings/billing
 
-  - model_name: claude-3-7-sonnet                # RECEIVED MODEL NAME
+  - model_name: claude-sonnet-4-0                # RECEIVED MODEL NAME
     litellm_params:                              # All params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
-      model: anthropic/claude-3-7-sonnet-latest  # MODEL NAME sent to `litellm.completion()`
+      model: anthropic/claude-sonnet-4-0         # MODEL NAME sent to `litellm.completion()`
       api_key: "os.environ/ANTHROPIC_API_KEY"    # Does os.getenv("ANTHROPIC_API_KEY")
 
-  - model_name: claude-opus-4-0
+  - model_name: claude-sonnet-4-5
     litellm_params:
-      model: anthropic/claude-opus-4-0
+      model: anthropic/claude-sonnet-4-5
       api_key: "os.environ/ANTHROPIC_API_KEY"
 
-  - model_name: claude-sonnet-4-0
+  - model_name: claude-opus-4-1
     litellm_params:
-      model: anthropic/claude-sonnet-4-0
+      model: anthropic/claude-opus-4-1
+      api_key: "os.environ/ANTHROPIC_API_KEY"
+
+  - model_name: claude-haiku-4-5
+    litellm_params:
+      model: anthropic/claude-haiku-4-5
       api_key: "os.environ/ANTHROPIC_API_KEY"
 
   # --- Via OpenAI
