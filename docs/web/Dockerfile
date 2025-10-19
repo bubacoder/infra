@@ -1,7 +1,7 @@
 #####################################################################
 #           Collect and convert Markdown and Compose files          #
 #####################################################################
-FROM python:3.13-alpine3.22 AS collect
+FROM python:3.14-alpine3.22 AS collect
 
 WORKDIR /tmp
 COPY docs/web/requirements.txt requirements.txt
