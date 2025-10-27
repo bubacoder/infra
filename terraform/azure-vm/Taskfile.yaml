@@ -65,12 +65,34 @@ tasks:
 
   destroy:
     desc: Destroy all resources and remove VM key
+    vars:
+      OWN_PUBLIC_IP:
+        sh: curl -s https://ipinfo.io/ip
+      GIT_CREDENTIALS:
+        sh: cat ~/.git-credentials 2>/dev/null | head -n 1 || true
+      REPO_URL:
+        sh: git config --get remote.origin.url
+    env:
+      TF_VAR_admin_source_address: "{{.OWN_PUBLIC_IP}}"
+      TF_VAR_git_credentials: "{{.GIT_CREDENTIALS}}"
+      TF_VAR_repo_url: "{{.REPO_URL}}"
     cmds:
       - echo "{{.TFBIN}} destroy..."
       - '{{.TFBIN}} destroy --auto-approve -var-file="{{.VAR_FILE}}" && rm -f {{.VM_KEYFILE}}'
 
   destroy-vm:
     desc: Destroy only the VM instance and remove VM key
+    vars:
+      OWN_PUBLIC_IP:
+        sh: curl -s https://ipinfo.io/ip
+      GIT_CREDENTIALS:
+        sh: cat ~/.git-credentials 2>/dev/null | head -n 1 || true
+      REPO_URL:
+        sh: git config --get remote.origin.url
+    env:
+      TF_VAR_admin_source_address: "{{.OWN_PUBLIC_IP}}"
+      TF_VAR_git_credentials: "{{.GIT_CREDENTIALS}}"
+      TF_VAR_repo_url: "{{.REPO_URL}}"
     cmds:
       - echo "{{.TFBIN}} destroy..."
       - '{{.TFBIN}} destroy --auto-approve -var-file="{{.VAR_FILE}}" --target module.vm.azurerm_linux_virtual_machine.vm && rm -f {{.VM_KEYFILE}}'
@@ -80,7 +102,8 @@ tasks:
     cmds:
       - |
         VM_FQDN=$({{.TFBIN}} output -raw vm_fqdn)
-        ssh -i {{.VM_KEYFILE}} {{.VM_ADMIN_USER}}@{{.VM_FQDN}}
+        echo "Connecting to ${VM_FQDN}"
+        ssh -i {{.VM_KEYFILE}} {{.VM_ADMIN_USER}}@${VM_FQDN}
 
   config-vm:
     desc: Run Ansible configuration on the Azure VM
