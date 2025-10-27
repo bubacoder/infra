@@ -88,7 +88,7 @@ repos:
   # Add '--fix' parameter to ansiblelint to fix (some) issues - https://ansible.readthedocs.io/projects/lint/autofix/
   # Add '-v' parameter to ansiblelint for verbose mode
   - repo: https://github.com/ansible-community/ansible-lint
-    rev: v25.9.2
+    rev: v25.9.0 # More recent version causes Python incompatibility - https://github.com/ansible/ansible-lint/pull/4796
     hooks:
       - id: ansible-lint
         files: ^ansible/
