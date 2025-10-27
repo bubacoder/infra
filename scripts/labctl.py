@@ -284,7 +284,6 @@ def docker_command(host_config_dir: Path, stack_dir: Path, service_name: str, ac
             logger.info(f">>> Showing logs for {stack_dir}/{service_name}")
             log_cmd = ["compose", "-f", compose_file, *env_file_args, "logs"]
             log_cmd.extend(build_log_command_flags(options))
-            log_cmd.append(service_name)
             docker(log_cmd)
 
 
@@ -442,4 +441,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print('Interrupted')
+        # Exit Code 130: Script terminated by Control-C
+        sys.exit(130)
