@@ -18,6 +18,11 @@ resource "azurerm_storage_account" "vm_storage_account" {
   account_replication_type   = "LRS"
   min_tls_version            = "TLS1_2"
   https_traffic_only_enabled = true
+
+  network_rules {
+    default_action = "Deny"
+    bypass         = ["AzureServices"]
+  }
 }
 
 # Create public IPs
