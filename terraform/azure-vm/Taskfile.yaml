@@ -57,6 +57,7 @@ tasks:
     cmds:
       - echo "{{.TFBIN}} apply..."
       - time {{.TFBIN}} apply --auto-approve "{{.TFPLAN}}"
+      - rm -f {{.TFPLAN}}
       - |
         VM_FQDN=$({{.TFBIN}} output -raw vm_fqdn)
         ssh-keygen -f ~/.ssh/known_hosts -R "$VM_FQDN" || true
