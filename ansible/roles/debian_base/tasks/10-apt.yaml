@@ -38,4 +38,4 @@
   ansible.builtin.apt:
     pkg: "{{ base_apt_storage_packages }}"
     state: present
-  when: install_storage_packages|default(false)|bool
+  when: install_storage_packages | default(false) | ansible.builtin.bool
