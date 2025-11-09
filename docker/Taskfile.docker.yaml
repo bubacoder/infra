@@ -69,17 +69,28 @@ tasks:
   update-example-env:
     desc: Create/update Docker example environment configuration files
     dotenv: ['config/docker/.env']
+    env:
+      CONFIG_DIR: "config/docker"
+      EXAMPLE_DIR: "config-example/docker"
+      SCRIPT: "scripts/update-example-env.py"
+    silent: true
     cmds:
-      - scripts/update-example-env.py config/docker/.env > config-example/docker/.env
-      - scripts/update-example-env.py config/docker/${MAIN_NODE}/.env > config-example/docker/myhost/.env
-      - cat config/docker/${MAIN_NODE}/services.yaml | sed "s/${MAIN_NODE}/myhost/g" > config-example/docker/myhost/services.yaml
+      # Process .env files
+      - |
+        SOURCE_HOSTDIR="${CONFIG_DIR}/${MAIN_NODE}"
+        TARGET_HOSTDIR="${EXAMPLE_DIR}/myhost"
+        mkdir -p "${TARGET_HOSTDIR}"
+        python3 "$SCRIPT" ${CONFIG_DIR}/.env ${EXAMPLE_DIR}/.env
+        find "$SOURCE_HOSTDIR" -type f -name '.env*' | while read -r env_file; do
+            target_filename="${env_file//$SOURCE_HOSTDIR/$TARGET_HOSTDIR}"
+            mkdir -p "$(dirname "$target_filename")"
+            echo "Processing: $env_file -> $target_filename"
+            python3 "$SCRIPT" "$env_file" "$target_filename"
+        done
+      # Process services.yaml, services-schema.yaml
+      - sed "s/${MAIN_NODE}/myhost/g" config/docker/${MAIN_NODE}/services.yaml > config-example/docker/myhost/services.yaml
       - cp config/docker/services-schema.yaml config-example/docker/services-schema.yaml
     sources:
-      - config/docker/**/.env
-      - config/docker/**/services.yaml
-      - config/docker/services-schema.yaml
+      - config/docker/**
     generates:
-      - config-example/docker/.env
-      - config-example/docker/myhost/.env
-      - config-example/docker/myhost/services.yaml
-      - config-example/docker/services-schema.yaml
+      - config-example/docker/**

@@ -49,12 +49,18 @@ def mask_sensitive_variables(input_file: str) -> str:
 
 def main() -> None:
     if len(sys.argv) < 2:
-        print("Usage: ./update-example-env.py <input_env_file>")
+        print("Usage: ./update-example-env.py <input_env_file> [output_env_file]")
         return
 
     input_file = sys.argv[1]
     output = mask_sensitive_variables(input_file)
-    print(output)
+
+    if len(sys.argv) == 3:
+        output_file = sys.argv[2]
+        with open(output_file, 'w') as f:
+            f.write(output)
+    else:
+        print(output)
 
 
 if __name__ == "__main__":
