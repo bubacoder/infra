@@ -2,7 +2,7 @@
 
 debian:
   vars:
-    ansible_conection: ssh
+    ansible_connection: ssh
     ansible_user: buba
   hosts:
     nas:
