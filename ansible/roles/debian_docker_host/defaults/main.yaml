@@ -1,0 +1,16 @@
+---
+# Docker package versions
+# By default, installs the latest version from Docker's repository
+# Can be overridden in inventory.yaml for specific hosts (e.g., for older kernels)
+#
+# Examples:
+#   - "latest" - installs the latest version
+#   - "5:20.10.24~3-0~debian-bullseye" - specific Debian version
+#   - "5:20.10.24-0ubuntu1~22.04.1" - specific Ubuntu version
+debian_docker_host_docker_ce_version: "latest"
+debian_docker_host_docker_ce_cli_version: "latest"
+debian_docker_host_containerd_io_version: "latest"
+
+# Set to true to prevent Docker packages from being automatically upgraded
+# Useful for systems with compatibility constraints (e.g., older kernels)
+debian_docker_host_hold_docker_packages: false
