@@ -44,7 +44,7 @@ def mask_sensitive_variables(input_file: str) -> str:
         else:
             output_lines.append(line.strip())
 
-    return '\n'.join(output_lines)
+    return '\n'.join(output_lines) + '\n'
 
 
 def main() -> None:

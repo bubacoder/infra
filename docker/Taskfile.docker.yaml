@@ -80,7 +80,8 @@ tasks:
         SOURCE_HOSTDIR="${CONFIG_DIR}/${MAIN_NODE}"
         TARGET_HOSTDIR="${EXAMPLE_DIR}/myhost"
         mkdir -p "${TARGET_HOSTDIR}"
-        python3 "$SCRIPT" ${CONFIG_DIR}/.env ${EXAMPLE_DIR}/.env
+        echo "Processing: ${CONFIG_DIR}/.env -> ${EXAMPLE_DIR}/.env"
+        python3 "$SCRIPT" "${CONFIG_DIR}/.env" "${EXAMPLE_DIR}/.env"
         find "$SOURCE_HOSTDIR" -type f -name '.env*' | while read -r env_file; do
             target_filename="${env_file//$SOURCE_HOSTDIR/$TARGET_HOSTDIR}"
             mkdir -p "$(dirname "$target_filename")"
@@ -90,7 +91,3 @@ tasks:
       # Process services.yaml, services-schema.yaml
       - sed "s/${MAIN_NODE}/myhost/g" config/docker/${MAIN_NODE}/services.yaml > config-example/docker/myhost/services.yaml
       - cp config/docker/services-schema.yaml config-example/docker/services-schema.yaml
-    sources:
-      - config/docker/**
-    generates:
-      - config-example/docker/**
