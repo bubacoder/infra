@@ -1,0 +1,40 @@
+# ScanServJS - A responsive web UI for SANE document scanners
+#
+# 🏠 Home: https://github.com/sbs20/scanservjs
+# 📦 Source: https://github.com/sbs20/scanservjs
+# 📜 Docs: https://github.com/sbs20/scanservjs/blob/master/README.md
+---
+name: scanservjs
+services:
+  scanservjs:
+    image: sbs20/scanservjs:v3.0.4
+    container_name: scanservjs
+    restart: unless-stopped
+    environment:
+      TZ: ${TIMEZONE}
+      SANED_NET_HOSTS: ${SCANSERVJS_SANED_NET_HOSTS}
+      AIRSCAN_DEVICES: ${SCANSERVJS_AIRSCAN_DEVICES}
+      PIXMA_HOSTS: ${SCANSERVJS_PIXMA_HOSTS}
+      OCR_LANG: ${SCANSERVJS_OCR_LANG}
+    volumes:
+      # - /var/run/dbus:/var/run/dbus # Enable for local (USB) scanners
+      - ${DOCKER_VOLUMES}/scanservjs/output:/var/lib/scanservjs/output
+      - ${DOCKER_VOLUMES}/scanservjs/config:/etc/scanservjs
+    # kics-scan ignore-line
+    privileged: true # Required for scanner access
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.scanservjs.rule: Host(`scanner.${MYDOMAIN}`)
+      traefik.http.routers.scanservjs.middlewares: localaccess@file
+      traefik.http.services.scanservjs.loadbalancer.server.port: 8080
+      homepage.group: Tools
+      homepage.name: ScanServJS
+      homepage.icon: scanservjs.png
+      homepage.href: https://scanner.${MYDOMAIN}/
+      homepage.description: "Web UI for SANE document scanners"
+
+networks:
+  proxy:
+    external: true
