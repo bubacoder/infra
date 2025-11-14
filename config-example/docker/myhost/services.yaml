@@ -132,6 +132,8 @@ services:
         state: up
       - name: obsidian
         state: up
+      - name: scanservjs
+        state: up
 
   - ai:
       - name: ollama
