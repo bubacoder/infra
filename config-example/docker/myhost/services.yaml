@@ -111,6 +111,8 @@ services:
       - name: gitlab
         state: down
       - name: jupyter-notebook
+        state: down
+      - name: supabase
         state: up
 
   - tools:
