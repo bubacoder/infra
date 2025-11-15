@@ -64,7 +64,7 @@ jobs:
           docker run --rm -v .:/home/admin/repos/infra infra-devcontainer:${{ matrix.distribution.tag }} bash --login -c "cd /home/admin/repos/infra; task versions"
 
       - name: Log in to the Container registry
-        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef
+        uses: docker/login-action@28fdb31ff34708d19615a74d67103ddc2ea9725c
         if: success() && github.ref == 'refs/heads/main'
         with:
           registry: ghcr.io
