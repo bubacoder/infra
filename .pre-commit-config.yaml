@@ -31,7 +31,7 @@ repos:
   # Gitleaks is a SAST tool for detecting and preventing hardcoded secrets like passwords, api keys, and tokens in git repos.
   # Gitleaks is an easy-to-use, all-in-one solution for detecting secrets, past or present, in your code.
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.28.0
+    rev: v8.29.0
     hooks:
       - id: gitleaks
 
@@ -44,7 +44,7 @@ repos:
 
   # Ruff is an extremely fast Python linter and code formatter, written in Rust.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.3
+    rev: v0.14.5
     hooks:
       # Linter - https://docs.astral.sh/ruff/linter/
       - id: ruff-check
@@ -88,7 +88,7 @@ repos:
   # Add '--fix' parameter to ansiblelint to fix (some) issues - https://ansible.readthedocs.io/projects/lint/autofix/
   # Add '-v' parameter to ansiblelint for verbose mode
   - repo: https://github.com/ansible-community/ansible-lint
-    rev: v25.9.2 # More recent version causes Python incompatibility - https://github.com/ansible/ansible-lint/pull/4796
+    rev: v25.11.0 # More recent version causes Python incompatibility - https://github.com/ansible/ansible-lint/pull/4796
     hooks:
       - id: ansible-lint
         files: ^ansible/
