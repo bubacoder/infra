@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Repository Overview
 
 This repository contains Infrastructure as Code (IaC) configuration for a home infrastructure setup. The main goals are:
-- Creating a local, self-hosted environment for various services minimizing reliance on cloud providers
+- Creating a local, self-hosted environment for various services, minimizing reliance on cloud providers
 - Learning and organizing knowledge, best practices, and tool documentation
 
 ## Key Commands

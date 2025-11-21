@@ -5,8 +5,8 @@
 ![Dev Container workflow](https://img.shields.io/github/actions/workflow/status/bubacoder/infra/devcontainer.yml?label=devcontainer)
 ![Pre-commit checks workflow](https://img.shields.io/github/actions/workflow/status/bubacoder/infra/pre-commit.yml?label=checks)
 
-This repository contains the Infrastructure as Code (IaC) configuration and documentation for my home infrastructure. The main goals of this ever-evolving setup are:
-- Create a local, self-hosted environment for various services and applications, minimizing reliance on external cloud providers.
+This repository contains the Infrastructure as Code (IaC) configuration and documentation for a home infrastructure setup. The main goals are:
+- Creating a local, self-hosted environment for various services and applications, minimizing reliance on external cloud providers.
 - Learning and organizing knowledge, best practices, and tool documentation into a single repository.
 
 ## Table of Contents<!-- omit in toc -->
@@ -48,22 +48,22 @@ The key components of this infrastructure include:
 
 The long-term goal is to reduce these dependencies and provide offline alternatives.
 
-| Name                                                                     | Description                            | Remarks                                                                 |
-| ------------------------------------------------------------------------ | -------------------------------------- | ----------------------------------------------------------------------- |
-| Docker images                                                            | All services are running as containers | Downloaded on first use                                                 |
-| Plugins, Modules (e.g. Crowdsec)                                         | Various plugins for services           | Downloaded on first use. TODO create inventory                          |
-| Large Language Models                                                    | Optional, used by Ollama               | Downloaded on first use                                                 |
-| [OVHcloud](https://www.ovhcloud.com/en/) (or other registrar)            | Domain Name registration               | Required for remote access and TLS certificates. TODO document fallback |
-| [Cloudflare](https://www.cloudflare.com/)                                | DNS zone administration, tunnel        | Optional, for remote access                                             |
-| [Let's Encrypt](https://letsencrypt.org/)                                | TLS certificates (managed by Traefik)  | Required. TODO document local CA setup for fallback                     |
-| [Backblaze B2](https://www.backblaze.com/cloud-storage)                  | Backup storage                         | Optional, local backup also configured                                  |
-| [CrowdSec](https://app.crowdsec.net/)                                    | Crowd-sourced IP blocklist             | Optional, security service, can be disabled                             |
-| [Azure](https://azure.microsoft.com/)                                    | Temporal VM, storage                   | Optional, not used by any lab components                                |
-| [Homepage Icons](https://github.com/walkxcode/dashboard-icons/tree/main) | Icon set for the services              | Optional, hosted on a CDN. TODO host locally                            |
+| Name                                                                     | Description                              | Remarks                                                                 |
+| ------------------------------------------------------------------------ | ---------------------------------------- | ----------------------------------------------------------------------- |
+| Docker images                                                            | All services run as containers           | Downloaded on first use                                                 |
+| Plugins, Modules (e.g., CrowdSec)                                        | Various plugins for services             | Downloaded on first use. TODO: create inventory                         |
+| Large Language Models                                                    | Optional, used by Ollama                 | Downloaded on first use                                                 |
+| [OVHcloud](https://www.ovhcloud.com/en/) (or other registrar)            | Domain name registration                 | Required for remote access and TLS certificates. TODO: document fallback |
+| [Cloudflare](https://www.cloudflare.com/)                                | DNS zone administration, tunnel          | Optional, for remote access                                             |
+| [Let's Encrypt](https://letsencrypt.org/)                                | TLS certificates (managed by Traefik)    | Required. TODO: document local CA setup for fallback                    |
+| [Backblaze B2](https://www.backblaze.com/cloud-storage)                  | Backup storage                           | Optional, local backup also configured                                  |
+| [CrowdSec](https://app.crowdsec.net/)                                    | Crowd-sourced IP blocklist               | Optional, security service, can be disabled                             |
+| [Azure](https://azure.microsoft.com/)                                    | Temporary VM, storage                    | Optional, not used by any lab components                                |
+| [Homepage Icons](https://github.com/walkxcode/dashboard-icons/tree/main) | Icon set for the services                | Optional, hosted on a CDN. TODO: host locally                           |
 
 ## Getting Started
 
-The recommended configuration is to setup Proxmox VE and install a Debian- or Ubuntu-based VM to host the Docker services.
+The recommended configuration is to set up Proxmox VE and install a Debian- or Ubuntu-based VM to host the Docker services.
 
 -> See [Getting Started](docs/setup.md)
 
