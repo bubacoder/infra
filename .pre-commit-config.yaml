@@ -49,7 +49,7 @@ repos:
       # Linter - https://docs.astral.sh/ruff/linter/
       - id: ruff-check
         args: ["--fix"]
-      # TODO Enable after pendling MRs are merged
+      # TODO Enable after pending MRs are merged
       # Formatter - https://docs.astral.sh/ruff/formatter/
       # - id: ruff-format
 
@@ -88,7 +88,7 @@ repos:
   # Add '--fix' parameter to ansiblelint to fix (some) issues - https://ansible.readthedocs.io/projects/lint/autofix/
   # Add '-v' parameter to ansiblelint for verbose mode
   - repo: https://github.com/ansible-community/ansible-lint
-    rev: v25.11.0 # More recent version causes Python incompatibility - https://github.com/ansible/ansible-lint/pull/4796
+    rev: v25.9.0 # More recent version than v25.9.0 causes Python incompatibility - https://github.com/ansible/ansible-lint/pull/4796
     hooks:
       - id: ansible-lint
         files: ^ansible/
