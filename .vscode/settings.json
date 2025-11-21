@@ -1,0 +1,13 @@
+{
+  "github.copilot.enable": {
+    "properties": false
+  },
+  "spellright.language": [
+    "en"
+  ],
+  "spellright.documentTypes": [
+    "markdown",
+    "latex",
+    "plaintext"
+  ]
+}
