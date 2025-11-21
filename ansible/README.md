@@ -22,7 +22,7 @@ https://www.ansible.com/
 
 ## Setup steps
 
-1. Instal Ansible on the admin workstation with `bootstrap-ansible.sh`. (See: [Ansible control node](https://docs.ansible.com/ansible/latest/network/getting_started/basic_concepts.html#control-node))
+1. Install Ansible on the admin workstation with `bootstrap-ansible.sh`. (See: [Ansible control node](https://docs.ansible.com/ansible/latest/network/getting_started/basic_concepts.html#control-node))
 2. Configure variables in `inventory/group_vars/`
 3. Add hosts to `inventory/inventory.yaml`
 4. Assign roles to hosts in `playbooks/`

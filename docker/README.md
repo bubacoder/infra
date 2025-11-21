@@ -16,7 +16,7 @@ For additional services to host, check [awesome-selfhosted](https://github.com/a
 In the `config/docker` subfolder multiple Docker hosts can be defined.
 
 Configuration files:
-- Host-specific settings: `config/docker/<hostname>/.env` -> See [Setting Started -> Configure Docker environment files][setup] for more details. (These files are not committed to the repo - backup them separately!)
+- Host-specific settings: `config/docker/<hostname>/.env` -> See [Getting Started -> Configure Docker environment files](../docs/setup.md#5-configure-docker-environment-files) for more details. (These files are not committed to the repo - backup them separately!)
 - Configure which services to start (`state: up`) or stop (`state: down`): `config/docker/<hostname>/services.yaml`
 
 ## Services

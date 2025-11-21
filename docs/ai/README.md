@@ -12,7 +12,7 @@
 
 ### Hardware requirements
 
-- CPU and GPU mode is supported
+- CPU and GPU modes are supported
 - You should have at least 8 GB of RAM available to run the 7B models, 16 GB to run the 13B models, and 32 GB to run the 33B models.
 - On Apple M1 and higher Ollama performs great with 7B models due to the [Unified memory architecture](https://en.wikipedia.org/wiki/Apple_M1#Memory)
 - High memory bandwidth (typically GPU) is the top priority to achieve good performance

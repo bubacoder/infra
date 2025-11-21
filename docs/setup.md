@@ -12,19 +12,19 @@
   - [6. Configure core services](#6-configure-core-services)
   - [7. Start the containers](#7-start-the-containers)
   - [8. Configure the router](#8-configure-the-router)
-  - [9. Configure addition infrastructure services](#9-configure-addition-infrastructure-services)
+  - [9. Configure additional infrastructure services](#9-configure-additional-infrastructure-services)
 
 ## Online service setup
 
-This setup uses a public Domain Name to allow publishing local services and to have a recognized TLS certificate.
-An alternative is to use free subdomains (e.g. duckdns.org) but its support is not included in this setup.
+This setup uses a public domain name to allow publishing local services and to have a recognized TLS certificate.
+An alternative is to use free subdomains (e.g. duckdns.org) but their support is not included in this setup.
 
 1. Register a Domain Name, e.g. at [OVHcloud](https://www.ovhcloud.com/en/) - but the registrar does not matter, see next step
 2. Transfer the DNS Zone administration to [Cloudflare](https://www.cloudflare.com/application-services/products/dns/) - Traefik reverse proxy certificate renewal is configured to use Cloudflare
 
 ## Local configuration
 
-The recommended setup is to setup Proxmox VE and install a Debian- or Ubuntu-based VM to host the Docker services.
+The recommended setup is to install Proxmox VE and deploy a Debian- or Ubuntu-based VM to host the Docker services.
 For development and administrative purposes, a separate VM can be used with additional tools installed. This separation from the Docker host is a best practice, but to simplify the setup these two roles can be unified.
 
 ### 1. Install Proxmox Virtual Environment
@@ -35,13 +35,13 @@ For development and administrative purposes, a separate VM can be used with addi
 
 #### Option A - Use devcontainer (easy method)
 
-The repository includes a [devcontainer](https://code.visualstudio.com/docs/devcontainers/containers) configuration.
-Using Visual Studio Code, the [Dev Containers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) and Docker the development (e.g. adding more services, building the documentation) and administration tasks (e.g. running an Ansible playbook) can be performed on any environment without additional software installation.
+The repository includes a [Dev Container](https://code.visualstudio.com/docs/devcontainers/containers) configuration.
+Using Visual Studio Code, the [Dev Containers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) and Docker, the development (e.g. adding more services, building the documentation) and administration tasks (e.g. running an Ansible playbook) can be performed on any environment without additional software installation.
 
 Follow the [Dev Containers tutorial](https://code.visualstudio.com/docs/devcontainers/tutorial) to get started.
 For troubleshooting, tips and tricks see [Dev Containers](../.devcontainer/README.md).
 
-Note: the resulting container image is pretty large (4+ GB) as it includes all software configured in `ansible/inventory/group_vars/debian/vars.yaml`.
+Note: The resulting container image is quite large (4+ GB) as it includes all software configured in `ansible/inventory/group_vars/debian/vars.yaml`.
 
 #### Option B - Use a dev/admin host
 
@@ -58,12 +58,12 @@ Steps:
 
 ### 3. Install Ubuntu Server VM (Docker host)
 
-Edit the parameters and use the `infra/proxmox/create-ubuntu-server-vm.sh` script to automatically create an Ubuntu Server LTS virtual machine and start the OS installation.
+Edit the parameters and use the `proxmox/create-ubuntu-server-vm.sh` script to automatically create an Ubuntu Server LTS virtual machine and start the OS installation.
 
 Note - Alternatives:
-- Create the VM on the Proxmox GUI, download and attach the installer CD and proceed with manual installation (who does that?)
+- Create the VM using the Proxmox web interface, download and attach the installer ISO, then proceed with manual installation
 - Use Terraform to deploy the VM via the [Proxmox Terraform provider](https://registry.terraform.io/providers/Telmate/proxmox/latest/docs)
-- Install Ubuntu as an LXC container (there could be some limitations)
+- Install Ubuntu as an LXC container (note that there may be some limitations)
 
 ### 4. Install and configure the required software using Ansible
 
@@ -104,9 +104,9 @@ config/docker
 
 ### 6. Configure core services
 
-TODO Separate core services, like Traefik, Homepage
+TODO: Separate core services, like Traefik and Homepage
 
-TODO Describe the minimally required (core) service configuration
+TODO: Describe the minimally required core service configuration
 
 ### 7. Start the containers
 
@@ -132,9 +132,9 @@ ipconfig /all
 ipconfig /release && ipconfig /renew
 ```
 
-### 9. Configure addition infrastructure services
+### 9. Configure additional infrastructure services
 
-TODO Describe configuration
+TODO: Describe configuration
 
 - AdGuard: local domain, router DHCP
 - Cloudflare
