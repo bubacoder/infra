@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE="$(dirname "$SCRIPT_DIR")"
-TARGET="$(dirname "$SCRIPT_DIR")/../../repo-template"
+TARGET="$(dirname "$SCRIPT_DIR")/../repo-template"
 
 # List of files to copy
 files_to_copy=(
