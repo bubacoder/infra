@@ -13,6 +13,7 @@
       "WebFetch(domain:docs.linuxserver.io)",
       "Bash(scripts/labctl.py service config:*)",
       "Bash(scripts/labctl.py service pull:*)",
+      "Bash(scripts/labctl.py service logs:*)",
       "Bash(pre-commit run:*)",
       "Bash(task lint-app)",
       "Bash(task lint)"
