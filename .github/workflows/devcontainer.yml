@@ -52,15 +52,17 @@ jobs:
         with:
           context: ansible
           file: .devcontainer/Dockerfile
-          tags: infra-devcontainer:${{ matrix.distribution.tag }}
+          tags: |
+            infra-devcontainer:${{ matrix.distribution.tag }}
+            ghcr.io/${{ github.repository_owner }}/infra-devcontainer:latest-${{ matrix.distribution.tag }}
           build-args: BASE_IMAGE=${{ matrix.distribution.base_image }}
           cache-from: type=gha,scope=${{ matrix.distribution.tag }}
           cache-to: type=gha,mode=max,scope=${{ matrix.distribution.tag }}
-          push: false
-          load: true
+          outputs: type=docker,dest=/tmp/image-${{ matrix.distribution.tag }}.tar
 
-      - name: Test the image
+      - name: Load and test the image
         run: |
+          docker load --input /tmp/image-${{ matrix.distribution.tag }}.tar
           docker run --rm -v .:/home/admin/repos/infra infra-devcontainer:${{ matrix.distribution.tag }} bash --login -c "cd /home/admin/repos/infra; task versions"
 
       - name: Log in to the Container registry
@@ -72,13 +74,6 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push the image
-        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
         if: success() && github.ref == 'refs/heads/main'
-        with:
-          context: ansible
-          file: .devcontainer/Dockerfile
-          tags: ghcr.io/${{ github.repository_owner }}/infra-devcontainer:latest-${{ matrix.distribution.tag }}
-          build-args: BASE_IMAGE=${{ matrix.distribution.base_image }}
-          cache-from: type=gha,scope=${{ matrix.distribution.tag }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.distribution.tag }}
-          push: true
+        run: |
+          docker push ghcr.io/${{ github.repository_owner }}/infra-devcontainer:latest-${{ matrix.distribution.tag }}

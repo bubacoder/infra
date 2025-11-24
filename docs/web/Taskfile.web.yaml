@@ -16,10 +16,8 @@ tasks:
         TAG=local/${SITE_DOMAIN}:collect
         docker build -f docs/web/Dockerfile -t "${TAG}" --target collect --progress=plain --no-cache .
         # export
-        site_container_id=$(docker create "${TAG}")
         mkdir -p docs/web/public
-        docker cp ${site_container_id}:/src/content docs/web/public
-        docker rm ${site_container_id}
+        docker run --rm -v ./docs/web/public:/public "${TAG}" cp -r /src/content /public
 
   # Add parameters to 'docker build' for debugging: --progress=plain --no-cache
   build:
@@ -38,11 +36,9 @@ tasks:
     cmds:
       - |
         SITE_DOMAIN=docs.${MYDOMAIN}
-        TAG=${SITE_DOMAIN}:latest
-        site_container_id=$(docker create "${TAG}")
+        TAG=local/${SITE_DOMAIN}:latest
         mkdir -p docs/web/public
-        docker cp ${site_container_id}:/site docs/web/public
-        docker rm ${site_container_id}
+        docker run --user $(id -u):$(id -g) --rm -v ./docs/web/public:/public "${TAG}" cp -r /site /public
 
   deploy:
     desc: Build and deploy documentation site as an nginx container
