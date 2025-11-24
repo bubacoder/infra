@@ -42,15 +42,25 @@ jobs:
         id: pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3
+
       - name: Build with Hugo
-        env:
-          HUGO_BASEURL: "${{ steps.pages.outputs.base_url }}/"
-          TAG: docs:latest
+        uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6
+        with:
+          context: .
+          file: docs/web/Dockerfile
+          tags: docs:latest
+          build-args: HUGO_BASEURL=${{ steps.pages.outputs.base_url }}/
+          cache-from: type=gha,scope=hugo-docs
+          cache-to: type=gha,mode=max,scope=hugo-docs
+          outputs: type=docker,dest=/tmp/hugo-site.tar
+
+      - name: Extract site files
         run: |
-          docker build -f docs/web/Dockerfile -t "${TAG}" --build-arg HUGO_BASEURL="${HUGO_BASEURL}" .
-          site_container_id=$(docker create "${TAG}")
-          docker cp ${site_container_id}:/site ./public
-          docker rm ${site_container_id}
+          mkdir -p public
+          docker load --input /tmp/hugo-site.tar
+          docker run --user $(id -u):$(id -g) --rm -v $(pwd)/public:/public docs:latest cp -r /site /public
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4

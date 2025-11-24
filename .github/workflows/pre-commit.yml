@@ -26,14 +26,14 @@ jobs:
 
       - name: Install terraform-docs
         run: |
-          VERSION=0.19.0
+          VERSION=0.20.0
           curl -sSLo ./terraform-docs.tar.gz https://terraform-docs.io/dl/v${VERSION}/terraform-docs-v${VERSION}-$(uname)-amd64.tar.gz
           tar -xzf terraform-docs.tar.gz terraform-docs
           chmod +x terraform-docs
           mv terraform-docs /usr/local/bin/terraform-docs
           rm terraform-docs.tar.gz
 
-      # Note: collections will be installed to /opt/pipx/venvs/ansible-core/lib/python3.10/site-packages/ansible_collections
+      # Note: collections will be installed to /opt/pipx/venvs/ansible-core/lib/python3.12/site-packages/ansible_collections (why?)
       - name: Install Ansible requirements
         run: cd ansible && ansible-galaxy install -vv -r requirements.yml
 

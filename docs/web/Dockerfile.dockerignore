@@ -3,3 +3,5 @@
 .env*
 .task
 .fact_cache
+.venv
+__pycache__
