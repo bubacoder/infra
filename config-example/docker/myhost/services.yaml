@@ -90,9 +90,15 @@ services:
         state: up
       - name: bees
         state: up
+
+  - database:
+      - name: adminer
+        state: up
       - name: couchdb
         state: up
       - name: mssql-server
+        state: up
+      - name: postgresql
         state: up
 
   - backup:
