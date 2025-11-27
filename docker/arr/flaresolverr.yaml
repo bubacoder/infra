@@ -7,7 +7,7 @@ name: flaresolverr
 services:
   flaresolverr:
     # DockerHub mirror flaresolverr/flaresolverr:latest
-    image: ghcr.io/flaresolverr/flaresolverr:v3.4.4
+    image: ghcr.io/flaresolverr/flaresolverr:v3.4.5
     container_name: flaresolverr
     restart: unless-stopped
     environment:
