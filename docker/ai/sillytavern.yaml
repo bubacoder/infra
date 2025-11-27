@@ -19,7 +19,7 @@ services:
     network_mode: none
 
   sillytavern:
-    image: ghcr.io/sillytavern/sillytavern:1.13.5
+    image: ghcr.io/sillytavern/sillytavern:1.14.0
     container_name: sillytavern
     restart: unless-stopped
     volumes:

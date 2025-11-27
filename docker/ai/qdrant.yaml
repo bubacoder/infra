@@ -10,7 +10,7 @@
 name: qdrant
 services:
   qdrant:
-    image: qdrant/qdrant:v1.15.5
+    image: qdrant/qdrant:v1.16.1
     container_name: qdrant
     restart: unless-stopped
     healthcheck:
