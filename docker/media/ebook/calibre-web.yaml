@@ -3,8 +3,9 @@
 #
 # Default login: `admin` / `admin123`
 #
-# 📜 Source: https://github.com/janeczku/calibre-web  
-# 📦 Image: https://docs.linuxserver.io/images/docker-calibre-web/  
+# Links:
+# - Source: https://github.com/janeczku/calibre-web
+# - Image: https://docs.linuxserver.io/images/docker-calibre-web/
 ---
 name: calibre-web
 services:

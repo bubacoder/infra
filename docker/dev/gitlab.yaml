@@ -5,9 +5,10 @@
 #
 # Register the runner (`gitlab-runner` service): https://docs.gitlab.com/runner/register/index.html#docker
 #
-# 🏠 Home: https://about.gitlab.com/install/ce-or-ee/  
-# 📦 Image: https://hub.docker.com/r/gitlab/gitlab-ce/  
-# Docker install instructions: https://docs.gitlab.com/ee/install/docker.html  
+# Links:
+# - Home: https://about.gitlab.com/install/ce-or-ee/
+# - Image: https://hub.docker.com/r/gitlab/gitlab-ce/
+# - Docker install instructions: https://docs.gitlab.com/ee/install/docker.html
 ---
 name: gitlab
 services:

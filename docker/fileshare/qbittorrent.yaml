@@ -7,8 +7,9 @@
 # - Configure categories (Settings menu) to specify default download locations
 # - Setup forwarding of port 6881 (TCP, UDP) in the router, check open port: https://www.yougetsignal.com/tools/open-ports/
 #
-# 🏠 Home: https://www.qbittorrent.org/  
-# 📦 Image: https://hub.docker.com/r/linuxserver/qbittorrent  
+# Links:
+# - Home: https://www.qbittorrent.org/
+# - Image: https://hub.docker.com/r/linuxserver/qbittorrent
 ---
 name: qbittorrent
 services:

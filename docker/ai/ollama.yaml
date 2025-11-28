@@ -1,6 +1,8 @@
-# Get up and running with Llama 3.2, Mistral, Gemma 2, and other large language models.  
+# Get up and running with Llama 3.2, Mistral, Gemma 2, and other large language models.
 #
-# https://github.com/ollama/ollama
+# Links:
+# - Home: https://ollama.com/
+# - Source: https://github.com/ollama/ollama
 ---
 name: ollama
 services:

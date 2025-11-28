@@ -9,9 +9,10 @@
 # ```
 # Do not lose/change your SECRET_KEY after the installation, otherwise the encrypted data can not be decrypted anymore.
 #
-# 🏠 Home: https://about.gitea.com/
-# 📦 Source: https://github.com/go-gitea/gitea
-# 📜 Docs: https://docs.gitea.com/installation/install-with-docker
+# Links:
+# - Home: https://about.gitea.com/
+# - Source: https://github.com/go-gitea/gitea
+# - Docs: https://docs.gitea.com/installation/install-with-docker
 #
 # TODO: Generate SECRET_KEY and INTERNAL_TOKEN for enhanced security
 # TODO: Consider switching to PostgreSQL for improved performance with large repositories

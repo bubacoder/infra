@@ -224,9 +224,10 @@ When creating a new service, use this template:
 ```yaml
 # Brief description of the service in 1 to 3 sentences
 #
-# 🏠 Home: https://service-homepage.com/
-# 📦 Source: https://github.com/vendor/service
-# 📜 Docs: https://docs.service.com/
+# Links:
+# - Home: https://service-homepage.com/
+# - Source: https://github.com/vendor/service
+# - Docs: https://docs.service.com/
 #
 # TODO: List additional configuration tasks, possible enhancements
 ---

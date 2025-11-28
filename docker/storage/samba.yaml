@@ -20,8 +20,9 @@
 #   SAMBA_VOLUME_CONFIG_timemachine: "[TimeMachine]; path=/shares/timemachine/%U; valid users = alice, bob, foo; guest ok = no; read only = no; browseable = yes; fruit:time machine = yes; fruit:time machine max size = 500G"
 # ```
 #
-# 📜 Source: https://github.com/ServerContainers/samba  
-# 📦 Image: https://github.com/servercontainers/samba/pkgs/container/samba  
+# Links:
+# - Source: https://github.com/ServerContainers/samba
+# - Image: https://github.com/servercontainers/samba/pkgs/container/samba
 ---
 name: samba
 services:

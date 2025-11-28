@@ -7,7 +7,8 @@
 # > The same goes for Android, macOS, and iOS, where all servers are questioned at once, and the fastest to answer is considered correct.
 # See more: https://www.xda-developers.com/two-pi-holes-spare-resources-recommend/
 #
-# Source: https://github.com/bakito/adguardhome-sync
+# Links:
+# - Source: https://github.com/bakito/adguardhome-sync
 ---
 name: adguardhome-sync
 services:

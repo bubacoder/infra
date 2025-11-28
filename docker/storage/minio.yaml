@@ -10,7 +10,9 @@
 # Similarly, if your TLS certificates do not have the IP SAN for the MinIO server host, the MinIO Console may fail to validate the connection to the server. Use the MINIO_SERVER_URL environment variable and specify the proxy-accessible hostname of the MinIO server to allow the Console to use the MinIO server API using the TLS certificate.
 # For example: `export MINIO_SERVER_URL="https://minio.example.net"`
 #
-# Compose: https://github.com/minio/minio/blob/master/docs/orchestration/docker-compose/docker-compose.yaml
+# Links:
+# - Home: https://min.io
+# - Compose: https://github.com/minio/minio/blob/master/docs/orchestration/docker-compose/docker-compose.yaml
 ---
 name: minio
 services:

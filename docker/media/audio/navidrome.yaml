@@ -3,10 +3,11 @@
 #
 # In case of "unable to open database file: no such file or directory" error, chown the `data` directory to match `${PUID}:${PGID}`.
 #
-# 🏠 Home: https://www.navidrome.org/  
-# 📦 Image: https://hub.docker.com/r/deluan/navidrome  
-# Installing with Docker: https://www.navidrome.org/docs/installation/docker/  
-# Configuration Options: https://www.navidrome.org/docs/usage/configuration-options/  
+# Links:
+# - Home: https://www.navidrome.org/
+# - Image: https://hub.docker.com/r/deluan/navidrome
+# - Installing with Docker: https://www.navidrome.org/docs/installation/docker/
+# - Configuration Options: https://www.navidrome.org/docs/usage/configuration-options/
 #
 # Recommended desktop player:  
 # Sonixd - A full-featured Subsonic/Jellyfin compatible desktop music player  

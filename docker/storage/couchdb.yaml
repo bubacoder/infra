@@ -2,7 +2,9 @@
 #
 # Used by [Obsidian LiveSync](https://github.com/vrtmrz/obsidian-livesync)
 #
-# https://github.com/apache/couchdb
+# Links:
+# - Home: https://couchdb.apache.org
+# - Source: https://github.com/apache/couchdb
 ---
 name: couchdb
 services:

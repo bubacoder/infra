@@ -2,10 +2,11 @@
 # It is lightweight and suitable for devices from single board computers to full servers, providing publish/subscribe
 # messaging capabilities with support for TLS, WebSockets, and various authentication methods.
 #
-# 🏠 Home: https://mosquitto.org/
-# 📦 Source: https://github.com/eclipse/mosquitto
-# 📜 Docs: https://hub.docker.com/_/eclipse-mosquitto
-# Configure Authentication: https://mosquitto.org/documentation/authentication-methods/
+# Links:
+# - Home: https://mosquitto.org/
+# - Source: https://github.com/eclipse/mosquitto
+# - Image: https://hub.docker.com/_/eclipse-mosquitto
+# - Configure Authentication: https://mosquitto.org/documentation/authentication-methods/
 #
 # TODO: Consider enabling TLS/SSL certificates for secure connections on port 8883
 # TODO: Implement authentication with password file and ACL for access control

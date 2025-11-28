@@ -3,10 +3,11 @@
 # (REST, GraphQL, and real-time subscriptions), serverless functions, file storage, and AI & vector
 # toolkit for embeddings and semantic search.
 #
-# 🏠 Home: https://supabase.com
-# 📦 Source: https://github.com/supabase/supabase
-# 📜 Docs: https://supabase.com/docs/guides/self-hosting/docker
-# 📜 Docker Setup: https://github.com/supabase/supabase/tree/master/docker
+# Links:
+# - Home: https://supabase.com
+# - Source: https://github.com/supabase/supabase
+# - Docs: https://supabase.com/docs/guides/self-hosting/docker
+# - Docker Setup: https://github.com/supabase/supabase/tree/master/docker
 #
 # Note: The self-hosted version supports only one project - https://github.com/orgs/supabase/discussions/4907
 #

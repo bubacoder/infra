@@ -3,9 +3,10 @@
 #
 # endlessh-go is a golang implementation of endlessh exporting Prometheus metrics, visualized by a Grafana dashboard.
 #
-# 📜 Source: https://github.com/shizunge/endlessh-go/  
-# C implementation: https://github.com/skeeto/endlessh/  
-# Developer's blogpost: https://nullprogram.com/blog/2019/03/22/  
+# Links:
+# - Source: https://github.com/shizunge/endlessh-go/
+# - C implementation: https://github.com/skeeto/endlessh/
+# - Developer's blogpost: https://nullprogram.com/blog/2019/03/22/
 #
 # Setup Grafana dashboard:
 # - https://github.com/shizunge/endlessh-go/?tab=readme-ov-file#dashboard
