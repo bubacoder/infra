@@ -20,8 +20,9 @@
 # Kasm Workspaces can be configured to connect to fixed remote endpoints that are using either the Remote Desktop Protocol, VNC or SSH.  
 # Details: https://kasmweb.com/docs/latest/how_to/fixed_infrastructure.html
 #
-# https://www.kasmweb.com/  
-# https://docs.linuxserver.io/images/docker-kasm/
+# Links:
+# - Home: https://www.kasmweb.com/
+# - Image: https://docs.linuxserver.io/images/docker-kasm/
 ---
 name: kasm
 services:

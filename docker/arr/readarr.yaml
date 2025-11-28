@@ -2,8 +2,14 @@
 #
 # Quick start guide: https://wiki.servarr.com/readarr/quick-start-guide
 #
-# 📜 Source: https://github.com/Readarr/Readarr  
-# 📦 Image: https://docs.linuxserver.io/images/docker-readarr/  
+# Links:
+# - Home: https://readarr.com/
+# - Source: https://github.com/Readarr/Readarr
+# - Image: https://docs.linuxserver.io/images/docker-readarr/
+#
+# TODO: Replace this service
+# > **Announcement: Retirement of Readarr**
+# > We would like to announce that the Readarr project has been retired. This difficult decision was made due to a combination of factors: the project's metadata has become unusable, we no longer have the time to remake or repair it, and the community effort to transition to using Open Library as the source has stalled without much progress.
 ---
 name: readarr
 services:

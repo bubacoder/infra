@@ -1,8 +1,8 @@
 # ScanServJS - A responsive web UI for SANE document scanners
 #
-# 🏠 Home: https://github.com/sbs20/scanservjs
-# 📦 Source: https://github.com/sbs20/scanservjs
-# 📜 Docs: https://github.com/sbs20/scanservjs/blob/master/README.md
+# Links:
+# - Source: https://github.com/sbs20/scanservjs
+# - Docs: https://github.com/sbs20/scanservjs/blob/master/README.md
 ---
 name: scanservjs
 services:

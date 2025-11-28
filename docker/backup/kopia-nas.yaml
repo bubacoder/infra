@@ -3,9 +3,10 @@
 #
 # This instance's repository is configured for local **NAS** storage
 #
-# 🏠 Home: https://kopia.io/  
-# 📜 Source: https://github.com/kopia/kopia  
-# 🐙 Compose: https://github.com/kopia/kopia/tree/master/tools/docker  
+# Links:
+# - Home: https://kopia.io/
+# - Source: https://github.com/kopia/kopia
+# - Compose: https://github.com/kopia/kopia/tree/master/tools/docker
 ---
 name: kopia-nas
 services:

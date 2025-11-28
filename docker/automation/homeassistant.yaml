@@ -9,8 +9,10 @@
 #     - 172.18.0.0/24
 # ```
 #
-# 🏠 Home: https://www.home-assistant.io/  
-# 📦 Image: https://hub.docker.com/r/linuxserver/homeassistant  
+# Links:
+# - https://www.home-assistant.io/
+# - https://hub.docker.com/r/linuxserver/homeassistant
+# - https://www.home-assistant.io/integrations/http/
 ---
 name: homeassistant
 services:

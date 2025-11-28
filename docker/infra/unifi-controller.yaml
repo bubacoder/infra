@@ -10,8 +10,9 @@
 # - Create the user on Settings -> Admins
 # - Set the `${UNIFI_LOCAL_VIEWONLY_USERNAME}` and `${UNIFI_LOCAL_VIEWONLY_PASSWORD}` variables
 #
-# 🏠 Home: https://ui.com/download/releases/network-server  
-# 📦 Image: https://hub.docker.com/r/linuxserver/unifi-controller  
+# Links:
+# - Home: https://ui.com/download/releases/network-server
+# - Image: https://hub.docker.com/r/linuxserver/unifi-controller
 ---
 name: unifi-controller
 services:
