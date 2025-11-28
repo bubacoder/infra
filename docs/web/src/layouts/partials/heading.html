@@ -1,8 +1,9 @@
+<h1 id="{{ .Title | plainify | anchorize }}">
 {{- if .Params.Icon }}
-<img src="{{ .Params.Icon }}" alt="{{ .Title }}" width="60px" height="auto"/>
+<img src="{{ .Params.Icon }}" alt="{{ .Title }}" width="32px" height="auto" style="display: inline; margin-right: 0.5rem; margin-top: 0.25rem;"/>
 {{- end }}
-
-<h1 id="{{ .Title | plainify | anchorize }}">{{ .Title }}</h1>
+{{ .Title }}
+</h1>
 
 {{- if .Description }}
 <h3>{{ .Description }}</h3>
