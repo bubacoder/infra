@@ -56,10 +56,17 @@ tasks:
   build:
     desc: Run all linting and build tasks
     cmds:
-      - task: docker:update-example-env
-      - task: docs-deploy
-      - task: pre-commit-update
       - task: lint
+      - task: docker:update-example-env
+      - task: docs:build
+
+  prepare-to-push:
+    desc: Prepare branch for push - lint, build, rebase
+    aliases: [prep]
+    cmds:
+      - clear
+      - task: build
+      - task: git-rebase-fixup
 
   pre-commit-update:
     desc: Update pre-commit repositories
