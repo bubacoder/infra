@@ -8,7 +8,7 @@ COPY docs/web/requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Note: Add parameter for verbose output: --verbose
-RUN --mount=type=bind,ro,source=.,target=/repo python -m docs.web.update_docs --repository-path /repo --output-content-path /src/content
+RUN --mount=type=bind,ro,source=.,target=/repo /repo/docs/web/update-docs.py --repository-path /repo --output-content-path /src/content
 
 #####################################################################
 #                            Build Stage                            #
