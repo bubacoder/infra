@@ -9,9 +9,8 @@ import sys
 from pathlib import Path
 
 import yaml
-
-from .docker_scanner import DockerComposeScanner
-from .git_utils import get_git_root
+from docker_scanner import DockerComposeScanner
+from git_utils import get_git_root
 
 
 def str_presenter(dumper, data):
@@ -24,11 +23,11 @@ yaml.add_representer(str, str_presenter)
 
 
 def export_services(repository_path, output_file, docker_path="docker", verbose=False):
-    """Export all Docker Compose services to a YAML file.
+    """Export all Docker Compose services to a YAML file or stdout.
 
     Args:
         repository_path: Path to the repository root
-        output_file: Path to the output YAML file
+        output_file: Path to the output YAML file, or None for stdout
         docker_path: Relative path to docker directory (default: "docker")
         verbose: Enable verbose logging
     """
@@ -69,10 +68,20 @@ def export_services(repository_path, output_file, docker_path="docker", verbose=
 
         output_data["services"].append(service_data)
 
-    # Write to YAML file
-    logger.info(f"Writing {len(services)} services to {output_file}")
-    with open(output_file, "w") as f:
-        yaml.dump(output_data, f, width=math.inf, default_flow_style=False, sort_keys=False, allow_unicode=True, Dumper=yaml.Dumper)
+    # Write to YAML file or stdout
+    if output_file is not None:
+        logger.info(f"Writing {len(services)} services to {output_file}")
+        with open(output_file, "w") as stream:
+            yaml.dump(
+                output_data, stream, width=math.inf, default_flow_style=False,
+                sort_keys=False, allow_unicode=True, indent=2, Dumper=yaml.Dumper
+            )
+    else:
+        logger.info("Writing services to stdout")
+        yaml.dump(
+            output_data, sys.stdout, width=math.inf, default_flow_style=False,
+            sort_keys=False, allow_unicode=True, indent=2, Dumper=yaml.Dumper
+        )
 
     logger.info("Export complete")
 
@@ -90,7 +99,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output-file",
         type=str,
-        help="Specify the output YAML file path"
+        help="Specify the output YAML file path (defaults to stdout if omitted)"
     )
     parser.add_argument(
         "--docker-path",
@@ -103,8 +112,8 @@ if __name__ == "__main__":
     # Get repository path
     repository_path = Path(args.repository_path) if args.repository_path else Path(get_git_root())
 
-    # Default output file if not specified
-    output_file = Path(args.output_file) if args.output_file else repository_path / "services.yaml"
+    # Default output to stdout if not specified
+    output_file = Path(args.output_file) if args.output_file else None
 
     # Export services
     try:

@@ -8,10 +8,9 @@ import sys
 from pathlib import Path
 
 import yaml
-
-from .docker_scanner import DockerComposeScanner
-from .git_utils import get_git_root
-from .link_processor import LinkProcessor
+from docker_scanner import DockerComposeScanner
+from git_utils import get_git_root
+from link_processor import LinkProcessor
 
 
 class DocsProcessor:
