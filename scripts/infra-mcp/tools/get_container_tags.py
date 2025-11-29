@@ -35,8 +35,170 @@ class ContainerTagFinder:
         arch_part = parts[1] if len(parts) > 1 else 'amd64'
         return os_part, arch_part
 
-    def get_docker_hub_tags(self, image_name: str, limit: int = 10, architecture: str = "linux/amd64") -> list[dict[str, Any]]:
-        """Query Docker Hub for image tags with timestamp information."""
+    def _parse_version(self, tag_name: str) -> tuple[int, ...] | None:
+        """
+        Extract version numbers from tag name.
+
+        Handles various tag formats:
+        - "18.1", "18.1.0"
+        - "v18.1", "v18.1.0"
+        - "18.1-trixie", "18.1-bookworm"
+        - "18", "v18"
+
+        Args:
+            tag_name: The tag name to parse
+
+        Returns:
+            tuple: A tuple of integers representing (major, minor, patch, ...), or None if not a version tag
+        """
+        # Handle common prefixes
+        normalized = tag_name.lower()
+        if normalized.startswith('v') and len(normalized) > 1 and normalized[1].isdigit():
+            normalized = normalized[1:]
+
+        # Skip non-version tags
+        if not any(c.isdigit() for c in normalized):
+            return None
+
+        # Skip tags that don't start with a digit
+        if not normalized[0].isdigit():
+            return None
+
+        # Extract the version part (before any '-', '_', or non-numeric suffix)
+        version_part = normalized.split('-')[0].split('_')[0]
+
+        # Split by '.' and try to parse as integers
+        try:
+            version_numbers = []
+            for part in version_part.split('.'):
+                # Only take numeric parts
+                if part.isdigit():
+                    version_numbers.append(int(part))
+                else:
+                    # If we hit a non-numeric part, stop parsing
+                    break
+
+            if version_numbers:
+                return tuple(version_numbers)
+            else:
+                return None
+        except (ValueError, AttributeError):
+            return None
+
+    def _parse_datetime(self, datetime_str: str | None) -> datetime:
+        """
+        Parse a datetime string to a datetime object.
+
+        Handles ISO format with 'Z' timezone suffix.
+
+        Args:
+            datetime_str: The datetime string to parse (ISO format or None)
+
+        Returns:
+            datetime: Parsed datetime object, or datetime.min if parsing fails
+        """
+        if not datetime_str:
+            return datetime.min
+        try:
+            return datetime.fromisoformat(datetime_str.replace('Z', '+00:00'))
+        except (ValueError, AttributeError):
+            return datetime.min
+
+    def _extract_arch_digest(self, tag: dict[str, Any], architecture: str) -> str | None:
+        """
+        Extract the digest for a specific architecture from a tag's images.
+
+        Args:
+            tag: Tag dictionary containing 'images' list
+            architecture: Architecture string in format 'os/architecture' (e.g., 'linux/amd64')
+
+        Returns:
+            str: The digest for the specified architecture, or None if not found
+        """
+        arch_os, arch_variant = self._parse_arch(architecture)
+        for image in tag.get('images', []):
+            if image.get('architecture') == arch_variant and image.get('os') == arch_os:
+                return image.get('digest')
+        return None
+
+    def _create_tag_data_dict(self, tag: dict[str, Any], architecture: str) -> dict[str, Any]:
+        """
+        Create a standardized tag data dictionary from a Docker Hub tag.
+
+        Args:
+            tag: Raw tag dictionary from Docker Hub API
+            architecture: Architecture string to extract digest for
+
+        Returns:
+            dict: Standardized tag data dictionary with name, last_updated, size, and digest
+        """
+        return {
+            'name': tag['name'],
+            'last_updated': tag.get('last_updated'),
+            'size': tag.get('full_size', 0),
+            'digest': self._extract_arch_digest(tag, architecture)
+        }
+
+    def _version_sort_key(self, tag: dict[str, Any]) -> tuple:
+        """
+        Return sort key for version-aware sorting.
+
+        Priority (highest to lowest):
+        1. 'latest' tag (always first)
+        2. Tags with version numbers (sorted by version descending)
+        3. Non-version tags (sorted by last_updated)
+
+        Args:
+            tag: Tag dictionary with 'name' and 'last_updated' fields
+
+        Returns:
+            tuple: A sort key that can be used with sorted() or list.sort()
+        """
+        tag_name = tag['name'].lower()
+
+        # Priority 1: 'latest' tag
+        if tag_name == 'latest':
+            return (2, (999, 999, 999, 999), datetime.max)
+
+        # Priority 2: Version tags
+        version = self._parse_version(tag['name'])
+        if version:
+            # Pad version tuple to 4 elements for consistent comparison
+            padded_version = version + (0,) * (4 - len(version))
+            updated = self._parse_datetime(tag.get('last_updated'))
+            return (1, padded_version[:4], updated)
+
+        # Priority 3: Non-version tags
+        updated = self._parse_datetime(tag.get('last_updated'))
+        return (0, (0, 0, 0, 0), updated)
+
+    def _sort_tags(self, tag_data: list[dict[str, Any]], sort_by: str) -> None:
+        """Sort tag data in place based on the sort_by parameter.
+
+        Args:
+            tag_data: List of tag dictionaries to sort
+            sort_by: Sort method - 'version', 'updated', or 'default' (no sorting)
+        """
+        if sort_by == "version":
+            # Version-aware sorting
+            tag_data.sort(key=self._version_sort_key, reverse=True)
+        elif sort_by == "updated":
+            # Sort by last_updated timestamp
+            tag_data.sort(key=lambda x: self._parse_datetime(x.get('last_updated')), reverse=True)
+        # else: sort_by == "default", keep original order
+
+    def get_docker_hub_tags(self, image_name: str, limit: int = 10, architecture: str = "linux/amd64", sort_by: str = "version") -> list[dict[str, Any]]:
+        """Query Docker Hub for image tags with timestamp information.
+
+        Args:
+            image_name: Name of the image to query
+            limit: Maximum number of tags to return (unused in fetching, used by caller)
+            architecture: Architecture to filter by (e.g., 'linux/amd64')
+            sort_by: Sort method - 'version' (default), 'updated', or 'default' (Docker Hub order)
+
+        Returns:
+            list: List of tag dictionaries sorted according to sort_by parameter
+        """
         # Parse repository name
         if '/' in image_name:
             namespace, repo = image_name.split('/', 1)
@@ -52,20 +214,7 @@ class ContainerTagFinder:
             tag_data: list[dict[str, Any]] = []
 
             for tag in data.get('results', []):
-                # Find the image info for the requested architecture
-                arch_digest = None
-                arch_os, arch_variant = self._parse_arch(architecture)
-                for image in tag.get('images', []):
-                    if image.get('architecture') == arch_variant and image.get('os') == arch_os:
-                        arch_digest = image.get('digest')
-                        break
-
-                tag_data.append({
-                    'name': tag['name'],
-                    'last_updated': tag.get('last_updated'),
-                    'size': tag.get('full_size', 0),
-                    'digest': arch_digest
-                })
+                tag_data.append(self._create_tag_data_dict(tag, architecture))
 
             # Handle pagination if there are more tags
             while 'next' in data and data['next'] and len(tag_data) < 1000:  # Limit to avoid too many requests
@@ -74,37 +223,29 @@ class ContainerTagFinder:
                 data = response.json()
 
                 for tag in data.get('results', []):
-                    # Find the image info for the requested architecture
-                    arch_digest = None
-                    arch_os, arch_variant = self._parse_arch(architecture)
-                    for image in tag.get('images', []):
-                        if image.get('architecture') == arch_variant and image.get('os') == arch_os:
-                            arch_digest = image.get('digest')
-                            break
+                    tag_data.append(self._create_tag_data_dict(tag, architecture))
 
-                    tag_data.append({
-                        'name': tag['name'],
-                        'last_updated': tag.get('last_updated'),
-                        'size': tag.get('full_size', 0),
-                        'digest': arch_digest
-                    })
-
-            # Sort by last_updated in descending order (newest first)
-            def _iso(dt_str):
-                try:
-                    return datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
-                except ValueError:
-                    return datetime.min
-
-            tag_data.sort(key=lambda x: _iso(x['last_updated']) if x['last_updated'] else datetime.min, reverse=True)
+            # Sort based on sort_by parameter
+            self._sort_tags(tag_data, sort_by)
         except requests.exceptions.RequestException as e:
             print(f"Error querying Docker Hub: {e}", file=sys.stderr)
             return []
         else:
             return tag_data
 
-    def get_registry_tags(self, registry_url: str, image_name: str, limit: int = 10, architecture: str = "linux/amd64") -> list[dict[str, Any]]:
-        """Query a registry API v2 for image tags and attempt to get creation time."""
+    def get_registry_tags(self, registry_url: str, image_name: str, limit: int = 10, architecture: str = "linux/amd64", sort_by: str = "version") -> list[dict[str, Any]]:
+        """Query a registry API v2 for image tags and attempt to get creation time.
+
+        Args:
+            registry_url: URL of the registry
+            image_name: Name of the image to query
+            limit: Maximum number of tags to return (unused in fetching, used by caller)
+            architecture: Architecture to filter by (e.g., 'linux/amd64')
+            sort_by: Sort method - 'version' (default), 'updated', or 'default' (registry order)
+
+        Returns:
+            list: List of tag dictionaries sorted according to sort_by parameter
+        """
         url: str = f"{registry_url}/v2/{image_name}/tags/list"
         try:
             response = requests.get(url, timeout=30)
@@ -154,14 +295,8 @@ class ContainerTagFinder:
                         'digest': None
                     })
 
-            # Sort by last_updated in descending order if available
-            def _httpdate(dt_str):
-                try:
-                    return parsedate_to_datetime(dt_str)
-                except Exception:
-                    return datetime.min
-
-            tag_data.sort(key=lambda x: _httpdate(x['last_updated']) if x['last_updated'] else datetime.min, reverse=True)
+            # Sort based on sort_by parameter
+            self._sort_tags(tag_data, sort_by)
         except requests.exceptions.RequestException as e:
             print(f"Error querying registry: {e}", file=sys.stderr)
             return []
@@ -303,6 +438,7 @@ class ContainerTagFinder:
         """Get tags for the image based on the provided arguments."""
         _, should_output = self._get_output_flags(args)
         fetch_limit = limit if limit is not None else args.limit
+        sort_by = getattr(args, 'sort', 'version')  # Default to 'version' if not specified
 
         registry_url, image_name, is_docker_hub = self._parse_image_reference(args.image, args.registry)
 
@@ -310,11 +446,11 @@ class ContainerTagFinder:
         if not is_docker_hub:
             if should_output:
                 print(f"Querying registry {registry_url} for {image_name} (architecture: {args.architecture})...")
-            tags = self.get_registry_tags(registry_url, image_name, fetch_limit, args.architecture)
+            tags = self.get_registry_tags(registry_url, image_name, fetch_limit, args.architecture, sort_by)
         else:
             if should_output:
                 print(f"Querying Docker Hub for {args.image} (architecture: {args.architecture})...")
-            tags = self.get_docker_hub_tags(args.image, fetch_limit, args.architecture)
+            tags = self.get_docker_hub_tags(args.image, fetch_limit, args.architecture, sort_by)
 
         return tags, registry_url, image_name, is_docker_hub
 
@@ -467,6 +603,8 @@ def main() -> None:
     recent_parser = subparsers.add_parser('list-recent', help='List recent tags for an image')
     recent_parser.add_argument('image', help='Image name (e.g., nginx or registry.example.com/nginx)')
     recent_parser.add_argument('--limit', type=int, default=10, help='Maximum number of tags to display (default: 10)')
+    recent_parser.add_argument('--sort', choices=['version', 'updated', 'default'], default='version',
+                               help='Sort order: version (by version number, default), updated (by last_updated timestamp), default (registry order)')
 
     # Create the parser for the "list-same-hash" command
     hash_parser = subparsers.add_parser('list-same-hash', help='List tags with the same hash')
