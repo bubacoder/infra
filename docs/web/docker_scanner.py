@@ -4,7 +4,7 @@ import logging
 import os
 from pathlib import Path
 
-from .compose_processor import ComposeFileProcessor
+from compose_processor import ComposeFileProcessor
 
 
 class DockerComposeScanner:
