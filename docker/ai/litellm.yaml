@@ -9,12 +9,14 @@
 name: litellm
 services:
   litellm:
-    image: ghcr.io/berriai/litellm:main-v1.53.1
-    command: --config /app/config.yaml --detailed_debug
+    image: ghcr.io/berriai/litellm:v1.80.0-stable
+    command:
+      - --config=/app/config.yaml
+      - --telemetry=false
     container_name: litellm
     restart: unless-stopped
     volumes:
-      - ./litellm:/app
+      - ./litellm/config.yaml:/app/config.yaml
     networks:
       - proxy
     environment:
@@ -24,6 +26,12 @@ services:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-""}
       LOCAL_OLLAMA_API_BASE: https://ollama.${MYDOMAIN}
       REMOTE_OLLAMA_API_BASE: http://localhost:11444
+    healthcheck:  # Defines the health check configuration for the container
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 http://localhost:4000/health/liveliness || exit 1"]  # Command to execute for health check
+      interval: 30s  # Perform health check every 30 seconds
+      timeout: 10s   # Health check command times out after 10 seconds
+      retries: 3     # Retry up to 3 times if health check fails
+      start_period: 40s  # Wait 40 seconds after container start before beginning health checks
     labels:
       traefik.enable: true
       traefik.http.routers.litellm.middlewares: localaccess@file
