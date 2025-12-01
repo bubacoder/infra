@@ -30,9 +30,9 @@ model_list:
       model: anthropic/claude-sonnet-4-5
       api_key: "os.environ/ANTHROPIC_API_KEY"
 
-  - model_name: claude-opus-4-1
+  - model_name: claude-opus-4-5
     litellm_params:
-      model: anthropic/claude-opus-4-1
+      model: anthropic/claude-opus-4-5
       api_key: "os.environ/ANTHROPIC_API_KEY"
 
   - model_name: claude-haiku-4-5
@@ -112,6 +112,12 @@ model_list:
   - model_name: deepseek-r1
     litellm_params:
       model: openrouter/deepseek/deepseek-r1
+      api_key: "os.environ/OPENROUTER_API_KEY"
+
+  # https://openrouter.ai/x-ai/grok-code-fast-1
+  - model_name: grok-code-fast-1
+    litellm_params:
+      model: openrouter/x-ai/grok-code-fast-1
       api_key: "os.environ/OPENROUTER_API_KEY"
 
   # --- Local models (Ollama)
