@@ -62,10 +62,19 @@ jobs:
           docker load --input /tmp/hugo-site.tar
           docker run --user $(id -u):$(id -g) --rm -v $(pwd)/public:/public docs:latest cp -r /site /public
 
+      - name: Validate site build
+        run: |
+          SITE_INDEX="./public/site/index.html"
+          if [ ! -f "$SITE_INDEX" ]; then
+            echo "Error: $SITE_INDEX not found"
+            exit 1
+          fi
+          echo "Validation passed: $SITE_INDEX exists"
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:
-          path: ./public
+          path: ./public/site
 
   # Deployment job
   deploy:
