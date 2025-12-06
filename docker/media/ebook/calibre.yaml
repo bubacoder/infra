@@ -17,7 +17,7 @@
 name: calibre
 services:
   calibre:
-    image: lscr.io/linuxserver/calibre:8.15.0
+    image: lscr.io/linuxserver/calibre:8.16.2
     container_name: calibre
     restart: unless-stopped
     # kics-scan ignore-line
