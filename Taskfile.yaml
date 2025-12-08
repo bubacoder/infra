@@ -138,6 +138,30 @@ tasks:
       - cd config && tar -cjf "../infra-config-backup/infra-config-$(date +%Y-%m-%d_%H-%M-%S).tar.bz2" .
       - ls -lh ../infra-config-backup/infra-config-*.tar.bz2 | tail -n 5
 
+  push-config-repo:
+    desc: Commit and push changes in the config git repository
+    silent: true
+    cmds:
+      - |
+        CONFIG_PATH="config"
+        cd "${CONFIG_PATH}" || { echo "Failed to cd to '${CONFIG_PATH}'"; exit 1; }
+        if [ ! -d ".git" ]; then
+          echo "Error: .git folder not found in '${CONFIG_PATH}'"
+          exit 1
+        fi
+
+        git add --all
+        if git diff --cached --quiet; then
+          echo "No changes to commit."
+        else
+          git commit -m "Automatic sync"
+        fi
+        if ! git remote get-url origin 2>/dev/null; then
+          echo "No remote origin URL is configured. Skipping push."
+        else
+          git push
+        fi
+
   # Setup scheduling with command `crontab -e`, add this line:
   # 0 1 * * * cd /home/buba/repos/infra && /home/linuxbrew/.linuxbrew/bin/task backup >> config/log/infra-backup.log 2>&1
   backup:
@@ -146,7 +170,8 @@ tasks:
     cmds:
       - echo "=== Backup started at $(date) ==="
       - task: backup-config
-      - task: obsidian:repo-backup
+      - task: push-config-repo
+      - task: obsidian:backup-vault-repo
       - |
         if [ -f "config/sync-backup-to-remote.sh" ]; then
             bash "config/sync-backup-to-remote.sh"
