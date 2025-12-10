@@ -48,11 +48,15 @@ dev_apt_packages:
   - pre-commit
   - shellcheck
   - tshark
+  - jq
+  - yq
+  - tea                 # Gitea CLI
 
 # Homebrew - https://brew.sh/
 dev_brew_packages:
   - asdf                # https://asdf-vm.com/
   - helix               # https://helix-editor.com
+  - act                 # https://nektosact.com/
 
   # AWS
   - awscli              # https://github.com/aws/aws-cli
