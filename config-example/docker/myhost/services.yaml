@@ -159,9 +159,9 @@ services:
       - name: qdrant
         state: up
 
-  # - communication:
-  #     - name: matrix-synapse
-  #       state: down
+  - communication:
+      - name: mattermost
+        state: up
 
   - arr:
       - name: radarr

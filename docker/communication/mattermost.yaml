@@ -1,0 +1,60 @@
+# Mattermost is a collaboration platform for mission-critical work that accelerates
+# workflow by integrating people, processes, tools and AI infrastructure on a resilient
+# and adaptable platform. The official Docker deployment solution provides enterprise-ready
+# team messaging with extensive customization options.
+#
+# Links:
+# - Home: https://mattermost.com
+# - Source: https://github.com/mattermost/docker
+# - Docs: https://docs.mattermost.com/deployment-guide/server/deploy-containers.html
+#
+# TODO: Configure S3-compatible storage (MinIO) for file uploads
+# TODO: Set up GitLab SSO integration (requires mounting PKI chain)
+# TODO: Configure SMTP settings for email notifications
+# TODO: Set up Prometheus metrics endpoint for monitoring
+# TODO: Configure automated backup strategy for Mattermost data
+# TODO: Review and configure Mattermost Calls settings for audio/video
+---
+name: mattermost
+services:
+  mattermost:
+    image: mattermost/mattermost-team-edition:11.1.1
+    container_name: mattermost
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 200
+    tmpfs:
+      - /tmp
+    environment:
+      TZ: ${TIMEZONE}
+      # Database configuration - connects to existing PostgreSQL service
+      MM_SQLSETTINGS_DRIVERNAME: postgres
+      MM_SQLSETTINGS_DATASOURCE: postgres://${MATTERMOST_POSTGRES_USER}:${MATTERMOST_POSTGRES_PASSWORD}@postgresql:5432/${MATTERMOST_POSTGRES_DB}?sslmode=disable&connect_timeout=10
+      # Search index configuration
+      MM_BLEVESETTINGS_INDEXDIR: /mattermost/bleve-indexes
+      # Site URL configuration
+      MM_SERVICESETTINGS_SITEURL: https://mattermost.${MYDOMAIN}
+    volumes:
+      - ${DOCKER_VOLUMES}/mattermost/config:/mattermost/config
+      - ${DOCKER_VOLUMES}/mattermost/data:/mattermost/data
+      - ${DOCKER_VOLUMES}/mattermost/logs:/mattermost/logs
+      - ${DOCKER_VOLUMES}/mattermost/plugins:/mattermost/plugins
+      - ${DOCKER_VOLUMES}/mattermost/client-plugins:/mattermost/client/plugins
+      - ${DOCKER_VOLUMES}/mattermost/bleve-indexes:/mattermost/bleve-indexes
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.mattermost.rule: Host(`mattermost.${MYDOMAIN}`)
+      traefik.http.routers.mattermost.middlewares: localaccess@file
+      traefik.http.services.mattermost.loadbalancer.server.port: 8065
+      homepage.group: Connections
+      homepage.name: Mattermost
+      homepage.icon: mattermost.png
+      homepage.href: https://mattermost.${MYDOMAIN}/
+      homepage.description: "Secure collaboration platform for mission-critical work"
+
+networks:
+  proxy:
+    external: true
