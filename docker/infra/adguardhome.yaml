@@ -15,7 +15,7 @@
 name: adguardhome
 services:
   adguardhome:
-    image: adguard/adguardhome:v0.107.69
+    image: adguard/adguardhome:v0.107.71
     container_name: adguardhome
     restart: unless-stopped
     volumes:
