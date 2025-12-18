@@ -6,6 +6,7 @@ vars:
   TFPLAN: '{{.CONFIG_DIR}}/tfplan'
   VAR_FILE: '{{.CONFIG_DIR}}/infra.tfvars'
   RESOURCE_GROUP: HomeInfra
+  STORAGE_ACCOUNT_NAME: tfstateinfrandomanimal # CUSTOMIZE: Must be globally unique, 3-24 chars, lowercase letters and numbers only
   VM_NAME: nest
   VM_KEYFILE: ~/.ssh/id_rsa_azure_vm
   VM_ADMIN_USER: azureuser
@@ -32,6 +33,24 @@ tasks:
       - '{{.TFBIN}} init -backend=false'
       - '{{.TFBIN}} validate'
       - tfsec
+
+  migrate-state:
+    desc: Migrate Terraform state from local to Azure remote backend
+    preconditions:
+      - sh: az account show
+        msg: "Not logged into Azure. Run 'az login --use-device-code' first"
+      - sh: az storage account show -n {{.STORAGE_ACCOUNT_NAME}} -g {{.RESOURCE_GROUP}}
+        msg: "Storage account '{{.STORAGE_ACCOUNT_NAME}}' not found. Create it first (see README)"
+      - sh: "[ -f '{{.CONFIG_DIR}}/terraform.tfstate' ]"
+        msg: "Local state file not found at {{.CONFIG_DIR}}/terraform.tfstate"
+    cmds:
+      - echo "Backing up current local state..."
+      - cp {{.CONFIG_DIR}}/terraform.tfstate {{.CONFIG_DIR}}/terraform.tfstate.backup-$(date +%Y%m%d-%H%M%S)
+      - echo "Initializing with new backend configuration..."
+      - '{{.TFBIN}} init -migrate-state'
+      - echo ""
+      - echo "Migration complete! Verify state in Azure:"
+      - echo "  az storage blob list --account-name {{.STORAGE_ACCOUNT_NAME}} --container-name azure-vm-state --output table"
 
   plan:
     desc: Create Terraform plan
