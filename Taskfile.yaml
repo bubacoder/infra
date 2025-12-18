@@ -136,7 +136,10 @@ tasks:
     cmds:
       - mkdir -p ../infra-config-backup
       - cd config && tar -cjf "../infra-config-backup/infra-config-$(date +%Y-%m-%d_%H-%M-%S).tar.bz2" .
+      - echo "Recent backups:"
       - ls -lh ../infra-config-backup/infra-config-*.tar.bz2 | tail -n 5
+      # Remove old backups (they are still kept in the repository - see the push-config-repo task)
+      - ls -t ../infra-config-backup/infra-config-*.tar.bz2 | tail -n +31 | xargs -r rm
 
   push-config-repo:
     desc: Commit and push changes in the config git repository

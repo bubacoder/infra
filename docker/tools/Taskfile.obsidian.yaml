@@ -4,36 +4,22 @@ env:
   OBSIDIAN_VAULT_NAME: "Today"
 
 tasks:
-  sync-vault-repo:
-    desc: Sync Obsidian vault to git repository
-    dotenv: ['config/docker/localhost/.env']
-    silent: true
-    cmds:
-      - |
-        VAULT_PATH="${STORAGE_OBSIDIAN}/${OBSIDIAN_VAULT_NAME}/"
-        REPO_NAME="$(printf '%s' "${OBSIDIAN_VAULT_NAME}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')"
-        REPO_PATH="$(realpath -s "../${REPO_NAME}")"
-        echo "Git repository path: ${REPO_PATH}"
-
-        cd "${REPO_PATH}" || { echo "Failed to cd to '${REPO_PATH}'"; exit 1; }
-        if [ ! -d ".git" ]; then
-          echo "Error: .git folder not found in '${REPO_PATH}'"
-          exit 1
-        fi
-
-        rsync --verbose --archive --delete --exclude ".obsidian/" --exclude ".git/" "${VAULT_PATH}" .
-        git status
-
+  # Note: to avoid syncing the .git folder by Obsidian, .git folder is placed outside of the Vault
+  # Reference: https://git-scm.com/docs/git-clone#Documentation/git-clone.txt---separate-git-dirgit-dir
+  # Clone command: `git clone --separate-git-dir`
   push-vault-repo:
     desc: Commit and push changes in Obsidian Vault git repository
     dotenv: ['config/docker/localhost/.env']
     silent: true
     cmds:
       - |
-        REPO_NAME="$(printf '%s' "${OBSIDIAN_VAULT_NAME}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')"
-        REPO_PATH="$(realpath -s "../${REPO_NAME}")"
-        cd "${REPO_PATH}" || { echo "Failed to cd to '${REPO_PATH}'"; exit 1; }
+        VAULT_PATH="${STORAGE_OBSIDIAN}/${OBSIDIAN_VAULT_NAME}/"
+        cd "${VAULT_PATH}" || { echo "Failed to cd to '${VAULT_PATH}'"; exit 1; }
+
         git add --all
+        pre-commit run || true
+        git add --all
+
         if git diff --cached --quiet; then
           echo "No changes to commit."
         else
@@ -45,8 +31,19 @@ tasks:
           git push
         fi
 
-  backup-vault-repo:
-    desc: Sync Obsidian vault to git repository, commit and push changes
+  stop-obsidian:
+    desc: Stop Obsidian service
     cmds:
-      - task: sync-vault-repo
+      - scripts/labctl.py service down tools/obsidian
+
+  start-obsidian:
+    desc: Start Obsidian service
+    cmds:
+      - scripts/labctl.py service up tools/obsidian
+
+  backup-vault-repo:
+    desc: Stop Obsidian, commit and push changes to git, then start the service
+    cmds:
+      - task: stop-obsidian
+      - defer: { task: start-obsidian }
       - task: push-vault-repo
