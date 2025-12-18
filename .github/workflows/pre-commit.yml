@@ -19,7 +19,7 @@ jobs:
 
       - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
         with:
-          terraform_version: "1.10.3"
+          terraform_version: "1.14.3"
 
       - name: Install tflint
         run: curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
