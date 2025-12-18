@@ -109,7 +109,7 @@ services:
 
   auth:
     container_name: supabase-auth
-    image: supabase/gotrue:v2.183.0
+    image: supabase/gotrue:v2.184.0
     restart: unless-stopped
     healthcheck:
       test:
@@ -220,7 +220,7 @@ services:
   realtime:
     # This container name looks inconsistent but is correct because realtime constructs tenant id by parsing the subdomain
     container_name: realtime-dev.supabase-realtime
-    image: supabase/realtime:v2.66.0
+    image: supabase/realtime:v2.68.7
     restart: unless-stopped
     depends_on:
       db:
@@ -266,7 +266,7 @@ services:
 
   storage:
     container_name: supabase-storage
-    image: supabase/storage-api:v1.32.0
+    image: supabase/storage-api:v1.33.1
     restart: unless-stopped
     volumes:
       - ${DOCKER_VOLUMES}/supabase/storage:/var/lib/storage
@@ -336,7 +336,7 @@ services:
 
   meta:
     container_name: supabase-meta
-    image: supabase/postgres-meta:v0.93.1
+    image: supabase/postgres-meta:v0.95.1
     restart: unless-stopped
     depends_on:
       db:
@@ -357,7 +357,7 @@ services:
 
   functions:
     container_name: supabase-edge-functions
-    image: supabase/edge-runtime:v1.69.26
+    image: supabase/edge-runtime:v1.69.28
     restart: unless-stopped
     volumes:
       - ./supabase/functions:/home/deno/functions:Z
@@ -383,7 +383,7 @@ services:
 
   analytics:
     container_name: supabase-analytics
-    image: supabase/logflare:1.26.14
+    image: supabase/logflare:1.27.2
     restart: unless-stopped
     # Uncomment to use Big Query backend for analytics
     # volumes:
@@ -432,7 +432,7 @@ services:
   # Comment out everything below this point if you are using an external Postgres database
   db:
     container_name: supabase-db
-    image: supabase/postgres:15.14.1.056
+    image: supabase/postgres:15.14.1.066
     restart: unless-stopped
     volumes:
       - ./supabase/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
@@ -491,7 +491,7 @@ services:
 
   vector:
     container_name: supabase-vector
-    image: timberio/vector:0.51.1-alpine
+    image: timberio/vector:0.52.0-alpine
     restart: unless-stopped
     volumes:
       - ./supabase/logs/vector.yml:/etc/vector/vector.yml:ro
