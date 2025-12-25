@@ -44,4 +44,3 @@ known-first-party = [
 quote-style = "double"
 indent-style = "space"
 docstring-code-format = true
-skip-magic-trailing-comma = true
