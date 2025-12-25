@@ -33,9 +33,15 @@ services:
       - ${DOCKER_VOLUMES}/endlessh:/config
     ports:
       - 2222:2222
-      # Prometheus metrics port: 2112
+    # For Prometheus metrics scraping (port 2112)
+    networks:
+      - proxy
     labels:
       homepage.group: Security
       homepage.name: Endlessh
       homepage.icon: terminal.png
       homepage.description: "SSH tarpit (port 2222)"
+
+networks:
+  proxy:
+    external: true
