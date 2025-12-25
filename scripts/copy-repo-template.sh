@@ -21,6 +21,8 @@ files_to_copy=(
 
   # VS Code
   ".vscode/extensions.json"
+  ".vscode/settings.json"
+  ".vscode/mcp.json"
   ".devcontainer/minimal/devcontainer.json"
 
   # Claude Code
