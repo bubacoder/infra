@@ -5,6 +5,7 @@ debian:
     ansible_connection: ssh
     ansible_user: buba
   hosts:
+    # Also update in config/docker/.env
     nas:
       # Pin Docker to older versions due to kernel 5.13.8 incompatibility with runc 1.3.x
       # See: https://github.com/opencontainers/runc/issues/4233
