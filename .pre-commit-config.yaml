@@ -44,7 +44,7 @@ repos:
 
   # Ruff is an extremely fast Python linter and code formatter, written in Rust.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.8
+    rev: v0.14.10
     hooks:
       # Linter - https://docs.astral.sh/ruff/linter/
       - id: ruff-check
@@ -103,7 +103,7 @@ repos:
   # https://docs.kics.io/latest/commands/
   # Ignoring errors: https://docs.kics.io/latest/running-kics/#using_commands_on_scanned_files_as_comments
   - repo: https://github.com/Checkmarx/kics
-    rev: v2.1.17
+    rev: v2.1.18
     hooks:
       - id: kics-scan
         # TODO solve the high severity issues first
