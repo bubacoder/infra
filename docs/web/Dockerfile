@@ -13,7 +13,7 @@ RUN --mount=type=bind,ro,source=.,target=/repo /repo/docs/web/update-docs.py --r
 #####################################################################
 #                            Build Stage                            #
 #####################################################################
-FROM hugomods/hugo:exts-0.148.1 AS build
+FROM hugomods/hugo:exts-0.153.4 AS build
 
 # Set base URL
 ARG HUGO_BASEURL
