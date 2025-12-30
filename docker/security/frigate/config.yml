@@ -1,0 +1,63 @@
+# Minimal Frigate configuration file
+# See https://docs.frigate.video/configuration/ for full reference
+
+mqtt:
+  enabled: false
+
+# Disable HTTPS protocol on port 8971 (TLS is provided by Traefik)
+tls:
+  enabled: false
+
+# Disable authentication (since we're using Traefik + Authelia)
+# auth:
+#   enabled: false
+
+# Docs: https://docs.frigate.video/configuration/cameras
+cameras:
+  reolink_front:
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path:
+            rtsp://{FRIGATE_CAMERA_USER}:{FRIGATE_CAMERA_PASSWORD}@{FRIGATE_CAMERA_IP}:554/h264Preview_01_sub
+          roles:
+            - detect
+        - path:
+            rtsp://{FRIGATE_CAMERA_USER}:{FRIGATE_CAMERA_PASSWORD}@{FRIGATE_CAMERA_IP}:554/h265Preview_01_main
+          roles:
+            - record
+    detect:
+      enabled: true
+      width: 960    # Sub stream resolution for detection
+      height: 540   # Reduces CPU usage vs 4K main stream
+      fps: 5        # 5 fps is sufficient for detection
+    record:
+      enabled: true
+      retain:
+        days: 7      # Keep motion recordings for 7 days
+        mode: motion # Only keep segments with motion
+    motion:
+      mask: 0.343,0.071,0.647,0.071,0.647,0.022,0.343,0.022
+
+# Docs: https://docs.frigate.video/configuration/object_detectors/
+detectors:
+  ov_0:
+    type: openvino
+    device: AUTO
+  ov_1:
+    type: openvino
+    device: AUTO
+
+model:
+  width: 300
+  height: 300
+  input_tensor: nhwc
+  input_pixel_format: bgr
+  # https://docs.frigate.video/configuration/object_detectors/#ssdlite-mobilenet-v2
+  path: /openvino-model/ssdlite_mobilenet_v2.xml
+  labelmap_path: /openvino-model/coco_91cl_bkgr.txt
+
+detect:
+  enabled: true
+
+version: 0.16-0
