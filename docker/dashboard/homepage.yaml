@@ -28,6 +28,7 @@ services:
     volumes:
       - ./homepage/config:/app/config
       - ./homepage/icons:/app/public/icons
+      - ${STORAGE_BACKGROUNDS}:/app/public/images
       - ${DOCKER_VOLUMES}/homepage/logs:/app/logs
     networks:
       - proxy

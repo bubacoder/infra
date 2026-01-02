@@ -5,6 +5,14 @@
 title: "{{HOMEPAGE_VAR_MYDOMAIN}}"
 theme: dark # or light
 color: slate
+
+background:
+  image: /images/background.jpg
+  blur: sm # sm, "", md, xl... see https://tailwindcss.com/docs/backdrop-blur
+  saturate: 100 # 0, 50, 100... see https://tailwindcss.com/docs/backdrop-saturate
+  brightness: 50 # 0, 50, 75... see https://tailwindcss.com/docs/backdrop-brightness
+  opacity: 50 # 0-100
+
 hideVersion: true
 showStats: false
 logpath: /app/logs
