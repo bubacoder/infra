@@ -220,7 +220,7 @@ services:
   realtime:
     # This container name looks inconsistent but is correct because realtime constructs tenant id by parsing the subdomain
     container_name: realtime-dev.supabase-realtime
-    image: supabase/realtime:v2.68.7
+    image: supabase/realtime:v2.69.1
     restart: unless-stopped
     depends_on:
       db:
@@ -266,7 +266,7 @@ services:
 
   storage:
     container_name: supabase-storage
-    image: supabase/storage-api:v1.33.1
+    image: supabase/storage-api:v1.33.4
     restart: unless-stopped
     volumes:
       - ${DOCKER_VOLUMES}/supabase/storage:/var/lib/storage
@@ -383,7 +383,7 @@ services:
 
   analytics:
     container_name: supabase-analytics
-    image: supabase/logflare:1.27.2
+    image: supabase/logflare:1.27.3
     restart: unless-stopped
     # Uncomment to use Big Query backend for analytics
     # volumes:
@@ -432,7 +432,7 @@ services:
   # Comment out everything below this point if you are using an external Postgres database
   db:
     container_name: supabase-db
-    image: supabase/postgres:15.14.1.066
+    image: supabase/postgres:15.14.1.067
     restart: unless-stopped
     volumes:
       - ./supabase/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
