@@ -70,7 +70,7 @@ repos:
 
   # pre-commit git hooks to take care of Terraform configurations
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.104.0
+    rev: v1.105.0
     hooks:
       - id: terraform_fmt
         files: ^terraform/
@@ -88,7 +88,7 @@ repos:
   # Add '--fix' parameter to ansiblelint to fix (some) issues - https://ansible.readthedocs.io/projects/lint/autofix/
   # Add '-v' parameter to ansiblelint for verbose mode
   - repo: https://github.com/ansible-community/ansible-lint
-    rev: v25.9.0 # More recent version than v25.9.0 causes Python incompatibility - https://github.com/ansible/ansible-lint/pull/4796
+    rev: v25.12.2 # More recent version than v25.9.0 causes Python incompatibility - https://github.com/ansible/ansible-lint/pull/4796
     hooks:
       - id: ansible-lint
         files: ^ansible/
@@ -103,7 +103,7 @@ repos:
   # https://docs.kics.io/latest/commands/
   # Ignoring errors: https://docs.kics.io/latest/running-kics/#using_commands_on_scanned_files_as_comments
   - repo: https://github.com/Checkmarx/kics
-    rev: v2.1.18
+    rev: v2.1.19
     hooks:
       - id: kics-scan
         # TODO solve the high severity issues first
