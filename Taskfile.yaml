@@ -1,6 +1,6 @@
 # https://taskfile.dev/ - Task is a task runner / build tool that aims to be simpler and easier to use than, for example, GNU Make.
 # [Say Goodbye to Makefile - Use Taskfile to Manage Tasks in CI/CD Pipelines and Locally](https://www.youtube.com/watch?v=Z7EnwBaJzCk)
-# Installed via the `debian_developer` Ansible role.
+# Installed via the `debian_tools` Ansible role.
 
 version: '3'
 

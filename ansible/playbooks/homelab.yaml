@@ -14,10 +14,16 @@
   roles:
     - role: debian_docker_host
 
-- name: Setup Samba client + developer tools
+- name: Setup developer tools
+  hosts:
+    - nest
+    - hive
+  roles:
+    - role: markosamuli.linuxbrew
+    - role: debian_tools
+
+- name: Setup Samba client
   hosts:
     - nest
   roles:
     - role: debian_samba_client
-    - role: markosamuli.linuxbrew
-    - role: debian_developer

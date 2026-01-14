@@ -27,16 +27,16 @@
   ansible.builtin.lineinfile:
     path: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
     regexp: "^api_url:"
-    line: "api_url: {{ crowdsec_local_api_url }}"
-  when: crowdsec_local_api_url|default('') != ''
+    line: "api_url: {{ debian_base_crowdsec_local_api_url }}"
+  when: debian_base_crowdsec_local_api_url|default('') != ''
   notify: Restart service crowdsec-firewall-bouncer
 
 - name: Set crowdsec api_key for iptables bouncer
   ansible.builtin.lineinfile:
     path: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
     regexp: "^api_key:"
-    line: "api_key: {{ crowdsec_local_api_key }}"
-  when: crowdsec_local_api_key|default('') != ''
+    line: "api_key: {{ debian_base_crowdsec_local_api_key }}"
+  when: debian_base_crowdsec_local_api_key|default('') != ''
   notify: Restart service crowdsec-firewall-bouncer
 
 - name: Enable service crowdsec-firewall-bouncer
@@ -45,5 +45,5 @@
     enabled: true
     state: started
   when:
-    - crowdsec_local_api_url|default('') != ''
-    - crowdsec_local_api_key|default('') != ''
+    - debian_base_crowdsec_local_api_url|default('') != ''
+    - debian_base_crowdsec_local_api_key|default('') != ''

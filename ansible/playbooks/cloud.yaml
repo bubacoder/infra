@@ -7,4 +7,4 @@
     - role: debian_base
     - role: debian_docker_host
     - role: markosamuli.linuxbrew
-    - role: debian_developer
+    - role: debian_tools

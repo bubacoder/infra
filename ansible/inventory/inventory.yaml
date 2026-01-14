@@ -4,6 +4,7 @@ debian:
   vars:
     ansible_connection: ssh
     ansible_user: buba
+
   hosts:
     # Also update in config/docker/.env
     nas:
@@ -13,17 +14,32 @@ debian:
       debian_docker_host_docker_ce_cli_version: "5:20.10.24~3-0~debian-bullseye"
       debian_docker_host_containerd_io_version: "1.6.33-1"
       debian_docker_host_hold_docker_packages: true
+
     proxmox:
       ansible_host: 192.168.1.50
+
     hive:
       ansible_host: 192.168.1.40
+
+      debian_tools_brew_install_groups:
+        kubernetes: true
+
     nest:
-      install_storage_packages: true
+      debian_base_install_storage_packages: true
 
       # Crowdsec - configure docker/security/crowdsec.yaml and
-      #   set 'crowdsec_local_api_key' in group_vars/debian/secret.yaml
-      install_crowdsec_bouncer: true
-      crowdsec_local_api_url: http://127.0.0.1:7080/
+      #   set 'debian_base_crowdsec_local_api_key' in group_vars/debian/secret.yaml
+      debian_base_install_crowdsec_bouncer: true
+      debian_base_crowdsec_local_api_url: http://127.0.0.1:7080/
+
+      # Enable all brew package groups
+      debian_tools_brew_install_groups:
+        common: true
+        dev: true
+        aws: true
+        azure: true
+        terraform: true
+        kubernetes: true
 
     # Cloud. Excluded in apply-homelab.sh
     azure-vm:
@@ -34,6 +50,13 @@ debian:
     # Only for ad-hoc playbooks. Excluded in apply-homelab.sh
     local-debian:
       ansible_connection: local
+      debian_tools_brew_install_groups:
+        common: true
+        dev: true
+        aws: true
+        azure: true
+        terraform: true
+        kubernetes: true
 
 mac:
   hosts:

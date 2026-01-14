@@ -6,7 +6,7 @@
     line: "{{ hostvars[item].ansible_host }} {{ item }}"
     state: present
   when:
-    - configure_hosts_file | default(false) | ansible.builtin.bool
+    - debian_base_configure_hosts_file | default(false) | ansible.builtin.bool
     - hostvars[item].ansible_host is defined
   with_items: "{{ groups.all }}"
 

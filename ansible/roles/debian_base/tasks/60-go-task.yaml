@@ -29,7 +29,7 @@
 
 - name: Download go-task .deb package
   ansible.builtin.get_url:
-    url: "https://github.com/go-task/task/releases/download/{{ go_task_version | default('v3.44.1') }}/task_linux_{{ debian_base_task_arch }}.deb"
+    url: "https://github.com/go-task/task/releases/download/{{ debian_base_go_task_version | default('v3.44.1') }}/task_linux_{{ debian_base_task_arch }}.deb"
     dest: "/tmp/go-task/task_linux_{{ debian_base_task_arch }}.deb"
     mode: "0644"
   when: debian_base_task_version_check.rc != 0

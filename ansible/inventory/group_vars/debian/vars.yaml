@@ -1,71 +1,92 @@
 ---
 
-admin_user: buba
+admin_user: "buba"
 admin_name: "Buba"
 admin_email: "bubacoder@gmail.com"
 
-configure_ssh_key: true
-ssh_key_file: "~/.ssh/id_ed25519.pub"
+debian_base_configure_ssh_key: true
+debian_base_ssh_key_file: "~/.ssh/id_ed25519.pub"
 
-configure_hosts_file: true
+debian_base_configure_hosts_file: true
 
-install_crowdsec_bouncer: false
+debian_base_install_crowdsec_bouncer: false
 
 # https://github.com/go-task/task/releases
-go_task_version: "v3.44.1"
+debian_base_go_task_version: "v3.44.1"
 
 linuxbrew_use_installer: true
 linuxbrew_init_shell: true
 
-base_apt_packages:
-  - sudo
-  - mc
-  - vim
-  - git
-  - util-linux
-  - screen
-  - tmux
-  - htop
-  - tree
+debian_base_apt_packages:
+  # Common
+  - sudo                # https://www.sudo.ws/
+  - mc                  # https://midnight-commander.org/
+  - vim                 # https://www.vim.org/
+  - git                 # https://git-scm.com/
+  - util-linux          # https://github.com/util-linux/util-linux
+  - screen              # https://www.gnu.org/software/screen/
+  - tmux                # https://github.com/tmux/tmux
+  - htop                # https://htop.dev/
+  - tree                # http://mama.indstate.edu/users/ice/tree/
   # Network
-  - curl
-  - net-tools
+  - curl                # https://curl.se/
+  - net-tools           # https://sourceforge.net/projects/net-tools/
 
-install_storage_packages: false
-base_apt_storage_packages:
-  - hdparm
-  - parted
-  - mdadm
-  - lvm2
-  - btrfs-compsize
-  - ncdu
+debian_base_install_storage_packages: false
+debian_base_apt_storage_packages:
+  - hdparm              # https://sourceforge.net/projects/hdparm/
+  - parted              # https://www.gnu.org/software/parted/
+  - mdadm               # https://git.kernel.org/pub/scm/utils/mdadm/mdadm.git
+  - lvm2                # https://sourceware.org/lvm2/
+  - btrfs-compsize      # https://github.com/kilobyte/compsize
+  - ncdu                # https://dev.yorhel.nl/ncdu
 
-dev_apt_packages:
-  - make
-  - python3-pip
-  - python3-venv
-  - pipx
-  - pre-commit
-  - shellcheck
-  - tshark
-  - jq
-  - yq
-  - tea                 # Gitea CLI
+debian_tools_apt_packages:
+  # Common
+  - jq                  # https://jqlang.github.io/jq/
+  - yq                  # https://github.com/kislyuk/yq
+  # Dev
+  - make                # https://www.gnu.org/software/make/
+  - python3-pip         # https://pip.pypa.io/
+  - python3-venv        # https://docs.python.org/3/library/venv.html
+  - pipx                # https://pipx.pypa.io/
+  - pre-commit          # https://pre-commit.com/
+  - shellcheck          # https://www.shellcheck.net/
+  - tea                 # https://gitea.com/gitea/tea
 
 # Homebrew - https://brew.sh/
-dev_brew_packages:
+# Installation flags - override in inventory.yaml per-host
+# All groups are opt-in by default
+debian_tools_brew_install_groups:
+  common: false
+  dev: false
+  aws: false
+  azure: false
+  terraform: false
+  kubernetes: false
+
+# Package group definitions
+
+## Common Tools
+debian_tools_brew_packages_common:
   - asdf                # https://asdf-vm.com/
   - helix               # https://helix-editor.com
+
+## Dev Tools
+debian_tools_brew_packages_dev:
   - act                 # https://nektosact.com/
 
-  # AWS
+## AWS Cloud Tools
+debian_tools_brew_packages_aws:
   - awscli              # https://github.com/aws/aws-cli
   - eksctl              # https://eksctl.io/
 
-  # Azure
+## Azure Cloud Tools
+debian_tools_brew_packages_azure:
   - azure-cli           # https://learn.microsoft.com/en-us/cli/azure/
 
-  # Terraform tools
+## Terraform Tools
+debian_tools_brew_packages_terraform:
   - terraform           # https://www.terraform.io/
   - terraform-docs      # https://github.com/terraform-docs/terraform-docs
   - terragrunt          # https://terragrunt.gruntwork.io/docs/getting-started/install/
@@ -73,7 +94,9 @@ dev_brew_packages:
   - tflint              # https://github.com/terraform-linters/tflint
   - opentofu            # https://opentofu.org/
 
-  # Kubernetes tools
+## Kubernetes Tools
+## Note: kubectl is set up by asdf
+debian_tools_brew_packages_kubernetes:
   - k9s                 # https://k9scli.io/
   - kustomize           # https://kustomize.io/
   - helm                # https://helm.sh/docs/intro/install/

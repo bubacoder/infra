@@ -27,13 +27,12 @@
 
 - name: Install Homebrew packages
   community.general.homebrew:
-    name: "{{ brew_base_tools + brew_cloud_tools + brew_terraform_tools + brew_kubernetes_tools }}"
-    # name: "{{ dev_brew_packages }}"
+    name: "{{ mac_base_brew_base_tools + mac_base_brew_cloud_tools + mac_base_brew_terraform_tools + mac_base_brew_kubernetes_tools }}"
     state: latest
   become: false
 
 - name: Install Homebrew Cask packages
   community.general.homebrew_cask:
-    name: "{{ brew_cask_packages }}"
+    name: "{{ mac_base_brew_cask_packages }}"
     state: latest
   become: false
