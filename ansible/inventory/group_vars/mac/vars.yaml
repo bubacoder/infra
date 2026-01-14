@@ -1,6 +1,6 @@
 ---
 
-brew_base_tools:
+mac_base_brew_base_tools:
   - helix               # https://helix-editor.com/
   - midnight-commander  # https://midnight-commander.org/
   - starship            # https://starship.rs/ --- OR oh-my-zsh
@@ -16,7 +16,7 @@ brew_base_tools:
   - pre-commit          # https://pre-commit.com/
   - go-task             # https://taskfile.dev/
 
-brew_cloud_tools:
+mac_base_brew_cloud_tools:
   # AWS
   - awscli              # https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
   - cfn-lint            # https://github.com/aws-cloudformation/cfn-lint
@@ -26,14 +26,14 @@ brew_cloud_tools:
   - vaulted             # https://github.com/miquella/vaulted
 
 # Note: terraform is set up by asdf
-brew_terraform_tools:
+mac_base_brew_terraform_tools:
   - terraform-docs      # https://github.com/terraform-docs/terraform-docs
   - terragrunt          # https://terragrunt.gruntwork.io/docs/getting-started/install/
   - tfsec               # https://github.com/aquasecurity/tfsec
   - tflint              # https://github.com/terraform-linters/tflint
 
 # Note: kubectl is set up by asdf
-brew_kubernetes_tools:
+mac_base_brew_kubernetes_tools:
   - docker                # https://www.docker.com/
   - derailed/k9s/k9s      # https://k9scli.io/
   - kustomize             # https://kustomize.io/
@@ -42,7 +42,7 @@ brew_kubernetes_tools:
   - aws-iam-authenticator # https://github.com/kubernetes-sigs/aws-iam-authenticator
   - eksctl                # https://eksctl.io/
 
-brew_cask_packages:
+mac_base_brew_cask_packages:
   - visual-studio-code     # https://code.visualstudio.com/
   - macpass                # https://macpassapp.org/
   - session-manager-plugin # https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html

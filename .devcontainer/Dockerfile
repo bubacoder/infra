@@ -30,8 +30,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     mkdir -p inventory/host_vars/local-debian/ && \
     LOCAL_CONFIG=inventory/host_vars/local-debian/local.yaml && \
     echo admin_user: "${ADMIN_USER}" > "$LOCAL_CONFIG" && \
-    echo configure_hosts_file: false >> "$LOCAL_CONFIG" && \
-    echo configure_ssh_key: false >> "$LOCAL_CONFIG" && \
+    echo debian_base_configure_hosts_file: false >> "$LOCAL_CONFIG" && \
+    echo debian_base_configure_ssh_key: false >> "$LOCAL_CONFIG" && \
     ./apply-adhoc.sh local-debian debian_base && \
     rm -rf .fact_cache
 
@@ -47,6 +47,6 @@ USER ${ADMIN_USER}
 
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    ./apply-adhoc.sh local-debian markosamuli.linuxbrew,debian_developer
+    ./apply-adhoc.sh local-debian markosamuli.linuxbrew,debian_tools
 
 WORKDIR /home/${ADMIN_USER}

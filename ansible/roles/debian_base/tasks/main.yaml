@@ -12,7 +12,7 @@
   become: true
 
 - name: Install Crowdsec iptables bouncer
-  when: install_crowdsec_bouncer | default(false) | ansible.builtin.bool
+  when: debian_base_install_crowdsec_bouncer | default(false) | ansible.builtin.bool
   ansible.builtin.import_tasks: 50-crowdsec.yaml
   become: true
 

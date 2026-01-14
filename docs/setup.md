@@ -53,7 +53,7 @@ MacOS is also supported, but only for working with Ansible remotely and applying
 Steps:
 - Clone the repository on a supported OS: `git clone <repository url>`
 - Install Ansible with: `ansible/bootstrap-ansible.sh`
-- Edit `ansible/inventory/inventory.yaml` and `ansible/playbooks/homelab.yaml`, include your host with `markosamuli.linuxbrew` and `debian_developer` roles
+- Edit `ansible/inventory/inventory.yaml` and `ansible/playbooks/homelab.yaml`, include your host with `markosamuli.linuxbrew` and `debian_tools` roles
 - Run `ansible/apply-homelab.sh`
 
 ### 3. Install Ubuntu Server VM (Docker host)

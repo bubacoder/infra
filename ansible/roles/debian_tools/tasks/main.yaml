@@ -1,0 +1,10 @@
+---
+- name: Install packages with apt
+  ansible.builtin.import_tasks: 10-apt.yaml
+
+# https://brew.sh/
+# https://docs.brew.sh/Homebrew-on-Linux
+- name: Install packages with Homebrew
+  ansible.builtin.include_tasks: 20-homebrew.yaml
+  when:
+    - debian_tools_brew_install_groups is defined or debian_tools_brew_cask_packages is defined

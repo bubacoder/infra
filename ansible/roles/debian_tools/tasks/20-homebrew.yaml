@@ -1,0 +1,42 @@
+---
+# Build the package list dynamically based on installation flags
+- name: Build Homebrew package list based on enabled groups
+  ansible.builtin.set_fact:
+    debian_tools_brew_packages: >-
+      {{
+        (debian_tools_brew_install_groups.common | default(false) | bool) | ternary(debian_tools_brew_packages_common | default([]), []) +
+        (debian_tools_brew_install_groups.dev | default(false) | bool) | ternary(debian_tools_brew_packages_dev | default([]), []) +
+        (debian_tools_brew_install_groups.aws | default(false) | bool) | ternary(debian_tools_brew_packages_aws | default([]), []) +
+        (debian_tools_brew_install_groups.azure | default(false) | bool) | ternary(debian_tools_brew_packages_azure | default([]), []) +
+        (debian_tools_brew_install_groups.terraform | default(false) | bool) | ternary(debian_tools_brew_packages_terraform | default([]), []) +
+        (debian_tools_brew_install_groups.kubernetes | default(false) | bool) | ternary(debian_tools_brew_packages_kubernetes | default([]), [])
+      }}
+  when: debian_tools_brew_install_groups is defined
+
+- name: Display packages to be installed
+  ansible.builtin.debug:
+    msg: "Will install {{ debian_tools_brew_packages | length }} Homebrew packages: {{ debian_tools_brew_packages | join(', ') }}"
+  when:
+    - debian_tools_brew_packages is defined
+    - debian_tools_brew_packages | length > 0
+
+- name: Install Homebrew packages
+  community.general.homebrew:
+    name: "{{ debian_tools_brew_packages }}"
+    state: latest
+  when:
+    - debian_tools_brew_packages is defined
+    - debian_tools_brew_packages | type_debug == 'list'
+    - debian_tools_brew_packages | length > 0
+  become: false
+
+- name: Install Homebrew Cask packages (only on Darwin)
+  community.general.homebrew_cask:
+    name: "{{ debian_tools_brew_cask_packages }}"
+    state: latest
+  when:
+    - ansible_system == "Darwin"
+    - debian_tools_brew_cask_packages is defined
+    - debian_tools_brew_cask_packages | type_debug == 'list'
+    - debian_tools_brew_cask_packages | length > 0
+  become: false
