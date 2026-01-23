@@ -20,7 +20,7 @@ http:
       rule: 'Host(`qbittorrent.{{env "MYDOMAIN"}}`)'
       service: qbittorrent
       middlewares:
-        - localaccess-sso@file
+        - localaccess@file
 
   services:
     router:

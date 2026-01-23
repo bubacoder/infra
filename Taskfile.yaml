@@ -135,7 +135,7 @@ tasks:
     desc: Create a compressed backup of the configuration directory
     cmds:
       - mkdir -p ../infra-config-backup
-      - cd config && tar -cjf "../infra-config-backup/infra-config-$(date +%Y-%m-%d_%H-%M-%S).tar.bz2" .
+      - cd config && tar -cjf "../infra-config-backup/infra-config-$(date +%Y-%m-%d_%H-%M-%S).tar.bz2" --exclude=.git .
       - echo "Recent backups:"
       - ls -lh ../infra-config-backup/infra-config-*.tar.bz2 | tail -n 5
       # Remove old backups (they are still kept in the repository - see the push-config-repo task)

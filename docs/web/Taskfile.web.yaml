@@ -57,4 +57,4 @@ tasks:
   create-service-list:
     desc: Create a YAML file describing the services
     cmds:
-      - docs/web/export-services.py --output-file docs/services.yaml
+      - docs/web/export-services.py --output-file docs/service-list.yaml
