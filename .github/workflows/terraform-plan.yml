@@ -1,0 +1,143 @@
+name: Terraform Plan
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/**'
+      - '.github/workflows/terraform-plan.yml'
+  workflow_dispatch:
+
+# Required for OIDC authentication
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  terraform-plan:
+    name: Terraform Plan - Azure VM
+    runs-on: ubuntu-latest
+
+    # Skip Renovate PRs (already handled by pre-commit)
+    if: "!startsWith(github.head_ref, 'renovate/')"
+
+    defaults:
+      run:
+        working-directory: terraform/azure-vm
+
+    env:
+      ARM_USE_OIDC: true
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      TF_IN_AUTOMATION: 1
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.14.3"
+
+      - name: Azure Login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          set -o pipefail
+          terraform plan -no-color -input=false 2>&1 | tee plan.txt
+        env:
+          # Repository variables for Terraform
+          TF_VAR_subscription_id: ${{ vars.TF_VAR_SUBSCRIPTION_ID }}
+          TF_VAR_vm_name: ${{ vars.TF_VAR_VM_NAME }}
+          TF_VAR_vm_domain_name_label: ${{ vars.TF_VAR_VM_DOMAIN_NAME_LABEL }}
+          TF_VAR_location: ${{ vars.TF_VAR_LOCATION }}
+          TF_VAR_resourcegroup: ${{ vars.TF_VAR_RESOURCEGROUP }}
+          TF_VAR_storage_disk_size_gb: ${{ vars.TF_VAR_STORAGE_DISK_SIZE_GB }}
+          TF_VAR_admin_user: ${{ vars.TF_VAR_ADMIN_USER }}
+          TF_VAR_vm_size: ${{ vars.TF_VAR_VM_SIZE }}
+          # Placeholder values for CI (sensitive data, not in variables)
+          TF_VAR_admin_source_address: "0.0.0.0/0"
+          TF_VAR_git_credentials: "ci-placeholder"
+          TF_VAR_repo_url: "https://github.com/${{ github.repository }}"
+
+      # Post plan to PR comments (disabled by default to prevent leaking internal info)
+      # To enable: Set repository variable TF_PLAN_POST_TO_PR=true in Settings > Secrets and variables > Actions > Variables
+      - name: Post Plan to PR
+        if: github.event_name == 'pull_request' && always() && vars.TF_PLAN_POST_TO_PR == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { readFileSync } = require('fs');
+            const plan = readFileSync('terraform/azure-vm/plan.txt', 'utf8');
+
+            const maxLength = 65000;
+            const truncatedPlan = plan.length > maxLength
+              ? plan.substring(0, maxLength) + '\n\n...(truncated)'
+              : plan;
+
+            const output = `### Terraform Plan - Azure VM 🏗️
+            <!-- terraform-plan-comment -->
+
+            #### Terraform Format 🖌 \`${{ steps.fmt.outcome }}\`
+            #### Terraform Init ⚙️ \`${{ steps.init.outcome }}\`
+            #### Terraform Validate 🤖 \`${{ steps.validate.outcome }}\`
+            #### Terraform Plan 📖 \`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`terraform
+            ${truncatedPlan}
+            \`\`\`
+
+            </details>
+
+            *Pusher: @${{ github.actor }}, Workflow: \`${{ github.workflow }}\`*`;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const botComment = comments.find(comment =>
+              comment.user.type === 'Bot' && comment.body.includes('<!-- terraform-plan-comment -->')
+            );
+
+            // Update existing comment or create new one
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: output
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: output
+              });
+            }
