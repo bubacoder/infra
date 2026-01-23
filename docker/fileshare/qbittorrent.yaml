@@ -35,11 +35,11 @@ services:
       - 6881:6881/udp # Bittorrent incoming connections
     labels:
       traefik.enable: true
-      traefik.http.routers.qbittorrent.middlewares: localaccess-sso@file
+      traefik.http.routers.qbittorrent.middlewares: localaccess@file
       traefik.http.services.qbittorrent.loadbalancer.server.port: 8080
       homepage.group: Arr
       homepage.name: qBittorrent
       homepage.icon: qbittorrent.png
       homepage.href: https://qbittorrent.${MYDOMAIN}/
-      homepage.description: "[SSO] BitTorrent client" # TODO solve double auth
+      homepage.description: "BitTorrent client"
       com.centurylinklabs.watchtower.enable: false

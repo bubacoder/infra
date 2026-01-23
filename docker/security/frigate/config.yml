@@ -18,23 +18,27 @@ cameras:
     enabled: true
     ffmpeg:
       inputs:
-        - path:
-            rtsp://{FRIGATE_CAMERA_USER}:{FRIGATE_CAMERA_PASSWORD}@{FRIGATE_CAMERA_IP}:554/h264Preview_01_sub
-          roles:
-            - detect
+        # High resolution stream
         - path:
             rtsp://{FRIGATE_CAMERA_USER}:{FRIGATE_CAMERA_PASSWORD}@{FRIGATE_CAMERA_IP}:554/h265Preview_01_main
           roles:
             - record
+        # Low resolution stream
+        - path:
+            rtsp://{FRIGATE_CAMERA_USER}:{FRIGATE_CAMERA_PASSWORD}@{FRIGATE_CAMERA_IP}:554/h264Preview_01_sub
+          roles:
+            - detect
     detect:
       enabled: true
       width: 960    # Sub stream resolution for detection
       height: 540   # Reduces CPU usage vs 4K main stream
       fps: 5        # 5 fps is sufficient for detection
+    snapshots:
+      enabled: true
     record:
       enabled: true
       retain:
-        days: 7      # Keep motion recordings for 7 days
+        days: 14     # Keep motion recordings for 14 days
         mode: motion # Only keep segments with motion
     motion:
       mask: 0.343,0.071,0.647,0.071,0.647,0.022,0.343,0.022

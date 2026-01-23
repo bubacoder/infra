@@ -151,6 +151,10 @@ This project uses:
   - Building and deploying documentation site
 - **Renovate** for automated dependency updates
 
+## Git Guidelines
+
+**Important**: Do not create git branches or commit changes to git unless it is explicitly requested by the user.
+
 ## Docker Service Management
 
 The repository uses a custom Python script (`scripts/labctl.py`) to manage Docker services defined in YAML files:
