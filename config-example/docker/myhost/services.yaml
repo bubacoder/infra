@@ -16,7 +16,7 @@ services:
       - name: endlessh
         state: up
       - name: frigate
-        state: up  
+        state: up
 
   - dashboard:
       - name: homepage
@@ -121,7 +121,7 @@ services:
       - name: jupyter-notebook
         state: down
       - name: supabase
-        state: up
+        state: down
 
   - tools:
       # - name: homelab-docs

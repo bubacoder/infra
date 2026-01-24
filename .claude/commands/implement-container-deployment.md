@@ -20,7 +20,7 @@ Follow closely the architectural patterns described in the `docker/guidelines.md
   - If there are additional configuration files, which are referenced in the compose file, copy them.
   - Keep the cloned repository.
 - For each container image used in the deployment, get the most specific tag (e.g. tag "1.2.0" is more specific than "1.2") by using the `get-most-specific-container-tag` MCP tool. Use the tag(s) returned by the tool in the Compose stack.
-- Based on these patterns and the found examples on the installation instructions page, create the Docker Compose file and save it as `docker/<category>/<application>.yaml`.
+- Based on these patterns and the found examples on the installation instructions page, create the Docker Compose file and save it as `docker/<category>/<application>/<application>.yaml`.
 - Ensure the compose file contains a brief description of the project and links to the homepage, GitHub page, and any Docker or Docker Compose setup example (if available).
 - If the installation guide suggests enhancements (e.g., using an optional external database instead of a built-in one, or enabling SSO), add TODOs at the top of the compose file.
 - If any new environment variables are required for configuration, add them to the `config-example/docker/myhost/.env` file with placeholder values only (do not commit secrets).

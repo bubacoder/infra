@@ -1,32 +1,71 @@
-global:
-  scrape_interval: 60s # By default, scrape targets every 60 seconds.
+# Prometheus is a systems and service monitoring system. It collects metrics from configured targets at given intervals, evaluates rule expressions, displays the results, and can trigger alerts if some condition is observed to be true.
+#
+# Links:
+# - Home: https://prometheus.io/
+# - Image: https://hub.docker.com/r/prom/prometheus
+# - Introduction: https://prometheus.io/docs/introduction/overview/
+#
+# Recommended collectors:
+# - https://hub.docker.com/r/prom/node-exporter/
+# - https://github.com/google/cadvisor/
+# - https://github.com/shizunge/endlessh-go/
+---
+name: prometheus
+services:
 
-  # Attach these labels to any time series or alerts when communicating with
-  # external systems (federation, remote storage, Alertmanager).
-  # external_labels:
-  #  monitor: 'codelab-monitor'
+  prometheus:
+    image: prom/prometheus:v3.8.1
+    container_name: prometheus
+    restart: unless-stopped
+    user: "0:0"
+    volumes:
+      - ./config:/etc/prometheus
+      - ${DOCKER_VOLUMES}/prometheus:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yaml"
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.prometheus.middlewares: localaccess@file
+      traefik.http.services.prometheus.loadbalancer.server.port: 9090
+      homepage.group: Monitoring
+      homepage.name: Prometheus
+      homepage.icon: prometheus.png
+      homepage.href: https://prometheus.${MYDOMAIN}/
+      homepage.description: "Exporters: node-exporter, cadvisor"
 
-# A scrape configuration containing exactly one endpoint to scrape:
-scrape_configs:
-  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
-  - job_name: "prometheus"
-    scrape_interval: 120s
-    static_configs:
-      - targets:
-          - "localhost:9090" # Main node
+  node_exporter:
+    image: quay.io/prometheus/node-exporter:v1.10.2
+    container_name: node_exporter
+    restart: unless-stopped
+    pid: host
+    command:
+      - '--path.rootfs=/host'
+    volumes:
+      # kics-scan ignore-line
+      - '/:/host:ro,rslave'
+    networks:
+      - proxy
 
-  - job_name: "node_exporter"
-    static_configs:
-      - targets:
-          - "node_exporter:9100" # Main node
-          - "192.168.1.10:9100"  # NAS node
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.55.1
+    restart: unless-stopped
+    container_name: cadvisor
+    # kics-scan ignore-line
+    privileged: true
+    # kics-scan ignore-block
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    networks:
+      - proxy
 
-  - job_name: "cadvisor"
-    static_configs:
-      - targets:
-          - "cadvisor:8080" # Main node
-
-  - job_name: "endlessh"
-    static_configs:
-      - targets:
-          - "endlessh:2112" # Main node
+networks:
+  proxy:
+    external: true
