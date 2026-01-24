@@ -1,0 +1,53 @@
+# PostgreSQL is a powerful, open source object-relational database system with over
+# 35 years of active development that has earned it a strong reputation for
+# reliability, feature robustness, and performance.
+#
+# Links:
+# - Home: https://www.postgresql.org/
+# - Source: https://github.com/docker-library/postgres
+# - Docs: https://hub.docker.com/_/postgres
+#
+# TODO: Add PgBouncer container for connection pooling
+# TODO: Add PostgreSQL exporter for Prometheus monitoring
+# TODO: Implement automated backup solution (pg_dump or pgBackRest)
+# TODO: Consider enabling SSL/TLS for encrypted connections
+# TODO: Set up streaming replication for high availability
+---
+name: postgresql
+services:
+  postgresql:
+    image: postgres:18.1-trixie
+    container_name: postgresql
+    restart: unless-stopped
+    shm_size: 128mb
+    environment:
+      TZ: ${TIMEZONE}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_INITDB_ARGS: --data-checksums
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./config/initdb:/docker-entrypoint-initdb.d
+    ports:
+      - 5432:5432
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      traefik.enable: false
+      homepage.group: Storage
+      homepage.name: PostgreSQL
+      homepage.icon: postgresql.png
+      homepage.description: "Powerful open source object-relational database system"
+
+volumes:
+  postgres-data:
+
+networks:
+  proxy:
+    external: true

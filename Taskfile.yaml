@@ -8,8 +8,8 @@ includes:
   ansible: ./ansible/Taskfile.ansible.yaml
   docker: ./docker/Taskfile.docker.yaml
   app: ./docker/Taskfile.apps.yaml
-  crowdsec: ./docker/security/Taskfile.crowdsec.yaml
-  obsidian: ./docker/tools/Taskfile.obsidian.yaml
+  crowdsec: ./docker/Taskfile.crowdsec.yaml
+  obsidian: ./docker/Taskfile.obsidian.yaml
   docs: ./docs/web/Taskfile.web.yaml
   devcontainer: ./.devcontainer/Taskfile.dev.yaml
   azure-vm:

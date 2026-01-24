@@ -1,0 +1,59 @@
+# Crowdsec - An open-source, lightweight agent to detect and respond to bad behaviours.
+#
+# Links:
+# - Home: https://www.crowdsec.net/
+# - Image: https://hub.docker.com/r/crowdsecurity/crowdsec
+# - Source: https://github.com/crowdsecurity/example-docker-compose
+# - Tutorial: https://docs.ibracorp.io/crowdsec/
+#
+# Register to dashboard, subscribe to blocklists: https://app.crowdsec.net/  
+# Configure iptables bouncer with Ansible: `ansible/roles/debian_base/tasks/45-crowdsec.yaml`
+#
+# Useful commands - execute within the container like `docker exec crowdsec <command>`:
+# - `cscli collections list`
+# - `cscli bouncers list`
+# - `cscli decisions list`
+# - `cscli alerts list`
+# - `cscli metrics`
+---
+name: crowdsec
+services:
+  crowdsec:
+    image: crowdsecurity/crowdsec:v1.7.4
+    container_name: crowdsec
+    restart: unless-stopped
+    ports:
+      # Host port 7080 for API access
+      - 7080:8080/tcp
+    environment:
+      PGID: "1000"
+      # https://app.crowdsec.net/hub/collections
+      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve Dominic-Wagner/vaultwarden LePresidente/jellyfin crowdsecurity/endlessh"
+    volumes:
+      - ./config/acquis.yaml:/etc/crowdsec/acquis.yaml
+      - ${DOCKER_VOLUMES}/crowdsec/etc:/etc/crowdsec
+      - ${DOCKER_VOLUMES}/crowdsec/data:/var/lib/crowdsec/data
+
+      # kics-scan ignore-line
+      - /var/log/auth.log:/var/log/auth.log:ro
+      - ${DOCKER_VOLUMES}/traefik/logs/traefik-access.log:/var/log/traefik-access.log:ro
+      - ${DOCKER_VOLUMES}/authelia/data/authelia.log:/var/log/authelia.log:ro
+      - ${DOCKER_VOLUMES}/vaultwarden/vaultwarden.log:/var/log/vaultwarden.log:ro
+      - ${DOCKER_VOLUMES}/jellyfin/log:/var/log/jellyfin:ro
+      - ${DOCKER_VOLUMES}/endlessh/logs/endlessh:/var/log/endlessh:ro
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.crowdsec.rule: Host(`crowdsec.${MYDOMAIN}`)
+      traefik.http.routers.crowdsec.middlewares: localaccess@file
+      traefik.http.services.crowdsec.loadbalancer.server.port: 8080
+      homepage.group: Security
+      homepage.name: Crowdsec
+      homepage.icon: crowdsec.png
+      homepage.href: https://app.crowdsec.net/
+      homepage.description: "Crowdsec Security Engine"
+
+networks:
+  proxy:
+    external: true

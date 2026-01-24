@@ -27,7 +27,7 @@ debian:
     nest:
       debian_base_install_storage_packages: true
 
-      # Crowdsec - configure docker/security/crowdsec.yaml and
+      # Crowdsec - configure docker/security/crowdsec/crowdsec.yaml and
       #   set 'debian_base_crowdsec_local_api_key' in group_vars/debian/secret.yaml
       debian_base_install_crowdsec_bouncer: true
       debian_base_crowdsec_local_api_url: http://127.0.0.1:7080/
