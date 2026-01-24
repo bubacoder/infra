@@ -7,7 +7,7 @@ A website is built with the [Hugo](https://gohugo.io/) static site generator, us
 
 **Build process:** The Markdown and Docker Compose files are collected and converted by `update-docs.py`, then `hugo` build is executed in a Docker container, producing a container image with `nginx` serving the static website.
 
-Run `task docs:deploy` to build and locally deploy (using `docker/tools/homelab-docs.yaml`) the site.
+Run `task docs:deploy` to build and locally deploy (using `docker/tools/homelab-docs/homelab-docs.yaml`) the site.
 
 ## Hugo
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
+"""Process documentation files and Docker Compose stacks for Hugo site generation."""
 
 import argparse
 import logging
-import os
 import shutil
 import sys
 from pathlib import Path
@@ -14,9 +14,14 @@ from link_processor import LinkProcessor
 
 
 class DocsProcessor:
-    """Class for processing documentation files and managing links."""
+    """Process documentation files and manage links."""
 
-    def __init__(self, repository_path, output_content_path, verbose=False):
+    def __init__(
+        self,
+        repository_path: Path,
+        output_content_path: Path,
+        verbose: bool = False,
+    ):
         """Initialize the DocsProcessor.
 
         Args:
@@ -26,74 +31,112 @@ class DocsProcessor:
         """
         self.repository_path = repository_path
         self.output_content_path = output_content_path
-
-        # Set up logging
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)
-
-        if verbose:
-            # Create console handler with a higher log level
-            ch = logging.StreamHandler()
-            ch.setLevel(logging.DEBUG)
-            formatter = logging.Formatter('  %(levelname)s: %(message)s')
-            ch.setFormatter(formatter)
-            self.logger.addHandler(ch)
-            self.logger.setLevel(logging.DEBUG)
-
-        # Load markdown locations
-        self.markdown_locations = self.load_config()
-
-        # Initialize link processor
+        self.logger = self._setup_logging(verbose)
+        self.markdown_locations = self._load_config()
         self.link_processor = LinkProcessor(
             self.logger,
             self.markdown_locations,
             self.repository_path,
-            self.output_content_path
+            self.output_content_path,
         )
-
-        # Initialize docker scanner
         self.docker_scanner = DockerComposeScanner(self.repository_path, self.logger)
 
-    def load_config(self):
-        """Load markdown locations from YAML file."""
-        yaml_path = self.repository_path / "docs" / "web" / "update-docs-config.yaml"
+    def _setup_logging(self, verbose: bool) -> logging.Logger:
+        """Configure and return logger instance.
+
+        Args:
+            verbose: Whether to enable debug logging
+
+        Returns:
+            Configured logger instance
+        """
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.DEBUG if verbose else logging.INFO)
+
+        if verbose:
+            handler = logging.StreamHandler()
+            handler.setLevel(logging.DEBUG)
+            formatter = logging.Formatter("  %(levelname)s: %(message)s")
+            handler.setFormatter(formatter)
+            logger.addHandler(handler)
+
+        return logger
+
+    def _load_config(self) -> list[tuple[str, str, int]]:
+        """Load markdown locations from YAML configuration file.
+
+        Returns:
+            List of tuples containing (source_path, target_path, weight)
+
+        Raises:
+            SystemExit: If configuration file cannot be loaded
+        """
+        config_path = self.repository_path / "docs" / "web" / "update-docs-config.yaml"
         try:
-            with open(yaml_path) as yaml_file:
-                data = yaml.safe_load(yaml_file)
+            with config_path.open() as config_file:
+                data = yaml.safe_load(config_file)
                 return data.get("locations", [])
-        except (FileNotFoundError, yaml.YAMLError):
-            self.logger.exception("Error loading update-docs-config.yaml")
+        except FileNotFoundError:
+            self.logger.exception(f"Configuration file not found: {config_path}")
+            sys.exit(1)
+        except yaml.YAMLError:
+            self.logger.exception(f"Invalid YAML in configuration file: {config_path}")
             sys.exit(1)
 
-    def log_copy(self, source_file_path, target_file_path):
-        """Log file copying operation."""
-        self.logger.debug(f"{source_file_path} ==> {target_file_path}")
+    def _log_copy(self, source_path: Path, target_path: Path) -> None:
+        """Log file copying operation.
 
-    def create_directory(self, directory):
-        """Create directory and any parent directories if they don't exist."""
+        Args:
+            source_path: Source file path
+            target_path: Target file path
+        """
+        self.logger.debug(f"{source_path} ==> {target_path}")
+
+    @staticmethod
+    def _ensure_directory(directory: Path) -> None:
+        """Create directory and parent directories if they don't exist.
+
+        Args:
+            directory: Directory path to create
+        """
         directory.mkdir(parents=True, exist_ok=True)
 
-    def delete_directory_content(self, content_path):
-        """Delete all content in a directory and recreate the directory."""
-        if content_path.exists() and content_path.is_dir():
-            shutil.rmtree(content_path)
-            self.create_directory(content_path)
+    def _clear_directory(self, directory: Path) -> None:
+        """Delete all content in directory and recreate it.
 
-    def copy_markdown_file(self, source_file_path, target_file_path, weight=0):
-        """Copy and process a markdown file, adding frontmatter and fixing links."""
-        with open(source_file_path) as readme_file:
-            content = readme_file.read()
-            lines = content.splitlines(True)  # Keep line endings
+        Args:
+            directory: Directory path to clear
+        """
+        if directory.exists() and directory.is_dir():
+            shutil.rmtree(directory)
+            self._ensure_directory(directory)
 
-        title_found = False
+    def _add_frontmatter_to_lines(
+        self,
+        lines: list[str],
+        weight: int = 0,
+    ) -> list[str]:
+        """Add Hugo frontmatter to markdown lines, extracting title from first heading.
+
+        Args:
+            lines: List of markdown lines
+            weight: Hugo weight parameter for ordering
+
+        Returns:
+            List of lines with frontmatter added
+        """
         processed_lines = []
+        title_found = False
 
-        # First line starting with "# " will be the title
         for line in lines:
             if not title_found and line.startswith("# "):
                 title = line[2:].replace("<!-- omit in toc -->", "").strip()
-                processed_lines.append("---\n")
-                processed_lines.append(f"title: \"{title}\"\n")
+                processed_lines.extend(
+                    [
+                        "---\n",
+                        f'title: "{title}"\n',
+                    ]
+                )
                 if weight != 0:
                     processed_lines.append(f"weight: {weight}\n")
                 processed_lines.append("---\n")
@@ -101,122 +144,230 @@ class DocsProcessor:
             else:
                 processed_lines.append(line)
 
-        # Process the content to check and fix links
-        processed_content = ''.join(processed_lines)
-        processed_content = self.link_processor.process_markdown_content(processed_content, source_file_path, target_file_path)
+        return processed_lines
 
-        with open(target_file_path, "w") as readme_file:
-            readme_file.write(processed_content)
+    def _process_markdown_file(
+        self,
+        source_path: Path,
+        target_path: Path,
+        weight: int = 0,
+    ) -> None:
+        """Process markdown file: add frontmatter and fix links.
 
-    def process_location(self, source_path, target_name, weight=0):
-        """Process a location specified in markdown_locations."""
-        if source_path.endswith("/"):
-            self.process_directory(source_path, target_name, weight)
+        Args:
+            source_path: Source markdown file path
+            target_path: Target markdown file path
+            weight: Hugo weight parameter for ordering
+        """
+        with source_path.open() as source_file:
+            content = source_file.read()
+            lines = content.splitlines(keepends=True)
+
+        processed_lines = self._add_frontmatter_to_lines(lines, weight)
+        processed_content = "".join(processed_lines)
+        processed_content = self.link_processor.process_markdown_content(
+            processed_content,
+            source_path,
+            target_path,
+        )
+
+        with target_path.open("w") as target_file:
+            target_file.write(processed_content)
+
+    def _process_markdown_location(
+        self,
+        source_relative: str,
+        target_relative: str,
+        weight: int = 0,
+    ) -> None:
+        """Process a markdown location (file or directory).
+
+        Args:
+            source_relative: Source path relative to repository root
+            target_relative: Target path relative to output content directory
+            weight: Hugo weight parameter for ordering
+        """
+        if source_relative.endswith("/"):
+            self._process_directory(source_relative, target_relative, weight)
         else:
-            self.process_markdown_file(source_path, target_name, weight)
+            self._process_single_file(source_relative, target_relative, weight)
 
-    def process_directory(self, source_path, target_name, weight=0):
-        """Process all markdown files in a directory."""
-        source_dir = self.repository_path / source_path
-        for file in os.listdir(source_dir):
-            if file.endswith(".md"):
-                target_filename = "_index.md" if file == "README.md" else file
-                self.process_markdown_file(source_path + "/" + file, target_name + "/" + target_filename, weight)
+    def _process_directory(
+        self,
+        source_relative: str,
+        target_relative: str,
+        weight: int = 0,
+    ) -> None:
+        """Process all markdown files in a directory.
 
-    def process_markdown_file(self, source_path, target_name, weight=0):
-        """Process a single markdown file."""
-        source_file_path = self.repository_path / source_path
-        target_file_path = self.output_content_path / target_name
+        Args:
+            source_relative: Source directory path relative to repository root
+            target_relative: Target directory path relative to output content directory
+            weight: Hugo weight parameter for ordering
+        """
+        source_dir = self.repository_path / source_relative
 
-        self.create_directory(target_file_path.parent)
-        self.log_copy(source_file_path, target_file_path)
-        self.copy_markdown_file(source_file_path, target_file_path, weight)
+        for filename in source_dir.iterdir():
+            if filename.suffix != ".md":
+                continue
 
-    def process_docker_directory(self, docker_path, docker_target_path):
-        """Process docker directory containing docker-compose files."""
-        source_dir = self.repository_path / docker_path
-        target_dir = self.output_content_path / docker_target_path
+            target_filename = "_index.md" if filename.name == "README.md" else filename.name
+            source_file_path = f"{source_relative}{filename.name}"
+            target_file_path = f"{target_relative}/{target_filename}"
+            self._process_single_file(source_file_path, target_file_path, weight)
 
-        self.create_directory(Path(target_dir))
+    def _process_single_file(
+        self,
+        source_relative: str,
+        target_relative: str,
+        weight: int = 0,
+    ) -> None:
+        """Process a single markdown file.
 
-        # Scan all compose files using the scanner
+        Args:
+            source_relative: Source file path relative to repository root
+            target_relative: Target file path relative to output content directory
+            weight: Hugo weight parameter for ordering
+        """
+        source_path = self.repository_path / source_relative
+        target_path = self.output_content_path / target_relative
+
+        self._ensure_directory(target_path.parent)
+        self._log_copy(source_path, target_path)
+        self._process_markdown_file(source_path, target_path, weight)
+
+    def _build_service_frontmatter(self, metadata: dict) -> list[str]:
+        """Build Hugo frontmatter for a service.
+
+        Args:
+            metadata: Service metadata dictionary
+
+        Returns:
+            List of frontmatter lines
+
+        Raises:
+            ValueError: If metadata is missing required 'name' key
+        """
+        if "name" not in metadata:
+            raise ValueError(f"Metadata missing required 'name' key: {metadata}")
+
+        lines = [
+            "---\n",
+            f'title: "{metadata["name"]}"\n',
+        ]
+
+        if "description" in metadata:
+            lines.append(f'description: "{metadata["description"]}"\n')
+
+        if "icon" in metadata:
+            lines.extend(
+                [
+                    "params:\n",
+                    f'  icon: "{metadata["icon_url"]}"\n',
+                ]
+            )
+
+        lines.append("---\n")
+        return lines
+
+    def _write_service_markdown(
+        self,
+        target_path: Path,
+        metadata: dict,
+        head_lines: list[str],
+        yaml_lines: list[str],
+    ) -> None:
+        """Write service markdown file with frontmatter and content.
+
+        Args:
+            target_path: Target markdown file path
+            metadata: Service metadata dictionary
+            head_lines: Comment lines from compose file
+            yaml_lines: YAML content lines from compose file
+        """
+        lines = self._build_service_frontmatter(metadata)
+        lines.extend(head_lines)
+
+        if yaml_lines:
+            lines.append("```yaml\n")
+            lines.extend(yaml_lines)
+            lines.append("```\n")
+
+        with target_path.open("w") as target_file:
+            target_file.writelines(lines)
+
+    def _process_docker_services(
+        self,
+        source_dir: Path,
+        target_dir: Path,
+        docker_path: str,
+    ) -> None:
+        """Process Docker Compose services and generate documentation.
+
+        Args:
+            source_dir: Source docker directory path
+            target_dir: Target output directory path
+            docker_path: Relative path to docker directory
+        """
+        self._ensure_directory(target_dir)
         services = self.docker_scanner.scan_docker_directory(docker_path)
-
-        # Group services by directory to handle READMEs
-        directories_processed = set()
+        processed_categories = set()
 
         for service in services:
-            service_category = service["category"]
-            category_path = Path(service_category) if service_category else Path(".")
+            category = service["category"]
+            category_path = Path(category) if category else Path(".")
 
-            # Process README.md for this directory if it exists and we haven't processed it yet
-            if service["has_readme"] and service_category not in directories_processed:
+            # Process category README once per category
+            if service["has_readme"] and category not in processed_categories:
                 source_readme = source_dir / category_path / "README.md"
                 target_readme = target_dir / category_path / "_index.md"
 
-                self.create_directory(target_readme.parent)
-                self.log_copy(source_readme, target_readme)
-                self.copy_markdown_file(source_readme, target_readme)
+                self._ensure_directory(target_readme.parent)
+                self._log_copy(source_readme, target_readme)
+                self._process_markdown_file(source_readme, target_readme)
+                processed_categories.add(category)
 
-                directories_processed.add(service_category)
+            # Process service compose file
+            source_compose = source_dir / service["file_path"]
+            target_markdown = target_dir / Path(service["file_path"]).parent.with_suffix(".md")
 
-            # Process the compose file and write markdown
-            source_file_path = source_dir / service["file_path"]
-            target_file_path = target_dir / Path(service["file_path"]).with_suffix(".md")
+            self._ensure_directory(target_markdown.parent)
+            self._log_copy(source_compose, target_markdown)
+            self._write_service_markdown(
+                target_markdown,
+                service["metadata"],
+                service["head_lines"],
+                service["yaml_lines"],
+            )
 
-            self.create_directory(target_file_path.parent)
-            self.log_copy(source_file_path, target_file_path)
-
-            metadata = service["metadata"]
-            head_lines = service["head_lines"]
-            yaml_lines = service["yaml_lines"]
-
-            # Build markdown content with frontmatter
-            processed_lines = ["---\n", f"title: \"{metadata['name']}\"\n"]
-            if 'description' in metadata:
-                processed_lines.append(f"description: \"{metadata['description']}\"\n")
-            if 'icon' in metadata:
-                processed_lines.append("params:\n")
-                processed_lines.append(f"  icon: \"{metadata['icon_url']}\"\n")
-            processed_lines.append("---\n")
-
-            # Add head section (comments from compose file)
-            processed_lines.extend(head_lines)
-
-            # Add YAML content in code block if present
-            if yaml_lines:
-                processed_lines.append("```yaml\n")
-                processed_lines.extend(yaml_lines)
-                processed_lines.append("```\n")
-
-            # Write the processed markdown file
-            with open(target_file_path, "w") as doc_file:
-                doc_file.writelines(processed_lines)
-
-    def process(self):
-        """Main method to process all files."""
-        # Remove the content directory (which only contains generated content)
-        self.delete_directory_content(self.output_content_path)
+    def process(self) -> None:
+        """Process all documentation files and Docker services."""
+        self._clear_directory(self.output_content_path)
 
         self.logger.info("Processing Docker Compose stacks")
-        self.process_docker_directory("docker", "docker")
+        source_dir = self.repository_path / "docker"
+        target_dir = self.output_content_path / "docker"
+        self._process_docker_services(source_dir, target_dir, "docker")
 
         for source, target, weight in self.markdown_locations:
             self.logger.info(f"Processing {source} ==> {target}")
-            self.process_location(source, target, weight)
+            self._process_markdown_location(source, target, weight)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Process documentation files.")
+def main() -> None:
+    """Main entry point for the documentation processor."""
+    parser = argparse.ArgumentParser(description="Process documentation files and Docker Compose stacks for Hugo.")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
-    parser.add_argument("--repository-path", type=str, help="Specify the path to the repository root")
-    parser.add_argument("--output-content-path", type=str, help="Specify the path of the generated content")
+    parser.add_argument("--repository-path", type=str, help="Path to the repository root")
+    parser.add_argument("--output-content-path", type=str, help="Path for generated content output")
     args = parser.parse_args()
 
-    # Get repository and output paths
     repository_path = Path(args.repository_path) if args.repository_path else Path(get_git_root())
     output_content_path = Path(args.output_content_path) if args.output_content_path else repository_path / "docs" / "web" / "src" / "content"
 
-    # Create and run the docs processor
     processor = DocsProcessor(repository_path, output_content_path, args.verbose)
     processor.process()
+
+
+if __name__ == "__main__":
+    main()

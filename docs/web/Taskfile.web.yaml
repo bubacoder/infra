@@ -12,7 +12,7 @@ tasks:
     cmds:
       - |
         # build
-        SITE_DOMAIN=docs.${MYDOMAIN}
+        SITE_DOMAIN=docs.${MYDOMAIN:-lab.internal}
         TAG=local/${SITE_DOMAIN}:collect
         docker build -f docs/web/Dockerfile -t "${TAG}" --target collect --progress=plain --no-cache .
         # export
@@ -25,7 +25,7 @@ tasks:
     dotenv: ['config/docker/.env']
     cmds:
       - |
-        SITE_DOMAIN=docs.${MYDOMAIN}
+        SITE_DOMAIN=docs.${MYDOMAIN:-lab.internal}
         HUGO_BASEURL=https://${SITE_DOMAIN}
         TAG=local/${SITE_DOMAIN}:latest
         docker build -f docs/web/Dockerfile -t "${TAG}" --build-arg HUGO_BASEURL="${HUGO_BASEURL}" .
@@ -35,7 +35,7 @@ tasks:
     dotenv: ['config/docker/.env']
     cmds:
       - |
-        SITE_DOMAIN=docs.${MYDOMAIN}
+        SITE_DOMAIN=docs.${MYDOMAIN:-lab.internal}
         TAG=local/${SITE_DOMAIN}:latest
         mkdir -p docs/web/public
         docker run --user $(id -u):$(id -g) --rm -v ./docs/web/public:/public "${TAG}" cp -r /site /public
