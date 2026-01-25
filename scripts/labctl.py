@@ -123,7 +123,7 @@ def get_compose_file(stack_dir: Path, service_name: str) -> Path:
     Returns:
         Path: The path to the service's compose file
     """
-    return stack_dir / f"{service_name}.yaml"
+    return stack_dir / service_name / f"{service_name}.yaml"
 
 
 def has_build_directive(compose_file: Path) -> bool:
