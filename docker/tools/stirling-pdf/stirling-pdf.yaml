@@ -7,7 +7,7 @@
 name: stirling-pdf
 services:
   stirling-pdf:
-    image: stirlingtools/stirling-pdf:2.1.5
+    image: stirlingtools/stirling-pdf:2.4.0
     container_name: stirling-pdf
     restart: unless-stopped
     environment:
