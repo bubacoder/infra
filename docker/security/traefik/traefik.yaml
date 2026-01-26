@@ -61,7 +61,7 @@ services:
       dockerfile_inline: |
         FROM alpine:3.21
         RUN apk add --no-cache logrotate
-        COPY traefik/logrotate.conf /etc/logrotate.conf
+        COPY config/logrotate.conf /etc/logrotate.conf
         RUN chmod 644 /etc/logrotate.conf
         RUN chown root:root /etc/logrotate.conf
         CMD ["sh", "-c", "logrotate -f /etc/logrotate.conf && sleep 86400"]
