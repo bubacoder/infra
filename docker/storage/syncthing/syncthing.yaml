@@ -8,7 +8,7 @@
 name: syncthing
 services:
   syncthing:
-    image: lscr.io/linuxserver/syncthing:2.0.12
+    image: lscr.io/linuxserver/syncthing:2.0.13
     container_name: syncthing
     restart: unless-stopped
     network_mode: host
