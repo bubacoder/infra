@@ -28,7 +28,7 @@ services:
     # kics-scan ignore-block
     volumes:
       # TODO Set to the block device containing the btrfs filesystem
-      - /dev/disk/by-uuid/96c03041-7dde-48b4-8cc1-3f72e18e1bd2:/dev/disk/by-uuid/96c03041-7dde-48b4-8cc1-3f72e18e1bd2
+      - /dev/disk/by-uuid/${BEES_BTRFS_UUID}:/dev/disk/by-uuid/${BEES_BTRFS_UUID}
       - ${DOCKER_VOLUMES}/bees:/etc/bees/
     depends_on:
       initContainer:
