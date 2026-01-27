@@ -271,9 +271,7 @@ def _perform_dry_run(
             f"→ Would move config: {paths.config_dir.relative_to(paths.docker_dir)}/ → {paths.stack_dir.relative_to(paths.docker_dir)}/config/"
         )
 
-    messages.append(
-        f"→ Would rename: {paths.stack_dir.relative_to(paths.docker_dir)}/ → {final_dir.relative_to(paths.docker_dir)}/"
-    )
+    messages.append(f"→ Would rename: {paths.stack_dir.relative_to(paths.docker_dir)}/ → {final_dir.relative_to(paths.docker_dir)}/")
 
     return True, "\n  ".join(messages)
 

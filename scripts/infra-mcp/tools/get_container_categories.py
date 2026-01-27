@@ -9,7 +9,7 @@ try:
     from utils.git import get_git_root
 except ModuleNotFoundError:
     # If that fails, try relative import (when run as a standalone script)
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     from utils.git import get_git_root
 
 
@@ -57,16 +57,16 @@ class ContainerCategoryFinder:
                 has_readme = readme_path.exists() and readme_path.is_file()
 
                 # Check for any yaml files in the current directory
-                has_yaml = any(file.lower().endswith(('.yaml', '.yml')) for file in files)
+                has_yaml = any(file.lower().endswith((".yaml", ".yml")) for file in files)
 
                 # Only include directories with both README.md and at least one yaml file
                 if has_readme and has_yaml:
                     # Get the path relative to the docker directory
                     rel_path = root_path.relative_to(self.docker_path)
                     # Convert to string and use forward slashes for consistency
-                    rel_path_str = str(rel_path).replace('\\', '/')
+                    rel_path_str = str(rel_path).replace("\\", "/")
                     # Add the directory to categories if it's not the root docker directory
-                    if rel_path_str != '.':
+                    if rel_path_str != ".":
                         categories.append(rel_path_str)
 
             return sorted(categories)

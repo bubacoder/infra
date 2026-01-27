@@ -19,8 +19,8 @@ def star_github_repo(repo_url: str) -> None:
     """
     try:
         parsed_url = urlparse(repo_url)
-        repo_path = unquote(parsed_url.path.strip('/'))
-        owner, repo_name = repo_path.split('/')
+        repo_path = unquote(parsed_url.path.strip("/"))
+        owner, repo_name = repo_path.split("/")
 
         # Construct the API endpoint URL
         api_url = f"https://api.github.com/user/starred/{owner}/{repo_name}"
@@ -31,7 +31,7 @@ def star_github_repo(repo_url: str) -> None:
         # Make the PUT request to star the repository
         headers = {
             "Authorization": f"Bearer {github_token}",
-            "Accept": "application/vnd.github+json"
+            "Accept": "application/vnd.github+json",
         }
         response = requests.put(api_url, headers=headers, timeout=30)
 
