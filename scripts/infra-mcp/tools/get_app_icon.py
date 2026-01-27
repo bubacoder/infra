@@ -117,8 +117,8 @@ class AppIconFinder:
 
             # 2. Check for the default location
             default_favicon = urljoin(homepage_url, "/favicon.ico")
-            favicon_response = requests.head(default_favicon, headers=self.headers, timeout=5)
-            if favicon_response.status_code == 200:
+            favicon_response = requests.head(default_favicon, headers=self.headers, timeout=5, allow_redirects=True)
+            if favicon_response.ok:
                 return default_favicon
             else:
                 return None
