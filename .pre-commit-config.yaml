@@ -49,9 +49,8 @@ repos:
       # Linter - https://docs.astral.sh/ruff/linter/
       - id: ruff-check
         args: ["--fix"]
-      # TODO Enable after pending MRs are merged
       # Formatter - https://docs.astral.sh/ruff/formatter/
-      # - id: ruff-format
+      - id: ruff-format
 
   # Dockerfile linter, validate inline bash, written in Haskell
   - repo: https://github.com/hadolint/hadolint

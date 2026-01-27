@@ -24,13 +24,13 @@ from utils.git import get_git_root
 from utils.security import validate_url_for_ssrf
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("infra-mcp")
 logger.info("Starting Infra MCP server")
 
 mcp = FastMCP(
     name="infra-mcp",
-    instructions="Use these tools to configure the homelab infrastructure and interact with the services."
+    instructions="Use these tools to configure the homelab infrastructure and interact with the services.",
 )
 
 
@@ -121,7 +121,7 @@ def list_container_tags(image: str, limit: int = 10) -> list[str]:
         args.registry = None
 
         tags, _, _, _ = tag_finder.get_image_tags(args)
-        return [tag['name'] for tag in tags[:limit]] if tags else []
+        return [tag["name"] for tag in tags[:limit]] if tags else []
     except Exception:
         logger.exception("list-container-tags failed for image=%r", image)
         return []
@@ -156,7 +156,7 @@ def list_same_hash_container_tags(image: str, tag: str | None = None, limit: int
 
         # Get same hash tags but don't output to stdout
         same_hash_tags = tag_finder.list_same_hash_tags(args, suppress_output=True)
-        return [tag['name'] for tag in same_hash_tags] if same_hash_tags else []
+        return [tag["name"] for tag in same_hash_tags] if same_hash_tags else []
     except Exception:
         logger.exception("list-same-hash-container-tags failed for image=%r tag=%r", image, tag)
         return []
@@ -194,9 +194,9 @@ def get_most_specific_container_tag(image: str, tag: str | None = None, limit: i
             most_specific = tag_finder.get_most_specific_tag(args)
             same_hash = tag_finder.list_same_hash_tags(args, suppress_output=True)
         if most_specific:
-            return most_specific['name']
+            return most_specific["name"]
         elif same_hash:
-            return same_hash[0]['name']
+            return same_hash[0]["name"]
         else:
             return tag or "latest"
     except Exception:
@@ -212,8 +212,8 @@ try:
     logger.info(f"Repository root path: {repository_root_path}")
 
     # Check environment variables to enable/disable tools
-    enable_task_tools = os.environ.get('ENABLE_TASK_TOOLS', 'true').lower() != 'false'
-    enable_container_tools = os.environ.get('ENABLE_CONTAINER_TOOLS', 'true').lower() != 'false'
+    enable_task_tools = os.environ.get("ENABLE_TASK_TOOLS", "true").lower() != "false"
+    enable_container_tools = os.environ.get("ENABLE_CONTAINER_TOOLS", "true").lower() != "false"
 
     # Add tools based on environment variable settings
     if enable_task_tools:

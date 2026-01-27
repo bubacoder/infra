@@ -20,7 +20,7 @@ class AppIconFinder:
         Initialize the AppIconFinder with default headers for HTTP requests.
         """
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
 
     def get_app_icon(self, app_name, homepage_url):
@@ -57,7 +57,7 @@ class AppIconFinder:
                 url,
                 headers=self.headers,
                 timeout=10,
-                allow_redirects=True
+                allow_redirects=True,
             )
             if response.ok:
                 return icon_name
@@ -81,42 +81,42 @@ class AppIconFinder:
 
             # Make sure URL has a scheme
             homepage_url = homepage_url.strip()
-            if not homepage_url.startswith(('http://', 'https://')):
-                homepage_url = 'https://' + homepage_url
+            if not homepage_url.startswith(("http://", "https://")):
+                homepage_url = "https://" + homepage_url
 
             # Fetch the homepage
             response = requests.get(homepage_url, headers=self.headers, timeout=10)
             response.raise_for_status()
 
             # Parse the HTML
-            soup = BeautifulSoup(response.text, 'html.parser')
+            soup = BeautifulSoup(response.text, "html.parser")
 
             # Look for favicon in different ways
             # 1. Check for link tags with rel="icon" or rel="shortcut icon"
-            icon_links = soup.find_all('link', rel=re.compile(r'(shortcut icon|icon|apple-touch-icon)', re.I))
+            icon_links = soup.find_all("link", rel=re.compile(r"(shortcut icon|icon|apple-touch-icon)", re.I))
             if icon_links:
                 # Sort by preference: apple-touch-icon > icon > shortcut icon
                 def get_priority(link):
-                    rel_attr = link.get('rel', [])
+                    rel_attr = link.get("rel", [])
                     if isinstance(rel_attr, str):
                         rel_attr = [rel_attr]
-                    rel_lower = ' '.join(rel_attr).lower()
-                    if 'apple-touch-icon' in rel_lower:
+                    rel_lower = " ".join(rel_attr).lower()
+                    if "apple-touch-icon" in rel_lower:
                         return 3
-                    elif 'icon' in rel_lower and 'shortcut' not in rel_lower:
+                    elif "icon" in rel_lower and "shortcut" not in rel_lower:
                         return 2
                     else:
                         return 1
 
                 icon_links = sorted(icon_links, key=get_priority, reverse=True)
                 for link in icon_links:
-                    if 'href' in link.attrs:
+                    if "href" in link.attrs:
                         # Make relative URLs absolute
-                        favicon_url = urljoin(homepage_url, link['href'])
+                        favicon_url = urljoin(homepage_url, link["href"])
                         return favicon_url
 
             # 2. Check for the default location
-            default_favicon = urljoin(homepage_url, '/favicon.ico')
+            default_favicon = urljoin(homepage_url, "/favicon.ico")
             favicon_response = requests.head(default_favicon, headers=self.headers, timeout=5)
             if favicon_response.status_code == 200:
                 return default_favicon
@@ -143,7 +143,7 @@ def test_icon_finder():
         ("Radarr", "radarr.video"),
         ("Grafana", "grafana.com"),
         ("Jellyfin", "jellyfin.org"),
-        ("HUP", "hup.hu")
+        ("HUP", "hup.hu"),
     ]
 
     for app_name, homepage in test_cases:

@@ -1,7 +1,13 @@
 # https://docs.astral.sh/ruff/settings/
 
 target-version = "py313"
-line-length = 120
+line-length = 150
+
+# Exclude third-party scripts
+exclude = [
+  "scripts/git-filter-repo.py",
+  "scripts/test-colors.py",
+]
 
 [lint]
 select = [
@@ -27,11 +33,10 @@ ignore = [
   "TRY003",  # Avoid specifying long messages outside the exception class
 ]
 
-# Exclude third-party scripts
-exclude = [
-  "scripts/git-filter-repo.py",
-  "scripts/test-colors.py",
-]
+[lint.pylint]
+max-returns = 10      # Increased from default 6
+max-branches = 20     # Increased from default 12
+max-statements = 75   # Increased from default 50
 
 [lint.isort]
 known-first-party = [

@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DockerOptions:
     """Configuration options for Docker operations."""
+
     pull_before_start: bool = False
     quiet: bool = False
     # Log options
@@ -35,7 +36,7 @@ class DockerOptions:
 
 # Global variables
 docker_stacks_dir: Path = (Path(__file__).resolve().parent.parent / "docker").resolve()
-ALLOWED_STATES: tuple[str, ...] = ('pull', 'up', 'down', 'restart', 'recreate', 'config', 'logs')
+ALLOWED_STATES: tuple[str, ...] = ("pull", "up", "down", "restart", "recreate", "config", "logs")
 
 
 def create_network_if_missing(network_name: str) -> None:
@@ -137,9 +138,9 @@ def has_build_directive(compose_file: Path) -> bool:
     """
     with open(compose_file) as f:
         yaml_content = yaml.safe_load(f)
-        if yaml_content and 'services' in yaml_content:
-            for service_config in yaml_content['services'].values():
-                if 'build' in service_config:
+        if yaml_content and "services" in yaml_content:
+            for service_config in yaml_content["services"].values():
+                if "build" in service_config:
                     return True
     return False
 
@@ -147,10 +148,10 @@ def has_build_directive(compose_file: Path) -> bool:
 def get_env_file_args(host_config_dir: Path, service_name: str) -> list[str]:
     """Get environment file arguments for Docker Compose with normalized paths."""
     env_paths = [
-        host_config_dir.parent / ".env",                  # Common .env file in config/docker
-        host_config_dir / ".env",                         # Host-specific .env file in config/docker/<hostname>
+        host_config_dir.parent / ".env",  # Common .env file in config/docker
+        host_config_dir / ".env",  # Host-specific .env file in config/docker/<hostname>
         host_config_dir.parent / f".env.{service_name}",  # Common service-specific .env file in config/docker
-        host_config_dir / f".env.{service_name}"          # Host- and service-specific .env file in config/docker/<hostname>
+        host_config_dir / f".env.{service_name}",  # Host- and service-specific .env file in config/docker/<hostname>
     ]
 
     args = []
@@ -177,7 +178,13 @@ def docker(cmd: list[str], env=None, stdin=None, stdout=None, stderr=None) -> No
     subprocess.run([docker_bin, *cmd], env=env, stdin=stdin, stdout=stdout, stderr=stderr, check=True)  # noqa: S603
 
 
-def docker_pull(stack_dir: Path, service_name: str, compose_file: Path, env_file_args: list[str], quiet: bool = False) -> None:
+def docker_pull(
+    stack_dir: Path,
+    service_name: str,
+    compose_file: Path,
+    env_file_args: list[str],
+    quiet: bool = False,
+) -> None:
     """Pull Docker images for a service.
 
     Args:
@@ -224,7 +231,13 @@ def build_log_command_flags(options: DockerOptions) -> list[str]:
     return flags
 
 
-def docker_command(host_config_dir: Path, stack_dir: Path, service_name: str, action: str, options: DockerOptions = None) -> None:
+def docker_command(
+    host_config_dir: Path,
+    stack_dir: Path,
+    service_name: str,
+    action: str,
+    options: DockerOptions = None,
+) -> None:
     """Execute Docker Compose command for a service.
 
     Args:
@@ -298,7 +311,13 @@ def load_services_config(config_file: str) -> dict:
         sys.exit(1)
 
 
-def process_services(host_config_dir: Path, config: dict, state_override: str | None = None, pull_before_start: bool = False, quiet: bool = False) -> None:
+def process_services(
+    host_config_dir: Path,
+    config: dict,
+    state_override: str | None = None,
+    pull_before_start: bool = False,
+    quiet: bool = False,
+) -> None:
     """Process services based on the configuration.
 
     Args:
@@ -308,11 +327,11 @@ def process_services(host_config_dir: Path, config: dict, state_override: str | 
         pull_before_start: Whether to pull images before starting services
         quiet: Whether to use quiet mode for docker operations
     """
-    if not config or 'services' not in config:
+    if not config or "services" not in config:
         logger.error("Error: Invalid configuration format. 'services' key not found.")
         return
 
-    services = config['services']
+    services = config["services"]
 
     # Process services using the new structure
     for category_entry in services:
@@ -326,12 +345,12 @@ def process_services(host_config_dir: Path, config: dict, state_override: str | 
 
         # Process each service in this category
         for service in service_list:
-            name = service.get('name', '')
+            name = service.get("name", "")
             if not name:
                 logger.warning(f"Skipping invalid service entry in category {category}: missing name")
                 continue
 
-            state = (state_override or service.get('state', 'up')).lower()
+            state = (state_override or service.get("state", "up")).lower()
             if state not in ALLOWED_STATES:
                 logger.warning(f"Unknown state '{state}' for service {category}/{name}")
                 continue
@@ -371,7 +390,7 @@ def cmd_service(args) -> None:
         sys.exit(1)
 
     # Parse service name in format category/subcategory/name
-    name_parts = args.name.split('/')
+    name_parts = args.name.split("/")
     if len(name_parts) < 2:
         logger.error("Service name must be in format category/name or category/subcategory/name")
         sys.exit(1)
@@ -379,62 +398,59 @@ def cmd_service(args) -> None:
     # The last part is always the service name
     service_name = name_parts[-1]
     # Everything before the last part is the category path
-    category_path = '/'.join(name_parts[:-1])
+    category_path = "/".join(name_parts[:-1])
 
     # Create options with all parameters
-    options = DockerOptions(
-        pull_before_start=args.pull_before_start,
-        quiet=args.quiet
-    )
+    options = DockerOptions(pull_before_start=args.pull_before_start, quiet=args.quiet)
 
     # Add log options if they exist in args and operation is 'logs'
-    if args.operation == 'logs':
-        if hasattr(args, 'follow'):
+    if args.operation == "logs":
+        if hasattr(args, "follow"):
             options.follow = args.follow
-        if hasattr(args, 'tail'):
+        if hasattr(args, "tail"):
             options.tail = args.tail
-        if hasattr(args, 'since'):
+        if hasattr(args, "since"):
             options.since = args.since
-        if hasattr(args, 'timestamps'):
+        if hasattr(args, "timestamps"):
             options.timestamps = args.timestamps
 
     docker_command(get_host_config_dir(), docker_stacks_dir / category_path, service_name, args.operation, options)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description='Manage Docker services using YAML configuration.')
-    subparsers = parser.add_subparsers(dest='command', help='Commands', required=True)
+    parser = argparse.ArgumentParser(description="Manage Docker services using YAML configuration.")
+    subparsers = parser.add_subparsers(dest="command", help="Commands", required=True)
 
     # Config command
-    config_parser = subparsers.add_parser('config', help='Manage service configurations')
-    config_subparsers = config_parser.add_subparsers(dest='config_command', help='Config subcommands', required=True)
+    config_parser = subparsers.add_parser("config", help="Manage service configurations")
+    config_subparsers = config_parser.add_subparsers(dest="config_command", help="Config subcommands", required=True)
 
     # Config apply command
-    config_apply_parser = config_subparsers.add_parser('apply', help='Apply service configurations')
-    config_apply_parser.add_argument('--config', '-c', help='Path to the YAML configuration file')
-    config_apply_parser.add_argument('--mode', '-m', choices=list(ALLOWED_STATES), help='Override state for all services')
-    config_apply_parser.add_argument('--pull-before-start', action='store_true', default=False, help='Pull images before starting services')
-    config_apply_parser.add_argument('--quiet', action='store_true', default=False, help='Use quiet mode for docker operations')
+    config_apply_parser = config_subparsers.add_parser("apply", help="Apply service configurations")
+    config_apply_parser.add_argument("--config", "-c", help="Path to the YAML configuration file")
+    config_apply_parser.add_argument("--mode", "-m", choices=list(ALLOWED_STATES), help="Override state for all services")
+    config_apply_parser.add_argument("--pull-before-start", action="store_true", default=False, help="Pull images before starting services")
+    config_apply_parser.add_argument("--quiet", action="store_true", default=False, help="Use quiet mode for docker operations")
 
     # Service command
-    service_parser = subparsers.add_parser('service', help='Manage individual services')
-    service_parser.add_argument('operation', choices=list(ALLOWED_STATES), help='Operation to perform on the service')
-    service_parser.add_argument('name', help='Service name in format category/name or category/subcategory/name')
-    service_parser.add_argument('--pull-before-start', action='store_true', default=False, help='Pull images before starting the service')
-    service_parser.add_argument('--quiet', action='store_true', default=False, help='Use quiet mode for docker operations')
+    service_parser = subparsers.add_parser("service", help="Manage individual services")
+    service_parser.add_argument("operation", choices=list(ALLOWED_STATES), help="Operation to perform on the service")
+    service_parser.add_argument("name", help="Service name in format category/name or category/subcategory/name")
+    service_parser.add_argument("--pull-before-start", action="store_true", default=False, help="Pull images before starting the service")
+    service_parser.add_argument("--quiet", action="store_true", default=False, help="Use quiet mode for docker operations")
     # Log-specific options
-    service_parser.add_argument('--follow', '-f', action='store_true', help='Follow log output (like tail -f)')
-    service_parser.add_argument('--tail', '-n', default="all", help='Number of lines to show from the end of logs (default: all)')
-    service_parser.add_argument('--since', '-s', help='Show logs since timestamp (e.g., "10m" for last 10 minutes)')
-    service_parser.add_argument('--timestamps', '-t', action='store_true', help='Show timestamps with log entries')
+    service_parser.add_argument("--follow", "-f", action="store_true", help="Follow log output (like tail -f)")
+    service_parser.add_argument("--tail", "-n", default="all", help="Number of lines to show from the end of logs (default: all)")
+    service_parser.add_argument("--since", "-s", help='Show logs since timestamp (e.g., "10m" for last 10 minutes)')
+    service_parser.add_argument("--timestamps", "-t", action="store_true", help="Show timestamps with log entries")
 
     args = parser.parse_args()
 
     # Handle command structure
-    if args.command == 'config':
-        if args.config_command == 'apply':
+    if args.command == "config":
+        if args.config_command == "apply":
             cmd_config_apply(args)
-    elif args.command == 'service':
+    elif args.command == "service":
         cmd_service(args)
     else:
         parser.print_help()
@@ -444,6 +460,6 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print('Interrupted')
+        print("Interrupted")
         # Exit Code 130: Script terminated by Control-C
         sys.exit(130)
