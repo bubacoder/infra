@@ -23,13 +23,13 @@ class ProxyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         # Parse the URL
         parsed_url = urlparse(self.path)
         target_host = parsed_url.hostname
-        target_port = parsed_url.port or (80 if parsed_url.scheme == 'http' else 443)
+        target_port = parsed_url.port or (80 if parsed_url.scheme == "http" else 443)
 
         print("\nParsed URL:")
         print(parsed_url)
 
         # Read the content length
-        content_length = int(self.headers.get('Content-Length', 0))
+        content_length = int(self.headers.get("Content-Length", 0))
         post_data = self.rfile.read(content_length) if content_length > 0 else None
 
         # Create headers for the target request
@@ -48,7 +48,7 @@ class ProxyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         conn = http.client.HTTPConnection(target_host, target_port)
 
         # Make the request to the target server
-        conn.request(self.command, urlunparse(parsed_url._replace(scheme='', netloc='')), body=post_data, headers=headers)
+        conn.request(self.command, urlunparse(parsed_url._replace(scheme="", netloc="")), body=post_data, headers=headers)
         target_response = conn.getresponse()
 
         # Send the response back to the client

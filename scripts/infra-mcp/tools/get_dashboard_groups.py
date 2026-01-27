@@ -11,7 +11,7 @@ try:
     from utils.git import get_git_root
 except ModuleNotFoundError:
     # If that fails, try relative import (when run as a standalone script)
-    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     from utils.git import get_git_root
 
 
