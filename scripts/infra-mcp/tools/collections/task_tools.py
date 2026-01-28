@@ -36,7 +36,7 @@ def get_task_list(repository_root_path: str) -> list[dict[str, str]]:
             [task_bin, "--list-all", "--dir", repository_root_path],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
     except subprocess.CalledProcessError:
         logger.exception("Error getting task list")
@@ -46,14 +46,13 @@ def get_task_list(repository_root_path: str) -> list[dict[str, str]]:
         # Parse output lines
         for line in result.stdout.splitlines():
             # Match lines like "* task_name:   task description"
-            match = re.match(r'^\*\s+(.+?):\s+(.+)$', line.strip())
+            match = re.match(r"^\*\s+(.+?):\s+(.+)$", line.strip())
             if match:
                 task_name = match.group(1).strip()
                 description = match.group(2).strip()
-                tasks.append({
-                    "name": task_name,
-                    "description": description
-                })
+                tasks.append(
+                    {"name": task_name, "description": description},
+                )
 
         logger.debug(f"Found {len(tasks)} tasks")
         return tasks
@@ -80,7 +79,7 @@ def execute_task(task_name: str, repository_root_path: str) -> str:
             [task_bin, task_name, "--dir", repository_root_path],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         ).stdout.strip()
     except subprocess.CalledProcessError as e:
         logger.exception(f"Error executing task {task_name}")
@@ -98,6 +97,7 @@ def create_task_function(task_name: str, repository_root_path: str) -> Callable[
     Returns:
         A callable function that executes the task
     """
+
     def task_fn() -> str:
         return execute_task(task_name, repository_root_path)
 
@@ -124,7 +124,7 @@ def add_task_tools(mcp_server: FastMCP, repository_root_path: str) -> None:
             fn=task_fn,
             name=tool_name,
             title=tool_name,
-            description=description
+            description=description,
         )
         mcp_server.add_tool(tool)
 

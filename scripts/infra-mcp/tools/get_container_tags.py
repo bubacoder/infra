@@ -30,9 +30,9 @@ class ContainerTagFinder:
         Returns:
             tuple: A tuple containing (os_part, arch_part)
         """
-        parts = arch.split('/')
-        os_part = parts[0] if parts else 'linux'
-        arch_part = parts[1] if len(parts) > 1 else 'amd64'
+        parts = arch.split("/")
+        os_part = parts[0] if parts else "linux"
+        arch_part = parts[1] if len(parts) > 1 else "amd64"
         return os_part, arch_part
 
     def _parse_version(self, tag_name: str) -> tuple[int, ...] | None:
@@ -53,7 +53,7 @@ class ContainerTagFinder:
         """
         # Handle common prefixes
         normalized = tag_name.lower()
-        if normalized.startswith('v') and len(normalized) > 1 and normalized[1].isdigit():
+        if normalized.startswith("v") and len(normalized) > 1 and normalized[1].isdigit():
             normalized = normalized[1:]
 
         # Skip non-version tags
@@ -65,12 +65,12 @@ class ContainerTagFinder:
             return None
 
         # Extract the version part (before any '-', '_', or non-numeric suffix)
-        version_part = normalized.split('-')[0].split('_')[0]
+        version_part = normalized.split("-")[0].split("_")[0]
 
         # Split by '.' and try to parse as integers
         try:
             version_numbers = []
-            for part in version_part.split('.'):
+            for part in version_part.split("."):
                 # Only take numeric parts
                 if part.isdigit():
                     version_numbers.append(int(part))
@@ -100,7 +100,7 @@ class ContainerTagFinder:
         if not datetime_str:
             return datetime.min
         try:
-            return datetime.fromisoformat(datetime_str.replace('Z', '+00:00'))
+            return datetime.fromisoformat(datetime_str.replace("Z", "+00:00"))
         except (ValueError, AttributeError):
             return datetime.min
 
@@ -116,9 +116,9 @@ class ContainerTagFinder:
             str: The digest for the specified architecture, or None if not found
         """
         arch_os, arch_variant = self._parse_arch(architecture)
-        for image in tag.get('images', []):
-            if image.get('architecture') == arch_variant and image.get('os') == arch_os:
-                return image.get('digest')
+        for image in tag.get("images", []):
+            if image.get("architecture") == arch_variant and image.get("os") == arch_os:
+                return image.get("digest")
         return None
 
     def _create_tag_data_dict(self, tag: dict[str, Any], architecture: str) -> dict[str, Any]:
@@ -133,10 +133,10 @@ class ContainerTagFinder:
             dict: Standardized tag data dictionary with name, last_updated, size, and digest
         """
         return {
-            'name': tag['name'],
-            'last_updated': tag.get('last_updated'),
-            'size': tag.get('full_size', 0),
-            'digest': self._extract_arch_digest(tag, architecture)
+            "name": tag["name"],
+            "last_updated": tag.get("last_updated"),
+            "size": tag.get("full_size", 0),
+            "digest": self._extract_arch_digest(tag, architecture),
         }
 
     def _version_sort_key(self, tag: dict[str, Any]) -> tuple:
@@ -154,22 +154,22 @@ class ContainerTagFinder:
         Returns:
             tuple: A sort key that can be used with sorted() or list.sort()
         """
-        tag_name = tag['name'].lower()
+        tag_name = tag["name"].lower()
 
         # Priority 1: 'latest' tag
-        if tag_name == 'latest':
+        if tag_name == "latest":
             return (2, (999, 999, 999, 999), datetime.max)
 
         # Priority 2: Version tags
-        version = self._parse_version(tag['name'])
+        version = self._parse_version(tag["name"])
         if version:
             # Pad version tuple to 4 elements for consistent comparison
             padded_version = version + (0,) * (4 - len(version))
-            updated = self._parse_datetime(tag.get('last_updated'))
+            updated = self._parse_datetime(tag.get("last_updated"))
             return (1, padded_version[:4], updated)
 
         # Priority 3: Non-version tags
-        updated = self._parse_datetime(tag.get('last_updated'))
+        updated = self._parse_datetime(tag.get("last_updated"))
         return (0, (0, 0, 0, 0), updated)
 
     def _sort_tags(self, tag_data: list[dict[str, Any]], sort_by: str) -> None:
@@ -184,10 +184,12 @@ class ContainerTagFinder:
             tag_data.sort(key=self._version_sort_key, reverse=True)
         elif sort_by == "updated":
             # Sort by last_updated timestamp
-            tag_data.sort(key=lambda x: self._parse_datetime(x.get('last_updated')), reverse=True)
+            tag_data.sort(key=lambda x: self._parse_datetime(x.get("last_updated")), reverse=True)
         # else: sort_by == "default", keep original order
 
-    def get_docker_hub_tags(self, image_name: str, limit: int = 10, architecture: str = "linux/amd64", sort_by: str = "version") -> list[dict[str, Any]]:
+    def get_docker_hub_tags(
+        self, image_name: str, limit: int = 10, architecture: str = "linux/amd64", sort_by: str = "version"
+    ) -> list[dict[str, Any]]:
         """Query Docker Hub for image tags with timestamp information.
 
         Args:
@@ -200,10 +202,10 @@ class ContainerTagFinder:
             list: List of tag dictionaries sorted according to sort_by parameter
         """
         # Parse repository name
-        if '/' in image_name:
-            namespace, repo = image_name.split('/', 1)
+        if "/" in image_name:
+            namespace, repo = image_name.split("/", 1)
         else:
-            namespace = 'library'  # Official images are in the 'library' namespace
+            namespace = "library"  # Official images are in the 'library' namespace
             repo = image_name
 
         url: str = f"https://hub.docker.com/v2/repositories/{namespace}/{repo}/tags?page_size=100"
@@ -213,16 +215,16 @@ class ContainerTagFinder:
             data = response.json()
             tag_data: list[dict[str, Any]] = []
 
-            for tag in data.get('results', []):
+            for tag in data.get("results", []):
                 tag_data.append(self._create_tag_data_dict(tag, architecture))
 
             # Handle pagination if there are more tags
-            while 'next' in data and data['next'] and len(tag_data) < 1000:  # Limit to avoid too many requests
-                response = requests.get(data['next'], timeout=30)
+            while "next" in data and data["next"] and len(tag_data) < 1000:  # Limit to avoid too many requests
+                response = requests.get(data["next"], timeout=30)
                 response.raise_for_status()
                 data = response.json()
 
-                for tag in data.get('results', []):
+                for tag in data.get("results", []):
                     tag_data.append(self._create_tag_data_dict(tag, architecture))
 
             # Sort based on sort_by parameter
@@ -233,7 +235,14 @@ class ContainerTagFinder:
         else:
             return tag_data
 
-    def get_registry_tags(self, registry_url: str, image_name: str, limit: int = 10, architecture: str = "linux/amd64", sort_by: str = "version") -> list[dict[str, Any]]:
+    def get_registry_tags(
+        self,
+        registry_url: str,
+        image_name: str,
+        limit: int = 10,
+        architecture: str = "linux/amd64",
+        sort_by: str = "version",
+    ) -> list[dict[str, Any]]:
         """Query a registry API v2 for image tags and attempt to get creation time.
 
         Args:
@@ -251,7 +260,7 @@ class ContainerTagFinder:
             response = requests.get(url, timeout=30)
             response.raise_for_status()
             data = response.json()
-            tags: list[str] = data.get('tags', [])
+            tags: list[str] = data.get("tags", [])
 
             # For Docker Registry API v2, we need to make additional requests to get manifest and timestamps
             tag_data: list[dict[str, Any]] = []
@@ -259,7 +268,7 @@ class ContainerTagFinder:
                 manifest_url = f"{registry_url}/v2/{image_name}/manifests/{tag}"
                 try:
                     # Try to get the manifest to extract creation time
-                    headers = {'Accept': 'application/vnd.docker.distribution.manifest.v2+json'}
+                    headers = {"Accept": "application/vnd.docker.distribution.manifest.v2+json"}
                     manifest_response = requests.get(manifest_url, headers=headers, timeout=30)
                     manifest_response.raise_for_status()
 
@@ -269,31 +278,25 @@ class ContainerTagFinder:
                     # For multi-arch images, we need to find the digest for the specific architecture
                     digest = None
                     # Try to parse the architecture from the manifest if it's a multi-arch image
-                    if 'manifests' in manifest:
-                        for m in manifest.get('manifests', []):
-                            if m.get('platform', {}).get('architecture') == architecture.split('/')[1] and \
-                               m.get('platform', {}).get('os') == architecture.split('/')[0]:
-                                digest = m.get('digest')
+                    if "manifests" in manifest:
+                        for m in manifest.get("manifests", []):
+                            if (
+                                m.get("platform", {}).get("architecture") == architecture.split("/")[1]
+                                and m.get("platform", {}).get("os") == architecture.split("/")[0]
+                            ):
+                                digest = m.get("digest")
                                 break
                     else:
                         # If it's not a multi-arch manifest, just use the digest directly
-                        digest = manifest_response.headers.get('Docker-Content-Digest')
+                        digest = manifest_response.headers.get("Docker-Content-Digest")
 
                     # Most registry implementations don't expose creation time directly in the API
                     # We'll use the response headers as a rough proxy for recency
-                    last_modified = manifest_response.headers.get('Last-Modified')
-                    tag_data.append({
-                        'name': tag,
-                        'last_updated': last_modified,
-                        'digest': digest
-                    })
+                    last_modified = manifest_response.headers.get("Last-Modified")
+                    tag_data.append({"name": tag, "last_updated": last_modified, "digest": digest})
                 except requests.exceptions.RequestException:
                     # If we can't get detailed info, just use the tag name
-                    tag_data.append({
-                        'name': tag,
-                        'last_updated': None,
-                        'digest': None
-                    })
+                    tag_data.append({"name": tag, "last_updated": None, "digest": None})
 
             # Sort based on sort_by parameter
             self._sort_tags(tag_data, sort_by)
@@ -309,13 +312,13 @@ class ContainerTagFinder:
             return "Unknown"
         try:
             # Parse ISO format
-            dt = datetime.fromisoformat(datetime_str.replace('Z', '+00:00'))
-            return dt.strftime('%Y-%m-%d %H:%M:%S UTC')
+            dt = datetime.fromisoformat(datetime_str.replace("Z", "+00:00"))
+            return dt.strftime("%Y-%m-%d %H:%M:%S UTC")
         except (TypeError, ValueError):
             # Try to parse HTTP date format
             try:
                 dt = parsedate_to_datetime(datetime_str)
-                return dt.strftime('%Y-%m-%d %H:%M:%S UTC')
+                return dt.strftime("%Y-%m-%d %H:%M:%S UTC")
             except Exception:
                 return datetime_str
 
@@ -323,7 +326,7 @@ class ContainerTagFinder:
         """Format size in bytes to human-readable format."""
         if size_bytes is None:
             return "Unknown"
-        for unit in ['B', 'KB', 'MB', 'GB']:
+        for unit in ["B", "KB", "MB", "GB"]:
             if size_bytes < 1024.0:
                 return f"{size_bytes:.2f} {unit}"
             size_bytes /= 1024.0
@@ -344,7 +347,7 @@ class ContainerTagFinder:
         if not target_digest:
             return []
 
-        return [tag for tag in tags if tag.get('digest') == target_digest]
+        return [tag for tag in tags if tag.get("digest") == target_digest]
 
     def _determine_tag_specificity(self, tag: str) -> int:
         """Determine how specific a version tag is, higher is more specific.
@@ -368,8 +371,8 @@ class ContainerTagFinder:
 
         # Skip tags that start with non-digits and aren't version tags
         # Allow common 'v' prefix before digits (e.g., v1.2.3)
-        normalized = tag[1:] if tag.startswith('v') and len(tag) > 1 else tag
-        if not normalized[0].isdigit() and '-' not in normalized:
+        normalized = tag[1:] if tag.startswith("v") and len(tag) > 1 else tag
+        if not normalized[0].isdigit() and "-" not in normalized:
             return -1
         tag = normalized
 
@@ -377,7 +380,7 @@ class ContainerTagFinder:
         score = 0
 
         # Split by common separators
-        parts = tag.replace('-', '.').replace('_', '.').split('.')
+        parts = tag.replace("-", ".").replace("_", ".").split(".")
 
         # Count numeric segments (major.minor.patch get higher scores)
         numeric_parts = []
@@ -401,7 +404,7 @@ class ContainerTagFinder:
         score += len(parts) * 5
 
         # Penalize 'latest' and 'stable' tags
-        if tag.lower() in ['latest', 'stable']:
+        if tag.lower() in ["latest", "stable"]:
             score = -100
 
         return score
@@ -417,11 +420,11 @@ class ContainerTagFinder:
             tuple: A tuple containing (registry_url, image_name, is_docker_hub)
         """
         # Parse the image name to determine if it includes a registry
-        if '/' in image and ('.' in image.split('/')[0] or ':' in image.split('/')[0]):
+        if "/" in image and ("." in image.split("/")[0] or ":" in image.split("/")[0]):
             # This looks like a hostname with a port or domain name
-            parts = image.split('/')
+            parts = image.split("/")
             registry_host = parts[0]
-            image_name = '/'.join(parts[1:])
+            image_name = "/".join(parts[1:])
             registry_url = registry or f"https://{registry_host}"
             return registry_url, image_name, False
         else:
@@ -430,7 +433,7 @@ class ContainerTagFinder:
 
     def _get_output_flags(self, args: argparse.Namespace, suppress_output: bool = False) -> tuple[bool, bool]:
         """Get output flag settings from args."""
-        quiet = args.quiet if hasattr(args, 'quiet') else False
+        quiet = args.quiet if hasattr(args, "quiet") else False
         should_output = not suppress_output and not quiet
         return quiet, should_output
 
@@ -438,7 +441,7 @@ class ContainerTagFinder:
         """Get tags for the image based on the provided arguments."""
         _, should_output = self._get_output_flags(args)
         fetch_limit = limit if limit is not None else args.limit
-        sort_by = getattr(args, 'sort', 'version')  # Default to 'version' if not specified
+        sort_by = getattr(args, "sort", "version")  # Default to 'version' if not specified
 
         registry_url, image_name, is_docker_hub = self._parse_image_reference(args.image, args.registry)
 
@@ -457,19 +460,19 @@ class ContainerTagFinder:
     def list_recent_tags(self, args: argparse.Namespace) -> None:
         """List recent tags for an image."""
         # Get output flags
-        quiet = args.quiet if hasattr(args, 'quiet') else False
+        quiet = args.quiet if hasattr(args, "quiet") else False
 
         # Get tags for the image
         tags, _, _, _ = self.get_image_tags(args)
 
         if tags:
             # Only take up to limit
-            tags = tags[:args.limit]
+            tags = tags[: args.limit]
 
             if quiet:
                 # In quiet mode, just output the tag names, one per line
                 for tag in tags:
-                    print(tag['name'])
+                    print(tag["name"])
             else:
                 # Detailed output
                 print(f"\nMost recent {len(tags)} tags for {args.image} ({args.architecture}):")
@@ -477,9 +480,9 @@ class ContainerTagFinder:
                 print("-" * 95)
 
                 for tag in tags:
-                    updated = self._format_datetime(tag.get('last_updated'))
-                    size = self._format_size(tag.get('size')) if 'size' in tag else 'N/A'
-                    digest = self._format_digest(tag.get('digest'))
+                    updated = self._format_datetime(tag.get("last_updated"))
+                    size = self._format_size(tag.get("size")) if "size" in tag else "N/A"
+                    digest = self._format_digest(tag.get("digest"))
                     print(f"{tag['name']:<30} {updated:<30} {size:<15} {digest:<20}")
         elif not quiet:
             print(f"No tags found for {args.image}")
@@ -503,15 +506,15 @@ class ContainerTagFinder:
             return []
 
         # Find the target tag to get its digest
-        tag_name = args.tag if args.tag else all_tags[0]['name']  # Use first tag if none specified
-        target_tag = next((t for t in all_tags if t['name'] == tag_name), None)
+        tag_name = args.tag if args.tag else all_tags[0]["name"]  # Use first tag if none specified
+        target_tag = next((t for t in all_tags if t["name"] == tag_name), None)
 
         if not target_tag:
             if should_output:
                 print(f"Tag '{tag_name}' not found for {args.image}")
             return []
 
-        target_digest = target_tag.get('digest')
+        target_digest = target_tag.get("digest")
         if not target_digest:
             if should_output:
                 print(f"No digest found for tag '{tag_name}'")
@@ -524,7 +527,7 @@ class ContainerTagFinder:
             if not suppress_output and quiet:
                 # In quiet mode (but not suppressed), output the tag names, one per line
                 for tag in same_hash_tags:
-                    print(tag['name'])
+                    print(tag["name"])
             elif should_output:
                 # Detailed output
                 print(f"\nTags with the same digest as '{tag_name}' ({self._format_digest(target_digest)}) for {args.image}:")
@@ -532,8 +535,8 @@ class ContainerTagFinder:
                 print("-" * 75)
 
                 for tag in same_hash_tags:
-                    updated = self._format_datetime(tag.get('last_updated'))
-                    size = self._format_size(tag.get('size')) if 'size' in tag else 'N/A'
+                    updated = self._format_datetime(tag.get("last_updated"))
+                    size = self._format_size(tag.get("size")) if "size" in tag else "N/A"
                     print(f"{tag['name']:<30} {updated:<30} {size:<15}")
         elif should_output:
             print(f"No tags found with the same digest as '{tag_name}'")
@@ -543,7 +546,7 @@ class ContainerTagFinder:
     def get_most_specific_tag(self, args: argparse.Namespace) -> dict[str, Any] | None:
         """Find the most specific version tag from a set of tags with the same hash."""
         # Store quiet flag to local variable for easier access
-        quiet = args.quiet if hasattr(args, 'quiet') else False
+        quiet = args.quiet if hasattr(args, "quiet") else False
 
         # First, get all tags with the same hash
         # When in quiet mode, suppress output from list_same_hash_tags
@@ -556,7 +559,7 @@ class ContainerTagFinder:
         # Calculate the specificity score for each tag
         tag_scores: list[tuple[dict[str, Any], int]] = []
         for tag in same_hash_tags:
-            score = self._determine_tag_specificity(tag['name'])
+            score = self._determine_tag_specificity(tag["name"])
             tag_scores.append((tag, score))
 
         # Sort by specificity score (highest first)
@@ -567,14 +570,14 @@ class ContainerTagFinder:
 
         if quiet:
             # Only output the final recommended tag
-            print(most_specific['name'])
+            print(most_specific["name"])
         else:
             # Detailed output
             print("\nMost specific tag:")
             print(f"{'TAG':<30} {'SPECIFICITY SCORE':<20} {'LAST UPDATED':<30}")
             print("-" * 80)
 
-            updated = self._format_datetime(most_specific.get('last_updated'))
+            updated = self._format_datetime(most_specific.get("last_updated"))
             print(f"{most_specific['name']:<30} {tag_scores[0][1]:<20} {updated:<30}")
 
             # Show honorable mentions (other high scoring tags)
@@ -582,7 +585,7 @@ class ContainerTagFinder:
                 print("\nOther version tags (sorted by specificity):")
                 for tag, score in tag_scores[1:6]:  # Show at most 5 other tags
                     if score > 0:  # Only show actual version tags
-                        updated = self._format_datetime(tag.get('last_updated'))
+                        updated = self._format_datetime(tag.get("last_updated"))
                         print(f"{tag['name']:<30} {score:<20} {updated:<30}")
 
             print(f"\nRecommended tag to use: {most_specific['name']}")
@@ -591,32 +594,35 @@ class ContainerTagFinder:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description='Operations on container image tags')
-    parser.add_argument('--registry', help='Registry URL (defaults to Docker Hub if not specified)')
-    parser.add_argument('--architecture', default='linux/amd64',
-                        help='Architecture to query for (default: linux/amd64)')
-    parser.add_argument('--quiet', action='store_true', help='Only output final results, no status or progress messages')
+    parser = argparse.ArgumentParser(description="Operations on container image tags")
+    parser.add_argument("--registry", help="Registry URL (defaults to Docker Hub if not specified)")
+    parser.add_argument("--architecture", default="linux/amd64", help="Architecture to query for (default: linux/amd64)")
+    parser.add_argument("--quiet", action="store_true", help="Only output final results, no status or progress messages")
 
-    subparsers = parser.add_subparsers(dest='command', help='Command to execute', required=True)
+    subparsers = parser.add_subparsers(dest="command", help="Command to execute", required=True)
 
     # Create the parser for the "list-recent" command
-    recent_parser = subparsers.add_parser('list-recent', help='List recent tags for an image')
-    recent_parser.add_argument('image', help='Image name (e.g., nginx or registry.example.com/nginx)')
-    recent_parser.add_argument('--limit', type=int, default=10, help='Maximum number of tags to display (default: 10)')
-    recent_parser.add_argument('--sort', choices=['version', 'updated', 'default'], default='version',
-                               help='Sort order: version (by version number, default), updated (by last_updated timestamp), default (registry order)')
+    recent_parser = subparsers.add_parser("list-recent", help="List recent tags for an image")
+    recent_parser.add_argument("image", help="Image name (e.g., nginx or registry.example.com/nginx)")
+    recent_parser.add_argument("--limit", type=int, default=10, help="Maximum number of tags to display (default: 10)")
+    recent_parser.add_argument(
+        "--sort",
+        choices=["version", "updated", "default"],
+        default="version",
+        help="Sort order: version (by version number, default), updated (by last_updated timestamp), default (registry order)",
+    )
 
     # Create the parser for the "list-same-hash" command
-    hash_parser = subparsers.add_parser('list-same-hash', help='List tags with the same hash')
-    hash_parser.add_argument('image', help='Image name (e.g., nginx or registry.example.com/nginx)')
-    hash_parser.add_argument('--tag', help='Tag to use as reference (default: latest or first tag found)')
-    hash_parser.add_argument('--limit', type=int, default=100, help='Maximum number of tags to search through (default: 100)')
+    hash_parser = subparsers.add_parser("list-same-hash", help="List tags with the same hash")
+    hash_parser.add_argument("image", help="Image name (e.g., nginx or registry.example.com/nginx)")
+    hash_parser.add_argument("--tag", help="Tag to use as reference (default: latest or first tag found)")
+    hash_parser.add_argument("--limit", type=int, default=100, help="Maximum number of tags to search through (default: 100)")
 
     # Create the parser for the "get-most-specific-tag" command
-    specific_parser = subparsers.add_parser('get-most-specific-tag', help='Find the most specific version tag from tags with the same hash')
-    specific_parser.add_argument('image', help='Image name (e.g., nginx or registry.example.com/nginx)')
-    specific_parser.add_argument('--tag', help='Tag to use as reference (default: latest or first tag found)')
-    specific_parser.add_argument('--limit', type=int, default=100, help='Maximum number of tags to search through (default: 100)')
+    specific_parser = subparsers.add_parser("get-most-specific-tag", help="Find the most specific version tag from tags with the same hash")
+    specific_parser.add_argument("image", help="Image name (e.g., nginx or registry.example.com/nginx)")
+    specific_parser.add_argument("--tag", help="Tag to use as reference (default: latest or first tag found)")
+    specific_parser.add_argument("--limit", type=int, default=100, help="Maximum number of tags to search through (default: 100)")
 
     # Initialize the container tag finder
     finder = ContainerTagFinder()
