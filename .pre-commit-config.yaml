@@ -62,7 +62,7 @@ repos:
 
   # Run renovate-config-validator
   - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 42.38.1
+    rev: 43.0.6
     hooks:
       - id: renovate-config-validator
         # TODO Old nodeenv (v0.13.4) does not support "lts" - remove after Ubuntu upgrade
