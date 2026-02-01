@@ -109,7 +109,7 @@ services:
 
   auth:
     container_name: supabase-auth
-    image: supabase/gotrue:v2.185.0
+    image: supabase/gotrue:v2.186.0
     restart: unless-stopped
     healthcheck:
       test:
@@ -220,7 +220,7 @@ services:
   realtime:
     # This container name looks inconsistent but is correct because realtime constructs tenant id by parsing the subdomain
     container_name: realtime-dev.supabase-realtime
-    image: supabase/realtime:v2.71.5
+    image: supabase/realtime:v2.73.5
     restart: unless-stopped
     depends_on:
       db:
@@ -266,7 +266,7 @@ services:
 
   storage:
     container_name: supabase-storage
-    image: supabase/storage-api:v1.33.5
+    image: supabase/storage-api:v1.36.0
     restart: unless-stopped
     volumes:
       - ${DOCKER_VOLUMES}/supabase/storage:/var/lib/storage
@@ -383,7 +383,7 @@ services:
 
   analytics:
     container_name: supabase-analytics
-    image: supabase/logflare:1.30.2
+    image: supabase/logflare:1.30.7
     restart: unless-stopped
     # Uncomment to use Big Query backend for analytics
     # volumes:
@@ -432,7 +432,7 @@ services:
   # Comment out everything below this point if you are using an external Postgres database
   db:
     container_name: supabase-db
-    image: supabase/postgres:15.14.1.073
+    image: supabase/postgres:15.14.1.079
     restart: unless-stopped
     volumes:
       - ./config/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
@@ -491,7 +491,7 @@ services:
 
   vector:
     container_name: supabase-vector
-    image: timberio/vector:0.52.0-alpine
+    image: timberio/vector:0.53.0-alpine
     restart: unless-stopped
     volumes:
       - ./config/logs/vector.yml:/etc/vector/vector.yml:ro
