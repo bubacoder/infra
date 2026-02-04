@@ -44,7 +44,7 @@ repos:
 
   # Ruff is an extremely fast Python linter and code formatter, written in Rust.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.14.14
+    rev: v0.15.0
     hooks:
       # Linter - https://docs.astral.sh/ruff/linter/
       - id: ruff-check
