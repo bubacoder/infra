@@ -68,7 +68,7 @@ class LinkProcessor:
         Returns:
             True if the link target exists
         """
-        link_path = link_url.split("#")[0]
+        link_path = link_url.split("#", maxsplit=1)[0]
 
         if not link_path:
             return True

@@ -438,7 +438,7 @@ def _log_service_result(message: str, success: bool, verbose: bool) -> None:
         for line in message.split("\n"):
             logger.info(f"  {line}")
     else:
-        first_line = message.split("\n")[0]
+        first_line = message.split("\n", maxsplit=1)[0]
         logger.info(f"  {first_line}")
 
 

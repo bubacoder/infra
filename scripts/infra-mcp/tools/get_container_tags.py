@@ -282,7 +282,7 @@ class ContainerTagFinder:
                         for m in manifest.get("manifests", []):
                             if (
                                 m.get("platform", {}).get("architecture") == architecture.split("/")[1]
-                                and m.get("platform", {}).get("os") == architecture.split("/")[0]
+                                and m.get("platform", {}).get("os") == architecture.split("/", maxsplit=1)[0]
                             ):
                                 digest = m.get("digest")
                                 break
@@ -420,7 +420,7 @@ class ContainerTagFinder:
             tuple: A tuple containing (registry_url, image_name, is_docker_hub)
         """
         # Parse the image name to determine if it includes a registry
-        if "/" in image and ("." in image.split("/")[0] or ":" in image.split("/")[0]):
+        if "/" in image and ("." in image.split("/", maxsplit=1)[0] or ":" in image.split("/", maxsplit=1)[0]):
             # This looks like a hostname with a port or domain name
             parts = image.split("/")
             registry_host = parts[0]
