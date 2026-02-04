@@ -20,8 +20,8 @@ readonly USERNAME="buba"
 readonly PASSWORD_HASH='$5$ZZvSaWFZz6GSdet7$spw97QIa9A1KmbWLHS0mqJuyUsRAfKJu4lWglYSaFK7'
 
 # VM params
-readonly VMNAME="nest2"
-readonly VMID=150
+readonly VMNAME="ubuntu-server-test"
+readonly VMID=300
 readonly CPU_CORES=4
 readonly MAX_MEMORY_SIZE=4096 # MB
 readonly MIN_MEMORY_SIZE=1024 # MB (memory ballooning)
