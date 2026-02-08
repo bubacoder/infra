@@ -8,7 +8,7 @@
 name: cyberchef
 services:
   cyberchef:
-    image: mpepping/cyberchef:v10.20.0
+    image: mpepping/cyberchef:v10.21.0
     container_name: cyberchef
     restart: unless-stopped
     networks:
