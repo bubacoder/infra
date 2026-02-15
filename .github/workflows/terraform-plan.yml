@@ -18,9 +18,6 @@ jobs:
     name: Terraform Plan - Azure VM
     runs-on: ubuntu-latest
 
-    # Skip Renovate PRs (already handled by pre-commit)
-    if: "!startsWith(github.head_ref, 'renovate/')"
-
     defaults:
       run:
         working-directory: terraform/azure-vm
