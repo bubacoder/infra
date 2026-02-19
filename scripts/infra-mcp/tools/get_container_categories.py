@@ -4,11 +4,11 @@ import os
 import sys
 from pathlib import Path
 
+# Use relative import for package structure
 try:
-    # Try importing with absolute path first (when imported from server.py)
-    from utils.git import get_git_root
-except ModuleNotFoundError:
-    # If that fails, try relative import (when run as a standalone script)
+    from ..utils.git import get_git_root
+except ImportError:
+    # When run as standalone script, adjust path
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     from utils.git import get_git_root
 
@@ -18,7 +18,7 @@ class ContainerCategoryFinder:
     A class for finding container categories in the docker directory.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initialize the ContainerCategoryFinder.
         """
@@ -74,9 +74,9 @@ class ContainerCategoryFinder:
             raise RuntimeError(f"Error finding container categories: {str(e)}") from None
 
 
-def main():
+def main() -> None:
     """
-    Run the application: read homepage settings and print dashboard groups.
+    Parse CLI args, find container categories from the docker directory, and print each path.
     """
     try:
         finder = ContainerCategoryFinder()

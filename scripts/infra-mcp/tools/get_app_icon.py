@@ -8,6 +8,13 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 
+# Import constants from the shared constants module
+try:
+    from ..utils.constants import DEFAULT_REQUEST_TIMEOUT
+except ImportError:
+    # Fallback for standalone execution
+    DEFAULT_REQUEST_TIMEOUT = 10
+
 
 class AppIconFinder:
     """
@@ -23,13 +30,13 @@ class AppIconFinder:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         }
 
-    def get_app_icon(self, app_name, homepage_url):
+    def get_app_icon(self, app_name: str, homepage_url: str) -> str:
         """
         Main function to get an application icon.
 
         Args:
-            app_name (str): The name of the application.
-            homepage_url (str): The URL of the application's homepage.
+            app_name: The name of the application.
+            homepage_url: The URL of the application's homepage.
 
         Returns:
             str: Either the icon filename (e.g., "github.png") if found in the dashboard-icons set,
@@ -48,7 +55,15 @@ class AppIconFinder:
         # Return default if no favicon found
         return "default"
 
-    def _find_dashboard_icon(self, app_name):
+    def _find_dashboard_icon(self, app_name: str) -> str | None:
+        """Find an icon from the dashboard-icons repository.
+
+        Args:
+            app_name: The name of the application
+
+        Returns:
+            str | None: The icon filename if found, None otherwise
+        """
         normalized_name = app_name.lower().replace(" ", "-")
         icon_name = f"{normalized_name}.png"
         url = f"https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/{icon_name}"
@@ -56,7 +71,7 @@ class AppIconFinder:
             response = requests.head(
                 url,
                 headers=self.headers,
-                timeout=10,
+                timeout=DEFAULT_REQUEST_TIMEOUT,
                 allow_redirects=True,
             )
             if response.ok:
@@ -64,17 +79,79 @@ class AppIconFinder:
             # Some CDNs/origins may disallow HEAD or require GET.
             if response.status_code in (403, 405):
                 # Use GET fallback for servers that disallow HEAD; ensure connection is closed.
-                with requests.get(url, headers=self.headers, timeout=10) as probe:
+                with requests.get(url, headers=self.headers, timeout=DEFAULT_REQUEST_TIMEOUT) as probe:
                     if probe.ok:
                         return icon_name
-                    else:
-                        return None
-            else:
-                return None
         except requests.RequestException:
+            pass
+        return None
+
+    def _parse_html_for_favicon(self, soup: BeautifulSoup, homepage_url: str) -> str | None:
+        """Parse HTML to find favicon link in meta tags.
+
+        Args:
+            soup: BeautifulSoup object containing parsed HTML
+            homepage_url: Base URL for resolving relative links
+
+        Returns:
+            str | None: Absolute favicon URL if found, None otherwise
+        """
+        # Look for link tags with rel="icon" or rel="shortcut icon"
+        icon_links = soup.find_all("link", rel=re.compile(r"(shortcut icon|icon|apple-touch-icon)", re.I))
+        if not icon_links:
             return None
 
-    def _find_favicon_url(self, homepage_url):
+        # Sort by preference: apple-touch-icon > icon > shortcut icon
+        def get_priority(link):
+            rel_attr = link.get("rel", [])
+            if isinstance(rel_attr, str):
+                rel_attr = [rel_attr]
+            rel_lower = " ".join(rel_attr).lower()
+            if "apple-touch-icon" in rel_lower:
+                return 3
+            if "icon" in rel_lower and "shortcut" not in rel_lower:
+                return 2
+            return 1
+
+        icon_links = sorted(icon_links, key=get_priority, reverse=True)
+        for link in icon_links:
+            if "href" in link.attrs:
+                # Make relative URLs absolute
+                return urljoin(homepage_url, link["href"])
+        return None
+
+    def _check_default_favicon(self, homepage_url: str) -> str | None:
+        """Check for favicon.ico at the default location.
+
+        Args:
+            homepage_url: Base URL to check
+
+        Returns:
+            str | None: Absolute URL to favicon.ico if exists, None otherwise
+        """
+        default_favicon = urljoin(homepage_url, "/favicon.ico")
+        try:
+            favicon_response = requests.head(
+                default_favicon,
+                headers=self.headers,
+                timeout=5,
+                allow_redirects=True,
+            )
+            if favicon_response.ok:
+                return default_favicon
+        except requests.RequestException:
+            pass
+        return None
+
+    def _find_favicon_url(self, homepage_url: str) -> str | None:
+        """Find a favicon URL by parsing the homepage.
+
+        Args:
+            homepage_url: The URL of the application's homepage
+
+        Returns:
+            str | None: The favicon URL if found, None otherwise
+        """
         try:
             if not homepage_url:
                 return None
@@ -82,46 +159,22 @@ class AppIconFinder:
             # Make sure URL has a scheme
             homepage_url = homepage_url.strip()
             if not homepage_url.startswith(("http://", "https://")):
-                homepage_url = "https://" + homepage_url
+                homepage_url = f"https://{homepage_url}"
 
             # Fetch the homepage
-            response = requests.get(homepage_url, headers=self.headers, timeout=10)
+            response = requests.get(homepage_url, headers=self.headers, timeout=DEFAULT_REQUEST_TIMEOUT)
             response.raise_for_status()
 
             # Parse the HTML
             soup = BeautifulSoup(response.text, "html.parser")
 
-            # Look for favicon in different ways
-            # 1. Check for link tags with rel="icon" or rel="shortcut icon"
-            icon_links = soup.find_all("link", rel=re.compile(r"(shortcut icon|icon|apple-touch-icon)", re.I))
-            if icon_links:
-                # Sort by preference: apple-touch-icon > icon > shortcut icon
-                def get_priority(link):
-                    rel_attr = link.get("rel", [])
-                    if isinstance(rel_attr, str):
-                        rel_attr = [rel_attr]
-                    rel_lower = " ".join(rel_attr).lower()
-                    if "apple-touch-icon" in rel_lower:
-                        return 3
-                    elif "icon" in rel_lower and "shortcut" not in rel_lower:
-                        return 2
-                    else:
-                        return 1
+            # Try to find favicon in HTML meta tags
+            favicon_url = self._parse_html_for_favicon(soup, homepage_url)
+            if favicon_url:
+                return favicon_url
 
-                icon_links = sorted(icon_links, key=get_priority, reverse=True)
-                for link in icon_links:
-                    if "href" in link.attrs:
-                        # Make relative URLs absolute
-                        favicon_url = urljoin(homepage_url, link["href"])
-                        return favicon_url
-
-            # 2. Check for the default location
-            default_favicon = urljoin(homepage_url, "/favicon.ico")
-            favicon_response = requests.head(default_favicon, headers=self.headers, timeout=5, allow_redirects=True)
-            if favicon_response.ok:
-                return default_favicon
-            else:
-                return None
+            # Check for the default location
+            return self._check_default_favicon(homepage_url)
         except Exception as e:
             print(f"Error finding favicon: {e}", file=sys.stderr)
             return None

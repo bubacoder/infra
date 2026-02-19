@@ -8,6 +8,14 @@ from typing import Any
 
 import requests
 
+# Import constants from the shared constants module
+try:
+    from ..utils.constants import MAX_TAGS_FETCH_LIMIT, REGISTRY_REQUEST_TIMEOUT
+except ImportError:
+    # Fallback for standalone execution
+    REGISTRY_REQUEST_TIMEOUT = 30
+    MAX_TAGS_FETCH_LIMIT = 1000
+
 
 class ContainerTagFinder:
     """
@@ -235,6 +243,57 @@ class ContainerTagFinder:
         else:
             return tag_data
 
+    def _fetch_manifest_for_tag(
+        self,
+        registry_url: str,
+        image_name: str,
+        tag: str,
+        architecture: str,
+    ) -> dict[str, Any]:
+        """Fetch manifest information for a specific tag.
+
+        Args:
+            registry_url: URL of the registry
+            image_name: Name of the image
+            tag: Tag to fetch manifest for
+            architecture: Architecture to filter by (e.g., 'linux/amd64')
+
+        Returns:
+            dict: Tag data with name, last_updated, and digest fields
+        """
+        manifest_url = f"{registry_url}/v2/{image_name}/manifests/{tag}"
+        try:
+            # Try to get the manifest to extract creation time
+            headers = {"Accept": "application/vnd.docker.distribution.manifest.v2+json"}
+            manifest_response = requests.get(manifest_url, headers=headers, timeout=REGISTRY_REQUEST_TIMEOUT)
+            manifest_response.raise_for_status()
+
+            # Get digest from the manifest
+            manifest = manifest_response.json()
+
+            # For multi-arch images, we need to find the digest for the specific architecture
+            digest = None
+            # Try to parse the architecture from the manifest if it's a multi-arch image
+            if "manifests" in manifest:
+                os_part, arch_part = self._parse_arch(architecture)
+                for m in manifest.get("manifests", []):
+                    platform = m.get("platform", {})
+                    if platform.get("architecture") == arch_part and platform.get("os") == os_part:
+                        digest = m.get("digest")
+                        break
+            else:
+                # If it's not a multi-arch manifest, just use the digest directly
+                digest = manifest_response.headers.get("Docker-Content-Digest")
+
+            # Most registry implementations don't expose creation time directly in the API
+            # We'll use the response headers as a rough proxy for recency
+            last_modified = manifest_response.headers.get("Last-Modified")
+        except requests.exceptions.RequestException:
+            # If we can't get detailed info, just use the tag name
+            last_modified = None
+            digest = None
+        return {"name": tag, "last_updated": last_modified, "digest": digest}
+
     def get_registry_tags(
         self,
         registry_url: str,
@@ -257,46 +316,17 @@ class ContainerTagFinder:
         """
         url: str = f"{registry_url}/v2/{image_name}/tags/list"
         try:
-            response = requests.get(url, timeout=30)
+            response = requests.get(url, timeout=REGISTRY_REQUEST_TIMEOUT)
             response.raise_for_status()
             data = response.json()
             tags: list[str] = data.get("tags", [])
 
             # For Docker Registry API v2, we need to make additional requests to get manifest and timestamps
             tag_data: list[dict[str, Any]] = []
-            for tag in tags[:100]:  # Limit the number of additional requests
-                manifest_url = f"{registry_url}/v2/{image_name}/manifests/{tag}"
-                try:
-                    # Try to get the manifest to extract creation time
-                    headers = {"Accept": "application/vnd.docker.distribution.manifest.v2+json"}
-                    manifest_response = requests.get(manifest_url, headers=headers, timeout=30)
-                    manifest_response.raise_for_status()
-
-                    # Get digest from the manifest
-                    manifest = manifest_response.json()
-
-                    # For multi-arch images, we need to find the digest for the specific architecture
-                    digest = None
-                    # Try to parse the architecture from the manifest if it's a multi-arch image
-                    if "manifests" in manifest:
-                        for m in manifest.get("manifests", []):
-                            if (
-                                m.get("platform", {}).get("architecture") == architecture.split("/")[1]
-                                and m.get("platform", {}).get("os") == architecture.split("/", maxsplit=1)[0]
-                            ):
-                                digest = m.get("digest")
-                                break
-                    else:
-                        # If it's not a multi-arch manifest, just use the digest directly
-                        digest = manifest_response.headers.get("Docker-Content-Digest")
-
-                    # Most registry implementations don't expose creation time directly in the API
-                    # We'll use the response headers as a rough proxy for recency
-                    last_modified = manifest_response.headers.get("Last-Modified")
-                    tag_data.append({"name": tag, "last_updated": last_modified, "digest": digest})
-                except requests.exceptions.RequestException:
-                    # If we can't get detailed info, just use the tag name
-                    tag_data.append({"name": tag, "last_updated": None, "digest": None})
+            # Limit the number of additional requests
+            for tag in tags[:100]:
+                tag_info = self._fetch_manifest_for_tag(registry_url, image_name, tag, architecture)
+                tag_data.append(tag_info)
 
             # Sort based on sort_by parameter
             self._sort_tags(tag_data, sort_by)

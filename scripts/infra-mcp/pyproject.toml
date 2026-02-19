@@ -1,8 +1,10 @@
 [project]
 name = "infra-mcp"
 version = "0.1.0"
-description = "MCP server for task runner integration"
+description = "MCP server for task runner integration, container operations, and infrastructure management"
+readme = "README.md"
 requires-python = ">=3.13"
+license = { text = "MIT" }
 dependencies = [
     "fastmcp>=2.10.0,<3",
     "requests>=2.32.4,<3",

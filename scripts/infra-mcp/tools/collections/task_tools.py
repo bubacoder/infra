@@ -8,15 +8,23 @@ import re
 import shutil
 import subprocess
 from collections.abc import Callable
+from pathlib import Path
 
 from fastmcp import FastMCP
 from fastmcp.tools import Tool
+
+# Import constants from the shared constants module
+try:
+    from ...utils.constants import TASK_COMMAND_TIMEOUT
+except ImportError:
+    # Fallback for standalone execution
+    TASK_COMMAND_TIMEOUT = 600
 
 # Configure logging
 logger = logging.getLogger("infra-mcp")
 
 
-def get_task_list(repository_root_path: str) -> list[dict[str, str]]:
+def get_task_list(repository_root_path: str | Path) -> list[dict[str, str]]:
     """
     Get the list of available tasks by running 'task --list-all'.
 
@@ -33,10 +41,11 @@ def get_task_list(repository_root_path: str) -> list[dict[str, str]]:
         return []
     try:
         result = subprocess.run(  # noqa: S603
-            [task_bin, "--list-all", "--dir", repository_root_path],
+            [task_bin, "--list-all", "--dir", str(repository_root_path)],
             capture_output=True,
             text=True,
             check=True,
+            timeout=TASK_COMMAND_TIMEOUT,
         )
     except subprocess.CalledProcessError:
         logger.exception("Error getting task list")
@@ -58,7 +67,7 @@ def get_task_list(repository_root_path: str) -> list[dict[str, str]]:
         return tasks
 
 
-def execute_task(task_name: str, repository_root_path: str) -> str:
+def execute_task(task_name: str, repository_root_path: str | Path) -> str:
     """
     Execute a task command and return the output.
 
@@ -76,17 +85,18 @@ def execute_task(task_name: str, repository_root_path: str) -> str:
         return f"Error executing task {task_name}: 'task' binary not found"
     try:
         return subprocess.run(  # noqa: S603
-            [task_bin, task_name, "--dir", repository_root_path],
+            [task_bin, task_name, "--dir", str(repository_root_path)],
             capture_output=True,
             text=True,
             check=True,
+            timeout=TASK_COMMAND_TIMEOUT,
         ).stdout.strip()
     except subprocess.CalledProcessError as e:
         logger.exception(f"Error executing task {task_name}")
         return f"Error executing task {task_name}: {e.stderr}"
 
 
-def create_task_function(task_name: str, repository_root_path: str) -> Callable[[], str]:
+def create_task_function(task_name: str, repository_root_path: str | Path) -> Callable[[], str]:
     """
     Create a function that executes a specific task.
 
@@ -104,7 +114,7 @@ def create_task_function(task_name: str, repository_root_path: str) -> Callable[
     return task_fn
 
 
-def add_task_tools(mcp_server: FastMCP, repository_root_path: str) -> None:
+def add_task_tools(mcp_server: FastMCP, repository_root_path: str | Path) -> None:
     """
     Get list of tasks, then create and add tools to MCP server for each task.
 
@@ -116,7 +126,7 @@ def add_task_tools(mcp_server: FastMCP, repository_root_path: str) -> None:
 
     for task_info in tasks:
         task_name = task_info["name"]
-        tool_name = task_name.replace(":", "--")
+        tool_name = task_name.replace(":", "-")
         description = task_info["description"]
         task_fn = create_task_function(task_name, repository_root_path)
 

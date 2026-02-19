@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 
-import os
 import sys
 from pathlib import Path
 
 import yaml
 
+# Use relative import for package structure
 try:
-    # Try importing with absolute path first (when imported from server.py)
-    from utils.git import get_git_root
-except ModuleNotFoundError:
-    # If that fails, try relative import (when run as a standalone script)
+    from ..utils.git import get_git_root
+except ImportError:
+    # When run as standalone script, adjust path
+    import os
+
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     from utils.git import get_git_root
 
@@ -20,7 +21,7 @@ class DashboardGroupFinder:
     A class for finding dashboard groups from homepage settings.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initialize the DashboardGroupFinder.
         """
@@ -32,10 +33,10 @@ class DashboardGroupFinder:
         Get a list of dashboard groups from the homepage settings.
 
         Args:
-            settings_file (Optional[Path]): Path to the settings file. If None, uses default.
+            settings_file: Path to the settings file. If None, uses default.
 
         Returns:
-            List[str]: A list of dashboard group names.
+            A list of dashboard group names.
         """
         if settings_file is None:
             settings_file = self.settings_file
@@ -52,7 +53,7 @@ class DashboardGroupFinder:
         return sorted(layout.keys())
 
 
-def main():
+def main() -> None:
     """
     Run the application: read homepage settings and print dashboard groups.
     """
