@@ -9,15 +9,23 @@ import re
 import subprocess
 import sys
 from collections.abc import Callable
+from pathlib import Path
 
 from fastmcp import FastMCP
 from fastmcp.tools import Tool
+
+# Import constants from the shared constants module
+try:
+    from ...utils.constants import TASK_COMMAND_TIMEOUT
+except ImportError:
+    # Fallback for standalone execution
+    TASK_COMMAND_TIMEOUT = 600
 
 # Configure logging
 logger = logging.getLogger("infra-mcp")
 
 
-def get_container_operations():
+def get_container_operations() -> list[dict[str, str]]:
     """
     Get the list of valid container operations
 
@@ -34,7 +42,7 @@ def get_container_operations():
     ]
 
 
-def execute_container_operation(operation: str, service_name: str, repository_root_path: str) -> str:
+def execute_container_operation(operation: str, service_name: str, repository_root_path: str | Path) -> str:
     """
     Execute one operation on the specified service and return the output
 
@@ -55,9 +63,10 @@ def execute_container_operation(operation: str, service_name: str, repository_ro
     if not re.match(r"^[a-zA-Z0-9_/-]+$", service_name):
         return f"Invalid service name format: {service_name}"
 
+    repository_root_str = str(repository_root_path)
     cmd = [
         sys.executable,  # Use the current Python interpreter
-        os.path.join(repository_root_path, "scripts", "labctl.py"),
+        os.path.join(repository_root_str, "scripts", "labctl.py"),
         "service",
         operation,
         service_name,
@@ -65,7 +74,11 @@ def execute_container_operation(operation: str, service_name: str, repository_ro
 
     try:
         result = subprocess.run(  # noqa: S603
-            cmd, capture_output=True, text=True, check=True
+            cmd,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=TASK_COMMAND_TIMEOUT,
         )
     except subprocess.CalledProcessError as e:
         return f"Error running operation: {e.stderr or str(e)}"
@@ -73,7 +86,7 @@ def execute_container_operation(operation: str, service_name: str, repository_ro
         return result.stdout or "(No output)"
 
 
-def create_operation_function(op: str, repository_root_path: str) -> Callable[[str], str]:
+def create_operation_function(op: str, repository_root_path: str | Path) -> Callable[[str], str]:
     """
     Create a function that executes a specific container service operation.
 
@@ -100,7 +113,7 @@ def create_operation_function(op: str, repository_root_path: str) -> Callable[[s
     return operation_fn
 
 
-def add_container_operation_tools(mcp_server: FastMCP, repository_root_path: str) -> None:
+def add_container_operation_tools(mcp_server: FastMCP, repository_root_path: str | Path) -> None:
     """
     Create and add tools to MCP server for container service operations.
 

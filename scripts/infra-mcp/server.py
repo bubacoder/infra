@@ -8,6 +8,7 @@ import contextlib
 import io
 import logging
 import os
+import signal
 import sys
 
 from fastmcp import FastMCP
@@ -20,11 +21,17 @@ from tools.get_app_icon import AppIconFinder
 from tools.get_container_categories import ContainerCategoryFinder
 from tools.get_container_tags import ContainerTagFinder
 from tools.get_dashboard_groups import DashboardGroupFinder
+from utils.constants import DEFAULT_CONTAINER_ARCHITECTURE, DEFAULT_SAME_HASH_LIMIT, DEFAULT_TAG_LIMIT
 from utils.git import get_git_root
+from utils.models import ContainerTagFinderArgs
 from utils.security import validate_url_for_ssrf
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+# Configure logging from environment
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 logger = logging.getLogger("infra-mcp")
 logger.info("Starting Infra MCP server")
 
@@ -36,6 +43,7 @@ mcp = FastMCP(
 
 @mcp.custom_route("/healthz", methods=["GET"])
 async def health_check(_request: Request) -> PlainTextResponse:
+    """Health check endpoint for monitoring server status."""
     return PlainTextResponse("OK")
 
 
@@ -96,7 +104,7 @@ def get_container_categories() -> list[str]:
 
 
 @mcp.tool(name="list-container-tags")
-def list_container_tags(image: str, limit: int = 10) -> list[str]:
+def list_container_tags(image: str, limit: int = DEFAULT_TAG_LIMIT) -> list[str]:
     """
     List recent tags for a container image.
 
@@ -109,26 +117,23 @@ def list_container_tags(image: str, limit: int = 10) -> list[str]:
     """
     tag_finder = ContainerTagFinder()
     try:
-        # Create a namespace to simulate command line args
-        class Args:
-            pass
-
-        args = Args()
-        args.image = image
-        args.architecture = "linux/amd64"
-        args.limit = limit
-        args.quiet = True
-        args.registry = None
+        args = ContainerTagFinderArgs(
+            image=image,
+            architecture=DEFAULT_CONTAINER_ARCHITECTURE,
+            limit=limit,
+            quiet=True,
+            registry=None,
+        )
 
         tags, _, _, _ = tag_finder.get_image_tags(args)
         return [tag["name"] for tag in tags[:limit]] if tags else []
     except Exception:
-        logger.exception("list-container-tags failed for image=%r", image)
+        logger.exception(f"list-container-tags failed for image={image!r}")
         return []
 
 
 @mcp.tool(name="list-same-hash-container-tags")
-def list_same_hash_container_tags(image: str, tag: str | None = None, limit: int = 100) -> list[str]:
+def list_same_hash_container_tags(image: str, tag: str | None = None, limit: int = DEFAULT_SAME_HASH_LIMIT) -> list[str]:
     """
     List tags that have the same hash as a specified container tag.
 
@@ -142,28 +147,25 @@ def list_same_hash_container_tags(image: str, tag: str | None = None, limit: int
     """
     tag_finder = ContainerTagFinder()
     try:
-        # Create a namespace to simulate command line args
-        class Args:
-            pass
-
-        args = Args()
-        args.image = image
-        args.tag = tag
-        args.architecture = "linux/amd64"
-        args.limit = limit
-        args.quiet = True
-        args.registry = None
+        args = ContainerTagFinderArgs(
+            image=image,
+            tag=tag,
+            architecture=DEFAULT_CONTAINER_ARCHITECTURE,
+            limit=limit,
+            quiet=True,
+            registry=None,
+        )
 
         # Get same hash tags but don't output to stdout
         same_hash_tags = tag_finder.list_same_hash_tags(args, suppress_output=True)
         return [tag["name"] for tag in same_hash_tags] if same_hash_tags else []
     except Exception:
-        logger.exception("list-same-hash-container-tags failed for image=%r tag=%r", image, tag)
+        logger.exception(f"list-same-hash-container-tags failed for image={image!r} tag={tag!r}")
         return []
 
 
 @mcp.tool(name="get-most-specific-container-tag")
-def get_most_specific_container_tag(image: str, tag: str | None = None, limit: int = 100) -> str:
+def get_most_specific_container_tag(image: str, tag: str | None = None, limit: int = DEFAULT_SAME_HASH_LIMIT) -> str:
     """
     Find the most specific container version tag from tags with the same hash.
 
@@ -177,34 +179,48 @@ def get_most_specific_container_tag(image: str, tag: str | None = None, limit: i
     """
     tag_finder = ContainerTagFinder()
     try:
-        # Create a namespace to simulate command line args
-        class Args:
-            pass
-
-        args = Args()
-        args.image = image
-        args.tag = tag
-        args.architecture = "linux/amd64"
-        args.limit = limit
-        args.quiet = True
-        args.registry = None
+        args = ContainerTagFinderArgs(
+            image=image,
+            tag=tag,
+            architecture=DEFAULT_CONTAINER_ARCHITECTURE,
+            limit=limit,
+            quiet=True,
+            registry=None,
+        )
 
         # Suppress any prints from the finder
         with contextlib.redirect_stdout(io.StringIO()):
             most_specific = tag_finder.get_most_specific_tag(args)
             same_hash = tag_finder.list_same_hash_tags(args, suppress_output=True)
+    except Exception:
+        logger.exception(f"get-most-specific-container-tag failed for image={image!r} tag={tag!r}")
+        return tag or "latest"
+    else:
         if most_specific:
             return most_specific["name"]
-        elif same_hash:
+        if same_hash:
             return same_hash[0]["name"]
-        else:
-            return tag or "latest"
-    except Exception:
-        logger.exception("get-most-specific-container-tag failed for image=%r tag=%r", image, tag)
         return tag or "latest"
 
 
 # --- Configure the FastMCP server ---
+
+
+def handle_shutdown(signum: int, _frame: object) -> None:
+    """Handle shutdown signals gracefully.
+
+    Args:
+        signum: Signal number received
+        _frame: Current stack frame (unused)
+    """
+    signal_name = signal.Signals(signum).name
+    logger.info(f"Received {signal_name}, shutting down gracefully...")
+    sys.exit(0)
+
+
+# Register signal handlers for graceful shutdown
+signal.signal(signal.SIGINT, handle_shutdown)
+signal.signal(signal.SIGTERM, handle_shutdown)
 
 try:
     # Get the repository root path
@@ -227,12 +243,22 @@ try:
         add_container_operation_tools(mcp, repository_root_path)
     else:
         logger.info("Container operation tools disabled by environment variable")
-except Exception:  # noqa: BLE001
-    logger.exception("Failed to initialize server")
+except FileNotFoundError:
+    logger.exception("Repository not found")
+    sys.exit(1)
+except RuntimeError:
+    logger.exception("Git operation failed")
+    sys.exit(1)
+except ImportError:
+    logger.exception("Failed to import required module")
+    sys.exit(1)
+except Exception:
+    logger.exception("Unexpected error during server initialization")
     sys.exit(1)
 
 
-def main():
+def main() -> None:
+    """Start the MCP server."""
     # Start the server
     mcp.run()
     # Or start with parameters:
