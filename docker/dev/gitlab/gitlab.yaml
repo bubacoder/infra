@@ -32,7 +32,7 @@
 name: gitlab
 services:
   gitlab:
-    image: gitlab/gitlab-ce:18.8.3-ce.0
+    image: gitlab/gitlab-ce:18.9.0-ce.0
     container_name: gitlab
     restart: unless-stopped
     # Do not use 'gitlab.${MYDOMAIN}', because the runner would use it and skip Traefik, resulting certificate error
@@ -68,7 +68,7 @@ services:
       homepage.description: "GitLab Community Edition"
 
   gitlab-runner:
-    image: gitlab/gitlab-runner:v18.8.0
+    image: gitlab/gitlab-runner:v18.9.0
     container_name: gitlab-runner
     restart: unless-stopped
     environment:
