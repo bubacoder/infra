@@ -20,24 +20,19 @@ model_list:
   #  Create API key: https://platform.claude.com/settings/keys
   #  Buy credits: https://platform.claude.com/settings/billing
 
-  - model_name: claude-sonnet-4-0                # RECEIVED MODEL NAME
+  - model_name: claude-sonnet-4-6                # RECEIVED MODEL NAME
     litellm_params:                              # All params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
-      model: anthropic/claude-sonnet-4-0         # MODEL NAME sent to `litellm.completion()`
+      model: anthropic/claude-sonnet-4-6         # MODEL NAME sent to `litellm.completion()`
       api_key: "os.environ/ANTHROPIC_API_KEY"    # Does os.getenv("ANTHROPIC_API_KEY")
 
-  - model_name: claude-sonnet-4-5
+  - model_name: claude-opus-4-6
     litellm_params:
-      model: anthropic/claude-sonnet-4-5
-      api_key: "os.environ/ANTHROPIC_API_KEY"
-
-  - model_name: claude-opus-4-5
-    litellm_params:
-      model: anthropic/claude-opus-4-5
+      model: anthropic/claude-opus-4-6
       api_key: "os.environ/ANTHROPIC_API_KEY"
 
   - model_name: claude-haiku-4-5
     litellm_params:
-      model: anthropic/claude-haiku-4-5
+      model: anthropic/claude-haiku-4-5-20251001
       api_key: "os.environ/ANTHROPIC_API_KEY"
 
   # --- Via OpenAI
@@ -78,16 +73,16 @@ model_list:
   #  Create API Key: https://openrouter.ai/settings/keys
   #  Buy credits: https://openrouter.ai/settings/credits
 
-  # https://openrouter.ai/openai/openai/gpt-4o
-  - model_name: gpt-4o
+  # https://openrouter.ai/openai/gpt-4.1
+  - model_name: gpt-4.1
     litellm_params:
-      model: openrouter/openai/gpt-4o
+      model: openrouter/openai/gpt-4.1
       api_key: "os.environ/OPENROUTER_API_KEY"
 
-  # https://openrouter.ai/openai/gpt-4o-mini
-  - model_name: gpt-4o-mini
+  # https://openrouter.ai/openai/gpt-4.1-mini
+  - model_name: gpt-4.1-mini
     litellm_params:
-      model: openrouter/openai/gpt-4o-mini
+      model: openrouter/openai/gpt-4.1-mini
       api_key: "os.environ/OPENROUTER_API_KEY"
 
   # https://openrouter.ai/openai/o4-mini-high
@@ -96,16 +91,16 @@ model_list:
       model: openrouter/openai/o4-mini-high
       api_key: "os.environ/OPENROUTER_API_KEY"
 
-  # https://openrouter.ai/meta-llama/llama-3.3-70b-instruct
-  - model_name: llama-3.3-70b-instruct
+  # https://openrouter.ai/meta-llama/llama-4-maverick
+  - model_name: llama-4-maverick
     litellm_params:
-      model: openrouter/meta-llama/llama-3.3-70b-instruct
+      model: openrouter/meta-llama/llama-4-maverick
       api_key: "os.environ/OPENROUTER_API_KEY"
 
-  # https://openrouter.ai/deepseek/deepseek-r1-distill-llama-70b
-  - model_name: deepseek-r1-distill-llama-70b
+  # https://openrouter.ai/deepseek/deepseek-v3.2
+  - model_name: deepseek-v3.2
     litellm_params:
-      model: openrouter/deepseek/deepseek-r1-distill-llama-70b
+      model: openrouter/deepseek/deepseek-v3.2
       api_key: "os.environ/OPENROUTER_API_KEY"
 
   # https://openrouter.ai/deepseek/deepseek-r1
@@ -141,8 +136,8 @@ model_list:
 router_settings:
   fallbacks:
     - gpt-5:
-        - gpt-4o
+        - gpt-4.1
     - gpt-5-mini:
-        - gpt-4o-mini
+        - gpt-4.1-mini
     - ollama-mac-mistral:
         - ollama-local-phi
