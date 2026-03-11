@@ -37,9 +37,10 @@ cameras:
       enabled: true
     record:
       enabled: true
-      retain:
-        days: 14     # Keep motion recordings for 14 days
-        mode: motion # Only keep segments with motion
+      continuous:
+        days: 0
+      motion:
+        days: 14
     motion:
       mask: 0.343,0.071,0.647,0.071,0.647,0.022,0.343,0.022
 
@@ -64,4 +65,4 @@ model:
 detect:
   enabled: true
 
-version: 0.16-0
+version: 0.17-0
