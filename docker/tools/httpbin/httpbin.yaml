@@ -1,0 +1,32 @@
+# go-httpbin is a Go rewrite of the classic httpbin service, offering an HTTP Request & Response
+# testing API for developers. It echoes request details, simulates status codes, delays, redirects,
+# auth challenges, and more — useful for debugging HTTP clients and tooling.
+#
+# Links:
+# - Home: https://httpbin.org/
+# - Source: https://github.com/mccutchen/go-httpbin
+# - Image: https://github.com/mccutchen/go-httpbin/pkgs/container/go-httpbin
+#
+# TODO: Set ALLOWED_REDIRECT_DOMAINS env var to restrict /redirect-to targets if needed
+---
+name: httpbin
+services:
+  httpbin:
+    image: ghcr.io/mccutchen/go-httpbin:2.21.0
+    container_name: httpbin
+    restart: unless-stopped
+    networks:
+      - proxy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.httpbin.middlewares: localaccess@file
+      traefik.http.services.httpbin.loadbalancer.server.port: 8080
+      homepage.group: Development
+      homepage.name: httpbin
+      homepage.icon: https://httpbin.org/static/favicon.ico
+      homepage.href: https://httpbin.${MYDOMAIN}/
+      homepage.description: HTTP request & response testing service
+
+networks:
+  proxy:
+    external: true
