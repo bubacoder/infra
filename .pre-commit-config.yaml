@@ -31,14 +31,14 @@ repos:
   # Gitleaks is a SAST tool for detecting and preventing hardcoded secrets like passwords, api keys, and tokens in git repos.
   # Gitleaks is an easy-to-use, all-in-one solution for detecting secrets, past or present, in your code.
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.30.1
+    rev: v8.30.0
     hooks:
       - id: gitleaks
 
   # ShellCheck, a static analysis tool for shell scripts - https://www.shellcheck.net/
   # Ignoring errors: https://www.shellcheck.net/wiki/Ignore, `.shellcheckrc`
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.10.0.1
+    rev: v0.11.0.1
     hooks:
       - id: shellcheck
 
@@ -59,12 +59,19 @@ repos:
       - id: hadolint-docker
         exclude: "\\.dockerignore$"
 
+  # actionlint is a static analysis tool for GitHub Actions workflow files.
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.6
+    hooks:
+      - id: actionlint
+        files: \.github/workflows/
+
   # Run renovate-config-validator
   - repo: https://github.com/renovatebot/pre-commit-hooks
-    rev: 43.0.6
+    rev: 43.110.8
     hooks:
       - id: renovate-config-validator
-        # TODO Old nodeenv (v0.13.4) does not support "lts" - remove after Ubuntu upgrade
+        # TODO Old nodeenv (v0.13.4) does not support "lts" - remove after Ubuntu upgrade, which contains at least v1.6.0
         language_version: "22.17.1"
 
   # pre-commit git hooks to take care of Terraform configurations
