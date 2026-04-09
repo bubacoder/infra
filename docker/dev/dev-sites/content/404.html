@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+        }
+        h1 {
+            font-size: 8rem;
+            font-weight: 700;
+            color: #e94560;
+            text-shadow: 0 0 40px rgba(233, 69, 96, 0.5);
+            margin-bottom: 1rem;
+        }
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: #a0a0a0;
+            margin-bottom: 2rem;
+        }
+        p {
+            color: #888;
+            font-size: 1rem;
+        }
+        .domain {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #4fc3f7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>404</h1>
+        <h2>Page Not Found</h2>
+        <p>The subdomain <span class="domain" id="subdomain"></span> does not exist.</p>
+        <p>Create a folder in <code>/content/</code> to serve content for this subdomain.</p>
+    </div>
+    <script>
+      const parts = window.location.hostname.split('.');
+      const devIdx = parts.indexOf('dev');
+      if (devIdx > 0) {
+        document.getElementById('subdomain').textContent = parts.slice(0, devIdx).join('.');
+      }
+    </script>
+</body>
+</html>
