@@ -60,7 +60,7 @@ jobs:
         run: |
           mkdir -p public
           docker load --input /tmp/hugo-site.tar
-          docker run --user $(id -u):$(id -g) --rm -v $(pwd)/public:/public docs:latest cp -r /site /public
+          docker run --user "$(id -u):$(id -g)" --rm -v "$(pwd)/public:/public" docs:latest cp -r /site /public
 
       - name: Validate site build
         run: |

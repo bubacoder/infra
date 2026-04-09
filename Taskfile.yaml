@@ -68,7 +68,7 @@ tasks:
       - task: build
       - task: git-rebase-fixup
 
-  pre-commit-update:
+  update-pre-commit:
     desc: Update pre-commit repositories
     cmds:
       - pre-commit autoupdate
