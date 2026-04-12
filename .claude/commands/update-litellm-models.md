@@ -2,16 +2,18 @@
 description: Update LiteLLM config/config.yaml to use the latest model versions from each provider
 ---
 
-Update the LiteLLM model configuration to use the latest available model IDs, removing outdated versions.
+Update the LiteLLM model configuration to use the latest available model IDs, removing outdated versions. Also update the Ollama pull script and sync LiteLLM's local Ollama entries.
 
-## Config file location
+## Config file locations
 
-Read the current config via:
+Read the current LiteLLM config via:
 ```bash
 docker exec litellm cat /app/config.yaml
 ```
 
-The source file is at `docker/ai/litellm/config/config.yaml`.
+Source files:
+- `docker/ai/litellm/config/config.yaml` — LiteLLM model list
+- `scripts/get-offline-data-ollama.sh` — Ollama model pull script
 
 ## Step 1: Look up latest models per provider (run searches in parallel)
 
@@ -23,13 +25,19 @@ Search the web for the current model IDs for each provider present in the config
 - **OpenRouter (Meta Llama)**: Search "Meta Llama latest models openrouter model IDs"
 - **OpenRouter (DeepSeek)**: Search "DeepSeek latest models openrouter model IDs"
 - **OpenRouter (xAI Grok)**: Search "xAI Grok latest models openrouter model IDs"
+- **Ollama local (≤3B)**: Search "best 3B LLM model Ollama <year> benchmark" → check https://ollama.com/library
+- **Ollama local (≤8B)**: Search "best 8B LLM model Ollama <year> benchmark" → check https://ollama.com/library
 
 For each provider, identify:
 1. The **latest stable** model ID (not preview/experimental unless that's the only option)
 2. Whether the currently configured model has been **superseded** by a newer release
 3. The **exact API model ID string** to use in LiteLLM params
 
+For Ollama local models, pick the **best-performing model** in each size class based on current benchmarks (HumanEval, MMLU, etc.), not just the newest release date.
+
 ## Step 2: Determine what to change
+
+### LiteLLM cloud models
 
 For each model in the config, decide:
 - **Update**: A newer stable version exists → update the `model_name` key and `litellm_params.model` value
@@ -37,24 +45,46 @@ For each model in the config, decide:
 - **Remove**: Superseded by a newer model already listed in the same config (avoid duplicates)
 
 Preserve without changes:
-- Local Ollama models (`ollama_chat/...`) — these are managed separately
 - The overall YAML structure, comments, and provider groupings
 - `api_key` and `api_base` references
 
-## Step 3: Update the file
+### Ollama local models (`scripts/get-offline-data-ollama.sh`)
 
-Write the updated config using:
+The script must always include exactly:
+- **One model ≤3B** — best benchmark performer in this size class (e.g. `phi4-mini`)
+- **One model ≤8B** — best benchmark performer in this size class (e.g. `qwen3:8b`)
+- **Embedding models** — keep as-is unless a clearly better alternative exists
+
+Update both the pull tags and the inline comments with model size.
+
+### LiteLLM Ollama entries sync
+
+After updating `get-offline-data-ollama.sh`, update the `ollama-local-*` entries in `config.yaml` to match:
+- `ollama_chat/<model>` must reflect the exact tag used in the pull script
+- Update the comment line above each entry (e.g. `# Local model - Phi 4 Mini (3.8B)`)
+- Do **not** change `api_base` or `api_key` references
+
+## Step 3: Update the files
+
+Write the updated LiteLLM config using:
 ```bash
 tee "$(git rev-parse --show-toplevel)/docker/ai/litellm/config/config.yaml" > /dev/null << 'EOF'
 <updated content>
 EOF
 ```
 
-Also update `router_settings.fallbacks` to reflect any renamed models.
+Write the updated Ollama script using:
+```bash
+tee "$(git rev-parse --show-toplevel)/scripts/get-offline-data-ollama.sh" > /dev/null << 'EOF'
+<updated content>
+EOF
+```
+
+Also update `router_settings.fallbacks` in `config.yaml` to reflect any renamed models.
 
 ## Step 4: Verify
 
-Confirm the file was written correctly:
+Confirm the LiteLLM config was written correctly:
 ```bash
 docker exec litellm cat /app/config.yaml
 ```
