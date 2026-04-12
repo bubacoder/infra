@@ -20,8 +20,8 @@ ollama_pull() {
 }
 
 # Large Language Models - https://ollama.com/search
-ollama_pull llama3.2:latest
-ollama_pull qwen2.5-coder:7b
+ollama_pull phi4-mini    # 3.8B - best-in-class sub-4B; 128K ctx
+ollama_pull qwen3:8b     # 8B   - best-in-class 7-8B; hybrid thinking, top HumanEval
 
 # Embedding Models - https://ollama.com/search?c=embedding
 ollama_pull nomic-embed-text
