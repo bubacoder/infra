@@ -15,6 +15,9 @@ includes:
   azure-vm:
     taskfile: ./terraform/azure-vm/Taskfile.yaml
     dir: ./terraform/azure-vm
+  aws-vm:
+    taskfile: ./terraform/aws-vm/Taskfile.yaml
+    dir: ./terraform/aws-vm
 
 tasks:
   default:

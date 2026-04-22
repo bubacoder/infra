@@ -1,0 +1,154 @@
+version: '3'
+
+vars:
+  TFBIN: terraform # Select "terraform" or "tofu"
+  CONFIG_DIR: ../../config/terraform/aws-vm
+  TFPLAN: '{{.CONFIG_DIR}}/tfplan'
+  VAR_FILE: '{{.CONFIG_DIR}}/infra.tfvars'
+  VM_KEYFILE: ~/.ssh/id_rsa_aws_vm
+  VM_ADMIN_USER: ubuntu
+
+env:
+  TF_IN_AUTOMATION: 1
+
+tasks:
+  clean:
+    desc: Clean Terraform files and plans
+    cmds:
+      - find . -type d -name '.terraform' -exec rm -rf {} +
+      - rm -f {{.TFPLAN}}
+
+  docs:
+    desc: Update Terraform module documentation
+    cmds:
+      - echo 'Updating Terraform module documentation'
+      - find . -name 'README.md' -not -path '*/.terragrunt-cache/*' -execdir terraform-docs markdown table --output-file README.md --output-mode inject . \;
+
+  check:
+    desc: Validate Terraform configuration and run security checks
+    cmds:
+      - '{{.TFBIN}} init -backend=false'
+      - '{{.TFBIN}} validate'
+      - tfsec
+
+  migrate-state:
+    desc: Migrate Terraform state from local to S3 remote backend
+    preconditions:
+      - sh: aws sts get-caller-identity
+        msg: "Not authenticated with AWS. Configure credentials first (aws configure / AWS_PROFILE / etc.)"
+      - sh: "[ -f '{{.CONFIG_DIR}}/terraform.tfstate' ]"
+        msg: "Local state file not found at {{.CONFIG_DIR}}/terraform.tfstate"
+    cmds:
+      - echo "Backing up current local state..."
+      - cp {{.CONFIG_DIR}}/terraform.tfstate {{.CONFIG_DIR}}/terraform.tfstate.backup-$(date +%Y%m%d-%H%M%S)
+      - echo "Ensure backend.tf is uncommented with your S3 bucket name, then run:"
+      - echo "  {{.TFBIN}} init -migrate-state"
+
+  plan:
+    desc: Create Terraform plan
+    vars:
+      OWN_PUBLIC_IP:
+        sh: curl -s https://ipinfo.io/ip
+      GIT_CREDENTIALS:
+        sh: cat ~/.git-credentials 2>/dev/null | head -n 1 || true
+      REPO_URL:
+        sh: git config --get remote.origin.url
+    env:
+      TF_VAR_admin_source_address: "{{.OWN_PUBLIC_IP}}"
+      TF_VAR_git_credentials: "{{.GIT_CREDENTIALS}}"
+      TF_VAR_repo_url: "{{.REPO_URL}}"
+    cmds:
+      - mkdir -p {{.CONFIG_DIR}}
+      - '{{.TFBIN}} init'
+      - echo "{{.TFBIN}} plan..."
+      - '{{.TFBIN}} plan -var-file="{{.VAR_FILE}}" -out="{{.TFPLAN}}"'
+
+  apply:
+    desc: Apply Terraform plan and configure SSH key
+    deps: [plan]
+    cmds:
+      - echo "{{.TFBIN}} apply..."
+      - time {{.TFBIN}} apply --auto-approve "{{.TFPLAN}}"
+      - rm -f {{.TFPLAN}}
+      - |
+        PUBLIC_IP=$({{.TFBIN}} output -raw public_ip)
+        ssh-keygen -f ~/.ssh/known_hosts -R "$PUBLIC_IP" || true
+        {{.TFBIN}} output -raw ssh_private_key > {{.VM_KEYFILE}}
+        chmod 600 {{.VM_KEYFILE}}
+        echo ""
+        echo "SSH key saved to {{.VM_KEYFILE}}"
+        echo "Connect with: ssh -i {{.VM_KEYFILE}} {{.VM_ADMIN_USER}}@$PUBLIC_IP"
+
+  destroy:
+    desc: Destroy all resources (warns about persistent EBS volume)
+    vars:
+      OWN_PUBLIC_IP:
+        sh: curl -s https://ipinfo.io/ip
+      GIT_CREDENTIALS:
+        sh: cat ~/.git-credentials 2>/dev/null | head -n 1 || true
+      REPO_URL:
+        sh: git config --get remote.origin.url
+    env:
+      TF_VAR_admin_source_address: "{{.OWN_PUBLIC_IP}}"
+      TF_VAR_git_credentials: "{{.GIT_CREDENTIALS}}"
+      TF_VAR_repo_url: "{{.REPO_URL}}"
+    cmds:
+      - |
+        echo "WARNING: The data EBS volume has prevent_destroy=true."
+        echo "If you want to delete it too, remove the lifecycle block from main.tf first."
+        echo ""
+      - '{{.TFBIN}} destroy --auto-approve -var-file="{{.VAR_FILE}}" && rm -f {{.VM_KEYFILE}}'
+
+  destroy-vm:
+    desc: Destroy the EC2 instance only (keeps EBS data volume, VPC, security group)
+    vars:
+      OWN_PUBLIC_IP:
+        sh: curl -s https://ipinfo.io/ip
+      GIT_CREDENTIALS:
+        sh: cat ~/.git-credentials 2>/dev/null | head -n 1 || true
+      REPO_URL:
+        sh: git config --get remote.origin.url
+    env:
+      TF_VAR_admin_source_address: "{{.OWN_PUBLIC_IP}}"
+      TF_VAR_git_credentials: "{{.GIT_CREDENTIALS}}"
+      TF_VAR_repo_url: "{{.REPO_URL}}"
+    cmds:
+      - '{{.TFBIN}} destroy --auto-approve -var-file="{{.VAR_FILE}}" --target module.ec2 --target aws_volume_attachment.data && rm -f {{.VM_KEYFILE}}'
+
+  connect-vm:
+    desc: SSH to the AWS VM
+    cmds:
+      - |
+        PUBLIC_IP=$({{.TFBIN}} output -raw public_ip)
+        echo "Connecting to ${PUBLIC_IP}..."
+        ssh -i {{.VM_KEYFILE}} {{.VM_ADMIN_USER}}@$PUBLIC_IP
+
+  config-vm:
+    desc: Run Ansible configuration on the AWS VM
+    cmds:
+      - cd ../../ansible; ./apply-cloud.sh
+
+  start-vm:
+    desc: Start the AWS EC2 instance
+    cmds:
+      - |
+        INSTANCE_ID=$({{.TFBIN}} output -raw instance_id)
+        aws ec2 start-instances --instance-ids "$INSTANCE_ID"
+
+  stop-vm:
+    desc: Stop the AWS EC2 instance (billing continues for EBS; compute billing stops)
+    cmds:
+      - |
+        INSTANCE_ID=$({{.TFBIN}} output -raw instance_id)
+        aws ec2 stop-instances --instance-ids "$INSTANCE_ID"
+
+  secrets-info:
+    desc: Display Secrets Manager information and credential retrieval instructions
+    cmds:
+      - |
+        SECRET_NAME=$({{.TFBIN}} output -raw secrets_manager_secret_name)
+        REGION=$({{.TFBIN}} -chdir=. output 2>/dev/null || true)
+        echo "Secret name: $SECRET_NAME"
+        echo ""
+        echo "=== How to retrieve git credentials from Secrets Manager ==="
+        echo "aws secretsmanager get-secret-value --secret-id \"$SECRET_NAME\" --query SecretString --output text"
