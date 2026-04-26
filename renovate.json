@@ -19,6 +19,16 @@
       "/^docker/.*\\.yaml$/"
     ]
   },
+  "customManagers": [
+    {
+      "description": "Update python-version in GitHub Actions workflow steps",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/.+\\.ya?ml$/"],
+      "matchStrings": ["python-version:\\s*['\"](?<currentValue>[\\d.]+)['\"]"],
+      "datasourceTemplate": "python-version",
+      "depNameTemplate": "python"
+    }
+  ],
   "packageRules": [
     {
       "description": "Group updates by manager",

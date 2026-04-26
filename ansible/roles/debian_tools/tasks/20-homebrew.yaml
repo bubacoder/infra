@@ -20,6 +20,14 @@
     - debian_tools_brew_packages is defined
     - debian_tools_brew_packages | length > 0
 
+- name: Add required Homebrew taps
+  community.general.homebrew_tap:
+    name: hashicorp/tap
+    state: present
+  when:
+    - debian_tools_brew_install_groups.terraform | default(false) | bool
+  become: false
+
 - name: Install Homebrew packages
   community.general.homebrew:
     name: "{{ debian_tools_brew_packages }}"

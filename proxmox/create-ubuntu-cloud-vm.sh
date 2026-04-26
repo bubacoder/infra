@@ -8,6 +8,7 @@ set -euo pipefail
 
 # Ubuntu version to install. Cloud images are downloaded automatically.
 # Check latest LTS version at: https://cloud-images.ubuntu.com/releases/
+# renovate: datasource=endoflife depName=ubuntu
 readonly UBUNTU_VERSION="24.04"
 readonly CLOUD_IMAGE="ubuntu-${UBUNTU_VERSION}-server-cloudimg-amd64.img"
 readonly CLOUD_IMAGE_URL="https://cloud-images.ubuntu.com/releases/${UBUNTU_VERSION}/release/${CLOUD_IMAGE}"
