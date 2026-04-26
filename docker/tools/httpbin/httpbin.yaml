@@ -12,7 +12,7 @@
 name: httpbin
 services:
   httpbin:
-    image: ghcr.io/mccutchen/go-httpbin:2.21.0
+    image: ghcr.io/mccutchen/go-httpbin:2.22.1
     container_name: httpbin
     restart: unless-stopped
     networks:
