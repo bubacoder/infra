@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Interactively rebases the current branch onto the remote default branch,
+# stashing and restoring any uncommitted changes around the rebase.
 set -euo pipefail
 
 BASE_REF="$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || echo 'origin/main')"

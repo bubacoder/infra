@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Sets up a uv virtual environment, installs dependencies, and starts the Infra MCP server.
 set -e
 
 # Change to script directory
