@@ -1,8 +1,8 @@
 ---
-description: Update LiteLLM config/config.yaml to use the latest model versions from each provider
+description: Update AI model configurations to use the latest model versions from each provider
 ---
 
-Update the LiteLLM model configuration to use the latest available model IDs, removing outdated versions. Also update the Ollama pull script and sync LiteLLM's local Ollama entries.
+Update the AI model configurations to use the latest available model IDs, removing outdated versions. This includes the LiteLLM config, the Ollama pull script, and syncing LiteLLM's local Ollama entries.
 
 ## Config file locations
 
@@ -40,9 +40,12 @@ For Ollama local models, pick the **best-performing model** in each size class b
 ### LiteLLM cloud models
 
 For each model in the config, decide:
-- **Update**: A newer stable version exists → update the `model_name` key and `litellm_params.model` value
-- **Keep**: Still the latest stable model → no change needed
-- **Remove**: Superseded by a newer model already listed in the same config (avoid duplicates)
+- **Add**: A newer stable version exists → add a new entry with the updated `model_name` and `litellm_params.model`
+- **Keep (latest)**: Already the most recent stable model → no change
+- **Keep (previous)**: One version behind the latest → keep as-is (allows pinning to the prior version)
+- **Remove**: Two or more versions behind the latest → remove to avoid clutter
+
+Example: config has Opus 4.5 and 4.6 → Opus 4.7 released → add 4.7, keep 4.6, remove 4.5.
 
 Preserve without changes:
 - The overall YAML structure, comments, and provider groupings
@@ -107,4 +110,4 @@ After completing the update, show a table of what changed:
 
 | Model | Old ID | New ID | Action                   |
 | ----- | ------ | ------ | ------------------------ |
-| ...   | ...    | ...    | Updated / Removed / Kept |
+| ...   | ...    | ...    | Added / Removed / Kept   |
