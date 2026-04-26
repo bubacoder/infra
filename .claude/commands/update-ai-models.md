@@ -2,7 +2,7 @@
 description: Update AI model configurations to use the latest model versions from each provider
 ---
 
-Update the AI model configurations to use the latest available model IDs, removing outdated versions. This includes the LiteLLM config, the Ollama pull script, and syncing LiteLLM's local Ollama entries.
+Update the AI model configurations to use the latest available model IDs, removing outdated versions. This includes the LiteLLM config, the Ollama model list in the Taskfile, and syncing LiteLLM's local Ollama entries.
 
 ## Config file locations
 
@@ -13,7 +13,7 @@ docker exec litellm cat /app/config.yaml
 
 Source files:
 - `docker/ai/litellm/config/config.yaml` — LiteLLM model list
-- `scripts/get-offline-data-ollama.sh` — Ollama model pull script
+- `Taskfile.yaml` — Ollama models are listed in the `get-offline-data-ollama` task
 
 ## Step 1: Look up latest models per provider (run searches in parallel)
 
@@ -51,18 +51,18 @@ Preserve without changes:
 - The overall YAML structure, comments, and provider groupings
 - `api_key` and `api_base` references
 
-### Ollama local models (`scripts/get-offline-data-ollama.sh`)
+### Ollama local models (`Taskfile.yaml` → `get-offline-data-ollama` task)
 
-The script must always include exactly:
+The task must always include exactly:
 - **One model ≤3B** — best benchmark performer in this size class (e.g. `phi4-mini`)
 - **One model ≤8B** — best benchmark performer in this size class (e.g. `qwen3:8b`)
 - **Embedding models** — keep as-is unless a clearly better alternative exists
 
-Update both the pull tags and the inline comments with model size.
+Update both the `docker exec ollama ollama pull <model>` lines and the inline comments with model size.
 
 ### LiteLLM Ollama entries sync
 
-After updating `get-offline-data-ollama.sh`, update the `ollama-local-*` entries in `config.yaml` to match:
+After updating the Taskfile, update the `ollama-local-*` entries in `config.yaml` to match:
 - `ollama_chat/<model>` must reflect the exact tag used in the pull script
 - Update the comment line above each entry (e.g. `# Local model - Phi 4 Mini (3.8B)`)
 - Do **not** change `api_base` or `api_key` references
@@ -76,12 +76,7 @@ tee "$(git rev-parse --show-toplevel)/docker/ai/litellm/config/config.yaml" > /d
 EOF
 ```
 
-Write the updated Ollama script using:
-```bash
-tee "$(git rev-parse --show-toplevel)/scripts/get-offline-data-ollama.sh" > /dev/null << 'EOF'
-<updated content>
-EOF
-```
+Update the `get-offline-data-ollama` task in `Taskfile.yaml` directly using the Edit tool.
 
 Also update `router_settings.fallbacks` in `config.yaml` to reflect any renamed models.
 
