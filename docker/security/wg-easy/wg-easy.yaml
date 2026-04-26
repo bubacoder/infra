@@ -30,8 +30,10 @@ services:
       WG_ALLOWED_IPS: "192.168.0.0/16" # Allowed IPs clients will use
     ports:
       - 51820:51820/udp # VPN
+    # kics-scan ignore-block - WireGuard requires read-only access to kernel modules to load the wireguard module
     volumes:
       - ${DOCKER_VOLUMES}/wg-easy:/etc/wireguard
+      - /lib/modules:/lib/modules:ro
     networks:
       - security-wg-easy
     labels:
