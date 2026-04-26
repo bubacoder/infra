@@ -48,19 +48,26 @@ fi
 
 echo "Found data volume at: $${DEVICE}"
 
-# Format with ext4 if the volume has no filesystem (first boot only)
-if ! blkid "$${DEVICE}" | grep -q "ext4"; then
+# Format with ext4 only if the volume has no existing filesystem (first boot only)
+if ! blkid "$${DEVICE}" | grep -q "UUID="; then
     echo "Formatting $${DEVICE} as ext4..."
     mkfs.ext4 -F "$${DEVICE}"
 fi
 
-mkdir -p /storage
-mount "$${DEVICE}" /storage
-
-# Persist the mount across reboots
-if ! grep -q "$${DEVICE}" /etc/fstab; then
-    echo "$${DEVICE} /storage ext4 defaults,nofail 0 2" >> /etc/fstab
+UUID=$(blkid -s UUID -o value "$${DEVICE}")
+if [ -z "$${UUID}" ]; then
+    echo "Error: Could not determine UUID for $${DEVICE}."
+    exit 1
 fi
+
+mkdir -p /storage
+
+# Persist the mount across reboots using stable UUID
+if ! grep -q "UUID=$${UUID}" /etc/fstab; then
+    echo "UUID=$${UUID} /storage ext4 defaults,nofail 0 2" >> /etc/fstab
+fi
+
+mount "UUID=$${UUID}" /storage
 
 # Create standard directory structure
 mkdir -p /storage/media/{movies,tvseries,audio}

@@ -99,6 +99,8 @@ task aws-vm:connect-vm
 | `task aws-vm:migrate-state` | Migrate state to S3 backend                 |
 | `task aws-vm:check`         | Validate + security scan                    |
 
+> **Cloud-init caveat:** `user_data_replace_on_change = false` in `main.tf` means Terraform will **not** re-run cloud-init when the cloud-init templates change on an existing instance. To apply updated cloud-init content, run `task aws-vm:destroy-vm` followed by `task aws-vm:apply` (the EBS data volume is preserved). Skipping this step will leave the running instance with the old bootstrap configuration.
+
 ## Architecture Selection
 
 | Architecture | Default Type | Notes                                   |

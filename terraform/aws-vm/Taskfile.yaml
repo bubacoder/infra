@@ -48,7 +48,10 @@ tasks:
     desc: Create Terraform plan
     vars:
       OWN_PUBLIC_IP:
-        sh: curl -s https://ipinfo.io/ip
+        sh: |
+          ip=$(curl -fsSL --max-time 5 https://ipinfo.io/ip | tr -d '[:space:]')
+          echo "$ip" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}(/[0-9]{1,2})?$' || { echo "ERROR: public IP lookup returned invalid data: '$ip'" >&2; exit 1; }
+          echo "$ip"
       GIT_CREDENTIALS:
         sh: cat ~/.git-credentials 2>/dev/null | head -n 1 || true
       REPO_URL:
@@ -83,7 +86,10 @@ tasks:
     desc: Destroy all resources (warns about persistent EBS volume)
     vars:
       OWN_PUBLIC_IP:
-        sh: curl -s https://ipinfo.io/ip
+        sh: |
+          ip=$(curl -fsSL --max-time 5 https://ipinfo.io/ip | tr -d '[:space:]')
+          echo "$ip" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}(/[0-9]{1,2})?$' || { echo "ERROR: public IP lookup returned invalid data: '$ip'" >&2; exit 1; }
+          echo "$ip"
       GIT_CREDENTIALS:
         sh: cat ~/.git-credentials 2>/dev/null | head -n 1 || true
       REPO_URL:
@@ -103,7 +109,10 @@ tasks:
     desc: Destroy the EC2 instance only (keeps EBS data volume, VPC, security group)
     vars:
       OWN_PUBLIC_IP:
-        sh: curl -s https://ipinfo.io/ip
+        sh: |
+          ip=$(curl -fsSL --max-time 5 https://ipinfo.io/ip | tr -d '[:space:]')
+          echo "$ip" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}(/[0-9]{1,2})?$' || { echo "ERROR: public IP lookup returned invalid data: '$ip'" >&2; exit 1; }
+          echo "$ip"
       GIT_CREDENTIALS:
         sh: cat ~/.git-credentials 2>/dev/null | head -n 1 || true
       REPO_URL:
