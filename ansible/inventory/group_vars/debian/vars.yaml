@@ -12,6 +12,7 @@ debian_base_configure_hosts_file: true
 debian_base_install_crowdsec_bouncer: false
 
 # https://github.com/go-task/task/releases
+# renovate: datasource=github-releases depName=go-task/task
 debian_base_go_task_version: "v3.44.1"
 
 linuxbrew_use_installer: true
@@ -87,12 +88,12 @@ debian_tools_brew_packages_azure:
 
 ## Terraform Tools
 debian_tools_brew_packages_terraform:
-  - terraform           # https://www.terraform.io/
-  - terraform-docs      # https://github.com/terraform-docs/terraform-docs
-  - terragrunt          # https://terragrunt.gruntwork.io/docs/getting-started/install/
-  - tfsec               # https://github.com/aquasecurity/tfsec
-  - tflint              # https://github.com/terraform-linters/tflint
-  - opentofu            # https://opentofu.org/
+  - hashicorp/tap/terraform # https://www.terraform.io/
+  - terraform-docs          # https://github.com/terraform-docs/terraform-docs
+  - terragrunt              # https://terragrunt.gruntwork.io/docs/getting-started/install/
+  - tfsec                   # https://github.com/aquasecurity/tfsec
+  - tflint                  # https://github.com/terraform-linters/tflint
+  - opentofu                # https://opentofu.org/
 
 ## Kubernetes Tools
 ## Note: kubectl is set up by asdf

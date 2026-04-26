@@ -4,8 +4,8 @@ set -euo pipefail
 # Deploy from adminhost: `ssh root@proxmox "bash -s" -- < create-ubuntu-server-vm.sh`
 
 # Ubuntu version to install. The install media is downloaded automatically and attached to the VM.
-# Check latest LTS version at: https://releases.ubuntu.com/
-readonly UBUNTU_VERSION="24.04.3"
+# Check https://releases.ubuntu.com/ for latest LTS point release; update manually.
+readonly UBUNTU_VERSION="26.04"
 readonly INSTALL_ISO="ubuntu-${UBUNTU_VERSION}-live-server-amd64.iso"
 
 # false: Manual installation is needed.
