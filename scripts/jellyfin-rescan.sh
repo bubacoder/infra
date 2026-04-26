@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Triggers a full metadata/image refresh for a Jellyfin media library via the REST API.
 set -euo pipefail
 
 # Note: More functions https://bgstack15.ddns.net/cgit/jellystack/tree/jellystack_lib.py

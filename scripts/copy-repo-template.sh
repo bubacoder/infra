@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Copies shared tooling config files (linting, IDE, Claude Code) from this repo
+# into a sibling repo-template directory, preserving directory structure.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
