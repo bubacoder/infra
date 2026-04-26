@@ -183,17 +183,27 @@ tasks:
   get-offline-data:
     desc: Download data files for offline use (stored both local and on Proxmox)
     cmds:
-      - task: get-offline-data-local
+      - task: get-offline-data-ollama
+      - task: get-offline-data-kiwix
       - task: get-offline-data-proxmox
 
-  get-offline-data-local:
-    desc: Download data files for offline use (files stored on localhost)
+  get-offline-data-ollama:
+    desc: Pull Ollama LLM and embedding models into the running Ollama container
+    cmds:
+      - docker ps --filter name=^ollama$ --filter status=running --quiet | grep -q . || { echo "Error - Ollama container is not running" >&2; exit 1; }
+      # Large Language Models - https://ollama.com/search
+      - docker exec ollama ollama pull phi4-mini  # 3.8B - best-in-class sub-4B; 128K ctx
+      - docker exec ollama ollama pull qwen3:8b   # 8B   - best-in-class 7-8B; hybrid thinking, top HumanEval
+      # Embedding Models - https://ollama.com/search?c=embedding
+      - docker exec ollama ollama pull nomic-embed-text
+      - docker exec ollama ollama list
+
+  get-offline-data-kiwix:
+    desc: Download Kiwix ZIM files and apps for offline use
     dotenv:
       - "config/docker/.env"
       - "config/docker/localhost/.env"
     cmds:
-      - scripts/get-offline-data-ollama.sh
-      - docker exec ollama ollama list
       - |
         scripts/get-offline-data-file.sh $STORAGE_KIWIX "https://download.kiwix.org/zim/wikipedia/" "wikipedia_hu_top_maxi_[0-9]{4}-[0-9]{2}\.zim"
         scripts/get-offline-data-file.sh $STORAGE_KIWIX "https://download.kiwix.org/zim/wikipedia/" "wikipedia_en_top_maxi_[0-9]{4}-[0-9]{2}\.zim"

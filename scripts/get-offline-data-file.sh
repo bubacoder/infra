@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# Downloads the latest file matching a regex pattern from an HTML directory listing, then prunes
+# all but the VERSIONS_TO_KEEP (default: 2) most recent local copies matching the same pattern.
+# Usage: get-offline-data-file.sh <directory> <url> <pattern>
 set -euo pipefail
 
 # Validate that target directory, URL, and pattern are provided
@@ -12,6 +15,7 @@ fi
 TARGET_DIR="$1"
 URL="$2"
 PATTERN="$3"
+VERSIONS_TO_KEEP="${VERSIONS_TO_KEEP:-2}"
 
 # Check if the target directory exists
 if [[ ! -d "$TARGET_DIR" ]]; then
@@ -62,6 +66,12 @@ download_latest_file() {
   echo "Downloading the latest file: $LATEST_FILE..."
   if wget -q --show-progress "${url}${LATEST_FILE}"; then
     echo "File '$LATEST_FILE' successfully downloaded to $(pwd)."
+    local OLD_FILES
+    OLD_FILES=$(for f in *; do [[ "$f" =~ ^${pattern}$ ]] && echo "$f"; done | sort -r | tail -n +"$((VERSIONS_TO_KEEP + 1))")
+    if [[ -n "$OLD_FILES" ]]; then
+      echo "Removing old versions..."
+      echo "$OLD_FILES" | xargs rm -v
+    fi
   else
     echo "Failed to download the file '$LATEST_FILE'. Exiting."
     return 1
