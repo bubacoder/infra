@@ -13,7 +13,7 @@ debian_base_install_crowdsec_bouncer: false
 
 # https://github.com/go-task/task/releases
 # renovate: datasource=github-releases depName=go-task/task
-debian_base_go_task_version: "v3.44.1"
+debian_base_go_task_version: "v3.50.0"
 
 linuxbrew_use_installer: true
 linuxbrew_init_shell: true

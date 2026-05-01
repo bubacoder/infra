@@ -16,9 +16,22 @@ install_ansible_on_ubuntu() {
   # Installing Ansible on Ubuntu
   # https://docs.ansible.com/ansible/latest/installation_guide/installation_distros.html#installing-ansible-on-ubuntu
   apt-get update
-  apt-get install --yes software-properties-common
-  add-apt-repository --yes --update ppa:ansible/ansible
-  apt-get install --yes --no-install-recommends ansible python3-pip
+
+  UBUNTU_CODENAME=$(. /etc/os-release && echo "$VERSION_CODENAME")
+
+  case "$UBUNTU_CODENAME" in
+    jammy|focal|bionic)
+      apt-get install --yes software-properties-common
+      add-apt-repository --yes --update ppa:ansible/ansible
+      apt-get install --yes --no-install-recommends ansible python3-pip
+      ;;
+    *)
+      # Ubuntu 24.04+ (noble and newer) includes Ansible in the universe repository;
+      # the PPA is unnecessary and its "noble" distribution causes apt-get update to
+      # hang in Docker builds.
+      apt-get install --yes --no-install-recommends ansible python3-pip
+      ;;
+  esac
 
   # "--ignore-installed" is added to fix error "Cannot uninstall PyYAML 6.0.1 ... The package was installed by debian."
   pip install passlib ansible-lint --ignore-installed --break-system-packages

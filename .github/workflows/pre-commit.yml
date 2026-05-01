@@ -31,7 +31,8 @@ jobs:
         run: |
           # renovate: datasource=github-releases depName=terraform-docs/terraform-docs extractVersion=^v(?<version>.+)$
           VERSION=0.20.0
-          curl -sSLo ./terraform-docs.tar.gz "https://terraform-docs.io/dl/v${VERSION}/terraform-docs-v${VERSION}-$(uname)-amd64.tar.gz"
+          ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+          curl -sSLo ./terraform-docs.tar.gz "https://terraform-docs.io/dl/v${VERSION}/terraform-docs-v${VERSION}-$(uname)-${ARCH}.tar.gz"
           tar -xzf terraform-docs.tar.gz terraform-docs
           chmod +x terraform-docs
           mv terraform-docs /usr/local/bin/terraform-docs

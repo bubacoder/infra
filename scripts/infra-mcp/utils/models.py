@@ -3,7 +3,15 @@
 This module contains dataclass definitions for shared data structures used throughout the codebase.
 """
 
-from dataclasses import dataclass
+import platform
+from dataclasses import dataclass, field
+
+_arch_map = {"x86_64": "amd64", "aarch64": "arm64", "armv7l": "arm"}
+
+
+def _default_architecture() -> str:
+    arch = _arch_map.get(platform.machine(), platform.machine())
+    return f"linux/{arch}"
 
 
 @dataclass
@@ -20,7 +28,7 @@ class ContainerTagFinderArgs:
     """
 
     image: str
-    architecture: str = "linux/amd64"
+    architecture: str = field(default_factory=_default_architecture)
     limit: int = 10
     quiet: bool = True
     registry: str | None = None

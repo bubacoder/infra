@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import platform
 import sys
 from datetime import datetime
 from email.utils import parsedate_to_datetime
@@ -15,6 +16,13 @@ except ImportError:
     # Fallback for standalone execution
     REGISTRY_REQUEST_TIMEOUT = 30
     MAX_TAGS_FETCH_LIMIT = 1000
+
+_arch_map = {"x86_64": "amd64", "aarch64": "arm64", "armv7l": "arm"}
+
+
+def _default_architecture() -> str:
+    arch = _arch_map.get(platform.machine(), platform.machine())
+    return f"linux/{arch}"
 
 
 class ContainerTagFinder:
@@ -39,8 +47,8 @@ class ContainerTagFinder:
             tuple: A tuple containing (os_part, arch_part)
         """
         parts = arch.split("/")
-        os_part = parts[0] if parts else "linux"
-        arch_part = parts[1] if len(parts) > 1 else "amd64"
+        os_part = parts[0] if parts and parts[0] else "linux"
+        arch_part = parts[1] if len(parts) > 1 and parts[1] else _arch_map.get(platform.machine(), platform.machine())
         return os_part, arch_part
 
     def _parse_version(self, tag_name: str) -> tuple[int, ...] | None:
@@ -196,7 +204,7 @@ class ContainerTagFinder:
         # else: sort_by == "default", keep original order
 
     def get_docker_hub_tags(
-        self, image_name: str, limit: int = 10, architecture: str = "linux/amd64", sort_by: str = "version"
+        self, image_name: str, limit: int = 10, architecture: str | None = None, sort_by: str = "version"
     ) -> list[dict[str, Any]]:
         """Query Docker Hub for image tags with timestamp information.
 
@@ -209,6 +217,9 @@ class ContainerTagFinder:
         Returns:
             list: List of tag dictionaries sorted according to sort_by parameter
         """
+        if architecture is None:
+            architecture = _default_architecture()
+
         # Parse repository name
         if "/" in image_name:
             namespace, repo = image_name.split("/", 1)
@@ -299,7 +310,7 @@ class ContainerTagFinder:
         registry_url: str,
         image_name: str,
         limit: int = 10,
-        architecture: str = "linux/amd64",
+        architecture: str | None = None,
         sort_by: str = "version",
     ) -> list[dict[str, Any]]:
         """Query a registry API v2 for image tags and attempt to get creation time.
@@ -314,6 +325,9 @@ class ContainerTagFinder:
         Returns:
             list: List of tag dictionaries sorted according to sort_by parameter
         """
+        if architecture is None:
+            architecture = _default_architecture()
+
         url: str = f"{registry_url}/v2/{image_name}/tags/list"
         try:
             response = requests.get(url, timeout=REGISTRY_REQUEST_TIMEOUT)
@@ -626,7 +640,7 @@ class ContainerTagFinder:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Operations on container image tags")
     parser.add_argument("--registry", help="Registry URL (defaults to Docker Hub if not specified)")
-    parser.add_argument("--architecture", default="linux/amd64", help="Architecture to query for (default: linux/amd64)")
+    parser.add_argument("--architecture", default=_default_architecture(), help="Architecture to query for (default: auto-detected)")
     parser.add_argument("--quiet", action="store_true", help="Only output final results, no status or progress messages")
 
     subparsers = parser.add_subparsers(dest="command", help="Command to execute", required=True)
