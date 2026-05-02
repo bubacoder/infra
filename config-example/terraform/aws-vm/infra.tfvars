@@ -11,6 +11,10 @@ architecture = "x86_64" # or "arm64" for Graviton (better price/performance)
 
 # instance_type = "t3.small"  # Override the default for the selected architecture
 
+# --- Spot Instance ---
+# spot_instance = false  # Set to true to use a Spot instance (~70% cheaper, may be interrupted)
+# spot_price    = null   # Max bid price (USD/hr). null = on-demand cap (recommended)
+
 # --- VM ---
 vm_name    = "nest"
 admin_user = "ubuntu"

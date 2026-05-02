@@ -50,8 +50,8 @@ tasks:
       OWN_PUBLIC_IP:
         sh: |
           ip=$(curl -fsSL --max-time 5 https://ipinfo.io/ip | tr -d '[:space:]')
-          echo "$ip" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}(/[0-9]{1,2})?$' || { echo "ERROR: public IP lookup returned invalid data: '$ip'" >&2; exit 1; }
-          echo "$ip"
+          echo "$ip" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}$' || { echo "ERROR: public IP lookup returned invalid data: '$ip'" >&2; exit 1; }
+          echo "$ip/32"
       REPO_URL:
         sh: |
           url=$(git config --get remote.origin.url)
@@ -76,11 +76,15 @@ tasks:
       - echo "{{.TFBIN}} apply..."
       - time {{.TFBIN}} apply --auto-approve "{{.TFPLAN}}"
       - rm -f {{.TFPLAN}}
+      - task: save-ssh-key
+
+  save-ssh-key:
+    desc: Save SSH private key from Terraform output to ~/.ssh
+    cmds:
       - |
         set -euo pipefail
         PUBLIC_IP=$({{.TFBIN}} output -raw public_ip)
         ssh-keygen -f ~/.ssh/known_hosts -R "$PUBLIC_IP" || true
-        umask 077
         {{.TFBIN}} output -raw ssh_private_key > {{.VM_KEYFILE}}.tmp
         mv {{.VM_KEYFILE}}.tmp {{.VM_KEYFILE}}
         chmod 600 {{.VM_KEYFILE}}
@@ -94,8 +98,8 @@ tasks:
       OWN_PUBLIC_IP:
         sh: |
           ip=$(curl -fsSL --max-time 5 https://ipinfo.io/ip | tr -d '[:space:]')
-          echo "$ip" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}(/[0-9]{1,2})?$' || { echo "ERROR: public IP lookup returned invalid data: '$ip'" >&2; exit 1; }
-          echo "$ip"
+          echo "$ip" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}$' || { echo "ERROR: public IP lookup returned invalid data: '$ip'" >&2; exit 1; }
+          echo "$ip/32"
       REPO_URL:
         sh: |
           url=$(git config --get remote.origin.url)
@@ -120,8 +124,8 @@ tasks:
       OWN_PUBLIC_IP:
         sh: |
           ip=$(curl -fsSL --max-time 5 https://ipinfo.io/ip | tr -d '[:space:]')
-          echo "$ip" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}(/[0-9]{1,2})?$' || { echo "ERROR: public IP lookup returned invalid data: '$ip'" >&2; exit 1; }
-          echo "$ip"
+          echo "$ip" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}$' || { echo "ERROR: public IP lookup returned invalid data: '$ip'" >&2; exit 1; }
+          echo "$ip/32"
       REPO_URL:
         sh: |
           url=$(git config --get remote.origin.url)

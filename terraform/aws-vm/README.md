@@ -252,6 +252,8 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 | os\_disk\_size\_gb | Root OS disk size in GB | `number` | `20` | no |
 | repo\_directory | Local directory name for the cloned repository | `string` | `"infra"` | no |
 | repo\_url | URL of the infrastructure repository to clone | `string` | n/a | yes |
+| spot\_instance | Use a Spot instance instead of On-Demand. Reduces cost by ~70% but the instance may be interrupted. | `bool` | `false` | no |
+| spot\_price | Maximum spot bid price (USD/hr). null = on-demand price cap (recommended — avoids accidental overbidding). | `string` | `null` | no |
 | vm\_name | Name tag and hostname of the VM | `string` | `"nest"` | no |
 
 ## Outputs
@@ -263,5 +265,8 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 | public\_ip | Public IP address of the instance |
 | public\_key\_fingerprint\_sha256 | SHA-256 fingerprint of the SSH public key |
 | secrets\_manager\_secret\_name | Name of the Secrets Manager secret storing git credentials |
+| spot\_bid\_status | Spot instance request bid status (null for on-demand) |
+| spot\_instance | Whether a Spot instance is used |
+| spot\_request\_state | Spot instance request state (null for on-demand) |
 | ssh\_private\_key | SSH private key (ED25519) for connecting to the instance |
 <!-- END_TF_DOCS -->
