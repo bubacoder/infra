@@ -74,6 +74,7 @@ variable "git_credentials" {
   description = "Git credentials for accessing the infrastructure repository. Will be written to ~/.git-credentials"
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "repo_url" {
