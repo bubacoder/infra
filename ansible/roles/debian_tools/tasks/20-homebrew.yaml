@@ -43,7 +43,7 @@
     name: "{{ debian_tools_brew_cask_packages }}"
     state: latest
   when:
-    - ansible_system == "Darwin"
+    - ansible_facts["system"] == "Darwin"
     - debian_tools_brew_cask_packages is defined
     - debian_tools_brew_cask_packages | type_debug == 'list'
     - debian_tools_brew_cask_packages | length > 0

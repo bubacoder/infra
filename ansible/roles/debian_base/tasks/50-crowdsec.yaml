@@ -13,7 +13,7 @@
 
 - name: Add crowdsec apt repository
   ansible.builtin.apt_repository:
-    repo: deb https://packagecloud.io/crowdsec/crowdsec/{{ ansible_distribution | lower }}/ {{ ansible_distribution_release }} main
+    repo: deb https://packagecloud.io/crowdsec/crowdsec/{{ ansible_facts["distribution"] | lower }}/ {{ ansible_facts["distribution_release"] }} main
     state: present
     filename: crowdsec
     update_cache: true
