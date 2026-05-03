@@ -4,13 +4,13 @@
   ansible.builtin.stat:
     path: /home/linuxbrew/.linuxbrew/bin/brew
   register: mac_base_homebrew_check
-  when: ansible_system == "Linux"
+  when: ansible_facts["system"] == "Linux"
 
 - name: Check if Homebrew is installed
   ansible.builtin.stat:
     path: /opt/homebrew/bin/brew
   register: mac_base_homebrew_check
-  when: ansible_system == "Darwin"
+  when: ansible_facts["system"] == "Darwin"
 
 - name: Install Homebrew
   ansible.builtin.shell: /bin/bash -c "NONINTERACTIVE=true $(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
