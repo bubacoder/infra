@@ -15,6 +15,9 @@ includes:
   azure-vm:
     taskfile: ./terraform/azure-vm/Taskfile.yaml
     dir: ./terraform/azure-vm
+  aws-vm:
+    taskfile: ./terraform/aws-vm/Taskfile.yaml
+    dir: ./terraform/aws-vm
 
 tasks:
   default:
@@ -83,6 +86,7 @@ tasks:
     cmds:
       - task: docs:clean
       - task: azure-vm:clean
+      - task: aws-vm:clean
 
   btrfs-compsize:
     desc: Show btrfs compression statistics
