@@ -11,7 +11,7 @@
 name: kopia-b2
 services:
   kopia-b2:
-    image: kopia/kopia:0.22.3
+    image: kopia/kopia:0.23.0
     container_name: kopia-b2
     restart: "unless-stopped"
     user: "0:0"
@@ -28,9 +28,11 @@ services:
       - server
       - start
       - --disable-csrf-token-checks
+      # Not directly accessible, only via Traefik, after SSO auth
       - --insecure
       - --without-password
       - --address=0.0.0.0:80
+      - --allow-extremely-dangerous-unauthenticated-server-on-the-network
     environment:
       USER: ${ADMIN_USER}
       KOPIA_PASSWORD: ${KOPIA_B2_REPOSITORY_PASSWORD}
