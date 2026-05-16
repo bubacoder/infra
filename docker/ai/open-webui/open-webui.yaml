@@ -30,6 +30,13 @@ services:
       RAG_WEB_SEARCH_RESULT_COUNT: 5
       RAG_WEB_SEARCH_CONCURRENT_REQUESTS: 10
       SEARXNG_QUERY_URL: "https://searxng.${MYDOMAIN}/search?q=<query>&format=json"
+      # https://github.com/open-webui/docs/blob/main/docs/reference/env-configuration.mdx#image_url_response_models_regex_pattern
+      IMAGE_URL_RESPONSE_MODELS_REGEX_PATTERN: "^gpt-image|.*gpt-.*-image"
+      # Fixes "Got more than 131072 bytes when reading" for image generation models
+      # that stream base64-encoded images as large SSE lines (e.g. gpt-5.4-image-2 via OpenRouter).
+      # Switches from aiohttp line-based iteration to iter_chunks(), bypassing the 128KB limit.
+      # See: https://github.com/open-webui/open-webui/issues/17626
+      CHAT_STREAM_RESPONSE_CHUNK_MAX_BUFFER_SIZE: 20971520
     extra_hosts:
       - host.docker.internal:host-gateway
     labels:
