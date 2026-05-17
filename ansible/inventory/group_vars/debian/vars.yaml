@@ -88,12 +88,12 @@ debian_tools_brew_packages_azure:
 
 ## Terraform Tools
 debian_tools_brew_packages_terraform:
-  - hashicorp/tap/terraform # https://www.terraform.io/
-  - terraform-docs          # https://github.com/terraform-docs/terraform-docs
-  - terragrunt              # https://terragrunt.gruntwork.io/docs/getting-started/install/
-  - tfsec                   # https://github.com/aquasecurity/tfsec
-  - tflint                  # https://github.com/terraform-linters/tflint
-  - opentofu                # https://opentofu.org/
+  - hashicorp/tap/terraform      # https://www.terraform.io/
+  - terraform-docs               # https://github.com/terraform-docs/terraform-docs
+  - terragrunt                   # https://terragrunt.gruntwork.io/docs/getting-started/install/
+  - tfsec                        # https://github.com/aquasecurity/tfsec
+  - terraform-linters/tap/tflint # https://github.com/terraform-linters/tflint
+  - opentofu                     # https://opentofu.org/
 
 ## Kubernetes Tools
 ## Note: kubectl is set up by asdf
