@@ -34,7 +34,7 @@ jobs:
           - tag: debian
             base_image: debian:trixie-slim
           - tag: ubuntu
-            base_image: ubuntu:24.04
+            base_image: ubuntu:26.04
 
     steps:
       - name: Checkout
