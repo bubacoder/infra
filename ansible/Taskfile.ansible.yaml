@@ -1,6 +1,11 @@
 version: '3'
 
 tasks:
+  apply-localhost:
+    desc: Run 'homelab' Ansible playbook for the local host
+    cmds:
+      - ansible/apply-localhost.sh
+
   apply-homelab:
     desc: Run 'homelab' Ansible playbook (apply configuration to local servers)
     cmds:

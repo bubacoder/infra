@@ -11,19 +11,22 @@
     - nas
     - nest
     - hive
+    - colony
   roles:
     - role: debian_docker_host
 
-- name: Setup developer tools
+- name: Setup Debian tools
   hosts:
     - nest
     - hive
+    - colony
   roles:
-    - role: markosamuli.linuxbrew
+    - role: debian_homebrew
     - role: debian_tools
 
 - name: Setup Samba client
   hosts:
     - nest
+    - colony
   roles:
     - role: debian_samba_client

@@ -6,6 +6,11 @@
       - cifs-utils
     state: present
 
+- name: Warn if admin_password is not set
+  ansible.builtin.debug:
+    msg: "WARNING: 'admin_password' is not defined — skipping credentials file creation. Samba mounts may fail."
+  when: admin_password is not defined
+
 - name: Create credentials file
   ansible.builtin.copy:
     dest: "{{ debian_samba_client_credentials_file }}"
@@ -15,6 +20,7 @@
     owner: root
     group: root
     mode: "0600"
+  when: admin_password is defined
 
 - name: Create mount base directory
   ansible.builtin.file:
@@ -41,3 +47,4 @@
     opts: "{{ debian_samba_client_mount_opts }}"
     state: mounted
   loop: "{{ debian_samba_client_nas_shares }}"
+  when: admin_password is defined

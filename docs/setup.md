@@ -52,9 +52,17 @@ MacOS is also supported, but only for working with Ansible remotely and applying
 
 Steps:
 - Clone the repository on a supported OS: `git clone <repository url>`
-- Install Ansible with: `ansible/bootstrap-ansible.sh`
-- Edit `ansible/inventory/inventory.yaml` and `ansible/playbooks/homelab.yaml`, include your host with `markosamuli.linuxbrew` and `debian_tools` roles
-- Run `ansible/apply-homelab.sh`
+- Install Ansible with: `sudo ansible/bootstrap-ansible.sh`
+  - Complete guide: [Ansible setup steps](../ansible/README.md#setup-steps)
+- Update the configuration files:
+  - `ansible/inventory/group_vars/debian/vars.yaml`
+    - Place the SSH public key at the path indicated by `debian_base_ssh_key_file` (e.g. `~/.ssh/id_ed25519.pub`)
+  - `ansible/inventory/inventory.yaml`
+    - Add your host
+  - `ansible/playbooks/homelab.yaml`
+    - Include your host with `debian_tools` and `debian_homebrew` roles; add `debian_docker_host` if this host will also run Docker containers
+- Apply the playbook locally: `ansible/apply-localhost.sh --ask-become-pass`
+  - (After passwordless sudo is configured, the `--ask-become-pass` parameter can be dropped)
 
 ### 3. Install Ubuntu Server VM (Docker host)
 
@@ -68,7 +76,7 @@ Note - Alternatives:
 ### 4. Install and configure the required software using Ansible
 
 Required and recommended software (like Docker, tmux, ...) are installed and configured by Ansible.
-For details, check the `ansible` / `inventory`|`roles`|`playbooks` folders.
+See the [Ansible README](../ansible/README.md) for details on roles, inventories, and useful run options (`--limit`, `--verbose`).
 
 Execute on the admin host:
 `ansible/apply-homelab.sh`

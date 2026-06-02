@@ -24,7 +24,18 @@
         group: "{{ admin_user }}"
         state: directory
         mode: '0700'
+    - name: Check if SSH key file exists
+      ansible.builtin.stat:
+        path: "{{ debian_base_ssh_key_file }}"
+      register: debian_base_ssh_key_stat
+      delegate_to: localhost
+      become: false
+    - name: Fail if SSH key file is missing and no admin password is set
+      when: not debian_base_ssh_key_stat.stat.exists and (admin_password | default('') == '')
+      ansible.builtin.fail:
+        msg: "SSH key file '{{ debian_base_ssh_key_file }}' not found and no admin_password set for user '{{ admin_user }}' — cannot configure secure access."
     - name: Set authorized key for user '{{ admin_user }}'
+      when: debian_base_ssh_key_stat.stat.exists
       ansible.posix.authorized_key:
         user: "{{ admin_user }}"
         state: present

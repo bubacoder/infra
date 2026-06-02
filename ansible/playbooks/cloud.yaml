@@ -6,5 +6,5 @@
   roles:
     - role: debian_base
     - role: debian_docker_host
-    - role: markosamuli.linuxbrew
+    - role: debian_homebrew
     - role: debian_tools

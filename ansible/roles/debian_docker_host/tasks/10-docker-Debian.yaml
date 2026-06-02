@@ -11,17 +11,18 @@
       - python3-pip
       - virtualenv
       - python3-setuptools
+      - python3-debian
       - cgroupfs-mount # To solve the issue: Docker failed to start daemon - "Devices cgroup isn't mounted"
     state: present
 
-- name: Add Docker GPG Key (on Debian)
-  ansible.builtin.apt_key:
-    url: https://download.docker.com/linux/debian/gpg
-    state: present
-
-- name: Add Docker Repository (on Debian)
-  ansible.builtin.apt_repository:
-    repo: deb https://download.docker.com/linux/debian {{ ansible_facts["distribution_release"] }} stable
+- name: Add Docker apt repository (on Debian)
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: deb
+    uris: https://download.docker.com/linux/debian
+    suites: "{{ ansible_facts['distribution_release'] }}"
+    components: stable
+    signed_by: https://download.docker.com/linux/debian/gpg
     state: present
 
 - name: Update apt and install Docker packages
