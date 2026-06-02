@@ -1,0 +1,31 @@
+---
+# https://brew.sh/
+# https://docs.brew.sh/Homebrew-on-Linux
+
+- name: Install Homebrew prerequisites
+  ansible.builtin.apt:
+    name:
+      - build-essential
+      - procps
+      - curl
+      - file
+      - git
+    state: present
+  become: true
+
+- name: Install Homebrew
+  ansible.builtin.shell: |
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  args:
+    creates: /home/linuxbrew/.linuxbrew/bin/brew
+  environment:
+    NONINTERACTIVE: "1"
+  become: false
+
+- name: Add Homebrew to shell init
+  ansible.builtin.lineinfile:
+    path: "~/.bashrc"
+    line: 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"'
+    create: true
+    mode: '0644'
+  become: false

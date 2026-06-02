@@ -1,4 +1,9 @@
 ---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+  become: true
+
 - name: Restart service systemd-resolved
   ansible.builtin.service:
     name: systemd-resolved

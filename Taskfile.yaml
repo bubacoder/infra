@@ -127,9 +127,9 @@ tasks:
     cmds:
       - lsb_release -a
       - uname -a
-      - ansible --version
-      - terraform --version
-      - docker --version || true
+      - 'ansible --version || echo "ansible: not installed"'
+      - 'terraform --version || echo "terraform: not installed"'
+      - 'docker --version || echo "docker: not installed"'
 
   backup-config:
     desc: Create a compressed backup of the configuration directory

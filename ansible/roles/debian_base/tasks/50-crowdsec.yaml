@@ -6,17 +6,16 @@
 # Configuration file: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
 # Logs: /var/log/crowdsec-firewall-bouncer.log
 ---
-- name: Add crowdsec apt-key
-  ansible.builtin.apt_key:
-    url: https://packagecloud.io/crowdsec/crowdsec/gpgkey
-    state: present
-
 - name: Add crowdsec apt repository
-  ansible.builtin.apt_repository:
-    repo: deb https://packagecloud.io/crowdsec/crowdsec/{{ ansible_facts["distribution"] | lower }}/ {{ ansible_facts["distribution_release"] }} main
+  ansible.builtin.deb822_repository:
+    name: crowdsec
+    types: deb
+    uris: https://packagecloud.io/crowdsec/crowdsec/{{ ansible_facts["distribution"] | lower }}/
+    suites: "{{ debian_base_crowdsec_suite | default(ansible_facts['distribution_release']) }}"
+    components: main
+    signed_by: https://packagecloud.io/crowdsec/crowdsec/gpgkey
     state: present
-    filename: crowdsec
-    update_cache: true
+  notify: Update apt cache
 
 - name: Install crowdsec iptables bouncer
   ansible.builtin.apt:

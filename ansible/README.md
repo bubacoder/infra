@@ -22,7 +22,7 @@ https://www.ansible.com/
 
 ## Setup steps
 
-1. Install Ansible on the admin workstation with `bootstrap-ansible.sh`. (See: [Ansible control node](https://docs.ansible.com/ansible/latest/network/getting_started/basic_concepts.html#control-node))
+1. Install Ansible on the admin workstation with `sudo bootstrap-ansible.sh`. (See: [Ansible control node](https://docs.ansible.com/ansible/latest/network/getting_started/basic_concepts.html#control-node))
 2. Configure variables in `inventory/group_vars/`
 3. Add hosts to `inventory/inventory.yaml`
 4. Assign roles to hosts in `playbooks/`
@@ -30,6 +30,8 @@ https://www.ansible.com/
    - If you use a non-root user and `sudo` requires a password (indicated by the "Missing sudo password" error message), use `apply-<playbook>.sh --ask-become-pass` and specify the password when requested ("BECOME password" message)
    - The playbook will set up passwordless `sudo`, so next time the `--ask-become-pass` parameter will not be required
 6. When the administrative user is already created, use that user in the inventory instead of `root` (`ansible_user: <adminuser>`). This is more secure and also required by Homebrew.
+
+For the complete infrastructure setup walkthrough using these playbooks, see [Getting Started](../docs/setup.md).
 
 ## Bootstrapping hosts with authentication
 

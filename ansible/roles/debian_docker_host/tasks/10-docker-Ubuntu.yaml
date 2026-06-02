@@ -13,14 +13,14 @@
       - python3-setuptools
     state: present
 
-- name: Add Docker GPG Key (on Ubuntu)
-  ansible.builtin.apt_key:
-    url: https://download.docker.com/linux/ubuntu/gpg
-    state: present
-
-- name: Add Docker Repository (on Ubuntu)
-  ansible.builtin.apt_repository:
-    repo: deb https://download.docker.com/linux/ubuntu {{ ansible_facts["distribution_release"] }} stable
+- name: Add Docker apt repository (on Ubuntu)
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: deb
+    uris: https://download.docker.com/linux/ubuntu
+    suites: "{{ ansible_facts['distribution_release'] }}"
+    components: stable
+    signed_by: https://download.docker.com/linux/ubuntu/gpg
     state: present
 
 - name: Update apt and install Docker packages

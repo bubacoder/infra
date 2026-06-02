@@ -31,6 +31,25 @@ debian:
       #   set 'debian_base_crowdsec_local_api_key' in group_vars/debian/secret.yaml
       debian_base_install_crowdsec_bouncer: true
       debian_base_crowdsec_local_api_url: http://127.0.0.1:7080/
+      # packagecloud.io does not yet have CrowdSec packages for Ubuntu 25.10 "resolute"
+      debian_base_crowdsec_suite: noble
+
+      # Enable all brew package groups
+      debian_tools_brew_install_groups:
+        common: true
+        dev: true
+        aws: true
+        azure: true
+        terraform: true
+        kubernetes: true
+
+    colony:
+      debian_base_install_storage_packages: true
+
+      # Crowdsec - configure docker/security/crowdsec/crowdsec.yaml and
+      #   set 'debian_base_crowdsec_local_api_key' in group_vars/debian/secret.yaml
+      # debian_base_install_crowdsec_bouncer: true
+      # debian_base_crowdsec_local_api_url: http://127.0.0.1:7080/
 
       # Enable all brew package groups
       debian_tools_brew_install_groups:
