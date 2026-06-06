@@ -57,3 +57,5 @@
       value: "store"
     - name: "pull.rebase"
       value: "true"
+    - name: "core.editor"
+      value: "vim"
