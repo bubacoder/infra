@@ -1,0 +1,26 @@
+---
+- name: Check installed RustDesk version
+  ansible.builtin.command:
+    cmd: dpkg-query -W -f='${Version}' rustdesk
+  register: ubuntu_desktop_rustdesk_installed
+  changed_when: false
+  failed_when: false
+
+- name: Download RustDesk .deb package
+  ansible.builtin.get_url:
+    url: "https://github.com/rustdesk/rustdesk/releases/download/{{ ubuntu_desktop_rustdesk_version }}/rustdesk-{{ ubuntu_desktop_rustdesk_version }}-x86_64.deb"
+    dest: /tmp/rustdesk.deb
+    mode: "0644"
+  when: ubuntu_desktop_rustdesk_installed.rc != 0 or ubuntu_desktop_rustdesk_installed.stdout != ubuntu_desktop_rustdesk_version
+
+- name: Install RustDesk
+  ansible.builtin.apt:
+    deb: /tmp/rustdesk.deb
+    state: present
+  when: ubuntu_desktop_rustdesk_installed.rc != 0 or ubuntu_desktop_rustdesk_installed.stdout != ubuntu_desktop_rustdesk_version
+
+- name: Clean up RustDesk .deb
+  ansible.builtin.file:
+    path: /tmp/rustdesk.deb
+    state: absent
+  when: ubuntu_desktop_rustdesk_installed.rc != 0 or ubuntu_desktop_rustdesk_installed.stdout != ubuntu_desktop_rustdesk_version

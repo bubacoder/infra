@@ -1,0 +1,19 @@
+---
+- name: Install snap packages
+  ansible.builtin.import_tasks: 10-snap.yaml
+  become: true
+
+- name: Install Chrome
+  ansible.builtin.import_tasks: 20-chrome.yaml
+  become: true
+  when: ubuntu_desktop_install_chrome | default(false) | ansible.builtin.bool
+
+- name: Install RustDesk
+  ansible.builtin.import_tasks: 30-rustdesk.yaml
+  become: true
+  when: ubuntu_desktop_install_rustdesk | default(false) | ansible.builtin.bool
+
+- name: Install Sunshine
+  ansible.builtin.import_tasks: 40-sunshine.yaml
+  become: true
+  when: ubuntu_desktop_install_sunshine | default(false) | ansible.builtin.bool

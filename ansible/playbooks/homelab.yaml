@@ -30,3 +30,9 @@
     - colony
   roles:
     - role: debian_samba_client
+
+- name: Setup Ubuntu desktop software
+  hosts:
+    - colony
+  roles:
+    - role: ubuntu_desktop
