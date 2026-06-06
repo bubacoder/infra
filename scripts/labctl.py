@@ -11,7 +11,11 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-import yaml
+try:
+    import yaml
+except ModuleNotFoundError:
+    print("Error: 'yaml' module not found. Install it with: pip3 install pyyaml", file=sys.stderr)
+    sys.exit(1)
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
