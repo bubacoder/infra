@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2154
 set -euo pipefail
 
 # HACK Do not let cloud-init start this script automatically with root user.
