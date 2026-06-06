@@ -1,0 +1,36 @@
+---
+# URL uses ansible_facts['distribution_version'] for the Ubuntu release (e.g. 24.04)
+# dpkg version strips the leading 'v' from the release tag
+- name: Check installed Sunshine version
+  ansible.builtin.command:
+    cmd: dpkg-query -W -f='${Version}' sunshine
+  register: ubuntu_desktop_sunshine_installed
+  changed_when: false
+  failed_when: false
+
+- name: Install Sunshine dependencies
+  ansible.builtin.apt:
+    pkg:
+      - miniupnpc
+      - libminiupnpc21
+    state: present
+  when: ubuntu_desktop_sunshine_installed.rc != 0 or ubuntu_desktop_sunshine_installed.stdout != ubuntu_desktop_sunshine_version | regex_replace('^v', '')
+
+- name: Download Sunshine .deb package
+  ansible.builtin.get_url:
+    url: "https://github.com/LizardByte/Sunshine/releases/download/{{ ubuntu_desktop_sunshine_version }}/sunshine-ubuntu-{{ ansible_facts['distribution_version'] }}-amd64.deb"
+    dest: /tmp/sunshine.deb
+    mode: "0644"
+  when: ubuntu_desktop_sunshine_installed.rc != 0 or ubuntu_desktop_sunshine_installed.stdout != ubuntu_desktop_sunshine_version | regex_replace('^v', '')
+
+- name: Install Sunshine
+  ansible.builtin.apt:
+    deb: /tmp/sunshine.deb
+    state: present
+  when: ubuntu_desktop_sunshine_installed.rc != 0 or ubuntu_desktop_sunshine_installed.stdout != ubuntu_desktop_sunshine_version | regex_replace('^v', '')
+
+- name: Clean up Sunshine .deb
+  ansible.builtin.file:
+    path: /tmp/sunshine.deb
+    state: absent
+  when: ubuntu_desktop_sunshine_installed.rc != 0 or ubuntu_desktop_sunshine_installed.stdout != ubuntu_desktop_sunshine_version | regex_replace('^v', '')

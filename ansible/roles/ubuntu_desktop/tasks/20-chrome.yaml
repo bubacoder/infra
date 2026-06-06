@@ -1,0 +1,26 @@
+---
+- name: Check if Chrome is installed
+  ansible.builtin.command:
+    cmd: dpkg-query -W -f='${Status}' google-chrome-stable
+  register: ubuntu_desktop_chrome_status
+  changed_when: false
+  failed_when: false
+
+- name: Download Chrome .deb package
+  ansible.builtin.get_url:
+    url: https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+    dest: /tmp/google-chrome-stable_current_amd64.deb
+    mode: "0644"
+  when: ubuntu_desktop_chrome_status.rc != 0 or 'install ok installed' not in ubuntu_desktop_chrome_status.stdout
+
+- name: Install Chrome
+  ansible.builtin.apt:
+    deb: /tmp/google-chrome-stable_current_amd64.deb
+    state: present
+  when: ubuntu_desktop_chrome_status.rc != 0 or 'install ok installed' not in ubuntu_desktop_chrome_status.stdout
+
+- name: Clean up Chrome .deb
+  ansible.builtin.file:
+    path: /tmp/google-chrome-stable_current_amd64.deb
+    state: absent
+  when: ubuntu_desktop_chrome_status.rc != 0 or 'install ok installed' not in ubuntu_desktop_chrome_status.stdout

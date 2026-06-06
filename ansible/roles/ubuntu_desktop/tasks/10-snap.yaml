@@ -1,0 +1,12 @@
+---
+- name: Install snap packages
+  community.general.snap:
+    name: "{{ ubuntu_desktop_snap_packages }}"
+    state: present
+
+- name: Install classic snap packages
+  community.general.snap:
+    name: "{{ item }}"
+    classic: true
+    state: present
+  loop: "{{ ubuntu_desktop_snap_classic_packages }}"
