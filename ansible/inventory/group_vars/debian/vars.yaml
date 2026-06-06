@@ -53,7 +53,6 @@ debian_tools_apt_packages:
   - pipx                # https://pipx.pypa.io/
   - pre-commit          # https://pre-commit.com/
   - shellcheck          # https://www.shellcheck.net/
-  - tea                 # https://gitea.com/gitea/tea
 
 # Homebrew - https://brew.sh/
 # Installation flags - override in inventory.yaml per-host
@@ -77,6 +76,7 @@ debian_tools_brew_packages_common:
 debian_tools_brew_packages_dev:
   - act                 # https://nektosact.com/
   - gh                  # https://cli.github.com/
+  - tea                 # https://gitea.com/gitea/tea
 
 ## AWS Cloud Tools
 debian_tools_brew_packages_aws:
