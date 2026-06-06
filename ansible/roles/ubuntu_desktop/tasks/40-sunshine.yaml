@@ -16,21 +16,44 @@
     state: present
   when: ubuntu_desktop_sunshine_installed.rc != 0 or ubuntu_desktop_sunshine_installed.stdout != ubuntu_desktop_sunshine_version | regex_replace('^v', '')
 
+- name: Fetch checksum release metadata
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/LizardByte/Sunshine/releases/tags/{{ ubuntu_desktop_sunshine_version }}"
+    return_content: true
+    headers:
+      Accept: "application/vnd.github+json"
+  register: ubuntu_desktop_sunshine_release
+  when: ubuntu_desktop_sunshine_installed.rc != 0 or ubuntu_desktop_sunshine_installed.stdout != ubuntu_desktop_sunshine_version | regex_replace('^v', '')
+
+- name: Extract Sunshine checksum for this platform
+  ansible.builtin.set_fact:
+    ubuntu_desktop_sunshine_checksum: >-
+      sha256:{{ (ubuntu_desktop_sunshine_release.json.body
+        | regex_search('sunshine-ubuntu-' + ansible_facts['distribution_version'] + '-amd64[.]deb[^\n]*sha256:([a-f0-9]{64})', '\1')) | first }}
+  when: ubuntu_desktop_sunshine_installed.rc != 0 or ubuntu_desktop_sunshine_installed.stdout != ubuntu_desktop_sunshine_version | regex_replace('^v', '')
+
+- name: Create temporary file for Sunshine .deb
+  ansible.builtin.tempfile:
+    suffix: .deb
+  register: ubuntu_desktop_sunshine_deb
+  when: ubuntu_desktop_sunshine_installed.rc != 0 or ubuntu_desktop_sunshine_installed.stdout != ubuntu_desktop_sunshine_version | regex_replace('^v', '')
+
 - name: Download Sunshine .deb package
   ansible.builtin.get_url:
     url: "https://github.com/LizardByte/Sunshine/releases/download/{{ ubuntu_desktop_sunshine_version }}/sunshine-ubuntu-{{ ansible_facts['distribution_version'] }}-amd64.deb"
-    dest: /tmp/sunshine.deb
+    dest: "{{ ubuntu_desktop_sunshine_deb.path }}"
     mode: "0644"
+    checksum: "{{ ubuntu_desktop_sunshine_checksum }}"
   when: ubuntu_desktop_sunshine_installed.rc != 0 or ubuntu_desktop_sunshine_installed.stdout != ubuntu_desktop_sunshine_version | regex_replace('^v', '')
 
 - name: Install Sunshine
   ansible.builtin.apt:
-    deb: /tmp/sunshine.deb
+    deb: "{{ ubuntu_desktop_sunshine_deb.path }}"
     state: present
   when: ubuntu_desktop_sunshine_installed.rc != 0 or ubuntu_desktop_sunshine_installed.stdout != ubuntu_desktop_sunshine_version | regex_replace('^v', '')
 
 - name: Clean up Sunshine .deb
   ansible.builtin.file:
-    path: /tmp/sunshine.deb
+    path: "{{ ubuntu_desktop_sunshine_deb.path }}"
     state: absent
   when: ubuntu_desktop_sunshine_installed.rc != 0 or ubuntu_desktop_sunshine_installed.stdout != ubuntu_desktop_sunshine_version | regex_replace('^v', '')
