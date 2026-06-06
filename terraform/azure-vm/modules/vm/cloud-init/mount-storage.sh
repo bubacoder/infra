@@ -15,7 +15,7 @@ function mount_storage() {
       success=1
     else
       sleep 1
-      ((counter++))
+      counter=$((counter + 1))
     fi
   done
 
