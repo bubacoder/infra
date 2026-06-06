@@ -6,6 +6,37 @@ on:
     branches: [main]
 
 jobs:
+  audit-scripts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Audit scripts/requirements.txt
+        run: pipx run pip-audit -r scripts/requirements.txt
+
+  audit-infra-mcp:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+
+      - name: Audit scripts/infra-mcp
+        run: |
+          uv export --frozen --no-dev --directory scripts/infra-mcp > /tmp/infra-mcp-reqs.txt
+          pipx run pip-audit -r /tmp/infra-mcp-reqs.txt
+
   check:
     runs-on: ubuntu-latest
     steps:
