@@ -86,6 +86,11 @@ module "ec2" {
   user_data_base64            = local.user_data
   user_data_replace_on_change = false
 
+  # Spot instance
+  create_spot_instance = var.spot_instance
+  spot_price           = var.spot_price
+  spot_type            = "one-time"
+
   metadata_options = {
     http_tokens                 = "required"
     http_endpoint               = "enabled"
@@ -116,10 +121,6 @@ resource "aws_ebs_volume" "data" {
   size              = var.data_disk_size_gb
   type              = "gp3"
   encrypted         = true
-
-  lifecycle {
-    prevent_destroy = true
-  }
 
   tags = {
     Name = "${var.vm_name}-data"

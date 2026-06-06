@@ -173,6 +173,8 @@ This will backup your local state and migrate it to Azure Blob Storage.
 
 Note: for the previous `Makefile` (which was replaced by `Taskfile`) see [MR #168](https://github.com/bubacoder/infra/pull/168).
 
+> **Cloud-init caveat:** `custom_data` is a `ForceNew` attribute in the azurerm provider, meaning Terraform will **destroy and recreate** the VM if cloud-init templates change. The data disk is preserved thanks to `lifecycle { prevent_destroy = true }` in the storage module. To apply updated cloud-init content, run `task azure-vm:destroy-vm` followed by `task azure-vm:apply`.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
@@ -209,7 +211,7 @@ Note: for the previous `Makefile` (which was replaced by `Taskfile`) see [MR #16
 |------|-------------|------|---------|:--------:|
 | admin\_source\_address | Allow connections (SSH, ...) only from this IP | `string` | n/a | yes |
 | admin\_user | Name of the administrative user on the VM | `string` | `"azureuser"` | no |
-| git\_credentials | Git credentials for accessing the infrastructure repository. Will be written to ~/.git-credentials | `string` | n/a | yes |
+| git\_credentials | Git credentials for accessing the infrastructure repository. Will be written to ~/.git-credentials | `string` | `""` | no |
 | location | Location of the resources | `string` | `"westeurope"` | no |
 | repo\_directory | Name of the infrastructure repository directory | `string` | `"infra"` | no |
 | repo\_url | URL of the infrastructure repository | `string` | n/a | yes |

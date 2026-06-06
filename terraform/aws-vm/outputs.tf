@@ -28,3 +28,18 @@ output "secrets_manager_secret_name" {
   description = "Name of the Secrets Manager secret storing git credentials"
   value       = aws_secretsmanager_secret.git_credentials.name
 }
+
+output "spot_instance" {
+  description = "Whether a Spot instance is used"
+  value       = var.spot_instance
+}
+
+output "spot_bid_status" {
+  description = "Spot instance request bid status (null for on-demand)"
+  value       = var.spot_instance ? module.ec2.spot_bid_status : null
+}
+
+output "spot_request_state" {
+  description = "Spot instance request state (null for on-demand)"
+  value       = var.spot_instance ? module.ec2.spot_request_state : null
+}

@@ -27,6 +27,18 @@ variable "instance_type" {
   type        = string
 }
 
+variable "spot_instance" {
+  description = "Use a Spot instance instead of On-Demand. Reduces cost by ~70% but the instance may be interrupted."
+  default     = false
+  type        = bool
+}
+
+variable "spot_price" {
+  description = "Maximum spot bid price (USD/hr). null = on-demand price cap (recommended — avoids accidental overbidding)."
+  default     = null
+  type        = string
+}
+
 # --- VM ---
 
 variable "vm_name" {

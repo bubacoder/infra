@@ -3,7 +3,7 @@
 resource "aws_secretsmanager_secret" "git_credentials" {
   name                    = "${var.vm_name}/git-credentials"
   description             = "Git credentials for cloning the infrastructure repository"
-  recovery_window_in_days = 7
+  recovery_window_in_days = 0
 
   tags = {
     Name = "${var.vm_name}-git-credentials"
