@@ -74,6 +74,7 @@ debian_tools_brew_packages_common:
 
 ## Dev Tools
 debian_tools_brew_packages_dev:
+  - uv                  # https://github.com/astral-sh/uv
   - act                 # https://nektosact.com/
   - gh                  # https://cli.github.com/
   - tea                 # https://gitea.com/gitea/tea
