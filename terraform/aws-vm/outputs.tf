@@ -24,6 +24,11 @@ output "ami_id" {
   value       = data.aws_ami.ubuntu.id
 }
 
+output "aws_region" {
+  description = "AWS region where resources are deployed"
+  value       = var.aws_region
+}
+
 output "secrets_manager_secret_name" {
   description = "Name of the Secrets Manager secret storing git credentials"
   value       = aws_secretsmanager_secret.git_credentials.name

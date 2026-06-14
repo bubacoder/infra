@@ -6,6 +6,13 @@ variable "aws_region" {
   type        = string
 }
 
+# Browse available Ubuntu AMIs: https://cloud-images.ubuntu.com/locator/ec2/
+variable "ubuntu_version" {
+  description = "Ubuntu release string used in the AMI name (e.g. 'ubuntu-resolute-26.04', 'ubuntu-noble-24.04')"
+  default     = "ubuntu-resolute-26.04"
+  type        = string
+}
+
 # Instance types by architecture:
 #   x86_64: t3.small (2 vCPU, 2 GB RAM) — general-purpose, Intel/AMD
 #   arm64:  t4g.small (2 vCPU, 2 GB RAM) — Graviton, better price/performance

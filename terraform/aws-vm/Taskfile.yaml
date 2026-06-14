@@ -10,6 +10,8 @@ vars:
 
 env:
   TF_IN_AUTOMATION: 1
+  AWS_DEFAULT_REGION:
+    sh: '{{.TFBIN}} output -raw aws_region 2>/dev/null || true'
 
 tasks:
   clean:
@@ -176,3 +178,28 @@ tasks:
         echo ""
         echo "=== How to retrieve git credentials from Secrets Manager ==="
         echo "aws secretsmanager get-secret-value --secret-id \"$SECRET_NAME\" --query SecretString --output text"
+
+  setup-secret:
+    desc: Populate git credentials in Secrets Manager (create if not exists, update if exists)
+    silent: true
+    cmds:
+      - |
+        set -euo pipefail
+        SECRET_NAME=$({{.TFBIN}} output -raw secrets_manager_secret_name)
+        REGION=$({{.TFBIN}} output -raw aws_region 2>/dev/null || aws configure get region || true)
+        [ -n "$REGION" ] || { echo "ERROR: could not determine AWS region. Set AWS_DEFAULT_REGION or configure it in ~/.aws/config." >&2; exit 1; }
+        echo "Secret: $SECRET_NAME (region: $REGION)"
+        echo ""
+        read -p "GitHub username: " GIT_USER
+        read -s -p "GitHub token (input hidden): " GIT_TOKEN
+        echo ""
+        SECRET_VALUE="https://${GIT_USER}:${GIT_TOKEN}@github.com"
+        aws secretsmanager put-secret-value \
+          --region "$REGION" \
+          --secret-id "$SECRET_NAME" \
+          --secret-string "$SECRET_VALUE" > /dev/null
+        echo "Secret value updated."
+        echo ""
+        echo "If cloud-init already ran and failed, re-run setup on the VM:"
+        PUBLIC_IP=$({{.TFBIN}} output -raw public_ip 2>/dev/null || echo "")
+        [ -n "$PUBLIC_IP" ] && echo "  ssh -i {{.VM_KEYFILE}} {{.VM_ADMIN_USER}}@${PUBLIC_IP} 'sudo /opt/repo-setup.sh setup'"
