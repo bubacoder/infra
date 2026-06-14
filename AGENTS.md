@@ -126,7 +126,7 @@ The infrastructure is designed around the following components:
    - `docs/`: Documentation and usage instructions
    - `terraform/`: IaC for cloud provisioning
      - `azure-vm/`: Azure Virtual Machine deployment with CloudInit
-   - `proxmox/`: Scripts for VM creation and management
+   - `vm/`: Scripts for VM creation and management
    - `scripts/`: Utility scripts for various tasks
    - `config/`: Host-specific configuration (not in repository)
    - `config-example/`: Example configuration files

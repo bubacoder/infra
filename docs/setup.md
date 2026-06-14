@@ -29,7 +29,7 @@ For development and administrative purposes, a separate VM can be used with addi
 
 ### 1. Install Proxmox Virtual Environment
 
---> See [Proxmox VE](../proxmox/README.md)
+--> See [Proxmox VE](../vm/proxmox/README.md)
 
 ### 2. Setup development/admin environment
 
@@ -66,7 +66,12 @@ Steps:
 
 ### 3. Install Ubuntu Server VM (Docker host)
 
-Edit the parameters and use the `proxmox/create-ubuntu-server-vm.sh` script to automatically create an Ubuntu Server LTS virtual machine and start the OS installation.
+Edit the parameters in `vm/proxmox/create-ubuntu-server-vm.sh`, then sync and run from the admin host:
+
+```bash
+rsync -a vm/ root@proxmox:/tmp/vm/
+ssh root@proxmox bash /tmp/vm/proxmox/create-ubuntu-server-vm.sh
+```
 
 Note - Alternatives:
 - Create the VM using the Proxmox web interface, download and attach the installer ISO, then proceed with manual installation

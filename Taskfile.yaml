@@ -227,8 +227,10 @@ tasks:
     env:
       PROXMOX: "root@proxmox"
     cmds:
-      - ssh ${PROXMOX} "bash -s" -- --download-only < proxmox/create-openwrt-vm.sh
-      - ssh ${PROXMOX} "bash -s" -- --download-only < proxmox/create-ubuntu-server-vm.sh
+      - rsync -a vm/ ${PROXMOX}:/tmp/vm/
+      - ssh ${PROXMOX} bash /tmp/vm/proxmox/create-openwrt-vm.sh --download-only
+      - ssh ${PROXMOX} bash /tmp/vm/proxmox/create-ubuntu-server-vm.sh --download-only
+      - ssh ${PROXMOX} bash /tmp/vm/proxmox/create-ubuntu-cloud-vm.sh --download-only
       # TODO Add Proxmox ISO
       # TODO Add Linux Mint ISO
 
