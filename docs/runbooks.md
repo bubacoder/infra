@@ -12,7 +12,7 @@ Hosts involved:
 
 Steps:
 
-- OLD: Install the new host using `proxmox/create-ubuntu-server-vm.sh`
+- OLD: Install the new host using `vm/proxmox/create-ubuntu-server-vm.sh`
 - OLD: Apply Ansible using `ansible/apply-homelab.sh`
 - OLD: Transfer container images to save bandwidth (Optional, see: [Docker](../docker/README.md))
 

@@ -12,7 +12,7 @@ locations:
   - ["docs/ai/", "ai/", 40]
   - ["ansible/README.md", "tools/ansible.md", 0]
   - ["terraform/README.md", "tools/terraform.md", 0]
-  - ["proxmox/", "proxmox/", 60]
+  - ["vm/proxmox/", "proxmox/", 60]
   - ["docker/README.md", "docker/_index.md", 70]
   - ["docs/tools/", "tools/", 75]
   - ["docs/web/README.md", "docs.md", 80]
