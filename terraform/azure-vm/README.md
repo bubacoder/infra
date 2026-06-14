@@ -179,7 +179,7 @@ Note: for the previous `Makefile` (which was replaced by `Taskfile`) see [MR #16
 ## Requirements
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | terraform | >= 1.5 |
 | azurerm | ~> 4.0 |
 | random | ~> 3.0 |
@@ -187,13 +187,13 @@ Note: for the previous `Makefile` (which was replaced by `Taskfile`) see [MR #16
 ## Providers
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | random | ~> 3.0 |
 
 ## Modules
 
 | Name | Source | Version |
-|------|--------|---------|
+| ---- | ------ | ------- |
 | base | ./modules/base | n/a |
 | keyvault | ./modules/keyvault | n/a |
 | storage | ./modules/storage | n/a |
@@ -202,13 +202,13 @@ Note: for the previous `Makefile` (which was replaced by `Taskfile`) see [MR #16
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [random_string.keyvault_suffix](https://registry.terraform.io/providers/hashicorp/random/latest/docs/resources/string) | resource |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | admin\_source\_address | Allow connections (SSH, ...) only from this IP | `string` | n/a | yes |
 | admin\_user | Name of the administrative user on the VM | `string` | `"azureuser"` | no |
 | git\_credentials | Git credentials for accessing the infrastructure repository. Will be written to ~/.git-credentials | `string` | `""` | no |
@@ -227,7 +227,7 @@ Note: for the previous `Makefile` (which was replaced by `Taskfile`) see [MR #16
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | key\_vault\_name | The name of the Key Vault containing git credentials |
 | vm\_fqdn | n/a |
 | vm\_id | n/a |

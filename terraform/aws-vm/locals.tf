@@ -2,11 +2,11 @@ locals {
   # Maps architecture to AMI name pattern and default instance type
   arch_config = {
     x86_64 = {
-      ami_pattern   = "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"
+      ami_pattern   = "ubuntu/images/hvm-ssd-gp3/${var.ubuntu_version}-amd64-server-*"
       instance_type = "t3.small"
     }
     arm64 = {
-      ami_pattern   = "ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-arm64-server-*"
+      ami_pattern   = "ubuntu/images/hvm-ssd-gp3/${var.ubuntu_version}-arm64-server-*"
       instance_type = "t4g.small"
     }
   }

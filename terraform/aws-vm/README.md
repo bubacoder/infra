@@ -1,6 +1,6 @@
 # AWS VM — Terraform
 
-Deploys an Ubuntu 24.04 LTS EC2 instance on AWS with:
+Deploys an Ubuntu 26.04 LTS (Resolute Raccoon) EC2 instance on AWS with:
 - x86_64 or ARM64 (Graviton) architecture selection
 - Persistent EBS data volume that survives instance termination
 - Secrets Manager + IAM Instance Profile for credential-less secret retrieval
@@ -17,7 +17,7 @@ Uses the [terraform-aws-modules](https://github.com/terraform-aws-modules/) comm
 │  │  Public Subnet (10.0.1.0/24)             │   │
 │  │  ┌────────────────────────────────────┐  │   │
 │  │  │  EC2 Instance                      │  │   │
-│  │  │  - Ubuntu 24.04 LTS                │  │   │
+│  │  │  - Ubuntu 26.04 LTS                │  │   │
 │  │  │  - IAM Instance Profile            │  │   │
 │  │  │  - gp3 root volume                 │  │   │
 │  │  │  - EBS data volume (/storage)      │  │   │
@@ -60,15 +60,13 @@ cp config-example/terraform/aws-vm/infra.tfvars config/terraform/aws-vm/infra.tf
 
 ### 3. Populate the git credentials secret
 
-After the first `apply`, the Secrets Manager secret exists but is empty. Populate it out-of-band (credentials are **not** stored in Terraform state):
+The Secrets Manager secret is created by Terraform but its value is intentionally **not** stored in Terraform state. Run the dedicated task to populate it (prompts for username and token):
 
 ```bash
-aws secretsmanager put-secret-value \
-  --secret-id "nest/git-credentials" \
-  --secret-string "https://<username>:<token>@github.com"
+task aws-vm:setup-secret
 ```
 
-Replace `nest` with your `vm_name` if you changed it.
+This works both before and after `task aws-vm:apply`. If cloud-init already ran and failed because the secret was empty, the task prints the SSH command to re-run the setup script on the VM.
 
 ### 4. Deploy
 
@@ -100,6 +98,7 @@ task aws-vm:connect-vm
 | `task aws-vm:start-vm`      | Start instance                              |
 | `task aws-vm:stop-vm`       | Stop instance                               |
 | `task aws-vm:secrets-info`  | Show Secrets Manager retrieval instructions |
+| `task aws-vm:setup-secret`  | Populate git credentials in Secrets Manager |
 | `task aws-vm:migrate-state` | Migrate state to S3 backend                 |
 | `task aws-vm:check`         | Validate + security scan                    |
 
@@ -201,7 +200,7 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 ## Requirements
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | terraform | >= 1.5 |
 | aws | ~> 5.0 |
 | cloudinit | ~> 2.3 |
@@ -210,7 +209,7 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 ## Providers
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | aws | ~> 5.0 |
 | cloudinit | ~> 2.3 |
 | tls | ~> 4.0 |
@@ -218,7 +217,7 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 ## Modules
 
 | Name | Source | Version |
-|------|--------|---------|
+| ---- | ------ | ------- |
 | ec2 | terraform-aws-modules/ec2-instance/aws | ~> 5.0 |
 | key\_pair | terraform-aws-modules/key-pair/aws | ~> 2.0 |
 | security\_group | terraform-aws-modules/security-group/aws | ~> 5.0 |
@@ -227,7 +226,7 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [aws_ebs_volume.data](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ebs_volume) | resource |
 | [aws_iam_instance_profile.ec2](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_instance_profile) | resource |
 | [aws_iam_role.ec2](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
@@ -242,7 +241,7 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | admin\_source\_address | CIDR or IP allowed SSH and HTTPS access (e.g. your public IP: '1.2.3.4/32') | `string` | n/a | yes |
 | admin\_user | SSH admin username (Ubuntu default is 'ubuntu') | `string` | `"ubuntu"` | no |
 | architecture | CPU architecture: 'x86\_64' or 'arm64' (Graviton) | `string` | `"x86_64"` | no |
@@ -254,13 +253,15 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 | repo\_url | URL of the infrastructure repository to clone | `string` | n/a | yes |
 | spot\_instance | Use a Spot instance instead of On-Demand. Reduces cost by ~70% but the instance may be interrupted. | `bool` | `false` | no |
 | spot\_price | Maximum spot bid price (USD/hr). null = on-demand price cap (recommended — avoids accidental overbidding). | `string` | `null` | no |
+| ubuntu\_version | Ubuntu release string used in the AMI name (e.g. 'ubuntu-resolute-26.04', 'ubuntu-noble-24.04') | `string` | `"ubuntu-resolute-26.04"` | no |
 | vm\_name | Name tag and hostname of the VM | `string` | `"nest"` | no |
 
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | ami\_id | AMI ID used for the instance |
+| aws\_region | AWS region where resources are deployed |
 | instance\_id | EC2 instance ID |
 | public\_ip | Public IP address of the instance |
 | public\_key\_fingerprint\_sha256 | SHA-256 fingerprint of the SSH public key |
