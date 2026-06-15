@@ -27,6 +27,33 @@
       "matchStrings": ["python-version:\\s*['\"](?<currentValue>[\\d.]+)['\"]"],
       "datasourceTemplate": "python-version",
       "depNameTemplate": "python"
+    },
+    {
+      "description": "Update tool versions set via inline renovate comments in GitHub Actions workflow scripts",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/workflows/.+\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+?) depName=(?<depName>[^\\s]+?)(?:\\s+extractVersion=(?<extractVersion>[^\\s]+))?\\s+(?:export\\s+)?[A-Z_]+=(?<currentValue>v?[0-9][^\\s]*)"
+      ],
+      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}"
+    },
+    {
+      "description": "Update tool versions set via inline renovate comments in shell scripts",
+      "customType": "regex",
+      "managerFilePatterns": ["/\\.sh$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+?) depName=(?<depName>[^\\s]+?)(?:\\s+extractVersion=(?<extractVersion>[^\\s]+))?\\s+(?:(?:export|readonly)\\s+)?[A-Z_]+=[\"']?(?<currentValue>v?[0-9][^'\"\\s]*)"
+      ],
+      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}"
+    },
+    {
+      "description": "Update tool versions set via inline renovate comments in Ansible YAML files",
+      "customType": "regex",
+      "managerFilePatterns": ["/^ansible/.+\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+?) depName=(?<depName>[^\\s]+?)(?:\\s+extractVersion=(?<extractVersion>[^\\s]+))?\\s+[a-z_]+:\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}"
     }
   ],
   "packageRules": [
