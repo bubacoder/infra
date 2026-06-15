@@ -17,7 +17,19 @@ jobs:
           persist-credentials: false
 
       - name: Audit scripts/requirements.txt
+        id: audit
         run: pipx run pip-audit -r scripts/requirements.txt
+
+      - name: Show fix instructions on failure
+        if: failure() && steps.audit.outcome == 'failure'
+        run: |
+          echo "::error::Vulnerable dependencies found in scripts/requirements.txt"
+          echo ""
+          echo "To fix, update the affected packages in scripts/requirements.txt:"
+          echo "  pipx run pip-audit -r scripts/requirements.txt --fix"
+          echo ""
+          echo "Then verify with:"
+          echo "  pipx run pip-audit -r scripts/requirements.txt"
 
   audit-infra-mcp:
     runs-on: ubuntu-latest
@@ -33,9 +45,25 @@ jobs:
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
 
       - name: Audit scripts/infra-mcp
+        id: audit
         run: |
           uv export --frozen --no-dev --directory scripts/infra-mcp > /tmp/infra-mcp-reqs.txt
           pipx run pip-audit -r /tmp/infra-mcp-reqs.txt
+
+      - name: Show fix instructions on failure
+        if: failure() && steps.audit.outcome == 'failure'
+        run: |
+          echo "::error::Vulnerable dependencies found in scripts/infra-mcp"
+          echo ""
+          echo "To fix, upgrade the affected package(s) in scripts/infra-mcp:"
+          echo "  uv lock --upgrade-package <package> --directory scripts/infra-mcp"
+          echo ""
+          echo "Or upgrade all packages at once:"
+          echo "  uv lock --upgrade --directory scripts/infra-mcp"
+          echo ""
+          echo "Then verify with:"
+          echo "  uv export --frozen --no-dev --directory scripts/infra-mcp > /tmp/infra-mcp-reqs.txt"
+          echo "  pipx run pip-audit -r /tmp/infra-mcp-reqs.txt"
 
   check:
     runs-on: ubuntu-latest
