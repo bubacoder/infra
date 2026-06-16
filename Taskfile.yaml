@@ -166,6 +166,8 @@ tasks:
         if ! git remote get-url origin 2>/dev/null; then
           echo "No remote origin URL is configured. Skipping push."
         else
+          echo "$(git remote get-url origin)"
+          git pull --rebase --autostash
           git push
         fi
 

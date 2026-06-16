@@ -1,35 +1,27 @@
 version: '3'
 
 env:
-  OBSIDIAN_VAULT_NAME: "Today"
+  OBSIDIAN_VAULT_NAME: ".."
 
 tasks:
   # Note: to avoid syncing the .git folder by Obsidian, .git folder is placed outside of the Vault
   # Reference: https://git-scm.com/docs/git-clone#Documentation/git-clone.txt---separate-git-dirgit-dir
   # Clone command: `git clone --separate-git-dir`
   push-vault-repo:
-    desc: Commit and push changes in Obsidian Vault git repository
-    dotenv: ['config/docker/localhost/.env']
+    desc: Run improvement tasks on the Obsidian Vault git repository, commit and push changes
+    env:
+      STORAGE_OBSIDIAN:
+        sh: |
+          set -a
+          source config/docker/.env
+          source config/docker/localhost/.env
+          echo "$STORAGE_OBSIDIAN"
     silent: true
     cmds:
       - |
         VAULT_PATH="${STORAGE_OBSIDIAN}/${OBSIDIAN_VAULT_NAME}/"
         cd "${VAULT_PATH}" || { echo "Failed to cd to '${VAULT_PATH}'"; exit 1; }
-
-        git add --all
-        pre-commit run || true
-        git add --all
-
-        if git diff --cached --quiet; then
-          echo "No changes to commit."
-        else
-          git commit -m "Automatic sync"
-        fi
-        if ! git remote get-url origin 2>/dev/null; then
-          echo "No remote origin URL is configured. Skipping push."
-        else
-          git push
-        fi
+        task improve
 
   stop-obsidian:
     desc: Stop Obsidian service
