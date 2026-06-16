@@ -202,7 +202,7 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 | Name | Version |
 | ---- | ------- |
 | terraform | >= 1.5 |
-| aws | ~> 5.0 |
+| aws | ~> 6.0 |
 | cloudinit | ~> 2.3 |
 | tls | ~> 4.0 |
 
@@ -210,7 +210,7 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 
 | Name | Version |
 | ---- | ------- |
-| aws | ~> 5.0 |
+| aws | ~> 6.0 |
 | cloudinit | ~> 2.3 |
 | tls | ~> 4.0 |
 
@@ -218,10 +218,10 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 
 | Name | Source | Version |
 | ---- | ------ | ------- |
-| ec2 | terraform-aws-modules/ec2-instance/aws | ~> 5.0 |
-| key\_pair | terraform-aws-modules/key-pair/aws | ~> 2.0 |
-| security\_group | terraform-aws-modules/security-group/aws | ~> 5.0 |
-| vpc | terraform-aws-modules/vpc/aws | ~> 5.0 |
+| ec2 | terraform-aws-modules/ec2-instance/aws | ~> 6.0 |
+| key\_pair | terraform-aws-modules/key-pair/aws | ~> 3.0 |
+| security\_group | terraform-aws-modules/security-group/aws | ~> 6.0 |
+| vpc | terraform-aws-modules/vpc/aws | ~> 6.0 |
 
 ## Resources
 

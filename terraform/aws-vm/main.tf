@@ -5,7 +5,7 @@ resource "tls_private_key" "main" {
 
 module "key_pair" {
   source  = "terraform-aws-modules/key-pair/aws"
-  version = "~> 2.0"
+  version = "~> 3.0"
 
   key_name   = var.vm_name
   public_key = tls_private_key.main.public_key_openssh
@@ -18,7 +18,7 @@ module "key_pair" {
 # VPC with a single public subnet — Internet Gateway is created automatically
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 5.0"
+  version = "~> 6.0"
 
   name = var.vm_name
   cidr = "10.0.0.0/16"
@@ -37,30 +37,36 @@ module "vpc" {
 # Security group: SSH and HTTPS from admin IP only, unrestricted egress
 module "security_group" {
   source  = "terraform-aws-modules/security-group/aws"
-  version = "~> 5.0"
+  version = "~> 6.0"
 
   name        = "${var.vm_name}-sg"
   description = "Allow SSH and HTTPS from admin source"
   vpc_id      = module.vpc.vpc_id
 
-  ingress_with_cidr_blocks = [
-    {
+  ingress_rules = {
+    ssh = {
       from_port   = 22
       to_port     = 22
-      protocol    = "tcp"
+      ip_protocol = "tcp"
       description = "SSH from admin"
-      cidr_blocks = local.admin_cidr
-    },
-    {
+      cidr_ipv4   = local.admin_cidr
+    }
+    https = {
       from_port   = 443
       to_port     = 443
-      protocol    = "tcp"
+      ip_protocol = "tcp"
       description = "HTTPS from admin"
-      cidr_blocks = local.admin_cidr
+      cidr_ipv4   = local.admin_cidr
     }
-  ]
+  }
 
-  egress_rules = ["all-all"]
+  egress_rules = {
+    all = {
+      ip_protocol = "-1"
+      cidr_ipv4   = "0.0.0.0/0"
+      description = "Allow all outbound"
+    }
+  }
 
   tags = {
     Name = "${var.vm_name}-sg"
@@ -70,7 +76,7 @@ module "security_group" {
 # EC2 instance
 module "ec2" {
   source  = "terraform-aws-modules/ec2-instance/aws"
-  version = "~> 5.0"
+  version = "~> 6.0"
 
   name          = var.vm_name
   ami           = data.aws_ami.ubuntu.id
@@ -78,7 +84,8 @@ module "ec2" {
   key_name      = module.key_pair.key_pair_name
 
   subnet_id                   = module.vpc.public_subnets[0]
-  vpc_security_group_ids      = [module.security_group.security_group_id]
+  vpc_security_group_ids      = [module.security_group.id]
+  create_security_group       = false
   associate_public_ip_address = true
 
   iam_instance_profile = aws_iam_instance_profile.ec2.name
@@ -97,14 +104,12 @@ module "ec2" {
     http_put_response_hop_limit = 1
   }
 
-  root_block_device = [
-    {
-      volume_size           = var.os_disk_size_gb
-      volume_type           = "gp3"
-      encrypted             = true
-      delete_on_termination = true
-    }
-  ]
+  root_block_device = {
+    size                  = var.os_disk_size_gb
+    type                  = "gp3"
+    encrypted             = true
+    delete_on_termination = true
+  }
 
   tags = {
     Name         = var.vm_name
