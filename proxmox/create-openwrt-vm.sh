@@ -6,7 +6,7 @@ set -euo pipefail
 # OpenWRT version to install
 # Check latest version at: https://downloads.openwrt.org/releases/
 # renovate: datasource=github-releases depName=openwrt/openwrt extractVersion=^v(?<version>.+)$
-readonly OPENWRT_VERSION=24.10.2
+readonly OPENWRT_VERSION=25.12.4
 
 # VM params
 readonly VMNAME="openwrt"
