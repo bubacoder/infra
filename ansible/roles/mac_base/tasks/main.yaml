@@ -1,6 +1,13 @@
 ---
 - name: Install packages with Homebrew
-  ansible.builtin.import_tasks: 10-homebrew.yaml
+  ansible.builtin.import_tasks: 20-homebrew.yaml
+
+# https://asdf-vm.com/
+- name: Install tools via asdf
+  ansible.builtin.include_tasks: "../../common/tasks/asdf.yaml"
+  vars:
+    asdf_tools: "{{ mac_base_asdf_tools }}"
+    asdf_brew_bin_path: "/opt/homebrew/bin:/usr/local/bin"
 
 - name: Configure admin user
-  ansible.builtin.import_tasks: 20-user.yaml
+  ansible.builtin.import_tasks: 30-user.yaml
