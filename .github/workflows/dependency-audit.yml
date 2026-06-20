@@ -1,0 +1,72 @@
+name: Dependency audit and auto-fix
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: dependency-audit
+  cancel-in-progress: true
+
+jobs:
+  audit-and-fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Audit scripts/requirements.txt
+        id: audit-scripts
+        continue-on-error: true
+        run: pipx run pip-audit -r scripts/requirements.txt
+
+      - name: Fix scripts/requirements.txt
+        if: steps.audit-scripts.outcome == 'failure'
+        run: pipx run pip-audit -r scripts/requirements.txt --fix
+
+      - name: Re-audit scripts/requirements.txt
+        if: steps.audit-scripts.outcome == 'failure'
+        run: pipx run pip-audit -r scripts/requirements.txt
+
+      - name: Audit scripts/infra-mcp
+        id: audit-infra-mcp
+        continue-on-error: true
+        run: |
+          uv export --frozen --no-dev --directory scripts/infra-mcp > /tmp/infra-mcp-reqs.txt
+          pipx run pip-audit -r /tmp/infra-mcp-reqs.txt
+
+      - name: Fix scripts/infra-mcp
+        if: steps.audit-infra-mcp.outcome == 'failure'
+        run: uv lock --upgrade --directory scripts/infra-mcp
+
+      - name: Re-audit scripts/infra-mcp
+        if: steps.audit-infra-mcp.outcome == 'failure'
+        run: |
+          uv export --frozen --no-dev --directory scripts/infra-mcp > /tmp/infra-mcp-reqs.txt
+          pipx run pip-audit -r /tmp/infra-mcp-reqs.txt
+
+      - name: Commit and push fixes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git add scripts/requirements.txt scripts/infra-mcp/uv.lock
+            git commit -m "fix: auto-upgrade vulnerable dependencies"
+            git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}"
+            git push origin HEAD:main
+          fi
