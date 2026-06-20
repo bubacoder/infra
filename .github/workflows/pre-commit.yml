@@ -24,7 +24,7 @@ jobs:
       - name: Install tflint
         run: |
           # renovate: datasource=github-releases depName=terraform-linters/tflint
-          export TFLINT_VERSION=v0.62.0
+          export TFLINT_VERSION=0.63.1
           curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
 
       - name: Install terraform-docs
