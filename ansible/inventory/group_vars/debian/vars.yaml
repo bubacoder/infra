@@ -88,9 +88,17 @@ debian_tools_brew_packages_aws:
 debian_tools_brew_packages_azure:
   - azure-cli           # https://learn.microsoft.com/en-us/cli/azure/
 
+## asdf Tools
+debian_tools_asdf_tools:
+  - plugin: terraform
+    # renovate: datasource=hashicorp depName=terraform
+    version: "1.14.3"
+  - plugin: kubectl
+    # renovate: datasource=github-releases depName=kubernetes/kubernetes extractVersion=^v(?<version>.+)$
+    version: "1.32.0"
+
 ## Terraform Tools
 debian_tools_brew_packages_terraform:
-  - hashicorp/tap/terraform      # https://www.terraform.io/
   - terraform-docs               # https://github.com/terraform-docs/terraform-docs
   - terragrunt                   # https://terragrunt.gruntwork.io/docs/getting-started/install/
   - tfsec                        # https://github.com/aquasecurity/tfsec
@@ -98,7 +106,6 @@ debian_tools_brew_packages_terraform:
   - opentofu                     # https://opentofu.org/
 
 ## Kubernetes Tools
-## Note: kubectl is set up by asdf
 debian_tools_brew_packages_kubernetes:
   - k9s                 # https://k9scli.io/
   - kustomize           # https://kustomize.io/

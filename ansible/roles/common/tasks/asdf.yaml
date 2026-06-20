@@ -1,0 +1,43 @@
+---
+# Shared asdf tasks. Call via include_tasks with:
+#   asdf_tools:         list of {plugin, version} dicts
+#   asdf_brew_bin_path: path to Homebrew bin directory
+
+- name: Add asdf plugins
+  ansible.builtin.command:
+    cmd: "asdf plugin add {{ item.plugin }}"
+  loop: "{{ asdf_tools }}"
+  register: _common_asdf_plugin
+  changed_when:
+    - _common_asdf_plugin.rc == 0
+    - "'already added' not in _common_asdf_plugin.stdout"
+    - "'already added' not in _common_asdf_plugin.stderr"
+  failed_when:
+    - _common_asdf_plugin.rc != 0
+    - "'already added' not in _common_asdf_plugin.stdout"
+    - "'already added' not in _common_asdf_plugin.stderr"
+  become: false
+  environment:
+    PATH: "{{ asdf_brew_bin_path }}:{{ ansible_facts['env']['PATH'] }}"
+
+- name: Install asdf tool versions
+  ansible.builtin.command:
+    cmd: "asdf install {{ item.plugin }} {{ item.version }}"
+  loop: "{{ asdf_tools }}"
+  register: _common_asdf_install
+  changed_when:
+    - "'already installed' not in _common_asdf_install.stdout"
+    - "'already installed' not in _common_asdf_install.stderr"
+  become: false
+  environment:
+    PATH: "{{ asdf_brew_bin_path }}:{{ ansible_facts['env']['PATH'] }}"
+
+- name: Set global versions via asdf
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_facts['env']['HOME'] }}/.tool-versions"
+    regexp: "^{{ item.plugin }}\\s"
+    line: "{{ item.plugin }} {{ item.version }}"
+    create: true
+    mode: "0644"
+  loop: "{{ asdf_tools }}"
+  become: false

@@ -8,3 +8,12 @@
   ansible.builtin.include_tasks: 20-homebrew.yaml
   when:
     - debian_tools_brew_install_groups is defined or debian_tools_brew_cask_packages is defined
+
+# https://asdf-vm.com/
+- name: Install tools via asdf
+  ansible.builtin.include_tasks: "../../common/tasks/asdf.yaml"
+  when:
+    - debian_tools_asdf_tools is defined
+  vars:
+    asdf_tools: "{{ debian_tools_asdf_tools }}"
+    asdf_brew_bin_path: "/home/linuxbrew/.linuxbrew/bin"
