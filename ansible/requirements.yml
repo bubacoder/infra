@@ -5,7 +5,7 @@
 collections:
   # Source: https://github.com/ansible-collections/community.general
   - name: community.general
-    version: 13.0.1
+    version: 13.1.0
   # Source: https://github.com/ansible-collections/community.docker
   - name: community.docker
     version: 5.2.1

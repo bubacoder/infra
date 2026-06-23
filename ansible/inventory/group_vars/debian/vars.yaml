@@ -95,7 +95,7 @@ debian_tools_asdf_tools:
     version: "1.14.3"
   - plugin: kubectl
     # renovate: datasource=github-releases depName=kubernetes/kubernetes extractVersion=^v(?<version>.+)$
-    version: "1.32.0"
+    version: "1.36.2"
 
 ## Terraform Tools
 debian_tools_brew_packages_terraform:
