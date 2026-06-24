@@ -36,7 +36,6 @@ debian:
 
       # Enable all brew package groups
       debian_tools_brew_install_groups:
-        common: true
         dev: true
         aws: true
         azure: true
@@ -44,6 +43,8 @@ debian:
         kubernetes: true
 
     colony:
+      ansible_host: 192.168.1.12
+
       debian_base_install_storage_packages: true
 
       # Crowdsec - configure docker/security/crowdsec/crowdsec.yaml and
@@ -53,7 +54,6 @@ debian:
 
       # Enable all brew package groups
       debian_tools_brew_install_groups:
-        common: true
         dev: true
         aws: true
         azure: true
@@ -70,7 +70,6 @@ debian:
     local-debian:
       ansible_connection: local
       debian_tools_brew_install_groups:
-        common: true
         dev: true
         aws: true
         azure: true

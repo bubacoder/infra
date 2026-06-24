@@ -1,0 +1,41 @@
+---
+- name: Create credentials file for {{ samba_server.hostname }}
+  ansible.builtin.copy:
+    dest: "/root/.smbcredentials_{{ samba_server.hostname }}"
+    content: |
+      username={{ admin_user }}
+      password={{ admin_password }}
+    owner: root
+    group: root
+    mode: "0600"
+  when: admin_password is defined
+  no_log: true
+
+- name: Create mount base directory for {{ samba_server.hostname }}
+  ansible.builtin.file:
+    path: "/mnt/{{ samba_server.hostname }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0777"
+  when: admin_password is defined
+
+- name: Create mount directories for {{ samba_server.hostname }}
+  ansible.builtin.file:
+    path: "/mnt/{{ samba_server.hostname }}/{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0777"
+  loop: "{{ samba_server.shares }}"
+  when: admin_password is defined
+
+- name: Mount shares from {{ samba_server.hostname }}
+  ansible.posix.mount:
+    src: "//{{ samba_server.hostname }}/{{ item }}"
+    path: "/mnt/{{ samba_server.hostname }}/{{ item }}"
+    fstype: cifs
+    opts: "credentials=/root/.smbcredentials_{{ samba_server.hostname }},{{ debian_samba_client_mount_opts_default }}"
+    state: mounted
+  loop: "{{ samba_server.shares }}"
+  when: admin_password is defined

@@ -5,7 +5,5 @@
     - name: Mount network shares
       ansible.builtin.include_tasks: 10-samba.yaml
       when:
-        - debian_samba_client_nas_hostname is defined
-        - debian_samba_client_nas_shares is defined
-        - debian_samba_client_nas_shares | type_debug == 'list'
-        - debian_samba_client_nas_shares | length > 0
+        - debian_samba_client_servers is defined
+        - debian_samba_client_servers | length > 0

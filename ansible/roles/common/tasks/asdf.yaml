@@ -1,7 +1,7 @@
 ---
 # Shared asdf tasks. Call via include_tasks with:
 #   asdf_tools:         list of {plugin, version} dicts
-#   asdf_brew_bin_path: path to Homebrew bin directory
+#   asdf_bin_path: path to directory containing the asdf binary
 
 - name: Add asdf plugins
   ansible.builtin.command:
@@ -18,7 +18,7 @@
     - "'already added' not in _common_asdf_plugin.stderr"
   become: false
   environment:
-    PATH: "{{ asdf_brew_bin_path }}:{{ ansible_facts['env']['PATH'] }}"
+    PATH: "{{ asdf_bin_path }}:{{ ansible_facts['env']['PATH'] }}"
 
 - name: Install asdf tool versions
   ansible.builtin.command:
@@ -30,7 +30,7 @@
     - "'already installed' not in _common_asdf_install.stderr"
   become: false
   environment:
-    PATH: "{{ asdf_brew_bin_path }}:{{ ansible_facts['env']['PATH'] }}"
+    PATH: "{{ asdf_bin_path }}:{{ ansible_facts['env']['PATH'] }}"
 
 - name: Set global versions via asdf
   ansible.builtin.lineinfile:

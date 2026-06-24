@@ -1,0 +1,35 @@
+---
+- name: Ensure ~/.local/bin exists
+  ansible.builtin.file:
+    path: "{{ ansible_facts['env']['HOME'] }}/.local/bin"
+    state: directory
+    mode: "0755"
+  become: false
+
+- name: Check if asdf binary is already installed
+  ansible.builtin.stat:
+    path: "{{ ansible_facts['env']['HOME'] }}/.local/bin/asdf"
+  register: _debian_tools_asdf_installed
+  become: false
+
+- name: Download and install asdf binary
+  ansible.builtin.unarchive:
+    src: >-
+      https://github.com/asdf-vm/asdf/releases/download/{{ debian_tools_asdf_version }}/asdf-{{ debian_tools_asdf_version }}-linux-{{
+        'amd64' if ansible_facts['architecture'] == 'x86_64' else 'arm64'
+      }}.tar.gz
+    dest: "{{ ansible_facts['env']['HOME'] }}/.local/bin"
+    remote_src: true
+    include:
+      - asdf
+    mode: "0755"
+  become: false
+  when: not _debian_tools_asdf_installed.stat.exists
+
+- name: Add asdf shims to PATH in ~/.bashrc
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_facts['env']['HOME'] }}/.bashrc"
+    line: 'export PATH="$HOME/.local/bin:${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"'
+    create: true
+    mode: "0644"
+  become: false

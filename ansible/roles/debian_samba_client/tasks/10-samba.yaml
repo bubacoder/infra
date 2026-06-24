@@ -11,40 +11,8 @@
     msg: "WARNING: 'admin_password' is not defined — skipping credentials file creation. Samba mounts may fail."
   when: admin_password is not defined
 
-- name: Create credentials file
-  ansible.builtin.copy:
-    dest: "{{ debian_samba_client_credentials_file }}"
-    content: |
-      username={{ admin_user }}
-      password={{ admin_password }}
-    owner: root
-    group: root
-    mode: "0600"
-  when: admin_password is defined
-
-- name: Create mount base directory
-  ansible.builtin.file:
-    path: "{{ debian_samba_client_mnt_dir }}"
-    state: directory
-    owner: "{{ admin_user }}"
-    group: "{{ admin_user }}"
-    mode: "0777"
-
-- name: Create mount directories
-  ansible.builtin.file:
-    path: "{{ debian_samba_client_mnt_dir }}{{ item }}"
-    state: directory
-    owner: "{{ admin_user }}"
-    group: "{{ admin_user }}"
-    mode: "0777"
-  loop: "{{ debian_samba_client_nas_shares }}"
-
-- name: Mount shares from NAS
-  ansible.posix.mount:
-    src: "//{{ debian_samba_client_nas_hostname }}/{{ item }}"
-    path: "{{ debian_samba_client_mnt_dir }}{{ item }}"
-    fstype: cifs
-    opts: "{{ debian_samba_client_mount_opts }}"
-    state: mounted
-  loop: "{{ debian_samba_client_nas_shares }}"
-  when: admin_password is defined
+- name: Configure mounts for each SMB server
+  ansible.builtin.include_tasks: 20-samba-server.yaml
+  loop: "{{ debian_samba_client_servers }}"
+  loop_control:
+    loop_var: samba_server
