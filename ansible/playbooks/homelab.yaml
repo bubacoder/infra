@@ -21,7 +21,6 @@
     - hive
     - colony
   roles:
-    - role: debian_homebrew
     - role: debian_tools
 
 - name: Setup Samba client

@@ -58,7 +58,6 @@ debian_tools_apt_packages:
 # Installation flags - override in inventory.yaml per-host
 # All groups are opt-in by default
 debian_tools_brew_install_groups:
-  common: false
   dev: false
   aws: false
   azure: false
@@ -66,11 +65,6 @@ debian_tools_brew_install_groups:
   kubernetes: false
 
 # Package group definitions
-
-## Common Tools
-debian_tools_brew_packages_common:
-  - asdf                # https://asdf-vm.com/
-  - helix               # https://helix-editor.com
 
 ## Dev Tools
 debian_tools_brew_packages_dev:
@@ -88,7 +82,10 @@ debian_tools_brew_packages_aws:
 debian_tools_brew_packages_azure:
   - azure-cli           # https://learn.microsoft.com/en-us/cli/azure/
 
-## asdf Tools
+## asdf - https://asdf-vm.com/
+# renovate: datasource=github-releases depName=asdf-vm/asdf
+debian_tools_asdf_version: "v0.16.7"
+
 debian_tools_asdf_tools:
   - plugin: terraform
     # renovate: datasource=hashicorp depName=terraform
@@ -111,9 +108,10 @@ debian_tools_brew_packages_kubernetes:
   - kustomize           # https://kustomize.io/
   - helm                # https://helm.sh/docs/intro/install/
 
-debian_samba_client_nas_hostname: nas
-debian_samba_client_nas_shares:
-  - media
-  - family-media
-  - backup
-  - downloads
+debian_samba_client_servers:
+  - hostname: 192.168.1.12
+    shares:
+      - media
+      - family-media
+      - backup
+      - downloads

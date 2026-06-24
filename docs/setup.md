@@ -60,7 +60,7 @@ Steps:
   - `ansible/inventory/inventory.yaml`
     - Add your host
   - `ansible/playbooks/homelab.yaml`
-    - Include your host with `debian_tools` and `debian_homebrew` roles; add `debian_docker_host` if this host will also run Docker containers
+    - Include your host with the `debian_tools` role (which handles Homebrew setup internally); add `debian_docker_host` if this host will also run Docker containers
 - Apply the playbook locally: `ansible/apply-localhost.sh --ask-become-pass`
   - (After passwordless sudo is configured, the `--ask-become-pass` parameter can be dropped)
 

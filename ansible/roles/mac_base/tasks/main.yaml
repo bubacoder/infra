@@ -7,7 +7,7 @@
   ansible.builtin.include_tasks: "../../common/tasks/asdf.yaml"
   vars:
     asdf_tools: "{{ mac_base_asdf_tools }}"
-    asdf_brew_bin_path: "/opt/homebrew/bin:/usr/local/bin"
+    asdf_bin_path: "/opt/homebrew/bin:/usr/local/bin"
 
 - name: Configure admin user
   ansible.builtin.import_tasks: 30-user.yaml

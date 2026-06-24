@@ -6,14 +6,19 @@
 # https://docs.brew.sh/Homebrew-on-Linux
 - name: Install packages with Homebrew
   ansible.builtin.include_tasks: 20-homebrew.yaml
-  when:
-    - debian_tools_brew_install_groups is defined or debian_tools_brew_cask_packages is defined
+  when: >-
+    (debian_tools_brew_install_groups is defined and
+     debian_tools_brew_install_groups.values() | select('equalto', true) | list | length > 0)
+    or (debian_tools_brew_cask_packages is defined and debian_tools_brew_cask_packages | length > 0)
 
 # https://asdf-vm.com/
+- name: Install asdf
+  ansible.builtin.include_tasks: 30-asdf.yaml
+  when: debian_tools_asdf_tools is defined
+
 - name: Install tools via asdf
   ansible.builtin.include_tasks: "../../common/tasks/asdf.yaml"
-  when:
-    - debian_tools_asdf_tools is defined
+  when: debian_tools_asdf_tools is defined
   vars:
     asdf_tools: "{{ debian_tools_asdf_tools }}"
-    asdf_brew_bin_path: "/home/linuxbrew/.linuxbrew/bin"
+    asdf_bin_path: "{{ ansible_facts['env']['HOME'] }}/.local/bin"
