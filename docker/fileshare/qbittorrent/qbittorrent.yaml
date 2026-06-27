@@ -1,5 +1,5 @@
 # The qBittorrent project aims to provide an open-source software alternative to µTorrent. qBittorrent is based on the Qt toolkit and libtorrent-rasterbar library.
-# The default username/password is `admin` / `adminadmin`.
+# The default username/password is printed to the terminal on container start.
 #
 # Recommended setup steps:
 # - Configure "Bypass authentication for clients in whitelisted IP subnets" (Settings -> Webui) - Authelia handles the authentication
@@ -17,8 +17,21 @@ services:
     build: .
     container_name: qbittorrent
     restart: unless-stopped
-    # network_mode: host
-    # hostname: ${MAIN_NODE}
+    networks:
+      - proxy
+    # If running on a separate host (not the Traefik host), remove the networks section above,
+    # add "- 8080:8080" to the ports section below so the WebUI is reachable on the host,
+    # and add a router+service entry in docker/security/traefik/config/dynamic/external-services.yml:
+    #   routers:
+    #     qbittorrent:
+    #       rule: 'Host(`qbittorrent.${MYDOMAIN}`)'
+    #       service: qbittorrent
+    #       middlewares: [localaccess@file]
+    #   services:
+    #     qbittorrent:
+    #       loadBalancer:
+    #         servers:
+    #           - url: http://<host>:8080
     environment:
       PUID: ${PUID}
       PGID: ${PGID}
@@ -28,9 +41,8 @@ services:
       - ${DOCKER_VOLUMES}/qbittorrent:/config
       - ${STORAGE_DOWNLOADS}/torrent-downloads:/downloads
       - ${STORAGE_MEDIA}:/media
-    # Not needed if 'network_mode: host' is set
     ports:
-      - 8080:8080 # Web UI
+      # 8080 not exposed on host - Traefik reaches it via proxy network
       - 6881:6881/tcp # Bittorrent incoming connections
       - 6881:6881/udp # Bittorrent incoming connections
     labels:
@@ -43,3 +55,7 @@ services:
       homepage.href: https://qbittorrent.${MYDOMAIN}/
       homepage.description: "BitTorrent client"
       com.centurylinklabs.watchtower.enable: false
+
+networks:
+  proxy:
+    external: true

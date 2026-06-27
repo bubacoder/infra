@@ -4,9 +4,9 @@
 
 - Connections:
     - Router Web UI:
-        href: https://router.{{HOMEPAGE_VAR_MYDOMAIN}}/cgi-bin/luci/
+        href: https://router.{{HOMEPAGE_VAR_MYDOMAIN}}/
         siteMonitor: https://router.{{HOMEPAGE_VAR_MYDOMAIN}}/
-        description: OpenWRT LuCi
+        description: Mikrotik hEX Router
         icon: router.png
     - Proxmox Web UI:
         href: https://proxmox.{{HOMEPAGE_VAR_MYDOMAIN}}/

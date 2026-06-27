@@ -6,7 +6,7 @@
 # http:
 #   use_x_forwarded_for: true
 #   trusted_proxies:
-#     - 172.18.0.0/24
+#     - 172.16.0.0/12  # All Docker bridge networks
 # ```
 #
 # Links:

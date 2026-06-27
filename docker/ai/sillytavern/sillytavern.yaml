@@ -14,7 +14,7 @@ services:
   initContainer:
     image: busybox
     container_name: sillytavern-init
-    command: grep -q '^\s*-\s*172\.18\.0\.1\/16' /home/node/app/config/config.yaml || sed -i '/whitelist:/a \ \ - 172.18.0.1\/16' /home/node/app/config/config.yaml
+    command: sh -c 'grep -q "172\.16\.0\.0/12" /home/node/app/config/config.yaml || sed -i "s|172\\.18\\.0\\.1/16|172.16.0.0/12|; /^whitelist:/a - 172.16.0.0/12" /home/node/app/config/config.yaml'
     volumes:
       - ${DOCKER_VOLUMES}/sillytavern/config:/home/node/app/config
     network_mode: none
