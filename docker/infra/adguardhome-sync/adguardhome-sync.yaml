@@ -20,10 +20,10 @@ services:
     environment:
       # Config reference: https://github.com/bakito/adguardhome-sync?tab=readme-ov-file#config-via-environment-variables
       CRON: "0 */2 * * *"
-      ORIGIN_URL: "http://${MAIN_NODE_IP}:3000"
+      ORIGIN_URL: "http://${PRIMARY_NODE_IP}:3000"
       ORIGIN_USERNAME: ${ADGUARDHOME_USERNAME}
       ORIGIN_PASSWORD: ${ADGUARDHOME_PASSWORD}
-      REPLICA1_URL: "http://${SECOND_NODE_IP}:3000"
+      REPLICA1_URL: "http://${SECONDARY_NODE_IP}:3000"
       REPLICA1_USERNAME: ${ADGUARDHOME_USERNAME}
       REPLICA1_PASSWORD: ${ADGUARDHOME_PASSWORD}
       API_PORT: 8080

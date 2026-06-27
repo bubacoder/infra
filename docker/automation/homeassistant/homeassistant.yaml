@@ -21,7 +21,7 @@ services:
     container_name: homeassistant
     restart: unless-stopped
     network_mode: host
-    hostname: ${MAIN_NODE}
+    hostname: ${PRIMARY_NODE}
     environment:
       PUID: ${PUID}
       PGID: ${PGID}

@@ -77,7 +77,7 @@ tasks:
     cmds:
       # Process .env files
       - |
-        SOURCE_HOSTDIR="${CONFIG_DIR}/${MAIN_NODE}"
+        SOURCE_HOSTDIR="${CONFIG_DIR}/${PRIMARY_NODE}"
         TARGET_HOSTDIR="${EXAMPLE_DIR}/myhost"
         mkdir -p "${TARGET_HOSTDIR}"
         echo "Processing: ${CONFIG_DIR}/.env -> ${EXAMPLE_DIR}/.env"
@@ -89,5 +89,5 @@ tasks:
             python3 "$SCRIPT" "$env_file" "$target_filename"
         done
       # Process services.yaml, services-schema.yaml
-      - sed "s/${MAIN_NODE}/myhost/g" config/docker/${MAIN_NODE}/services.yaml > config-example/docker/myhost/services.yaml
+      - sed "s/${PRIMARY_NODE}/myhost/g" config/docker/${PRIMARY_NODE}/services.yaml > config-example/docker/myhost/services.yaml
       - cp config/docker/services-schema.yaml config-example/docker/services-schema.yaml
