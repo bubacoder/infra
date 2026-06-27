@@ -54,6 +54,15 @@
         "# renovate: datasource=(?<datasource>[a-z-]+?) depName=(?<depName>[^\\s]+?)(?:\\s+extractVersion=(?<extractVersion>[^\\s]+))?\\s+[a-z_]+:\\s*\"(?<currentValue>[^\"]+)\""
       ],
       "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}"
+    },
+    {
+      "description": "Update tool versions set via inline renovate comments in Traefik static config",
+      "customType": "regex",
+      "managerFilePatterns": ["/^docker/security/traefik/config/traefik\\.yml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+?) depName=(?<depName>[^\\s]+?)(?:\\s+extractVersion=(?<extractVersion>[^\\s]+))?\\s+[a-z_]+:\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}"
     }
   ],
   "packageRules": [
@@ -171,7 +180,7 @@
       "matchPackageNames": [
         "lscr.io/linuxserver/qbittorrent"
       ],
-      "allowedVersions": "<5"
+      "allowedVersions": "<6"
     },
     {
       "description": "Disable invalid version tags",
