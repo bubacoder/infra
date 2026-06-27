@@ -1,0 +1,12 @@
+# GPU override for Jellyfin — AMD VAAPI hardware transcoding.
+# Enable by setting GPU_COMPOSE_SUFFIX=amdgpu in config/docker/<hostname>/.env
+# After deploying, configure VA-API in Jellyfin UI: Dashboard → Playback → Transcoding → VA-API
+---
+name: jellyfin
+services:
+  jellyfin:
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+    group_add:
+      - "${GPU_RENDER_GID}"  # render group — numeric GID required (name may not exist in container)
+      - "${GPU_VIDEO_GID}"   # video group

@@ -145,6 +145,19 @@ def get_env_file_args(host_config_dir: Path, service_name: str) -> list[str]:
     return args
 
 
+def get_gpu_suffix(host_config_dir: Path) -> str | None:
+    """Read GPU_COMPOSE_SUFFIX from the host-specific .env file."""
+    env_file = host_config_dir / ".env"
+    if not env_file.exists():
+        return None
+    for line in env_file.read_text().splitlines():
+        stripped = line.strip()
+        if stripped.startswith("GPU_COMPOSE_SUFFIX="):
+            value = stripped.split("=", 1)[1].strip().strip("\"'")
+            return value or None
+    return None
+
+
 def docker(
     cmd: list[str],
     env: dict[str, str] | None = None,
@@ -162,23 +175,24 @@ def docker(
 def docker_pull(
     stack_dir: Path,
     service_name: str,
-    compose_file: Path,
+    compose_files: list[Path],
     env_file_args: list[str],
     quiet: bool = False,
 ) -> None:
     """Pull Docker images for a service, using build if the service has a build directive."""
     logger.info(f">>> Pulling {stack_dir}/{service_name}")
+    file_args = [arg for f in compose_files for arg in ["-f", str(f)]]
 
-    if has_build_directive(compose_file):
+    if has_build_directive(compose_files[0]):
         # Bake: https://docs.docker.com/guides/compose-bake/
         env = os.environ.copy()
         env["COMPOSE_BAKE"] = "true"
-        cmd = ["compose", "-f", compose_file, *env_file_args, "build", "--pull"]
+        cmd = ["compose", *file_args, *env_file_args, "build", "--pull"]
         if quiet:
             cmd.append("--quiet")
         docker(cmd, env=env)
     else:
-        cmd = ["compose", "-f", compose_file, *env_file_args, "pull"]
+        cmd = ["compose", *file_args, *env_file_args, "pull"]
         if quiet:
             cmd.append("--quiet")
         docker(cmd)
@@ -219,16 +233,25 @@ def docker_command(
     if action in {"up", "recreate"}:
         create_service_networks(compose_file)
 
+    compose_files = [compose_file]
+    suffix = get_gpu_suffix(host_config_dir)
+    if suffix:
+        override = compose_file.parent / f"{service_name}-{suffix}.yaml"
+        if override.exists():
+            logger.info(f"  GPU override: {override.name}")
+            compose_files.append(override)
+
     env_file_args = get_env_file_args(host_config_dir, service_name)
-    base_cmd = ["compose", "-f", compose_file, *env_file_args]
+    file_args = [arg for f in compose_files for arg in ["-f", str(f)]]
+    base_cmd = ["compose", *file_args, *env_file_args]
 
     match action:
         case "pull":
-            docker_pull(stack_dir, service_name, compose_file, env_file_args, options.quiet)
+            docker_pull(stack_dir, service_name, compose_files, env_file_args, options.quiet)
 
         case "up":
             if options.pull_before_start:
-                docker_pull(stack_dir, service_name, compose_file, env_file_args, options.quiet)
+                docker_pull(stack_dir, service_name, compose_files, env_file_args, options.quiet)
             logger.info(f">>> Starting {stack_dir}/{service_name}")
             docker([*base_cmd, "up", "--detach"])
 
@@ -242,7 +265,7 @@ def docker_command(
 
         case "recreate":
             if options.pull_before_start:
-                docker_pull(stack_dir, service_name, compose_file, env_file_args, options.quiet)
+                docker_pull(stack_dir, service_name, compose_files, env_file_args, options.quiet)
             logger.info(f">>> Recreating {stack_dir}/{service_name}")
             docker([*base_cmd, "up", "--detach", "--force-recreate"])
 

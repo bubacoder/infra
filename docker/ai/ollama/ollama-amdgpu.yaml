@@ -1,0 +1,14 @@
+# GPU override for Ollama — AMD ROCm hardware inference.
+# Enable by setting GPU_COMPOSE_SUFFIX=amdgpu in config/docker/<hostname>/.env
+# Switches to the :rocm image tag and passes both DRI and KFD devices.
+---
+name: ollama
+services:
+  ollama:
+    image: ollama/ollama:0.30.10-rocm
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+      - /dev/kfd:/dev/kfd
+    group_add:
+      - "${GPU_RENDER_GID}"  # render group — numeric GID required (name may not exist in container)
+      - "${GPU_VIDEO_GID}"   # video group

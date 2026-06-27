@@ -7,15 +7,7 @@
 name: ollama
 services:
   ollama:
-    # Enable for GPU support (see ollama documentation for CUDA driver setup)
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities:
-    #             - gpu
+    # GPU acceleration: set GPU_COMPOSE_SUFFIX=amdgpu in host .env to load ollama-amdgpu.yaml (ROCm/AMD)
     image: ollama/ollama:0.30.10
     container_name: ollama
     restart: unless-stopped
