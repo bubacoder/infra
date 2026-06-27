@@ -73,6 +73,8 @@ scripts/labctl.py service logs category/service-name --timestamps
 
 **Key insight from logs:** Pay attention to the source location (e.g. `module.file:function:line`). An error in `process_chat` vs `images_endpoint` are different code paths that may require completely different fixes, even if the symptom looks the same.
 
+**If docker logs return empty or near-empty output:** some services (notably Traefik) write all logs to files rather than stdout. Skip immediately to Step 3 — do not waste tool calls on alternative retrieval methods (e.g. querying an internal API).
+
 If dependent services are suspected, check their logs too.
 
 ---
@@ -170,6 +172,8 @@ Choose the least invasive fix, in this order:
 1. **Environment variable or config change** — no files to mount, most maintainable
 2. **Mount a patched file via Docker volume** — add a bind mount in the service YAML pointing to a patched copy stored in the repo (e.g. `./patched_file.py:/app/path/file.py:ro`); document clearly why it exists
 3. **Custom Docker image** — only if a volume mount is not feasible; significantly increases maintenance burden
+
+**When adding a service to the `proxy` network:** remove any host port binding for the port Traefik proxies (e.g. `8080:8080`). Traefik reaches the container via Docker networking — the host binding is redundant and will conflict if another service uses the same port. Ports needed for direct external access (e.g. BitTorrent, UDP services) should remain.
 
 **Always revert wrong fixes before applying the correct one.** Accumulating incorrect changes obscures the actual state and makes future debugging harder.
 
