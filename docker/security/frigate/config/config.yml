@@ -12,6 +12,13 @@ tls:
 # auth:
 #   enabled: false
 
+# Docs: https://docs.frigate.video/configuration/hardware_acceleration_video
+# Docs: https://docs.frigate.video/configuration/ffmpeg_presets
+# AMD VAAPI hardware acceleration for video decode
+# Enable GPU_COMPOSE_SUFFIX=amdgpu in host .env to load frigate-amdgpu.yaml (VAAPI/AMD).
+ffmpeg:
+  hwaccel_args: preset-vaapi
+
 # Docs: https://docs.frigate.video/configuration/cameras
 cameras:
   reolink_front:
