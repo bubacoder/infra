@@ -109,7 +109,7 @@ debian_tools_brew_packages_kubernetes:
   - helm                # https://helm.sh/docs/intro/install/
 
 debian_samba_client_servers:
-  - hostname: 192.168.1.12
+  - hostname: colony
     shares:
       - media
       - family-media

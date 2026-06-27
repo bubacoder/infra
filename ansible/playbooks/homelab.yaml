@@ -26,7 +26,6 @@
 - name: Setup Samba client
   hosts:
     - nest
-    - colony
   roles:
     - role: debian_samba_client
 
