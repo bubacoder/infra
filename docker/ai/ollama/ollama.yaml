@@ -8,7 +8,7 @@ name: ollama
 services:
   ollama:
     # GPU acceleration: set GPU_COMPOSE_SUFFIX=amdgpu in host .env to load ollama-amdgpu.yaml (ROCm/AMD)
-    image: ollama/ollama:0.30.10
+    image: ollama/ollama:0.31.1
     container_name: ollama
     restart: unless-stopped
     # https://docs.docker.com/config/containers/resource_constraints/#configure-the-default-cfs-scheduler
