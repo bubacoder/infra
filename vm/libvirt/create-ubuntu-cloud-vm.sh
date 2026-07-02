@@ -12,6 +12,11 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../lib-common.sh"
 
 # === User configuration ===
 
+# Network type: "nat" uses libvirt's default NAT network; "bridge" attaches directly
+# to the LAN bridge (requires setup-bridge.sh to have been run first, bridge name below).
+readonly NETWORK_TYPE="nat"  # "nat" | "bridge"
+readonly BRIDGE_NAME="br0"
+
 # renovate: datasource=endoflife depName=ubuntu
 readonly UBUNTU_VERSION="26.04"
 
@@ -89,6 +94,13 @@ create_vm() {
         osinfo_arg="detect=on,require=off"
     fi
 
+    local network_arg
+    if [[ "${NETWORK_TYPE}" == "bridge" ]]; then
+        network_arg="bridge=${BRIDGE_NAME},model=virtio"
+    else
+        network_arg="network=default,model=virtio"
+    fi
+
     virt-install \
         --name "${VMNAME}" \
         --memory "${MEMORY_SIZE}" \
@@ -96,7 +108,7 @@ create_vm() {
         --disk "path=${VM_DISK},format=qcow2,bus=virtio" \
         --import \
         --osinfo "${osinfo_arg}" \
-        --network "network=default,model=virtio" \
+        --network "${network_arg}" \
         --graphics none \
         --noautoconsole \
         --cloud-init "user-data=${INIT_DIR}/user-data,meta-data=${INIT_DIR}/meta-data,disable=on"
@@ -130,6 +142,7 @@ for cmd in wget qemu-img virt-install virsh; do
 done
 
 parse_download_only_arg "$@"
+
 download_cloud_image
 
 if [ "$DOWNLOAD_ONLY" = true ]; then
