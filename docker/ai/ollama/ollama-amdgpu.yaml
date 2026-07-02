@@ -5,7 +5,7 @@
 name: ollama
 services:
   ollama:
-    image: ollama/ollama:0.30.10-rocm
+    image: ollama/ollama:0.31.1-rocm
     devices:
       - /dev/dri/renderD128:/dev/dri/renderD128
       - /dev/kfd:/dev/kfd
