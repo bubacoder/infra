@@ -45,7 +45,7 @@ For each model in the config, decide:
 - **Keep (previous)**: One version behind the latest → keep as-is (allows pinning to the prior version)
 - **Remove**: Two or more versions behind the latest → remove to avoid clutter
 
-Example: config has Opus 4.5 and 4.6 → Opus 4.7 released → add 4.7, keep 4.6, remove 4.5.
+Example (illustrates the rule — do not treat these version numbers as current): config has Opus 4.5 and 4.6 → Opus 4.7 released → add 4.7, keep 4.6, remove 4.5. Apply the "latest / one-behind / two-or-more-behind" rule against the versions you actually find in Step 1, not against the numbers written here or already in the config.
 
 Preserve without changes:
 - The overall YAML structure, comments, and provider groupings
@@ -62,30 +62,33 @@ Update both the `docker exec ollama ollama pull <model>` lines and the inline co
 
 ### LiteLLM Ollama entries sync
 
-After updating the Taskfile, update the `ollama-local-*` entries in `config.yaml` to match:
-- `ollama_chat/<model>` must reflect the exact tag used in the pull script
+After updating the Taskfile, make the `ollama-local-*` entries in `config.yaml` match it **one-to-one**: there must be exactly one `ollama-local-*` entry per model pulled by the task. If the task pulls a model that has no matching entry, **add** the missing entry; if an entry points to a model no longer pulled, remove it.
+- **Chat models** (the ≤3B and ≤8B entries): `ollama_chat/<model>` must reflect the exact tag used in the pull script.
+- **Embedding models** (e.g. `nomic-embed-text`): use the `ollama/<model>:latest` prefix, not `ollama_chat/` — LiteLLM routes `ollama_chat/` to the chat-completions endpoint, which doesn't serve embeddings. E.g. `ollama/nomic-embed-text:latest`.
 - Update the comment line above each entry (e.g. `# Local model - Phi 4 Mini (3.8B)`)
 - Do **not** change `api_base` or `api_key` references
+- **Out of scope:** entries that are not produced by the task, e.g. `ollama-mac-mistral` (a remote Mac's Ollama via `REMOTE_OLLAMA_API_BASE`). Leave these untouched.
 
 ## Step 3: Update the files
 
-Write the updated LiteLLM config using:
-```bash
-tee "$(git rev-parse --show-toplevel)/docker/ai/litellm/config/config.yaml" > /dev/null << 'EOF'
-<updated content>
-EOF
-```
+Edit `docker/ai/litellm/config/config.yaml` and `Taskfile.yaml` with the **Edit tool**, making targeted, minimal changes — one edit per model entry added/removed/renamed. Do **not** rewrite either file wholesale (a full-file rewrite risks silently dropping comments, provider groupings, or the inline doc links).
 
-Update the `get-offline-data-ollama` task in `Taskfile.yaml` directly using the Edit tool.
-
-Also update `router_settings.fallbacks` in `config.yaml` to reflect any renamed models.
+Also update `router_settings.fallbacks` in `config.yaml`:
+- Reflect any **renamed** model names, and
+- **Remove** any fallback entry that points to a model you removed in Step 2, so no fallback references a model that no longer exists in the config.
 
 ## Step 4: Verify
 
-Confirm the LiteLLM config was written correctly:
-```bash
-docker exec litellm cat /app/config.yaml
-```
+1. Lint the changed files: `pre-commit run --files docker/ai/litellm/config/config.yaml Taskfile.yaml` and fix any issues (the repo lints YAML with yamllint).
+2. Restart LiteLLM so it re-reads and **parses** the new config, then confirm it came up cleanly (a YAML or unknown-model error surfaces here, not from re-reading the file):
+   ```bash
+   scripts/labctl.py service restart ai/litellm
+   docker logs litellm --tail 50 2>&1 | grep -i "error\|invalid\|traceback" || echo "no startup errors"
+   ```
+3. Confirm the running container sees the intended config:
+   ```bash
+   docker exec litellm cat /app/config.yaml
+   ```
 
 ## LiteLLM model ID format reference
 
@@ -95,7 +98,8 @@ docker exec litellm cat /app/config.yaml
 | OpenAI (direct)        | `openai/<model-id>`                |
 | Google Gemini (direct) | `gemini/<model-id>`                |
 | OpenRouter             | `openrouter/<provider>/<model-id>` |
-| Ollama (local)         | `ollama_chat/<model-name>`         |
+| Ollama (local, chat)   | `ollama_chat/<model-name>`         |
+| Ollama (local, embed)  | `ollama/<model-name>:latest`       |
 
 Example: `openrouter/meta-llama/llama-4-maverick`, `anthropic/claude-sonnet-4-6`
 

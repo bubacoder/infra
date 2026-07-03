@@ -2,12 +2,17 @@
 
 ## Variables
 
-APPLICATION_NAME: $ARGUMENTS
-INSTALL_INSTRUCTIONS_URL: $ARGUMENTS
+$ARGUMENTS contains both of the following; split it as described:
+- INSTALL_INSTRUCTIONS_URL: the token that looks like a URL (starts with `http`).
+- APPLICATION_NAME: the remaining text. If only a URL was given, derive the name from the URL / the page's title once fetched.
+
+If `$ARGUMENTS` is empty or no URL can be identified, ask the user for the application name and the installation-instructions URL before continuing.
 
 ## Instructions
 
 Your task is to collect all necessary know-how for deploying a containerized application using Docker Compose.
+
+**First, check the application is not already deployed:** use the `get-container-categories` MCP tool and/or run `find docker -iname '*<application>*'`. If a matching service already exists, stop and tell the user rather than producing a duplicate PRP.
 
 ### Part 1 - Look for installation details
 
@@ -18,6 +23,7 @@ Visit the installation instructions page for APPLICATION_NAME at INSTALL_INSTRUC
 3. Plain docker setup (`docker run ...`)
 
 Gather all information relevant to container deployment.
+Also research whether the application supports **AMD GPU acceleration** — e.g. VAAPI for video decode/transcode or ROCm for compute/inference. Note the type of acceleration, whether the vendor ships a GPU-specific image tag, and any manual in-app configuration it requires. Record findings only; do not design the compose files here (that is done in the implementation step).
 ABORT your work if no container-based installation method is found.
 
 ### Part 2 - Gather application metadata
@@ -48,7 +54,7 @@ Long description: <Describe the application in 1–3 sentences. Optimally use th
 
 ## Container deployment
 
-<Put ALL information relevant for container-based deployment: Compose-based example (when found - or at least a docker run command), description of the environment variables, security considerations, possible further improvements. Organize information into sub-sections>
+<Put ALL information relevant for container-based deployment: Compose-based example (when found - or at least a docker run command), description of the environment variables, security considerations, AMD GPU acceleration support (type, GPU-specific image tag, manual in-app steps - or state "none"), possible further improvements. Organize information into sub-sections>
 
 ```
 
