@@ -25,6 +25,8 @@ networks:
     external: true
 ```
 
+Each service file lives at `docker/<category>/<service-name>/<service-name>.yaml`, where `<category>` is one of the subfolders under `docker/` (e.g. `ai`, `tools`, `media/video`).
+
 **Common Practices:**
 - Service metadata at the top with comments for documentation
 - Links to official sites, source repositories, and helpful guides
@@ -205,6 +207,44 @@ Under the hood, these tasks use the `docker compose` command with the following 
 ```bash
 docker compose -f "$yaml_file" --env-file "$env_file" up --detach
 ```
+
+### Service Registration
+
+A compose file is not deployed until the service is registered in the host's `config/docker/<hostname>/services.yaml`, listed under its `<category>` with `state: up` (or `down`). `task docker:apply` / `labctl.py` only act on registered services.
+
+### Managing Individual Services (`labctl.py`)
+
+Services are addressed as `<category>/<service-name>` (e.g. `ai/ollama`, `media/video/jellyfin`). Manage a single service with:
+
+```bash
+scripts/labctl.py service <operation> <category>/<service-name>
+```
+
+Operations: `up`, `down`, `restart`, `recreate`, `pull`, `config` (render the resolved compose config), `logs`.
+
+## GPU Acceleration Overrides
+
+Services that support hardware acceleration keep the GPU configuration in a **separate Docker Compose override file** — never in the base compose file, so hosts without a GPU run the base file unchanged.
+
+- The override file is named `docker/<category>/<service>/<service>-<suffix>.yaml` (e.g. `-amdgpu`). `labctl.py` merges it automatically when the host sets `GPU_COMPOSE_SUFFIX=<suffix>` in `config/docker/<hostname>/.env`.
+- Because it is a merge override, it repeats the same `name:` and service key as the base file and includes **only the fields that change**.
+
+```yaml
+# AMD GPU override (VAAPI video decode/transcode, or ROCm compute)
+---
+name: service-name
+services:
+  service-name:
+    # image: vendor/service:tag-rocm    # only if the vendor ships a GPU-specific tag (e.g. Ollama :rocm)
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128   # VAAPI / render node
+      # - /dev/kfd:/dev/kfd                        # add for ROCm compute (inference); not needed for VAAPI-only
+    group_add:
+      - "${GPU_RENDER_GID}"  # render group — numeric GID required (name may not exist in container)
+      - "${GPU_VIDEO_GID}"   # video group
+```
+
+The override's header comment must state which acceleration it provides, the `GPU_COMPOSE_SUFFIX=<suffix>` enable line, and any **manual in-app steps** still required (e.g. Jellyfin: enable VA-API in Dashboard → Playback → Transcoding; Frigate: set `hwaccel_args: preset-vaapi` in `config/config.yml`). See the working examples: `docker/media/video/jellyfin/jellyfin-amdgpu.yaml`, `docker/ai/ollama/ollama-amdgpu.yaml`, `docker/security/frigate/frigate-amdgpu.yaml`.
 
 ## Service Categories
 

@@ -4,10 +4,19 @@ description: Analyze GitHub Actions workflows and recommend improvements for spe
 
 Analyze the GitHub Actions workflows in this repository and provide recommendations for improving pipeline execution speed and efficiency.
 
-**IMPORTANT: Token Management**
-- Use small batch sizes for all GitHub API calls to avoid exceeding token limits
-- Be selective: analyze the most important workflows in detail, others only at a high level
-- Get targeted data: use specific API calls for individual runs rather than listing many runs
+**This command only analyzes and reports — do not edit any workflow files.** Show before/after code in the report; leave applying changes to the user.
+
+**Preflight (do this first, abort if it fails):**
+This command uses the GitHub CLI (`gh`) for all run data. Verify it is available and authenticated:
+```bash
+gh --version   # must exist on PATH
+gh auth status # must report a logged-in account with repo/actions access
+```
+If `gh` is not installed or `gh auth status` fails, **stop and tell the user**: report exactly what failed and how to fix it (install `gh`, or run `gh auth login`). Do not attempt `gh auth login` yourself and do not fall back to unauthenticated API calls — without run data this command cannot do its job.
+
+`gh` infers the repository from the git remote; add `-R <owner>/<repo>` only if the wrong repo is picked up.
+
+**Token management:** request only the JSON fields you need (`--json ...`), limit runs to a handful (`--limit 5`), and use `--log-failed` rather than pulling full logs.
 
 Follow these steps:
 
@@ -16,19 +25,20 @@ Follow these steps:
    - Read each workflow file to understand the structure
    - If there are more than 5 workflows, prioritize the most critical ones (CI, deployments) for detailed analysis
 
-2. **Analyze recent workflow executions**:
-   - Use `mcp__github__list_workflows` to get workflow IDs
-   - For each workflow, use `mcp__github__list_workflow_runs` to get recent runs (use parameter: perPage=3)
-   - Focus on the most frequently run workflows first
-   - Use `mcp__github__get_workflow_run` to get details for 1-2 representative runs per workflow
-   - Use `mcp__github__list_workflow_jobs` to examine job execution (use parameter: perPage=10)
-   - Use `mcp__github__get_job_logs` with `failed_only: true` to identify common failure patterns
-   - Analyze execution times, bottlenecks, and patterns across runs
+2. **Analyze recent workflow executions** (via `gh`):
+   - List workflows: `gh workflow list`
+   - For each workflow, get recent runs (timing + status):
+     `gh run list --workflow <workflow-file-or-name> --limit 5 --json databaseId,status,conclusion,createdAt,updatedAt,event`
+   - Focus on the most frequently run workflows first.
+   - For 1-2 representative runs, get per-job/step timings:
+     `gh run view <run-id> --json jobs` (each job has `startedAt`/`completedAt` and a `steps` array with the same)
+   - For failing runs, inspect only the failed logs: `gh run view <run-id> --log-failed`
+   - Compute execution times from the `startedAt`/`completedAt` timestamps; look for bottlenecks and patterns across runs.
 
 3. **Examine workflow configuration**:
    - Job dependencies and sequencing
    - Matrix strategies
-   - Caching configuration (actions/cache, Docker layer caching, etc.)
+   - Caching configuration (actions/cache, Docker layer caching, etc.) — note what caching **already exists** so you don't recommend adding caching a job already has
    - Concurrency settings
    - Conditional execution
    - Runner types (ubuntu-latest, self-hosted, etc.)

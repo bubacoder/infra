@@ -21,6 +21,24 @@ Make sure you have:
 
 The compose file is at `docker/<category>/<service>/<service>.yaml`. If the user mentions an error but not the service name, ask. If the service is obvious from context, proceed.
 
+If you know the service name but not its `category`, look it up instead of guessing: list categories with the `mcp__infra-mcp__get-container-categories` MCP tool, or run `find docker -name '<service>.yaml'`.
+
+**Scope.** This skill covers container/compose-level problems. If the root cause turns out to be host-level — host firewall, DNS, storage/permissions on a mount, Proxmox networking, or a down dependency host (e.g. a remote NAS) — stop patching the container, state that clearly, and hand the host-level fix back to the user.
+
+---
+
+## Step 0 — Confirm the Service Exists and Is Running
+
+Before analysing logs, confirm the container is actually deployed and running — an empty log stream from a container that never started is a different problem.
+
+```bash
+docker ps -a --filter "name=<container_name>" --format '{{.Names}}\t{{.Status}}'
+```
+
+- **Not listed at all** → the service was never started. Check it is registered in `config/docker/<hostname>/services.yaml` with `state: up`, then bring it up (`scripts/labctl.py service up category/service-name`).
+- **`Restarting` / `Exited`** → it is crash-looping. The logs (Step 2) will contain the startup error; this is expected, proceed.
+- **`Up`** → running but misbehaving; proceed normally.
+
 ---
 
 ## Step 1 — Get Compose Config and Identify Services
@@ -37,7 +55,7 @@ From the config, identify:
 - **Environment variables** (may reveal misconfiguration)
 - **Image tag** (needed for source code lookups in Steps 4–7)
 
-Environment variables are loaded from `.env` files in this precedence order (later overrides earlier):
+Environment variables are loaded from `.env` files in this precedence order (later overrides earlier; canonical reference: `docker/guidelines.md` → "Environment Variables Management"):
 1. `config/docker/.env` — common to all hosts
 2. `config/docker/<hostname>/.env` — host-specific
 3. `config/docker/.env.<service>` — service-specific (all hosts)
@@ -114,6 +132,8 @@ Use the GitHub API to read the actual source for the version in use:
 gh api repos/<org>/<repo>/contents/<path>?ref=<version-tag> --jq '.content' | base64 -d | grep -i "<variable>"
 ```
 
+> The `gh`-based steps (4–7) need an authenticated CLI. If a `gh` call fails with an auth or rate-limit error, run `gh auth status` — if unauthenticated, ask the user to run `gh auth login` (do not attempt it yourself), and meanwhile fall back to Context7 docs and web search.
+
 ---
 
 ## Step 5 — Search GitHub Issues
@@ -149,7 +169,11 @@ gh api repos/<org>/<repo>/releases --jq '.[0:5] | .[] | {tag: .tag_name, body: .
 
 **Upgrading:** If a newer version contains the fix, update the image tag in the service YAML file (`docker/category/service/service.yaml`) and recreate the container.
 
-**Downgrading:** If a recent update introduced the regression, note the last known-good version and offer to roll back.
+**Downgrading:** If a recent update introduced the regression, note the last known-good version, set the image tag in the service YAML back to it, and recreate the container:
+```bash
+scripts/labctl.py service recreate category/service-name
+```
+Then re-check the logs (Step 2) and tell the user the version was pinned, so the regression can be reported upstream.
 
 ---
 
