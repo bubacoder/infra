@@ -44,7 +44,7 @@ repos:
 
   # Ruff is an extremely fast Python linter and code formatter, written in Rust.
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.17
+    rev: v0.15.20
     hooks:
       # Linter - https://docs.astral.sh/ruff/linter/
       - id: ruff-check
@@ -76,7 +76,7 @@ repos:
 
   # pre-commit git hooks to take care of Terraform configurations
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.107.0
+    rev: v1.108.0
     hooks:
       - id: terraform_fmt
         files: ^terraform/
@@ -94,7 +94,7 @@ repos:
   # Add '--fix' parameter to ansiblelint to fix (some) issues - https://ansible.readthedocs.io/projects/lint/autofix/
   # Add '-v' parameter to ansiblelint for verbose mode
   - repo: https://github.com/ansible-community/ansible-lint
-    rev: v26.4.0 # Pinned to Python 3.13 - Python 3.14+ requires ansible-core >= 2.20.0
+    rev: v26.6.0 # Pinned to Python 3.13 - Python 3.14+ requires ansible-core >= 2.20.0
     hooks:
       - id: ansible-lint
         language_version: python3.14
