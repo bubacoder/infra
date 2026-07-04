@@ -10,8 +10,9 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from docker_scanner import DockerComposeScanner
-from git_utils import get_git_root
+
+from utils.docker_scanner import DockerComposeScanner
+from utils.git_utils import get_git_root
 
 
 def str_presenter(dumper: yaml.Dumper, data: str) -> yaml.ScalarNode:

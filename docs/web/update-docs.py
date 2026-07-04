@@ -8,9 +8,12 @@ import sys
 from pathlib import Path
 
 import yaml
-from docker_scanner import DockerComposeScanner
-from git_utils import get_git_root
 from link_processor import LinkProcessor
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent / "scripts"))
+
+from utils.docker_scanner import DockerComposeScanner  # noqa: E402
+from utils.git_utils import get_git_root  # noqa: E402
 
 
 class DocsProcessor:
