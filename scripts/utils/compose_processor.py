@@ -101,6 +101,64 @@ class ComposeFileProcessor:
 
         return {}
 
+    def extract_image_references(self, file_path: Path) -> list[dict[str, str | int]]:
+        """Extract image references from a docker-compose file, with their line numbers.
+
+        Args:
+            file_path: Path to the docker-compose file
+
+        Returns:
+            List of dicts with keys: service (name), image (reference string), line (1-indexed
+            line number in the file). Services without an "image" key are skipped.
+        """
+        compose_dict = self._load_compose_file(file_path)
+        if not compose_dict:
+            return []
+
+        services = compose_dict.get("services", {})
+        if not isinstance(services, dict):
+            return []
+
+        with open(file_path) as stream:
+            lines = stream.readlines()
+
+        references = []
+        cursor = 0
+        for service_name, service_def in services.items():
+            if not isinstance(service_def, dict):
+                continue
+
+            image = service_def.get("image")
+            if not image:
+                continue
+
+            line_number = self._find_image_line(lines, image, cursor)
+            if line_number is None:
+                self.logger.warning(f"Could not locate 'image:' line for service {service_name!r} in {file_path}")
+                continue
+
+            cursor = line_number
+            references.append({"service": service_name, "image": image, "line": line_number})
+
+        return references
+
+    def _find_image_line(self, lines: list[str], image: str, start: int) -> int | None:
+        """Find the 1-indexed line number of an "image:" line matching the given value.
+
+        Args:
+            lines: Raw lines of the compose file
+            image: Image reference string to search for
+            start: 0-indexed line to start searching from
+
+        Returns:
+            1-indexed line number if found, None otherwise
+        """
+        for index in range(start, len(lines)):
+            stripped = lines[index].strip()
+            if stripped.startswith("image:") and image in stripped:
+                return index + 1
+        return None
+
     def extract_compose_file_data(self, source_file_path: Path) -> dict[str, dict | list] | None:
         """Extract all information from a docker-compose file.
 
