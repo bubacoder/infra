@@ -1,0 +1,18 @@
+# Gitea Runner configuration
+# See https://gitea.com/gitea/runner/src/branch/main/config.example.yaml
+
+log:
+  level: info
+
+runner:
+  labels:
+    - docker:docker://node:20-bookworm
+    - ubuntu-latest:docker://node:20-bookworm
+
+container:
+  network: bridge
+  privileged: false
+
+cache:
+  host: ""
+  port: 8088

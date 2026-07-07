@@ -1,0 +1,59 @@
+# MongoDB is a source-available, document-oriented NoSQL database designed for scalability and
+# developer agility, storing data as flexible, JSON-like documents rather than rows and columns.
+#
+# This is a shared instance, following the same pattern as postgresql/couchdb in this category.
+# Mongo's /docker-entrypoint-initdb.d scripts only run once, on first startup with an empty data
+# directory — each consuming service should add its own init script under ./config/initdb when it
+# first starts using this instance. A service added *after* this instance already has data must
+# create its user/db manually via `mongosh` instead, since init scripts won't re-run.
+#
+# Links:
+# - Home: https://www.mongodb.com
+# - Source: https://github.com/docker-library/mongo
+# - Docs: https://hub.docker.com/_/mongo
+#
+# TODO: Add a mongo-express (or similar) admin UI service if a web GUI is wanted
+# TODO: Implement an automated backup solution (mongodump)
+---
+name: mongodb
+services:
+  mongodb-init:
+    image: busybox:1.38.0
+    container_name: mongodb-init
+    command: ["sh", "-c", "chown -R 999:999 /data/db"]
+    volumes:
+      - ${DOCKER_VOLUMES}/mongodb/data:/data/db
+
+  mongodb:
+    image: mongo:7.0.37-jammy
+    container_name: mongodb
+    restart: unless-stopped
+    # kics-scan ignore-block
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?MongoDB root password must be set}
+    volumes:
+      - ${DOCKER_VOLUMES}/mongodb/data:/data/db
+      - ./config/initdb:/docker-entrypoint-initdb.d
+    ports:
+      - 27017:27017
+    networks:
+      - proxy
+    depends_on:
+      mongodb-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    labels:
+      traefik.enable: false
+      homepage.group: Storage
+      homepage.name: MongoDB
+      homepage.icon: mongodb.png
+      homepage.description: "Popular NoSQL document database"
+
+networks:
+  proxy:
+    external: true
