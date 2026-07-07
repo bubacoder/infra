@@ -1,0 +1,50 @@
+# Gitea Runner (formerly act_runner) is the official runner for Gitea Actions.
+# It connects to a Gitea instance and executes CI/CD workflows in isolated Docker containers,
+# supporting three modes: host-level execution, Docker (bind-mounting the host Docker socket),
+# and Docker-in-Docker (DinD) for full isolation.
+#
+# Links:
+# - Home: https://gitea.com/gitea/runner
+# - Source: https://gitea.com/gitea/runner
+# - Docs: https://docs.gitea.com/usage/actions/act-runner
+# - Install instructions URL: https://docs.gitea.com/usage/actions/act-runner
+# - Compose: https://docs.gitea.com/usage/actions/act-runner
+#
+# Registration:
+# 1. Navigate to Gitea Admin → Actions → Runners → Create Runner
+# 2. Copy the registration token and set GITEA_RUNNER_REGISTRATION_TOKEN in the host .env file
+# 3. The runner auto-registers on first start using this token; the resulting .runner file
+#    persists in the /data volume and is used for all subsequent connections
+# 4. To re-register (e.g. after token rotation), stop the container, delete the
+#    ${DOCKER_VOLUMES}/act-runner/.runner file, and restart
+#
+# TODO: Pin to a specific version tag instead of 2.0.0 for production stability
+# TODO: Use the dind-rootless flavour for production deployments requiring job isolation
+# TODO: Configure a shared external cache server across multiple runners to avoid rebuilding on each runner
+# TODO: Mount runner images from a local registry or mirror to avoid rate limits on Docker Hub
+# TODO: Configure container.valid_volumes to restrict which host paths job containers can mount
+# TODO: Join Traefik to the dev-act-runner network in docker/security/traefik/traefik.yaml if a web UI is added
+---
+name: act-runner
+services:
+  act-runner:
+    image: gitea/runner:2.0.0
+    container_name: act-runner
+    restart: unless-stopped
+    environment:
+      TZ: ${TIMEZONE}
+      CONFIG_FILE: /config.yaml
+      GITEA_INSTANCE_URL: https://gitea.${MYDOMAIN}/
+      GITEA_RUNNER_REGISTRATION_TOKEN: ${GITEA_RUNNER_REGISTRATION_TOKEN}
+      GITEA_RUNNER_NAME: ${GITEA_RUNNER_NAME:-act-runner}
+      GITEA_RUNNER_LABELS: ${GITEA_RUNNER_LABELS:-docker:docker://node:20-bookworm,ubuntu-latest:docker://node:20-bookworm}
+    volumes:
+      - ${DOCKER_VOLUMES}/act-runner:/data
+      - ./config/config.yaml:/config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - dev-act-runner
+
+networks:
+  dev-act-runner:
+    external: true
