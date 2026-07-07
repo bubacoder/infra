@@ -1,3 +1,7 @@
+---
+description: Collect installation details and generate a PRP for container deployment
+---
+
 # Prepare deployment of Docker Compose Service
 
 ## Variables
