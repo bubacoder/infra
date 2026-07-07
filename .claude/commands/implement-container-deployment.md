@@ -1,3 +1,7 @@
+---
+description: Deploy a container-based service by creating a Docker Compose file from a PRP
+---
+
 # Deploy Docker Compose Service
 
 ## Variables
