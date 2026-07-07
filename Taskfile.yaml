@@ -87,6 +87,12 @@ tasks:
       - task: docs:clean
       - task: azure-vm:clean
       - task: aws-vm:clean
+      - task: clean-venvs
+
+  clean-venvs:
+    desc: Remove Python virtual environments (.venv directories)
+    cmds:
+      - find . -type d -name '.venv' -exec rm -rf {} +
 
   btrfs-compsize:
     desc: Show btrfs compression statistics
