@@ -25,9 +25,9 @@
         description: Remote Desktop connection
         icon: windows-10.png
 
-- Arr:
-    - qBittorrent @ NAS:
-        href: https://qbittorrent.{{HOMEPAGE_VAR_MYDOMAIN}}/
-        siteMonitor: https://qbittorrent.{{HOMEPAGE_VAR_MYDOMAIN}}/
-        description: "BitTorrent client"
-        icon: qbittorrent.png
+# - Arr:
+#     - qBittorrent @ NAS:
+#         href: https://qbittorrent.{{HOMEPAGE_VAR_MYDOMAIN}}/
+#         siteMonitor: https://qbittorrent.{{HOMEPAGE_VAR_MYDOMAIN}}/
+#         description: "BitTorrent client"
+#         icon: qbittorrent.png

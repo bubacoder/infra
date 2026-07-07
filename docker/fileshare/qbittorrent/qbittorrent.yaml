@@ -3,6 +3,12 @@
 #
 # Recommended setup steps:
 # - Configure "Bypass authentication for clients in whitelisted IP subnets" (Settings -> Webui) - Authelia handles the authentication
+#   - Reverse proxy setup (default below, via Traefik): enable "Use HTTP for WebUI" -> "Reverse proxy support", and
+#     add the Docker proxy network CIDR (e.g. 172.16.0.0/12) to "Trusted proxies list", so qBittorrent reads the
+#     real client IP from X-Forwarded-For instead of seeing Traefik's container IP. Without this, the subnet
+#     whitelist never matches and every request is prompted for login.
+#   - Direct host exposure (see "separate host" note below): leave "Reverse proxy support" disabled, since
+#     qBittorrent sees the client's real IP directly and the subnet whitelist works as-is.
 # - The image is build locally (see: `Dockerfile`) and includes the VueTorrent (https://github.com/WDaan/VueTorrent) web interface. To enable it, point your alternate WebUI location to '/usr/vuetorrent' folder in qBittorrent settings.
 # - Configure categories (Settings menu) to specify default download locations
 # - Setup forwarding of port 6881 (TCP, UDP) in the router, check open port: https://www.yougetsignal.com/tools/open-ports/
