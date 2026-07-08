@@ -18,15 +18,16 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    # Named volume is needed to avoid "chown - Operation not permitted" error
     volumes:
-      - searxng-valkey-data:/data
+      - ${DOCKER_VOLUMES}/searxng/valkey-data:/data
     cap_drop:
       - ALL
     cap_add:
       - SETGID
       - SETUID
       - DAC_OVERRIDE
+      - CHOWN
+      - FOWNER
     logging:
       driver: "json-file"
       options:
@@ -37,7 +38,7 @@ services:
 
   searxng:
     container_name: searxng
-    image: docker.io/searxng/searxng:2025.5.30-37d851f
+    image: docker.io/searxng/searxng:2026.7.3-747cec4c2
     restart: unless-stopped
     volumes:
       - ${DOCKER_VOLUMES}/searxng:/etc/searxng
@@ -73,6 +74,3 @@ networks:
     external: false
   proxy:
     external: true
-
-volumes:
-  searxng-valkey-data:

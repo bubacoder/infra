@@ -12,6 +12,13 @@
 ---
 name: mssql-server
 services:
+  mssql-server-init:
+    image: busybox:1.38.0
+    container_name: mssql-server-init
+    command: ["sh", "-c", "chown -R 10001:10001 /var/opt/mssql"]
+    volumes:
+      - ${DOCKER_VOLUMES}/mssql-server/data:/var/opt/mssql
+
   mssql-server:
     image: mcr.microsoft.com/mssql/server:2025-latest
     container_name: mssql-server
@@ -27,7 +34,10 @@ services:
     ports:
       - "1433:1433"
     volumes:
-      - mssql_data:/var/opt/mssql
+      - ${DOCKER_VOLUMES}/mssql-server/data:/var/opt/mssql
+    depends_on:
+      mssql-server-init:
+        condition: service_completed_successfully
     labels:
       traefik.enable: false
       homepage.group: Storage
@@ -35,6 +45,3 @@ services:
       homepage.icon: microsoft-sql-server.png
       homepage.href: mssql://${LOCAL_NODE_IP:-127.0.0.1}:1433
       homepage.description: Enterprise relational database
-
-volumes:
-  mssql_data:

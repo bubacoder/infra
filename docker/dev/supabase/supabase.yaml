@@ -430,6 +430,14 @@ services:
       - supabase
 
   # Comment out everything below this point if you are using an external Postgres database
+  db-init:
+    container_name: supabase-db-init
+    image: busybox:1.38.0
+    command: ["sh", "-c", "chown -R 100:101 /var/lib/postgresql/data /etc/postgresql-custom"]
+    volumes:
+      - ${DOCKER_VOLUMES}/supabase/db-data:/var/lib/postgresql/data
+      - ${DOCKER_VOLUMES}/supabase/db-config:/etc/postgresql-custom
+
   db:
     container_name: supabase-db
     image: supabase/postgres:15.14.1.142
@@ -443,15 +451,15 @@ services:
       # Initialize the database settings with JWT_SECRET and JWT_EXP
       - ./config/db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
       # PGDATA directory is persisted between restarts
-      - supabase-db-data:/var/lib/postgresql/data
+      - ${DOCKER_VOLUMES}/supabase/db-data:/var/lib/postgresql/data
       # Changes required for internal supabase data such as _analytics
       - ./config/db/_supabase.sql:/docker-entrypoint-initdb.d/migrations/97-_supabase.sql:Z
       # Changes required for Analytics support
       - ./config/db/logs.sql:/docker-entrypoint-initdb.d/migrations/99-logs.sql:Z
       # Changes required for Pooler support
       - ./config/db/pooler.sql:/docker-entrypoint-initdb.d/migrations/99-pooler.sql:Z
-      # Use named volume to persist pgsodium decryption key between restarts
-      - supabase-db-config:/etc/postgresql-custom
+      # Persists pgsodium decryption key between restarts
+      - ${DOCKER_VOLUMES}/supabase/db-config:/etc/postgresql-custom
     healthcheck:
       test:
         [
@@ -466,6 +474,8 @@ services:
       timeout: 5s
       retries: 10
     depends_on:
+      db-init:
+        condition: service_completed_successfully
       vector:
         condition: service_healthy
     environment:
@@ -577,10 +587,6 @@ services:
       ]
     networks:
       - supabase
-
-volumes:
-  supabase-db-config:
-  supabase-db-data:
 
 networks:
   supabase:
