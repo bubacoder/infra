@@ -8,6 +8,13 @@
 ---
 name: n8n
 services:
+  n8n-postgres-init:
+    image: busybox:1.38.0
+    container_name: n8n-postgres-init
+    command: ["sh", "-c", "chown -R 70:70 /var/lib/postgresql/data"]
+    volumes:
+      - ${DOCKER_VOLUMES}/n8n/postgres-data:/var/lib/postgresql/data
+
   n8n-postgres:
     image: postgres:16-alpine
     container_name: n8n-postgres
@@ -19,7 +26,10 @@ services:
       POSTGRES_PASSWORD: ${N8N_POSTGRES_PASSWORD}
       POSTGRES_DB: ${N8N_POSTGRES_DB}
     volumes:
-      - n8n_postgres_storage:/var/lib/postgresql/data
+      - ${DOCKER_VOLUMES}/n8n/postgres-data:/var/lib/postgresql/data
+    depends_on:
+      n8n-postgres-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h localhost -U ${N8N_POSTGRES_USER} -d ${N8N_POSTGRES_DB}"]
       interval: 5s
@@ -27,7 +37,7 @@ services:
       retries: 10
 
   initContainer:
-    image: busybox
+    image: busybox:1.38.0
     container_name: n8n-init
     command: ["sh", "-c", "chown -R 1000:1000 /home/node/.n8n"]
     volumes:
@@ -76,6 +86,3 @@ networks:
     external: false
   proxy:
     external: true
-
-volumes:
-  n8n_postgres_storage:

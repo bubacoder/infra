@@ -15,6 +15,13 @@
 ---
 name: postgresql
 services:
+  postgresql-init:
+    image: busybox:1.38.0
+    container_name: postgresql-init
+    command: ["sh", "-c", "chown -R 999:999 /var/lib/postgresql"]
+    volumes:
+      - ${DOCKER_VOLUMES}/postgresql/data:/var/lib/postgresql
+
   postgresql:
     image: postgres:18.4-trixie
     container_name: postgresql
@@ -27,12 +34,15 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
       POSTGRES_INITDB_ARGS: --data-checksums
     volumes:
-      - postgres-data:/var/lib/postgresql
+      - ${DOCKER_VOLUMES}/postgresql/data:/var/lib/postgresql
       - ./config/initdb:/docker-entrypoint-initdb.d
     ports:
       - 5432:5432
     networks:
       - proxy
+    depends_on:
+      postgresql-init:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 10s
@@ -44,9 +54,6 @@ services:
       homepage.name: PostgreSQL
       homepage.icon: postgresql.png
       homepage.description: "Powerful open source object-relational database system"
-
-volumes:
-  postgres-data:
 
 networks:
   proxy:
