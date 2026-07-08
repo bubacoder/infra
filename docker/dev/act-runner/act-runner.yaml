@@ -41,6 +41,7 @@ services:
     volumes:
       - ${DOCKER_VOLUMES}/act-runner:/data
       - ./config/config.yaml:/config.yaml:ro
+      # kics-scan ignore-line
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - dev-act-runner

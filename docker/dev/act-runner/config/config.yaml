@@ -10,7 +10,10 @@ runner:
     - ubuntu-latest:docker://node:20-bookworm
 
 container:
-  network: bridge
+  # Empty = the runner creates a per-job docker network, which is the only
+  # way workflow `services:` hostnames (e.g. postgres, qdrant) resolve from
+  # the job container — the default bridge network has no name resolution.
+  network: ""
   privileged: false
 
 cache:
