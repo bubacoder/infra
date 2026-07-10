@@ -1,14 +1,22 @@
-# GPU override for Ollama — AMD ROCm hardware inference.
+# GPU override for Ollama — AMD iGPU inference via the Vulkan backend.
 # Enable by setting GPU_COMPOSE_SUFFIX=amdgpu in config/docker/<hostname>/.env
-# Switches to the :rocm image tag and passes both DRI and KFD devices.
+# NOTE: deliberately the STANDARD image, not :rocm — colony's Vega iGPU
+# (Ryzen 7 5825U, gfx90c) has no rocblas kernels in ROCm builds ("dropping
+# ROCm device"), while the standard image ships the ggml Vulkan backend
+# (the :rocm image does not), which supports Vega iGPUs via RADV.
+# OLLAMA_IGPU_ENABLE opts the iGPU into scheduling on Linux.
+# References:
+# - Vulkan backend for AMD/Intel GPUs: https://github.com/ollama/ollama/issues/11247
+# - Hardware support matrix (Vulkan path for iGPUs): https://docs.ollama.com/gpu
 ---
 name: ollama
 services:
   ollama:
-    image: ollama/ollama:0.31.1-rocm
+    image: ollama/ollama:0.31.1
     devices:
       - /dev/dri/renderD128:/dev/dri/renderD128
-      - /dev/kfd:/dev/kfd
+    environment:
+      OLLAMA_IGPU_ENABLE: "1"
     group_add:
       - "${GPU_RENDER_GID}"  # render group — numeric GID required (name may not exist in container)
       - "${GPU_VIDEO_GID}"   # video group
