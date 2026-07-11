@@ -7,7 +7,7 @@
 name: bees
 services:
   initContainer:
-    image: busybox
+    image: busybox:1.38.0
     container_name: beesd-init
     command: /bin/sh -c "echo 'UUID=${BEES_BTRFS_UUID}' > /etc/bees/disk.conf && echo 'DB_SIZE=${BEES_DB_SIZE}' >> /etc/bees/disk.conf"
     volumes:
