@@ -21,13 +21,16 @@
   ansible.builtin.set_fact:
     debian_base_task_arch: "{{ {'x86_64': 'amd64', 'aarch64': 'arm64', 'armv7l': 'arm', 'armv6l': 'arm'}[ansible_facts['architecture']] }}"
 
+# Normalize the version to a bare number (strip any leading "v"): Renovate's
+# github-releases datasource writes the version without the "v" prefix, while the
+# go-task release tag requires it (tag "v3.52.0" contains file "task_3.52.0_...").
 - name: Set go-task version
   ansible.builtin.set_fact:
-    debian_base_go_task_version: "{{ debian_base_go_task_version | default('v3.50.0') }}"
+    debian_base_go_task_version: "{{ debian_base_go_task_version | default('3.50.0') | regex_replace('^v', '') }}"
 
 - name: Download go-task .deb package
   ansible.builtin.get_url:
-    url: "https://github.com/go-task/task/releases/download/{{ debian_base_go_task_version }}/task_{{ debian_base_go_task_version | regex_replace('^v', '') }}_linux_{{ debian_base_task_arch }}.deb"
+    url: "https://github.com/go-task/task/releases/download/v{{ debian_base_go_task_version }}/task_{{ debian_base_go_task_version }}_linux_{{ debian_base_task_arch }}.deb"
     dest: "/tmp/go-task/task_{{ debian_base_go_task_version }}_linux_{{ debian_base_task_arch }}.deb"
     mode: "0644"
   when: debian_base_task_version_check.rc != 0

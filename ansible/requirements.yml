@@ -11,4 +11,4 @@ collections:
     version: 5.2.1
   # Source: https://github.com/ansible-collections/ansible.posix
   - name: ansible.posix
-    version: 2.2.0
+    version: 2.2.1

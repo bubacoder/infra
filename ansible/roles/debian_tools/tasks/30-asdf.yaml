@@ -12,10 +12,17 @@
   register: _debian_tools_asdf_installed
   become: false
 
+# Normalize the version to a bare number (strip any leading "v"): Renovate's
+# github-releases datasource writes the version without the "v" prefix, while the
+# asdf release tag and asset both require it (e.g. "v0.20.0"/"asdf-v0.20.0-...").
+- name: Set asdf version
+  ansible.builtin.set_fact:
+    debian_tools_asdf_version: "{{ debian_tools_asdf_version | regex_replace('^v', '') }}"
+
 - name: Download and install asdf binary
   ansible.builtin.unarchive:
     src: >-
-      https://github.com/asdf-vm/asdf/releases/download/{{ debian_tools_asdf_version }}/asdf-{{ debian_tools_asdf_version }}-linux-{{
+      https://github.com/asdf-vm/asdf/releases/download/v{{ debian_tools_asdf_version }}/asdf-v{{ debian_tools_asdf_version }}-linux-{{
         'amd64' if ansible_facts['architecture'] == 'x86_64' else 'arm64'
       }}.tar.gz
     dest: "{{ ansible_facts['env']['HOME'] }}/.local/bin"
