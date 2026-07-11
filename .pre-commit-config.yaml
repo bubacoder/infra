@@ -13,7 +13,8 @@ repos:
         exclude: |
             (?x)^(
                 docker/security/authelia/|
-                docker/automation/mosquitto/
+                docker/automation/mosquitto/|
+                docker/tools/searxng/config/
             )
       - id: mixed-line-ending
       - id: fix-byte-order-marker
