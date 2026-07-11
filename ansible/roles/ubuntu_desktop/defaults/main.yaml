@@ -10,7 +10,7 @@ ubuntu_desktop_install_chrome: true
 
 ubuntu_desktop_install_rustdesk: true
 # renovate: datasource=github-releases depName=rustdesk/rustdesk
-ubuntu_desktop_rustdesk_version: "1.4.8"
+ubuntu_desktop_rustdesk_version: "1.4.9"
 
 ubuntu_desktop_install_sunshine: false
 # renovate: datasource=github-releases depName=LizardByte/Sunshine
