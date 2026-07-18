@@ -24,9 +24,10 @@ jobs:
       - name: Install tflint
         run: |
           # renovate: datasource=github-releases depName=terraform-linters/tflint
-          VERSION=v0.63.1
+          VERSION=0.64.0
           ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
-          curl -sSLo ./tflint.zip "https://github.com/terraform-linters/tflint/releases/download/${VERSION}/tflint_linux_${ARCH}.zip"
+          # Renovate's github-releases datasource writes the version without the "v" prefix, while the tflint release tag requires it (tag "v0.64.0").
+          curl -sSLo ./tflint.zip "https://github.com/terraform-linters/tflint/releases/download/v${VERSION}/tflint_linux_${ARCH}.zip"
           unzip tflint.zip tflint
           chmod +x tflint
           mv tflint /usr/local/bin/tflint
