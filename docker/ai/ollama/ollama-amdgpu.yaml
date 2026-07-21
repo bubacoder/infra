@@ -12,7 +12,7 @@
 name: ollama
 services:
   ollama:
-    image: ollama/ollama:0.31.2
+    image: ollama/ollama:0.32.1
     devices:
       - /dev/dri/renderD128:/dev/dri/renderD128
     environment:
