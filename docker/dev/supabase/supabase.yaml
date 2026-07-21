@@ -109,7 +109,7 @@ services:
 
   auth:
     container_name: supabase-auth
-    image: supabase/gotrue:v2.192.0
+    image: supabase/gotrue:v2.193.1
     restart: unless-stopped
     healthcheck:
       test:
@@ -220,7 +220,7 @@ services:
   realtime:
     # This container name looks inconsistent but is correct because realtime constructs tenant id by parsing the subdomain
     container_name: realtime-dev.supabase-realtime
-    image: supabase/realtime:v2.112.12
+    image: supabase/realtime:v2.117.0
     restart: unless-stopped
     depends_on:
       db:
@@ -266,7 +266,7 @@ services:
 
   storage:
     container_name: supabase-storage
-    image: supabase/storage-api:v1.66.2
+    image: supabase/storage-api:v1.67.7
     restart: unless-stopped
     volumes:
       - ${DOCKER_VOLUMES}/supabase/storage:/var/lib/storage
@@ -440,7 +440,7 @@ services:
 
   db:
     container_name: supabase-db
-    image: supabase/postgres:15.14.1.143
+    image: supabase/postgres:15.14.1.150
     restart: unless-stopped
     volumes:
       - ./config/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
@@ -501,7 +501,7 @@ services:
 
   vector:
     container_name: supabase-vector
-    image: timberio/vector:0.56.0-alpine
+    image: timberio/vector:0.57.0-alpine
     restart: unless-stopped
     volumes:
       - ./config/logs/vector.yml:/etc/vector/vector.yml:ro
