@@ -181,7 +181,7 @@ Note: for the previous `Makefile` (which was replaced by `Taskfile`) see [MR #16
 | Name | Version |
 | ---- | ------- |
 | terraform | >= 1.5 |
-| azurerm | ~> 4.0 |
+| azurerm | ~> 5.0 |
 | random | ~> 3.0 |
 
 ## Providers
