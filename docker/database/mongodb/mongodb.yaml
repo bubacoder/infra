@@ -25,7 +25,7 @@ services:
       - ${DOCKER_VOLUMES}/mongodb/data:/data/db
 
   mongodb:
-    image: mongo:7.0.39-jammy
+    image: mongo:7.0.40-jammy
     container_name: mongodb
     restart: unless-stopped
     # kics-scan ignore-block
