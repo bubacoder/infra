@@ -1,10 +1,10 @@
-name: Terraform Plan
+name: Terraform Plan - Azure
 
 on:
   pull_request:
     paths:
-      - 'terraform/**'
-      - '.github/workflows/terraform-plan.yml'
+      - 'terraform/azure-vm/**'
+      - '.github/workflows/terraform-plan-azure.yml'
   workflow_dispatch:
 
 # Required for OIDC authentication
@@ -14,7 +14,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: "terraform-plan"
+  group: "terraform-plan-azure"
   cancel-in-progress: false
 
 jobs:
