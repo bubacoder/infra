@@ -67,7 +67,7 @@ download_latest_file() {
   if wget -q --show-progress "${url}${LATEST_FILE}"; then
     echo "File '$LATEST_FILE' successfully downloaded to $(pwd)."
     local OLD_FILES
-    OLD_FILES=$(for f in *; do [[ "$f" =~ ^${pattern}$ ]] && echo "$f"; done | sort -r | tail -n +"$((VERSIONS_TO_KEEP + 1))")
+    OLD_FILES=$(for f in *; do if [[ "$f" =~ ^${pattern}$ ]]; then echo "$f"; fi; done | sort -r | tail -n +"$((VERSIONS_TO_KEEP + 1))")
     if [[ -n "$OLD_FILES" ]]; then
       echo "Removing old versions..."
       echo "$OLD_FILES" | xargs rm -v
