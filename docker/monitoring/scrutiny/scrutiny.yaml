@@ -23,7 +23,7 @@ services:
       retries: 20
 
   scrutiny-web:
-    image: ghcr.io/analogj/scrutiny:master-web # No semantic version tags are available
+    image: ghcr.io/analogj/scrutiny:v0.9.3-web
     container_name: scrutiny-web
     restart: unless-stopped
     networks:
