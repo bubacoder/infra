@@ -5,6 +5,13 @@ log:
   level: info
 
 runner:
+  # Two jobs at a time. The default (1) serializes every workflow: a repo whose
+  # CI jobs have no `needs:` between them still ran them back-to-back, ~11 min
+  # wall clock against a ~4.5 min longest single job. Kept at 2 rather than
+  # higher so a heavy pair (a test suite plus its database/vector service
+  # containers, alongside a JVM build) leaves headroom for the rest of the
+  # services this host runs.
+  capacity: 2
   labels:
     - docker:docker://node:20-bookworm
     - ubuntu-latest:docker://node:20-bookworm
