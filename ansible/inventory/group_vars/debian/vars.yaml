@@ -46,6 +46,7 @@ debian_tools_apt_packages:
   # Common
   - jq                  # https://jqlang.github.io/jq/
   - yq                  # https://github.com/kislyuk/yq
+  - ripgrep             # https://github.com/burntsushi/ripgrep
   # Dev
   - make                # https://www.gnu.org/software/make/
   - python3-pip         # https://pip.pypa.io/
