@@ -32,7 +32,6 @@ services:
     volumes:
       - ${DOCKER_VOLUMES}/calibre:/config
       - ${STORAGE_CALIBRE_LIBRARY}:/books
-      - ${STORAGE_CALIBRE_LIBRARY_HUN}:/books-hun
       - ${STORAGE_DOWNLOADS}:/downloads:ro
     networks:
       - proxy
