@@ -5,7 +5,6 @@ Software to acquire and manage different media types:
 - Radarr -- Movies
 - Sonarr -- TV shows
 - Bazarr -- Subtitles
-- Readarr -- Ebooks
 
 Helper utility for the software above:
 - Prowlarr -- Indexer manager
