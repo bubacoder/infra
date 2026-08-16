@@ -1,4 +1,4 @@
-FROM alpine:3.21 AS crowdsec_plugin
+FROM alpine:3.24 AS crowdsec_plugin
 
 # renovate: datasource=git-tags depName=maxlerebourg/crowdsec-bouncer-traefik-plugin
 ARG CROWDSEC_PLUGIN_REF=v1.7.1
