@@ -27,7 +27,7 @@ http:
       chain:
         middlewares:
           - crowdsec-bouncer
-          # - security-headers
+          - security-headers
 
     https-only:
       redirectScheme:
