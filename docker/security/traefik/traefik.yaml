@@ -9,7 +9,8 @@
 name: traefik
 services:
   traefik:
-    image: traefik:v3.7.10
+    build: .
+    image: local/traefik
     container_name: traefik
     restart: unless-stopped
     environment:

@@ -56,13 +56,16 @@
       "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}"
     },
     {
-      "description": "Update tool versions set via inline renovate comments in Traefik static config",
+      "description": "Update the vendored CrowdSec Traefik plugin tag and tag-object SHA together",
       "customType": "regex",
-      "managerFilePatterns": ["/^docker/security/traefik/config/traefik\\.yml$/"],
+      "managerFilePatterns": ["/^docker/security/traefik/Dockerfile$/"],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[a-z-]+?) depName=(?<depName>[^\\s]+?)(?:\\s+extractVersion=(?<extractVersion>[^\\s]+))?\\s+[a-z_]+:\\s*\"(?<currentValue>[^\"]+)\""
+        "# renovate: datasource=(?<datasource>[a-z-]+?) depName=(?<depName>[^\\s]+?)\\s+ARG CROWDSEC_PLUGIN_REF=(?<currentValue>[^\\s]+)\\s+ARG CROWDSEC_PLUGIN_TAG_SHA=(?<currentDigest>[a-f0-9]{40})"
       ],
-      "extractVersionTemplate": "{{#if extractVersion}}{{{extractVersion}}}{{else}}^v?(?<version>.+)${{/if}}"
+      "datasourceTemplate": "git-tags",
+      "packageNameTemplate": "https://github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin.git",
+      "extractVersionTemplate": "^v?(?<version>.+)$",
+      "autoReplaceStringTemplate": "# renovate: datasource=git-tags depName=maxlerebourg/crowdsec-bouncer-traefik-plugin\nARG CROWDSEC_PLUGIN_REF={{{newValue}}}\nARG CROWDSEC_PLUGIN_TAG_SHA={{{newDigest}}}"
     }
   ],
   "packageRules": [
