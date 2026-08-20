@@ -2,7 +2,7 @@ FROM alpine:3.21 AS crowdsec_plugin
 
 # renovate: datasource=git-tags depName=maxlerebourg/crowdsec-bouncer-traefik-plugin
 ARG CROWDSEC_PLUGIN_REF=v1.7.1
-ARG CROWDSEC_PLUGIN_TAG_SHA=bc83e9d0924b9fefcaed5beea880ab18b9f58764
+ARG CROWDSEC_PLUGIN_TAG_SHA=bef5dfaadbb07381af02ec4e7391e49214ebf953
 
 # hadolint ignore=DL3018
 RUN apk add --no-cache git \
