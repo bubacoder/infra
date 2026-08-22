@@ -15,7 +15,7 @@ debian_base_install_crowdsec_bouncer: false
 
 # https://github.com/go-task/task/releases
 # renovate: datasource=github-releases depName=go-task/task
-debian_base_go_task_version: "3.52.0"
+debian_base_go_task_version: "3.53.1"
 
 debian_base_apt_packages:
   # Common
@@ -93,7 +93,7 @@ debian_tools_asdf_tools:
     version: "1.14.3"
   - plugin: kubectl
     # renovate: datasource=github-releases depName=kubernetes/kubernetes extractVersion=^v(?<version>.+)$
-    version: "1.36.3"
+    version: "1.36.4"
 
 ## Terraform Tools
 debian_tools_brew_packages_terraform:
