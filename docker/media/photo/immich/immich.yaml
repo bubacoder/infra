@@ -1,0 +1,88 @@
+# Immich is a high-performance self-hosted solution for backing up, organizing, and viewing photos and videos, with mobile clients, multi-user support, and local machine-learning search and recognition.
+#
+# Links:
+# - Home: https://immich.app
+# - Source: https://github.com/immich-app/immich
+# - Docs: https://immich.app/docs/install/docker-compose
+# - Compose: https://github.com/immich-app/immich/releases/latest/download/docker-compose.yml
+#
+# TODO: Configure and regularly test 3-2-1 backups for the library and PostgreSQL volume; review metrics and SSO requirements.
+---
+name: immich
+services:
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:v3
+    container_name: immich-server
+    restart: unless-stopped
+    environment:
+      TZ: ${TIMEZONE}
+      DB_USERNAME: immich
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_DATABASE_NAME: immich
+    volumes:
+      - ${DOCKER_VOLUMES}/immich/library:/data
+      - ${STORAGE_FAMILYMEDIA}:/external/family-media:ro
+      # kics-scan ignore-line -- read-only timezone data, not a writable host directory.
+      - /etc/localtime:/etc/localtime:ro
+    depends_on:
+      - redis
+      - database
+    networks:
+      - proxy
+      - immich
+    labels:
+      traefik.enable: true
+      traefik.http.routers.immich.rule: Host(`immich.${MYDOMAIN}`)
+      traefik.http.routers.immich.middlewares: localaccess@file
+      traefik.http.services.immich.loadbalancer.server.port: 2283
+      homepage.group: Media
+      homepage.name: Immich
+      homepage.icon: immich.png
+      homepage.href: https://immich.${MYDOMAIN}/
+      homepage.description: "Self-hosted photo and video backup and management platform"
+
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:v3
+    container_name: immich-machine-learning
+    restart: unless-stopped
+    environment:
+      TZ: ${TIMEZONE}
+    volumes:
+      - immich-model-cache:/cache
+    networks:
+      - immich
+
+  redis:
+    image: docker.io/valkey/valkey:9
+    container_name: immich-redis
+    restart: unless-stopped
+    healthcheck:
+      test: redis-cli ping || exit 1
+    networks:
+      - immich
+
+  database:
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
+    container_name: immich-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: immich
+      POSTGRES_DB: immich
+      POSTGRES_INITDB_ARGS: --data-checksums
+    volumes:
+      - immich-postgres:/var/lib/postgresql/data
+    shm_size: 128mb
+    healthcheck:
+      disable: false
+    networks:
+      - immich
+
+volumes:
+  immich-model-cache:
+  immich-postgres:
+
+networks:
+  proxy:
+    external: true
+  immich:
