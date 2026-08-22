@@ -1,0 +1,54 @@
+auth:
+  - user: ${ADMIN_USER}
+    group: family
+    uid: 1000
+    gid: 1500
+    password: ${ADMIN_PASSWORD}
+
+share:
+  # Public shares
+  - name: media
+    path: /samba/media
+    browsable: "yes"
+    readonly: "no"
+    guestok: "no"
+    validusers: ${ADMIN_USER}
+    writelist: ${ADMIN_USER}
+    veto: "no"
+
+  - name: family-media
+    path: /samba/family-media
+    browsable: "yes"
+    readonly: "no"
+    guestok: "no"
+    validusers: ${ADMIN_USER}
+    writelist: ${ADMIN_USER}
+    veto: "no"
+
+  # System shares (not browsable)
+  - name: mnt
+    path: /samba/mnt
+    browsable: "no"
+    readonly: "no"
+    guestok: "no"
+    validusers: ${ADMIN_USER}
+    writelist: ${ADMIN_USER}
+    veto: "no"
+
+  - name: backup
+    path: /samba/backup
+    browsable: "no"
+    readonly: "no"
+    guestok: "no"
+    validusers: ${ADMIN_USER}
+    writelist: ${ADMIN_USER}
+    veto: "no"
+
+  - name: downloads
+    path: /samba/downloads
+    browsable: "no"
+    readonly: "no"
+    guestok: "no"
+    validusers: ${ADMIN_USER}
+    writelist: ${ADMIN_USER}
+    veto: "no"
