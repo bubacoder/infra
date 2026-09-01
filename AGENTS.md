@@ -113,7 +113,7 @@ The infrastructure is designed around the following components:
    - Docker Compose for container definitions
 
 2. **Key Services**:
-   - **Security**: Traefik (reverse proxy), Authelia (authentication), Cloudflared (tunnel)
+    - **Security**: Traefik (reverse proxy), Authentik (primary identity/SSO), Cloudflared (tunnel)
    - **Monitoring**: Grafana, Prometheus, Node-exporter, Uptime-kuma
    - **Media**: Jellyfin, Metube, Navidrome, Calibre
    - **Storage**: MinIO, Syncthing, FileSharing

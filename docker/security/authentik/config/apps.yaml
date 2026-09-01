@@ -1,0 +1,198 @@
+# Declarative, non-destructive Authentik application definitions. Values are
+# expanded from config/docker/<host>/.env files; secrets stay in ignored files.
+version: 1
+authentik:
+  url: "${AUTHENTIK_URL}"
+  token_file: authentik/api-token
+  outpost: authentik Embedded Outpost
+
+applications:
+  - name: Grafana
+    slug: grafana
+    launch_url: "https://grafana.${MYDOMAIN}/"
+    group: monitoring
+    provider:
+      type: oidc
+      name: Provider for Grafana
+      client_id: "${GRAFANA_AUTHENTIK_CLIENT_ID}"
+      client_secret_file: grafana/authentik-client-secret
+      redirect_uris:
+        - "https://grafana.${MYDOMAIN}/login/generic_oauth"
+      scope_mappings:
+        - goauthentik.io/providers/oauth2/scope-openid
+        - goauthentik.io/providers/oauth2/scope-profile
+        - goauthentik.io/providers/oauth2/scope-email
+        - goauthentik.io/providers/oauth2/scope-offline_access
+
+  - name: Uptime Kuma
+    slug: uptime-kuma
+    launch_url: "https://uptime-kuma.${MYDOMAIN}/"
+    group: monitoring
+    provider:
+      type: proxy_forward_auth
+      name: Provider for Uptime Kuma
+      external_host: "https://uptime-kuma.${MYDOMAIN}/"
+      mode: forward_single
+      outpost: authentik Embedded Outpost
+
+  - name: Gitea
+    slug: gitea
+    launch_url: "https://gitea.${MYDOMAIN}/"
+    group: developers
+    provider:
+      type: oidc
+      name: Provider for Gitea
+      client_id: "${GITEA_AUTHENTIK_CLIENT_ID}"
+      client_secret_file: gitea/authentik-client-secret
+      signing_key: "${GITEA_AUTHENTIK_SIGNING_KEY}"
+      redirect_uris:
+        - "https://gitea.${MYDOMAIN}/user/oauth2/authentik/callback"
+
+  - name: Open WebUI
+    slug: open-webui
+    launch_url: "https://open-webui.${MYDOMAIN}/"
+    group: users
+    provider:
+      type: oidc
+      name: Provider for Open WebUI
+      client_id: "${OPEN_WEBUI_AUTHENTIK_CLIENT_ID}"
+      client_secret_file: open-webui/authentik-client-secret
+      signing_key: "${OPEN_WEBUI_AUTHENTIK_SIGNING_KEY}"
+      redirect_uris:
+        - "https://open-webui.${MYDOMAIN}/oauth/oidc/callback"
+
+  - name: Immich
+    slug: immich
+    launch_url: "https://immich.${MYDOMAIN}/"
+    group: media
+    provider:
+      type: oidc
+      name: Provider for Immich
+      client_id: "${IMMICH_AUTHENTIK_CLIENT_ID}"
+      client_secret_file: immich/authentik-client-secret
+      signing_key: "${IMMICH_AUTHENTIK_SIGNING_KEY}"
+      redirect_uris:
+        - "https://immich.${MYDOMAIN}/auth/login"
+        - "https://immich.${MYDOMAIN}/user-settings"
+        - "https://immich.${MYDOMAIN}/api/oauth/mobile-redirect"
+
+  - name: Calibre-Web-Automated
+    slug: calibre-web-automated
+    launch_url: "https://calibre-web-automated.${MYDOMAIN}/"
+    group: media
+    provider:
+      type: oidc
+      name: Provider for Calibre-Web-Automated
+      client_id: "${CALIBRE_WEB_AUTOMATED_AUTHENTIK_CLIENT_ID}"
+      client_secret_file: calibre-web-automated/authentik-client-secret
+      redirect_uris:
+        - "https://calibre-web-automated.${MYDOMAIN}/login/generic/authorized"
+
+  - name: Guacamole
+    slug: guacamole
+    launch_url: "https://guacamole.${MYDOMAIN}/"
+    group: admins
+    provider:
+      type: oidc
+      name: Provider for Guacamole
+      client_type: public
+      grant_types:
+        - implicit
+      client_id: "${GUACAMOLE_AUTHENTIK_CLIENT_ID}"
+      signing_key: "${GUACAMOLE_AUTHENTIK_SIGNING_KEY}"
+      redirect_uris:
+        - "https://guacamole.${MYDOMAIN}/"
+
+  - name: Adminer
+    slug: adminer
+    launch_url: "https://adminer.${MYDOMAIN}/"
+    group: developers
+    provider:
+      type: proxy_forward_auth
+      name: Provider for Adminer
+      external_host: "https://adminer.${MYDOMAIN}/"
+      mode: forward_single
+      outpost: authentik Embedded Outpost
+
+  - name: Code Server
+    slug: code-server
+    launch_url: "https://code.${MYDOMAIN}/"
+    group: developers
+    provider:
+      type: proxy_forward_auth
+      name: Provider for Code Server
+      external_host: "https://code.${MYDOMAIN}/"
+      mode: forward_single
+      outpost: authentik Embedded Outpost
+
+  - name: qBittorrent
+    slug: qbittorrent
+    launch_url: "https://qbittorrent.${MYDOMAIN}/"
+    group: media
+    provider:
+      type: proxy_forward_auth
+      name: Provider for qBittorrent
+      external_host: "https://qbittorrent.${MYDOMAIN}/"
+      mode: forward_single
+      outpost: authentik Embedded Outpost
+
+  - name: Scrutiny
+    slug: scrutiny
+    launch_url: "https://scrutiny.${MYDOMAIN}/"
+    group: monitoring
+    provider:
+      type: proxy_forward_auth
+      name: Provider for Scrutiny
+      external_host: "https://scrutiny.${MYDOMAIN}/"
+      mode: forward_single
+      outpost: authentik Embedded Outpost
+
+  - name: MeTube
+    slug: metube
+    launch_url: "https://metube.${MYDOMAIN}/"
+    group: media
+    provider:
+      type: proxy_forward_auth
+      name: Provider for MeTube
+      external_host: "https://metube.${MYDOMAIN}/"
+      mode: forward_single
+      outpost: authentik Embedded Outpost
+
+  - name: Obsidian
+    slug: obsidian
+    launch_url: "https://obsidian.${MYDOMAIN}/"
+    group: admins
+    provider:
+      type: proxy_forward_auth
+      name: Provider for Obsidian
+      external_host: "https://obsidian.${MYDOMAIN}/"
+      mode: forward_single
+      outpost: authentik Embedded Outpost
+
+  - name: Kopia B2
+    slug: kopia-b2
+    launch_url: "https://kopia-b2.${MYDOMAIN}/"
+    group: admins
+    provider:
+      type: proxy_forward_auth
+      name: Provider for Kopia B2
+      external_host: "https://kopia-b2.${MYDOMAIN}/"
+      mode: forward_single
+      outpost: authentik Embedded Outpost
+
+  - name: wg-easy
+    slug: wg-easy
+    launch_url: "https://vpn.${MYDOMAIN}/"
+    group: admins
+    provider:
+      type: oidc
+      name: Provider for wg-easy
+      client_id: "${WG_EASY_AUTHENTIK_CLIENT_ID}"
+      client_secret_file: wg-easy/authentik-client-secret
+      redirect_uris:
+        - "https://vpn.${MYDOMAIN}/api/auth/oidc/callback"
+        - "https://vpn.${MYDOMAIN}/api/auth/oidc/link"
+      scope_mappings:
+        - goauthentik.io/providers/oauth2/scope-openid
+        - infra/providers/oauth2/scope-wg-easy-verified-email
+        - goauthentik.io/providers/oauth2/scope-profile

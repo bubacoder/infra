@@ -39,7 +39,7 @@ services:
       homepage.name: Immich
       homepage.icon: immich.png
       homepage.href: https://immich.${MYDOMAIN}/
-      homepage.description: "Self-hosted photo and video backup and management platform"
+      homepage.description: "[SSO] Self-hosted photo and video backup and management platform"
 
   immich-machine-learning:
     image: ghcr.io/immich-app/immich-machine-learning:v3

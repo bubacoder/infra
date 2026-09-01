@@ -1,0 +1,66 @@
+# Authentik ForwardAuth callback routes. The file provider watches this
+# directory, so adding a protected application does not restart Authentik.
+http:
+  routers:
+
+    authentik-uptime-kuma-outpost:
+      rule: Host(`uptime-kuma.{{env "MYDOMAIN"}}`) && PathPrefix(`/outpost.goauthentik.io/`)
+      priority: 100
+      middlewares:
+        - localaccess@file
+      service: authentik-outpost
+
+    authentik-adminer-outpost:
+      rule: Host(`adminer.{{env "MYDOMAIN"}}`) && PathPrefix(`/outpost.goauthentik.io/`)
+      priority: 100
+      middlewares:
+        - localaccess@file
+      service: authentik-outpost
+
+    authentik-code-server-outpost:
+      rule: Host(`code.{{env "MYDOMAIN"}}`) && PathPrefix(`/outpost.goauthentik.io/`)
+      priority: 100
+      middlewares:
+        - localaccess@file
+      service: authentik-outpost
+
+    authentik-qbittorrent-outpost:
+      rule: Host(`qbittorrent.{{env "MYDOMAIN"}}`) && PathPrefix(`/outpost.goauthentik.io/`)
+      priority: 100
+      middlewares:
+        - localaccess@file
+      service: authentik-outpost
+
+    authentik-scrutiny-outpost:
+      rule: Host(`scrutiny.{{env "MYDOMAIN"}}`) && PathPrefix(`/outpost.goauthentik.io/`)
+      priority: 100
+      middlewares:
+        - localaccess@file
+      service: authentik-outpost
+
+    authentik-metube-outpost:
+      rule: Host(`metube.{{env "MYDOMAIN"}}`) && PathPrefix(`/outpost.goauthentik.io/`)
+      priority: 100
+      middlewares:
+        - localaccess@file
+      service: authentik-outpost
+
+    authentik-obsidian-outpost:
+      rule: Host(`obsidian.{{env "MYDOMAIN"}}`) && PathPrefix(`/outpost.goauthentik.io/`)
+      priority: 100
+      middlewares:
+        - localaccess@file
+      service: authentik-outpost
+
+    authentik-kopia-b2-outpost:
+      rule: Host(`kopia-b2.{{env "MYDOMAIN"}}`) && PathPrefix(`/outpost.goauthentik.io/`)
+      priority: 100
+      middlewares:
+        - localaccess@file
+      service: authentik-outpost
+
+  services:
+    authentik-outpost:
+      loadBalancer:
+        servers:
+          - url: http://authentik-server:9000

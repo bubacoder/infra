@@ -35,7 +35,7 @@ services:
       - 443:443/udp # HTTP/3 - QUIC
     networks:
       - proxy
-      - security-authelia
+      - security-authentik
       - security-wg-easy
       - dev-code-server
       - tools-vaultwarden
@@ -73,7 +73,7 @@ services:
 networks:
   proxy:
     external: true
-  security-authelia:
+  security-authentik:
     external: true
   security-wg-easy:
     external: true

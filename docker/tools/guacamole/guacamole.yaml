@@ -14,20 +14,23 @@ services:
     container_name: guacamole
     restart: unless-stopped
     environment:
-      EXTENSIONS: auth-header
+      # JDBC retains local recovery and connection permissions; native OIDC
+      # replaces the ineffective auth-header extension.
+      EXTENSIONS: auth-jdbc-postgresql,auth-sso-openid
     volumes:
       - ${DOCKER_VOLUMES}/guacamole:/config
     networks:
       - proxy
     labels:
       traefik.enable: true
+      traefik.http.routers.guacamole.rule: Host(`guacamole.${MYDOMAIN}`)
       traefik.http.routers.guacamole.middlewares: localaccess@file
       traefik.http.services.guacamole.loadbalancer.server.port: 8080
       homepage.group: Connections
       homepage.name: Guacamole
       homepage.icon: guacamole.png
       homepage.href: https://guacamole.${MYDOMAIN}/
-      homepage.description: "Remote desktop gateway"
+      homepage.description: "[SSO] Remote desktop gateway"
 
 networks:
   proxy:

@@ -49,6 +49,7 @@ services:
     restart: unless-stopped
     environment:
       - CONTAINERS=1 # Allow access to viewing containers
+      - INFO=1 # Allow CrowdSec Docker log acquisition to read daemon metadata
       - SERVICES=1 # Allow access to viewing services (necessary when using Docker Swarm)
       - TASKS=1 # Allow access to viewing tasks (necessary when using Docker Swarm)
       - POST=0 # Disallow any POST operations (effectively read-only)

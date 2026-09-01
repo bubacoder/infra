@@ -7,7 +7,7 @@ services:
         state: up
       - name: traefik
         state: up
-      - name: authelia
+      - name: authentik
         state: up
       - name: wg-easy
         state: up

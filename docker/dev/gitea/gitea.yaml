@@ -39,6 +39,17 @@ services:
       # Security
       GITEA__security__SECRET_KEY: ${GITEA_SECRET_KEY}
       GITEA__security__INTERNAL_TOKEN: ${GITEA_INTERNAL_TOKEN}
+      # Authentik OIDC permits developer accounts while retaining local-admin recovery.
+      # Onboard once: configure ignored GITEA_AUTHENTIK_* values and secret file,
+      # run `scripts/authentik-apps.py --apply`, recreate Gitea,
+      # then run `docker/dev/gitea/gitea-auth.py --host <host> --apply`. Re-run the last
+      # command after changing the client secret, client ID, or OIDC source settings.
+      GITEA__service__ALLOW_ONLY_EXTERNAL_REGISTRATION: "true"
+      GITEA__service__DISABLE_REGISTRATION: "false"
+      GITEA__oauth2_client__ENABLE_AUTO_REGISTRATION: "true"
+      GITEA__oauth2_client__USERNAME: preferred_username
+      GITEA__oauth2_client__ACCOUNT_LINKING: login
+      GITEA__oauth2_client__OPENID_CONNECT_SCOPES: profile email
     volumes:
       - ${DOCKER_VOLUMES}/gitea:/data
     networks:
@@ -54,7 +65,7 @@ services:
       homepage.name: Gitea
       homepage.icon: gitea.png
       homepage.href: https://gitea.${MYDOMAIN}/
-      homepage.description: "Self-hosted Git service"
+      homepage.description: "[SSO] Self-hosted Git service"
 
 networks:
   proxy:

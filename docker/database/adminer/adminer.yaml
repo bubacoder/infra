@@ -27,13 +27,13 @@ services:
       - proxy
     labels:
       traefik.enable: true
-      traefik.http.routers.adminer.middlewares: localaccess-sso@file
+      traefik.http.routers.adminer.middlewares: localaccess-authentik@file
       traefik.http.services.adminer.loadbalancer.server.port: 8080
       homepage.group: Storage
       homepage.name: Adminer
       homepage.icon: adminer.png
       homepage.href: https://adminer.${MYDOMAIN}/
-      homepage.description: "Full-featured database management tool"
+      homepage.description: "[SSO] Full-featured database management tool"
 
 networks:
   proxy:

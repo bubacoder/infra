@@ -22,8 +22,28 @@ services:
     container_name: grafana
     restart: unless-stopped
     user: "0:0"
+    environment:
+      GF_SERVER_ROOT_URL: https://grafana.${MYDOMAIN}/
+      GF_AUTH_DISABLE_LOGIN_FORM: "false"
+      GF_AUTH_GENERIC_OAUTH_ENABLED: "true"
+      GF_AUTH_GENERIC_OAUTH_NAME: Authentik
+      GF_AUTH_GENERIC_OAUTH_ALLOW_SIGN_UP: "true"
+      GF_AUTH_GENERIC_OAUTH_AUTO_LOGIN: "false"
+      GF_AUTH_GENERIC_OAUTH_ALLOW_ASSIGN_GRAFANA_ADMIN: "false"
+      GF_AUTH_GENERIC_OAUTH_CLIENT_ID: ${GRAFANA_AUTHENTIK_CLIENT_ID:?Configure Grafana Authentik client ID}
+      GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET__FILE: /run/secrets/grafana-authentik-client-secret
+      # Revalidate Authentik application access when the five-minute access token expires.
+      GF_AUTH_GENERIC_OAUTH_SCOPES: openid profile email offline_access
+      GF_AUTH_GENERIC_OAUTH_USE_REFRESH_TOKEN: "true"
+      GF_AUTH_GENERIC_OAUTH_AUTH_URL: https://sso.${MYDOMAIN}/application/o/authorize/
+      GF_AUTH_GENERIC_OAUTH_TOKEN_URL: https://sso.${MYDOMAIN}/application/o/token/
+      GF_AUTH_GENERIC_OAUTH_API_URL: https://sso.${MYDOMAIN}/application/o/userinfo/
+      GF_AUTH_GENERIC_OAUTH_USE_PKCE: "true"
+      GF_AUTH_SIGNOUT_REDIRECT_URL: https://sso.${MYDOMAIN}/application/o/grafana/end-session/
     volumes:
       - ${DOCKER_VOLUMES}/grafana:/var/lib/grafana
+    secrets:
+      - grafana-authentik-client-secret
     networks:
       - proxy
     labels:
@@ -34,11 +54,15 @@ services:
       homepage.name: Grafana
       homepage.icon: grafana.png
       homepage.href: https://grafana.${MYDOMAIN}/
-      homepage.description: "Monitoring dashboard"
+      homepage.description: "[SSO] Monitoring dashboard"
 
 networks:
   proxy:
     external: true
+
+secrets:
+  grafana-authentik-client-secret:
+    file: ${GRAFANA_AUTHENTIK_CLIENT_SECRET_PATH:?Configure Grafana Authentik client secret path}
 
 # volumes:
 #   grafana-data:

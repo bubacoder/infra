@@ -37,7 +37,11 @@ docker ps -a --filter "name=<container_name>" --format '{{.Names}}\t{{.Status}}'
 
 - **Not listed at all** → the service was never started. Check it is registered in `config/docker/<hostname>/services.yaml` with `state: up`, then bring it up (`scripts/labctl.py service up category/service-name`).
 - **`Restarting` / `Exited`** → it is crash-looping. The logs (Step 2) will contain the startup error; this is expected, proceed.
-- **`Up`** → running but misbehaving; proceed normally.
+- **`Up`** → inspect `.State.Health` when the image defines a health check
+  before changing routing or dependencies. A service may be running but
+  intentionally withheld by Traefik until it becomes healthy. Record the
+  health-check interval and retry only after its first scheduled check.
+- **`Up` with no health check** → proceed normally.
 
 ---
 
@@ -63,7 +67,7 @@ Environment variables are loaded from `.env` files in this precedence order (lat
 
 **Check indirect dependencies too.** Many errors originate upstream of the failing service:
 - **Traefik** — reverse proxy; routing or TLS misconfiguration shows up as connection errors in the app
-- **Authelia** — a 401/403 may be Authelia rejecting the session, not the app itself
+- **Authentik** — a 401/403 may be Authentik rejecting the session, not the app itself
 - **Cloudflared** — tunnel connectivity issues affect all externally-exposed services
 - **Ollama / LiteLLM** — if an AI frontend errors, check the model provider first
 

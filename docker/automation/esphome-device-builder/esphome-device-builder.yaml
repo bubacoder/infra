@@ -21,6 +21,10 @@ services:
       TZ: ${TIMEZONE}
       PUID: ${PUID}
       PGID: ${PGID}
+      # Host networking exposes the dashboard outside Traefik. Authentication is
+      # disabled unless both optional values are set in config/docker/<host>/.env.
+      ESPHOME_USERNAME: ${ESPHOME_USERNAME:-}
+      ESPHOME_PASSWORD: ${ESPHOME_PASSWORD:-}
     # kics-scan ignore-block
     volumes:
       - /etc/localtime:/etc/localtime:ro

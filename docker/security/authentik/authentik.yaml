@@ -1,0 +1,120 @@
+# Authentik is an identity provider and SSO platform supporting OIDC, OAuth2,
+# SAML, LDAP, social login sources, and proxy authentication outposts.
+#
+# The embedded proxy outpost is used, so the worker does not need access to the
+# Docker socket. Do not change the sso hostname after configuring OIDC clients;
+# it forms part of the permanent issuer URL.
+#
+# Links:
+# - Home: https://goauthentik.io/
+# - Source: https://github.com/goauthentik/authentik
+# - Docs: https://docs.goauthentik.io/
+# - Docker Compose: https://docs.goauthentik.io/install-config/install/docker-compose/
+---
+name: authentik
+services:
+  postgresql:
+    image: postgres:16.15-alpine3.24
+    container_name: authentik-postgresql
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: authentik
+      POSTGRES_USER: authentik
+      POSTGRES_PASSWORD_FILE: /run/secrets/authentik-postgresql-password
+      POSTGRES_INITDB_ARGS: --data-checksums
+    secrets:
+      - authentik-postgresql-password
+    volumes:
+      - ${DOCKER_VOLUMES}/authentik/postgresql:/var/lib/postgresql/data
+    networks:
+      - authentik-backend
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d authentik -U authentik"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    labels:
+      traefik.enable: false
+
+  server:
+    image: ghcr.io/goauthentik/server:2026.8.0
+    container_name: authentik-server
+    restart: unless-stopped
+    command: server
+    shm_size: 512mb
+    environment:
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      # kics-scan ignore-line -- value is loaded from a mounted Compose secret.
+      AUTHENTIK_POSTGRESQL__PASSWORD: file:///run/secrets/authentik-postgresql-password
+      # kics-scan ignore-line -- value is loaded from a mounted Compose secret.
+      AUTHENTIK_SECRET_KEY: file:///run/secrets/authentik-secret-key
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+    secrets:
+      - authentik-postgresql-password
+      - authentik-secret-key
+    volumes:
+      - ${DOCKER_VOLUMES}/authentik/data:/data
+      - ${DOCKER_VOLUMES}/authentik/templates:/templates
+      - ./config/blueprints:/blueprints:ro
+    networks:
+      - authentik-backend
+      - security-authentik
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    labels:
+      traefik.enable: true
+      traefik.docker.network: security-authentik
+      traefik.http.routers.authentik.rule: Host(`sso.${MYDOMAIN}`)
+      traefik.http.routers.authentik.middlewares: localaccess@file
+      traefik.http.services.authentik.loadbalancer.server.port: 9000
+      homepage.group: Security
+      homepage.name: Authentik
+      homepage.icon: authentik.png
+      homepage.href: https://sso.${MYDOMAIN}/
+      homepage.description: "Identity provider and SSO platform"
+
+  worker:
+    image: ghcr.io/goauthentik/server:2026.8.0
+    container_name: authentik-worker
+    restart: unless-stopped
+    command: worker
+    shm_size: 512mb
+    environment:
+      AUTHENTIK_POSTGRESQL__HOST: postgresql
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      # kics-scan ignore-line -- value is loaded from a mounted Compose secret.
+      AUTHENTIK_POSTGRESQL__PASSWORD: file:///run/secrets/authentik-postgresql-password
+      # kics-scan ignore-line -- value is loaded from a mounted Compose secret.
+      AUTHENTIK_SECRET_KEY: file:///run/secrets/authentik-secret-key
+      AUTHENTIK_ERROR_REPORTING__ENABLED: "false"
+    secrets:
+      - authentik-postgresql-password
+      - authentik-secret-key
+    volumes:
+      - ${DOCKER_VOLUMES}/authentik/data:/data
+      - ${DOCKER_VOLUMES}/authentik/certs:/certs
+      - ${DOCKER_VOLUMES}/authentik/templates:/templates
+      - ./config/blueprints:/blueprints:ro
+    networks:
+      - authentik-backend
+    depends_on:
+      postgresql:
+        condition: service_healthy
+    labels:
+      traefik.enable: false
+
+networks:
+  authentik-backend:
+  security-authentik:
+    external: true
+
+secrets:
+  authentik-postgresql-password:
+    file: ${AUTHENTIK_SECRETS_PATH:?Authentik secrets path is required}/postgresql-password
+  authentik-secret-key:
+    file: ${AUTHENTIK_SECRETS_PATH:?Authentik secrets path is required}/secret-key

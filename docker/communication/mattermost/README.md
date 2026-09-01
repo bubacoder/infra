@@ -8,7 +8,6 @@ Before deploying Mattermost, ensure the following services are running:
 
 1. **PostgreSQL** - Database backend (deployed via `docker/database/postgresql/postgresql.yaml`)
 2. **Traefik** - Reverse proxy for HTTPS access
-3. **Authelia** - SSO authentication (configured via `localaccess-sso` middleware)
 
 ## Database Setup
 
