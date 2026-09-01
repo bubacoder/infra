@@ -43,14 +43,14 @@ services:
       start_period: 10s
     labels:
       traefik.enable: true
-      traefik.http.routers.scrutiny.middlewares: localaccess@file
+      traefik.http.routers.scrutiny.middlewares: localaccess-authentik@file
       traefik.http.routers.scrutiny.rule: Host(`scrutiny.${MYDOMAIN}`)
       traefik.http.services.scrutiny.loadbalancer.server.port: 8080
       homepage.group: Monitoring
       homepage.name: Scrutiny
       homepage.icon: scrutiny.png
       homepage.href: https://scrutiny.${MYDOMAIN}/
-      homepage.description: Hard Drive S.M.A.R.T Monitoring
+      homepage.description: "[SSO] Hard Drive S.M.A.R.T Monitoring"
 
 networks:
   proxy:

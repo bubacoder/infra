@@ -28,7 +28,7 @@ services:
     environment:
       PGID: "1000"
       # https://app.crowdsec.net/hub/collections
-      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve Dominic-Wagner/vaultwarden LePresidente/jellyfin crowdsecurity/endlessh"
+      COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve Dominic-Wagner/vaultwarden LePresidente/jellyfin crowdsecurity/endlessh firix/authentik"
     volumes:
       - ./config/acquis.yaml:/etc/crowdsec/acquis.yaml
       - ${DOCKER_VOLUMES}/crowdsec/etc:/etc/crowdsec
@@ -37,7 +37,6 @@ services:
       # kics-scan ignore-line
       - /var/log/auth.log:/var/log/auth.log:ro
       - ${DOCKER_VOLUMES}/traefik/logs/traefik-access.log:/var/log/traefik-access.log:ro
-      - ${DOCKER_VOLUMES}/authelia/data/authelia.log:/var/log/authelia.log:ro
       - ${DOCKER_VOLUMES}/vaultwarden/vaultwarden.log:/var/log/vaultwarden.log:ro
       - ${DOCKER_VOLUMES}/jellyfin/log:/var/log/jellyfin:ro
       - ${DOCKER_VOLUMES}/endlessh/logs/endlessh:/var/log/endlessh:ro

@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
+# wg-easy requires a verified email claim. Authentik's default email scope
+# intentionally emits false because it does not persist a global verification state.
+version: 1
+metadata:
+  name: wg-easy OIDC scope mapping
+entries:
+  - model: authentik_providers_oauth2.scopemapping
+    identifiers:
+      managed: infra/providers/oauth2/scope-wg-easy-verified-email
+    attrs:
+      name: wg-easy verified email
+      scope_name: email
+      description: Verified email claim for the Authentik-protected wg-easy application.
+      expression: |
+        return {
+            "email": request.user.email,
+            "email_verified": True,
+        }

@@ -28,7 +28,7 @@ services:
       TZ: ${TIMEZONE}
       HARDCOVER_TOKEN: ${HARDCOVER_TOKEN} # optional - Hardcover metadata provider
       NETWORK_SHARE_MODE: false # library is on local disk; set true for NFS/SMB
-      TRUSTED_PROXY_COUNT: 2 # Cloudflare Tunnel -> Traefik -> CWA
+      TRUSTED_PROXY_COUNT: 1 # Traefik supplies the forwarded HTTPS scheme
     # Large library scan + known fd leak (https://github.com/crocodilestick/Calibre-Web-Automated/issues/1108)
     ulimits:
       nofile:
@@ -49,7 +49,7 @@ services:
       homepage.name: Calibre-Web Automated
       homepage.icon: calibre-web.png
       homepage.href: https://calibre-web-automated.${MYDOMAIN}/
-      homepage.description: All-in-one self-hosted digital library with automated ebook ingest, conversion and management
+      homepage.description: "[SSO] All-in-one self-hosted digital library"
 
 networks:
   proxy:

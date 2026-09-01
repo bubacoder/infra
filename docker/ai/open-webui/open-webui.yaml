@@ -22,7 +22,22 @@ services:
     environment:
       WEBUI_SECRET_KEY: ${OPEN_WEBUI_SECRET_KEY}
       WEBUI_URL: "https://open-webui.${MYDOMAIN}"
+
+      # Auth
+      # Use Authentik by default; append ?form=1 to the login URL for local password recovery.
+      ENABLE_LOGIN_FORM: "false"
+      ENABLE_PASSWORD_AUTH: "true"
+      ENABLE_OAUTH: "true"
+      ENABLE_OAUTH_SIGNUP: "true"
+      OAUTH_AUTO_REDIRECT: "true"
+      OAUTH_MERGE_ACCOUNTS_BY_EMAIL: "true"
+      OAUTH_CLIENT_ID: ${OPEN_WEBUI_AUTHENTIK_CLIENT_ID:?Configure Open WebUI Authentik client ID}
+      OAUTH_CLIENT_SECRET: ${OPEN_WEBUI_AUTHENTIK_CLIENT_SECRET:?Configure Open WebUI Authentik client secret}
+      OPENID_PROVIDER_URL: "https://sso.${MYDOMAIN}/application/o/open-webui/.well-known/openid-configuration"
+      OPENID_REDIRECT_URI: "https://open-webui.${MYDOMAIN}/oauth/oidc/callback"
+      OAUTH_SCOPES: "openid email profile"
       OLLAMA_API_BASE_URL: "https://ollama.${MYDOMAIN}/api"
+
       # Web search using SearXNG
       # Details: https://github.com/open-webui/docs/blob/main/docs/tutorials/integrations/web_search.md
       ENABLE_RAG_WEB_SEARCH: true
@@ -30,6 +45,8 @@ services:
       RAG_WEB_SEARCH_RESULT_COUNT: 5
       RAG_WEB_SEARCH_CONCURRENT_REQUESTS: 10
       SEARXNG_QUERY_URL: "https://searxng.${MYDOMAIN}/search?q=<query>&format=json"
+
+      # Image models
       # https://github.com/open-webui/docs/blob/main/docs/reference/env-configuration.mdx#image_url_response_models_regex_pattern
       IMAGE_URL_RESPONSE_MODELS_REGEX_PATTERN: "^gpt-image|.*gpt-.*-image"
       # Fixes "Got more than 131072 bytes when reading" for image generation models
@@ -47,7 +64,7 @@ services:
       homepage.name: "Open WebUI"
       homepage.icon: open-webui.png
       homepage.href: https://open-webui.${MYDOMAIN}/
-      homepage.description: "User-friendly WebUI for LLMs"
+      homepage.description: "[SSO] User-friendly WebUI for LLMs"
 
 networks:
   proxy:

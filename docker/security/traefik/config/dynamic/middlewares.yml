@@ -17,11 +17,11 @@ http:
         middlewares:
           - local-ip-allowlist
 
-    localaccess-sso:
+    localaccess-authentik:
       chain:
         middlewares:
           - local-ip-allowlist
-          - authelia
+          - authentik
 
     publicaccess:
       chain:
@@ -42,10 +42,9 @@ http:
           - 172.16.0.0/12   # private class B
           - 192.168.0.0/16  # private class C
 
-    authelia:
+    authentik:
       forwardAuth:
-        address: 'http://authelia:9091/api/verify?rd=https://auth.{{env "MYDOMAIN"}}'
-        authResponseHeaders: Remote-User,Remote-Groups,Remote-Name,Remote-Email
+        address: http://authentik-server:9000/outpost.goauthentik.io/auth/traefik
         trustForwardHeader: true
 
     crowdsec-bouncer:

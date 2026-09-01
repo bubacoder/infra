@@ -77,8 +77,10 @@ services:
   traefik:
     # ... other configuration
     networks:
-      - proxy  # Main network
-      - security-authelia  # Isolated service networks
+      # Main network
+      - proxy
+      # Isolated service networks:
+      - security-authentik
       - security-wg-easy
       - tools-vaultwarden
       # ... other isolated networks
@@ -88,9 +90,11 @@ And in the networks section of the same file, all these external networks must b
 
 ```yaml
 networks:
-  proxy:  # Main network
+  # Main network
+  proxy:
     external: true
-  security-authelia:  # Isolated service networks
+  # Isolated service networks
+  security-authentik:
     external: true
   security-wg-easy:
     external: true
@@ -112,7 +116,7 @@ Traefik serves as the central reverse proxy for all services with the following 
 - HTTP to HTTPS redirection
 - HTTP/3 support
 - Access control via middleware chains
-- Integration with Authelia for SSO
+- Integration with Authentik
 - Integration with CrowdSec for security
 - Docker provider for automatic service discovery
 
@@ -130,18 +134,22 @@ labels:
 
 ### Authentication & Security
 
-#### Authelia SSO Integration
+#### Authentication Integration
 
-Services requiring authentication use Authelia middleware:
+New services start local-only:
 
 ```yaml
-traefik.http.routers.service-name.middlewares: localaccess-sso@file
+traefik.http.routers.service-name.middlewares: localaccess@file
 ```
+
+Onboard SSO separately using
+`docker/security/authentik/app-onboarding.md`. Authentik-protected browser routes use
+`localaccess-authentik@file`.
 
 #### Access Control Patterns
 
 - `localaccess`: Restricts access to local networks only, default option
-- `localaccess-sso`: Restricts access to local networks and requires authentication
+- `localaccess-authentik`: Restricts access to local networks and requires Authentik
 - `publicaccess`: Available externally with CrowdSec protection
 
 #### Cloudflare Tunnel
@@ -250,7 +258,7 @@ The override's header comment must state which acceleration it provides, the `GP
 
 Services are organized into logical categories:
 
-- **Security**: Traefik, Authelia, Cloudflared, CrowdSec, ...
+- **Security**: Traefik, Authentik, Cloudflared, CrowdSec, ...
 - **Monitoring**: Prometheus, Grafana, Node-exporter, Uptime-kuma, ...
 - **Media**: Jellyfin, Metube, Navidrome, Calibre, ...
 - **Storage**: MinIO, Syncthing, FileSharing, ...

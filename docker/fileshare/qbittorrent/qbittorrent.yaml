@@ -2,13 +2,19 @@
 # The default username/password is printed to the terminal on container start.
 #
 # Recommended setup steps:
-# - Configure "Bypass authentication for clients in whitelisted IP subnets" (Settings -> Webui) - Authelia handles the authentication
-#   - Reverse proxy setup (default below, via Traefik): enable "Use HTTP for WebUI" -> "Reverse proxy support", and
-#     add the Docker proxy network CIDR (e.g. 172.16.0.0/12) to "Trusted proxies list", so qBittorrent reads the
-#     real client IP from X-Forwarded-For instead of seeing Traefik's container IP. Without this, the subnet
-#     whitelist never matches and every request is prompted for login.
-#   - Direct host exposure (see "separate host" note below): leave "Reverse proxy support" disabled, since
-#     qBittorrent sees the client's real IP directly and the subnet whitelist works as-is.
+# - Keep qBittorrent WebUI authentication enabled for API clients. Authentik
+#   protects browser access through Traefik.
+#   - For the proxy-only setup below, enable "Bypass authentication for clients
+#     on whitelisted IP subnets", whitelist Traefik's proxy-network IP as a
+#     /32, and leave "Reverse proxy support" disabled. qBittorrent then bypasses
+#     its login only for Traefik, rather than for every client or container on
+#     the proxy network.
+#   - Traefik's IP can change when it is recreated. Use a dedicated network with
+#     a reserved Traefik IP for a durable configuration, or update the /32
+#     whitelist after each Traefik recreation. Do not whitelist the full proxy
+#     network.
+#   - Direct host exposure (see "separate host" note below) must retain WebUI
+#     authentication because the browser connects to qBittorrent directly.
 # - The image is build locally (see: `Dockerfile`) and includes the VueTorrent (https://github.com/WDaan/VueTorrent) web interface. To enable it, point your alternate WebUI location to '/usr/vuetorrent' folder in qBittorrent settings.
 # - Configure categories (Settings menu) to specify default download locations
 # - Setup forwarding of port 6881 (TCP, UDP) in the router, check open port: https://www.yougetsignal.com/tools/open-ports/
@@ -32,7 +38,7 @@ services:
     #     qbittorrent:
     #       rule: 'Host(`qbittorrent.${MYDOMAIN}`)'
     #       service: qbittorrent
-    #       middlewares: [localaccess@file]
+    #       middlewares: [localaccess-authentik@file]
     #   services:
     #     qbittorrent:
     #       loadBalancer:
@@ -53,13 +59,13 @@ services:
       - 6881:6881/udp # Bittorrent incoming connections
     labels:
       traefik.enable: true
-      traefik.http.routers.qbittorrent.middlewares: localaccess@file
+      traefik.http.routers.qbittorrent.middlewares: localaccess-authentik@file
       traefik.http.services.qbittorrent.loadbalancer.server.port: 8080
       homepage.group: Arr
       homepage.name: qBittorrent
       homepage.icon: qbittorrent.png
       homepage.href: https://qbittorrent.${MYDOMAIN}/
-      homepage.description: "BitTorrent client"
+      homepage.description: "[SSO] BitTorrent client"
       com.centurylinklabs.watchtower.enable: false
 
 networks:

@@ -1,0 +1,84 @@
+# yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
+# The private address allowlist remains a manually managed Authentik policy.
+version: 1
+metadata:
+  name: Google verified email
+entries:
+  - model: authentik_policies_expression.expressionpolicy
+    identifiers:
+      name: google-email-verified
+    attrs:
+      execution_logging: false
+      expression: |
+        if request.context.get("email_verified") is not True:
+            ak_message("Google did not verify this account's email address.")
+            return False
+
+        return True
+
+  - model: authentik_policies_expression.expressionpolicy
+    identifiers:
+      name: default-source-enrollment-if-sso
+    attrs:
+      expression: |
+        prompt = request.context.get("prompt_data", {})
+        oauth_userinfo = request.context.get("oauth_userinfo") or {}
+        email = prompt.get("email", "").strip().casefold()
+        email_verified = oauth_userinfo.get("verified_email") is True
+
+        verified = ak_call_policy(
+            "google-email-verified",
+            email_verified=email_verified,
+        )
+        allowed = ak_call_policy(
+            "google-email-allowlist",
+            allowlist_email=email,
+        )
+
+        if not verified.passing:
+            ak_message("Google did not provide a verified email address.")
+            return False
+
+        if not allowed.passing:
+            ak_message("This Google account is not permitted.")
+            return False
+
+        if not ak_is_sso_flow:
+            ak_message("Google login did not start a source SSO flow.")
+            return False
+
+        prompt["username"] = email
+        return True
+
+  - model: authentik_policies_expression.expressionpolicy
+    identifiers:
+      name: default-source-authentication-if-sso
+    attrs:
+      expression: |
+        prompt = request.context.get("prompt_data", {})
+        oauth_userinfo = request.context.get("oauth_userinfo") or {}
+        email = (oauth_userinfo.get("email") or prompt.get("email", request.user.email or "")).strip().casefold()
+        email_verified = oauth_userinfo.get("verified_email") is True
+
+        verified = ak_call_policy(
+            "google-email-verified",
+            email_verified=email_verified,
+        )
+        allowed = ak_call_policy(
+            "google-email-allowlist",
+            allowlist_email=email,
+        )
+
+        if not verified.passing:
+            ak_message("Google did not provide a verified email address.")
+            return False
+
+        if not allowed.passing:
+            ak_message("This Google account is not permitted.")
+            return False
+
+        if not ak_is_sso_flow:
+            ak_message("Google login did not start a source SSO flow.")
+            return False
+
+        return True

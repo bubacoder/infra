@@ -27,8 +27,8 @@ services:
     command:
       - server
       - start
+      # The UI is reachable only through Traefik and Authentik ForwardAuth.
       - --disable-csrf-token-checks
-      # Not directly accessible, only via Traefik, after SSO auth
       - --insecure
       - --without-password
       - --address=0.0.0.0:80
@@ -44,11 +44,15 @@ services:
       - ${DOCKER_VOLUMES}/kopia-b2/cache:/app/cache
       - ${DOCKER_VOLUMES}/kopia-b2/logs:/app/logs
 
-      # Nest (source)
+      # Local (source)
       - /etc:/sources/nest/etc:ro
       - ${DOCKER_VOLUMES}:/sources/nest/docker-volumes:ro
       - ${ADMIN_HOME}/repos:/sources/nest/repos:ro
-      - ${STORAGE_LOCAL_MEDIA}:/sources/nest/media:ro
+
+      # Sources will be migrated ho hostname-neutral path
+      - /etc:/sources/local/etc:ro
+      - ${DOCKER_VOLUMES}:/sources/local/docker-volumes:ro
+      - ${ADMIN_HOME}/repos:/sources/local/repos:ro
 
       # NAS (source)
       - ${STORAGE_FAMILYMEDIA}:/sources/nas/family-media:ro
@@ -60,7 +64,7 @@ services:
     labels:
       traefik.enable: true
       traefik.docker.network: backup-kopia
-      traefik.http.routers.kopia-b2.middlewares: localaccess-sso@file
+      traefik.http.routers.kopia-b2.middlewares: localaccess-authentik@file
       traefik.http.services.kopia-b2.loadbalancer.server.port: 80
       homepage.group: Storage
       homepage.name: Kopia - Backblaze B2

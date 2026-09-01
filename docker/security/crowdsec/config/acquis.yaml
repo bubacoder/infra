@@ -8,10 +8,12 @@ filenames:
 labels:
   type: traefik
 ---
-filenames:
-  - /var/log/authelia.log
+source: docker
+docker_host: tcp://dockerproxy:2375
+container_name:
+  - authentik-server
 labels:
-  type: authelia
+  type: authentik
 ---
 filenames:
   - /var/log/vaultwarden.log

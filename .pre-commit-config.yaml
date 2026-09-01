@@ -12,7 +12,6 @@ repos:
       - id: end-of-file-fixer
         exclude: |
             (?x)^(
-                docker/security/authelia/|
                 docker/automation/mosquitto/|
                 docker/tools/searxng/config/
             )
@@ -23,6 +22,9 @@ repos:
       - id: check-shebang-scripts-are-executable
       - id: check-yaml
         args: ["--allow-multiple-documents"]
+        # Authentik blueprints use application-specific !Find/!KeyOf YAML tags
+        # and are validated by Authentik's blueprint importer.
+        exclude: ^docker/security/authentik/config/blueprints/.*\.ya?ml$
       - id: check-added-large-files
         args: ["--maxkb=512"]
       - id: detect-aws-credentials
@@ -101,11 +103,12 @@ repos:
         language_version: python3.14
         additional_dependencies: ["ansible-core>=2.19.0"]
         files: ^ansible/
+        pass_filenames: false
         always_run: false
         entry: >
           env ANSIBLE_ROLES_PATH=~/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:ansible/roles
           env ANSIBLE_COLLECTIONS_PATH=/usr/lib/python3/dist-packages:/usr/share/ansible/collections:/etc/ansible/collections:/opt/pipx/venvs/ansible-core/lib/python3.12/site-packages/ansible_collections:~/.ansible/collections:collections
-          python3 -m ansiblelint --force-color
+          python3 -m ansiblelint --force-color ansible/
 
   # Find security vulnerabilities, compliance issues, and infrastructure misconfigurations early in the development cycle of your infrastructure-as-code with KICS by Checkmarx.
   # KICS stands for Keeping Infrastructure as Code Secure, it is open source and is a must-have for any cloud native project.

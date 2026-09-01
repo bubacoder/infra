@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://goauthentik.io/blueprints/schema.json
+# Managed global permissions for scripts/authentik-apps.py. The API token remains
+# in ignored host configuration because Authentik only displays its value once.
+version: 1
+metadata:
+  name: Authentik application automation
+entries:
+  - model: authentik_rbac.role
+    id: authentik-apps-operator
+    identifiers:
+      name: authentik-apps-operator
+    attrs:
+      permissions:
+        - authentik_core.view_group
+        - authentik_core.add_group
+        - authentik_core.view_application
+        - authentik_core.add_application
+        - authentik_policies.view_policybinding
+        - authentik_policies.add_policybinding
+        - authentik_providers_oauth2.view_oauth2provider
+        - authentik_providers_oauth2.add_oauth2provider
+        - authentik_providers_oauth2.change_oauth2provider
+        - authentik_providers_oauth2.view_scopemapping
+        - authentik_providers_proxy.view_proxyprovider
+        - authentik_providers_proxy.add_proxyprovider
+        - authentik_flows.view_flow
+        - authentik_outposts.view_outpost
+        - authentik_outposts.change_outpost
+  - model: authentik_core.group
+    identifiers:
+      name: authentik-apps-automation
+    attrs:
+      is_superuser: false
+      users:
+        - !Find [authentik_core.user, [username, authentik-apps]]
+      roles:
+        - !KeyOf authentik-apps-operator

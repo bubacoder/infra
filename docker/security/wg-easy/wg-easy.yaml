@@ -13,7 +13,7 @@
 name: wg-easy
 services:
   wg-easy:
-    image: ghcr.io/wg-easy/wg-easy:14 # TODO Upgrade to 15.x
+    image: ghcr.io/wg-easy/wg-easy:15.4.0
     container_name: wg-easy
     hostname: wireguard-easy
     restart: unless-stopped
@@ -21,18 +21,27 @@ services:
       - NET_ADMIN
       - SYS_MODULE
     environment:
-      WG_HOST: vpn.${MYDOMAIN} # The public hostname of your VPN server
-      # PASSWORD: ${ADMIN_PASSWORD} # When set, requires a password when logging in to the Web UI -> Disabled, Authelia SSO is configured
-      # WG_DEFAULT_DNS: 1.1.1.1,8.8.8.8 # DNS server clients will use
-      WG_DEFAULT_DNS: ${PRIMARY_NODE_IP} # DNS server clients will use
-      WG_DEFAULT_ADDRESS: 10.8.0.x # Clients IP address range
-      # WG_ALLOWED_IPS: "0.0.0.0/0,::/0" # Allowed IPs clients will use
-      WG_ALLOWED_IPS: "192.168.0.0/16" # Allowed IPs clients will use
+      # v15 imports WireGuard settings and peers from the v14 wg0.json backup.
+      # Initial v15 setup: create a temporary local admin, select "Yes" for an
+      # existing setup, then upload the backed-up wg0.json file.
+      # Link that existing local account to Authentik while signed in locally at
+      # https://vpn.${MYDOMAIN}/api/auth/oidc/link. Test /api/auth/oidc in a
+      # fresh session before setting DISABLE_PASSWORD_AUTH to "true".
+      OAUTH_PROVIDERS: oidc
+      OAUTH_AUTO_REGISTER: "false"
+      OAUTH_OIDC_SERVER: https://sso.${MYDOMAIN}/application/o/wg-easy/
+      OAUTH_OIDC_CLIENT_ID: ${WG_EASY_AUTHENTIK_CLIENT_ID}
+      OAUTH_OIDC_CLIENT_SECRET: ${WG_EASY_AUTHENTIK_CLIENT_SECRET}
+      OAUTH_OIDC_NAME: Authentik
+      # Keep password login during setup. Disable it only after the local
+      # administrator is linked to OIDC and a fresh OIDC session succeeds.
+      DISABLE_PASSWORD_AUTH: "true"
     ports:
       - 51820:51820/udp # VPN
     # kics-scan ignore-block - WireGuard requires read-only access to kernel modules to load the wireguard module
     volumes:
-      - ${DOCKER_VOLUMES}/wg-easy:/etc/wireguard
+      # Never mount v15 over v14 state: it remains the rollback source.
+      - ${DOCKER_VOLUMES}/wg-easy-v15:/etc/wireguard
       - /lib/modules:/lib/modules:ro
     networks:
       - security-wg-easy
@@ -40,7 +49,8 @@ services:
       traefik.enable: true
       traefik.docker.network: security-wg-easy
       traefik.http.routers.wireguard.rule: Host(`vpn.${MYDOMAIN}`)
-      traefik.http.routers.wireguard.middlewares: localaccess-sso@file
+      # wg-easy v15 owns native OIDC; Traefik limits the setup UI to LAN/VPN.
+      traefik.http.routers.wireguard.middlewares: localaccess@file
       traefik.http.services.wireguard.loadbalancer.server.port: 51821
       homepage.group: Security
       homepage.name: WireGuard Easy

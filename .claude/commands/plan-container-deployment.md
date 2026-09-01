@@ -28,6 +28,7 @@ Visit the installation instructions page for APPLICATION_NAME at INSTALL_INSTRUC
 
 Gather all information relevant to container deployment.
 Also research whether the application supports **AMD GPU acceleration** — e.g. VAAPI for video decode/transcode or ROCm for compute/inference. Note the type of acceleration, whether the vendor ships a GPU-specific image tag, and any manual in-app configuration it requires. Record findings only; do not design the compose files here (that is done in the implementation step).
+Research the application's current official authentication documentation for the version being planned. Record native OIDC/OAuth2, SAML, trusted-header, and local authentication capabilities; exact callback/logout URLs; scopes, PKCE, client authentication and group/role mapping; effects on APIs, mobile/desktop clients, webhooks and CLI use; and the supported local recovery path. Prefer official documentation and cite it. If authentication support cannot be confirmed, say so rather than guessing.
 ABORT your work if no container-based installation method is found.
 
 ### Part 2 - Gather application metadata
@@ -59,6 +60,14 @@ Long description: <Describe the application in 1–3 sentences. Optimally use th
 ## Container deployment
 
 <Put ALL information relevant for container-based deployment: Compose-based example (when found - or at least a docker run command), description of the environment variables, security considerations, AMD GPU acceleration support (type, GPU-specific image tag, manual in-app steps - or state "none"), possible further improvements. Organize information into sub-sections>
+
+## Authentication capabilities
+
+- Local authentication and recovery: <supported behavior>
+- Native OIDC/OAuth2: <supported/unsupported/unknown, minimum version, exact callbacks and configuration requirements>
+- Other SSO: <SAML, trusted headers, LDAP, or none>
+- Client compatibility: <API, CLI, mobile, desktop, webhook, and non-browser effects>
+- Recommended integration: <native OIDC preferred; otherwise ForwardAuth if browser-safe; cite official docs>
 
 ```
 

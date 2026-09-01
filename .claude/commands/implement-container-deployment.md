@@ -30,11 +30,11 @@ patterns described in the `docker/guidelines.md` file.
 - **Header comment.** Start the file with the comment block from the guidelines template: the `Long description`, then a `Links:` list (Homepage, GitHub/Source, Docs, and any Docker/Compose setup example), then a `TODO:` line.
 - **Networking.** Connect the service to the shared external `proxy` network by default. For sensitive services (password managers, backup, VPN, anything holding secrets), use an isolated network instead, per the "Isolated Networks" section of the guidelines — and add a `TODO` reminding the user that Traefik must be joined to that new network (in `docker/security/traefik/traefik.yaml`).
 - **Traefik labels.** If the service has a web UI, expose it via Traefik labels (`traefik.enable`, the router `Host(...)` rule, the loadbalancer server port, and the access middleware). Choose the access middleware explicitly and state your choice in the summary:
-  - `localaccess@file` — local network only (default)
-  - `localaccess-sso@file` — local network + Authelia authentication
-  - `publicaccess@file` — reachable externally with CrowdSec protection
+  - Use `localaccess@file` for the initial deployment. Do not configure SSO in this command.
+  - Use `publicaccess@file` only when the PRP and user explicitly require unauthenticated external access.
 - **Homepage dashboard labels.** Add the dashboard labels using the PRP metadata: `homepage.group` = `Dashboard Group`, `homepage.name` = `Application name`, `homepage.icon` = `Dashboard Icon`, `homepage.href` = the service URL, `homepage.description` = `Short description`.
-- If the installation guide suggests enhancements (e.g. using an optional external database instead of a built-in one, or enabling SSO), add them as `TODO` lines in the header comment.
+- If the PRP identifies supported SSO, add a TODO that names the recommended
+  integration but keep the initial deployment on `localaccess@file`.
 - **Environment variables.** Reuse the existing common variables (`TIMEZONE`, `PUID`, `PGID`, `MYDOMAIN`, `DOCKER_VOLUMES`) — they are already defined, do not redefine them. For any *new* variable the service needs, add it with a **placeholder value only (never a real secret)** to the correct `.env` example file, following the precedence in the guidelines:
   - Common, non-secret, same for every host → `config-example/docker/.env`
   - Host-specific values or secrets/API keys → `config-example/docker/myhost/.env` (the usual case for a new service)
@@ -61,3 +61,8 @@ A compose file alone is **not** deployable — the service must be registered so
 - Pull the container image(s) with `scripts/labctl.py service pull <category>/<application> --quiet` (with a 15 minute timeout) and verify success.
 - **If any of these steps still fails after a couple of fix attempts, stop and report the exact error to the user** rather than guessing further or leaving the repo half-changed.
 - Finish with a short summary: the file path created, the category/dashboard group used, the access middleware chosen, any new env vars added (and to which file), and any `TODO`s left for the user (e.g. joining Traefik to a new isolated network).
+- From the PRP's **Authentication capabilities** section, tell the user whether
+  native OIDC/OAuth2 or another SSO method is supported and the recommended
+  integration. State that the service intentionally starts with
+  `localaccess@file`. Point the user to the repository
+  `onboard-application-sso` skill for the separate SSO onboarding workflow.

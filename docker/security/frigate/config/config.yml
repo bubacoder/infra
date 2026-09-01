@@ -8,7 +8,8 @@ mqtt:
 tls:
   enabled: false
 
-# Disable authentication (since we're using Traefik + Authelia)
+# Keep native authentication enabled; proxy authentication does not protect
+# direct host-port access.
 # auth:
 #   enabled: false
 

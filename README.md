@@ -40,7 +40,8 @@ The key components of this infrastructure include:
 - **Ansible**: Used for configuring the host OS and deploying required software.
 - **Docker Compose**: For defining and managing Docker container configurations.
 - **Traefik**: A reverse proxy with TLS certificate management.
-- **Authelia**: Provides authentication and single sign-on capabilities.
+- **Authentik**: Central identity provider for Google federation, native OIDC,
+  and Traefik ForwardAuth, with local recovery accounts.
 - **Guacamole**: A web-based remote desktop and SSH access solution.
 - **Homepage**: A dashboard for managing and accessing various services.
 

@@ -27,10 +27,10 @@ services:
     #   - 21027:21027/udp
     labels:
       traefik.enable: true
-      traefik.http.routers.syncthing.middlewares: localaccess-sso@file
+      traefik.http.routers.syncthing.middlewares: localaccess@file
       traefik.http.services.syncthing.loadbalancer.server.port: 8384
       homepage.group: Storage
       homepage.name: Syncthing
       homepage.icon: syncthing.png
       homepage.href: https://syncthing.${MYDOMAIN}/
-      homepage.description: "[SSO] File Sync" # TODO solve double auth
+      homepage.description: "File Sync"

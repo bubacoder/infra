@@ -32,13 +32,13 @@ services:
     labels:
       traefik.enable: true
       traefik.http.routers.obsidian.rule: Host(`obsidian.${MYDOMAIN}`)
-      traefik.http.routers.obsidian.middlewares: localaccess-sso@file
+      traefik.http.routers.obsidian.middlewares: localaccess-authentik@file
       traefik.http.services.obsidian.loadbalancer.server.port: 3000
       homepage.group: Tools
       homepage.name: Obsidian
       homepage.icon: obsidian.png
       homepage.href: https://obsidian.${MYDOMAIN}/
-      homepage.description: "Knowledge base for Markdown files"
+      homepage.description: "[SSO] Knowledge base for Markdown files"
 
 networks:
   proxy:

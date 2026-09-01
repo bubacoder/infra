@@ -121,6 +121,8 @@ TODO: Separate core services, like Traefik and Homepage
 
 TODO: Describe the minimally required core service configuration
 
+For central authentication and SSO, see [Authentik Getting Started](authentik.md).
+
 ### 7. Start the containers
 
 Edit `config/docker/<hostname>/services.yaml` to select which services (stacks) should be started (`state: up`)
