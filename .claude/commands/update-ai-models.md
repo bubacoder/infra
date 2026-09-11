@@ -54,7 +54,7 @@ Preserve without changes:
 ### Ollama local models (`Taskfile.yaml` → `get-offline-data-ollama` task)
 
 The task must always include exactly:
-- **One model ≤3B** — best benchmark performer in this size class (e.g. `phi4-mini`)
+- **One model ≤3B** — best benchmark performer in this size class; verify its published parameter count (for example, `phi4-mini` is 3.8B and does not qualify)
 - **One model ≤8B** — best benchmark performer in this size class (e.g. `qwen3:8b`)
 - **Embedding models** — keep as-is unless a clearly better alternative exists
 
@@ -64,7 +64,7 @@ Update both the `docker exec ollama ollama pull <model>` lines and the inline co
 
 After updating the Taskfile, make the `ollama-local-*` entries in `config.yaml` match it **one-to-one**: there must be exactly one `ollama-local-*` entry per model pulled by the task. If the task pulls a model that has no matching entry, **add** the missing entry; if an entry points to a model no longer pulled, remove it.
 - **Chat models** (the ≤3B and ≤8B entries): `ollama_chat/<model>` must reflect the exact tag used in the pull script.
-- **Embedding models** (e.g. `nomic-embed-text`): use the `ollama/<model>:latest` prefix, not `ollama_chat/` — LiteLLM routes `ollama_chat/` to the chat-completions endpoint, which doesn't serve embeddings. E.g. `ollama/nomic-embed-text:latest`.
+- **Embedding models**: use `ollama/<model>` with the exact tag pulled by the task, not `ollama_chat/` — LiteLLM routes `ollama_chat/` to the chat-completions endpoint, which doesn't serve embeddings. E.g. a task pull of `qwen3-embedding:8b` requires `ollama/qwen3-embedding:8b`.
 - Update the comment line above each entry (e.g. `# Local model - Phi 4 Mini (3.8B)`)
 - Do **not** change `api_base` or `api_key` references
 - **Out of scope:** entries that are not produced by the task, e.g. `ollama-mac-mistral` (a remote Mac's Ollama via `REMOTE_OLLAMA_API_BASE`). Leave these untouched.
@@ -83,12 +83,18 @@ Also update `router_settings.fallbacks` in `config.yaml`:
 2. Restart LiteLLM so it re-reads and **parses** the new config, then confirm it came up cleanly (a YAML or unknown-model error surfaces here, not from re-reading the file):
    ```bash
    scripts/labctl.py service restart ai/litellm
-   docker logs litellm --tail 50 2>&1 | grep -i "error\|invalid\|traceback" || echo "no startup errors"
+   if ! logs="$(scripts/labctl.py service logs ai/litellm --tail 50 2>&1)"; then
+     printf '%s\n' "$logs" >&2
+     echo "failed to read LiteLLM logs" >&2
+     exit 1
+   elif grep -qiE "error|invalid|traceback" <<<"$logs"; then
+     echo "startup errors found" >&2
+     exit 1
+   else
+     echo "no startup errors"
+   fi
    ```
-3. Confirm the running container sees the intended config:
-   ```bash
-   docker exec litellm cat /app/config.yaml
-   ```
+3. Confirm the LiteLLM startup log lists the expected aliases. This verifies that the service parsed the mounted configuration without assuming a container name.
 
 ## LiteLLM model ID format reference
 
