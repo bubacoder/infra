@@ -10,9 +10,9 @@
 # - Configuration Options: https://www.navidrome.org/docs/usage/configuration-options/
 #
 # Recommended desktop player:  
-# Sonixd - A full-featured Subsonic/Jellyfin compatible desktop music player  
-# https://github.com/jeffvli/sonixd  
-# (Fix startup issue Mac: `xattr -cr /Applications/Sonixd.app`)
+# Feishin - A modern self-hosted music player.  
+# https://github.com/jeffvli/feishin  
+# (Fix startup issue Mac: `xattr -r -d com.apple.quarantine /Applications/Feishin.app`)
 ---
 name: navidrome
 services:

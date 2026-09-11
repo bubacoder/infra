@@ -38,7 +38,7 @@ services:
       traefik.enable: false
 
   server:
-    image: ghcr.io/goauthentik/server:2026.8.0
+    image: ghcr.io/goauthentik/server:2026.8.2
     container_name: authentik-server
     restart: unless-stopped
     command: server
@@ -78,7 +78,7 @@ services:
       homepage.description: "Identity provider and SSO platform"
 
   worker:
-    image: ghcr.io/goauthentik/server:2026.8.0
+    image: ghcr.io/goauthentik/server:2026.8.2
     container_name: authentik-worker
     restart: unless-stopped
     command: worker
