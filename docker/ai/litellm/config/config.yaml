@@ -20,19 +20,9 @@ model_list:
   #  Create API key: https://platform.claude.com/settings/keys
   #  Buy credits: https://platform.claude.com/settings/billing
 
-  - model_name: claude-sonnet-4-6                # RECEIVED MODEL NAME
-    litellm_params:                              # All params accepted by litellm.completion() - https://docs.litellm.ai/docs/completion/input
-      model: anthropic/claude-sonnet-4-6         # MODEL NAME sent to `litellm.completion()`
-      api_key: "os.environ/ANTHROPIC_API_KEY"    # Does os.getenv("ANTHROPIC_API_KEY")
-
   - model_name: claude-sonnet-5
     litellm_params:
       model: anthropic/claude-sonnet-5
-      api_key: "os.environ/ANTHROPIC_API_KEY"
-
-  - model_name: claude-opus-4-8
-    litellm_params:
-      model: anthropic/claude-opus-4-8
       api_key: "os.environ/ANTHROPIC_API_KEY"
 
   - model_name: claude-opus-5
@@ -40,9 +30,9 @@ model_list:
       model: anthropic/claude-opus-5
       api_key: "os.environ/ANTHROPIC_API_KEY"
 
-  - model_name: claude-fable-5
+  - model_name: claude-fable-5-1
     litellm_params:
-      model: anthropic/claude-fable-5
+      model: anthropic/claude-fable-5-1
       api_key: "os.environ/ANTHROPIC_API_KEY"
 
   - model_name: claude-haiku-4-5
@@ -56,7 +46,7 @@ model_list:
   #  Create API key: https://platform.openai.com/api-keys
   #  Buy credits: https://platform.openai.com/settings/organization/billing/overview
 
-  - model_name: gpt-5.6
+  - model_name: gpt-5.6-sol
     litellm_params:
       model: openai/gpt-5.6-sol
       api_key: "os.environ/OPENAI_API_KEY"
@@ -71,10 +61,6 @@ model_list:
       model: openai/gpt-5.6-luna
       api_key: "os.environ/OPENAI_API_KEY"
 
-  - model_name: gpt-5.5
-    litellm_params:
-      model: openai/gpt-5.5
-      api_key: "os.environ/OPENAI_API_KEY"
 
   # --- Via Google
   #  LiteLLM provider: https://docs.litellm.ai/docs/providers/gemini
@@ -104,16 +90,16 @@ model_list:
       model: openrouter/meta-llama/llama-4-maverick
       api_key: "os.environ/OPENROUTER_API_KEY"
 
-  # https://openrouter.ai/deepseek/deepseek-v4-pro
-  - model_name: deepseek-v4-pro
-    litellm_params:
-      model: openrouter/deepseek/deepseek-v4-pro
-      api_key: "os.environ/OPENROUTER_API_KEY"
-
   # https://openrouter.ai/deepseek/deepseek-v4-pro-0813
   - model_name: deepseek-v4-pro-0813
     litellm_params:
       model: openrouter/deepseek/deepseek-v4-pro-0813
+      api_key: "os.environ/OPENROUTER_API_KEY"
+
+  # https://openrouter.ai/deepseek/deepseek-v4.1-flash
+  - model_name: deepseek-v4.1-flash
+    litellm_params:
+      model: openrouter/deepseek/deepseek-v4.1-flash
       api_key: "os.environ/OPENROUTER_API_KEY"
 
   # https://openrouter.ai/x-ai/grok-4.6
@@ -138,10 +124,10 @@ model_list:
   #  LiteLLM provider: https://docs.litellm.ai/docs/providers/ollama#using-ollama-apichat
   #  Models: https://ollama.com/search
 
-  # Local model - Phi 4 Mini (3.8B)
-  - model_name: ollama-local-phi
+  # Local model - Qwen 3.5 (2B)
+  - model_name: ollama-local-qwen3-5
     litellm_params:
-      model: ollama_chat/phi4-mini
+      model: ollama_chat/qwen3.5:2b
       api_base: "os.environ/LOCAL_OLLAMA_API_BASE"
       api_key: "none"
 
@@ -168,7 +154,5 @@ model_list:
 
 router_settings:
   fallbacks:
-    - gpt-5.5:
-        - gpt-5.6
     - ollama-mac-mistral:
-        - ollama-local-phi
+        - ollama-local-qwen3-5

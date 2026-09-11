@@ -212,7 +212,7 @@ tasks:
     cmds:
       - docker ps --filter name=^ollama$ --filter status=running --quiet | grep -q . || { echo "Error - Ollama container is not running" >&2; exit 1; }
       # Large Language Models - https://ollama.com/search
-      - docker exec ollama ollama pull phi4-mini  # 3.8B - best-in-class sub-4B; 128K ctx
+      - docker exec ollama ollama pull qwen3.5:2b # 2B   - current capable model in the <=3B class; 256K ctx
       - docker exec ollama ollama pull qwen3:8b   # 8B   - best-in-class 7-8B; hybrid thinking, top HumanEval
       # Embedding Models - https://ollama.com/search?c=embedding
       - docker exec ollama ollama pull nomic-embed-text
