@@ -271,7 +271,8 @@ def docker_command(
 
         case "config":
             logger.info(f">>> Checking {stack_dir}/{service_name}")
-            docker([*base_cmd, "config"])
+            # Avoid resolving secrets from .env files into the rendered output.
+            docker([*base_cmd, "config", "--no-interpolate"])
 
         case "logs":
             logger.info(f">>> Showing logs for {stack_dir}/{service_name}")
