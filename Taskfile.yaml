@@ -94,6 +94,18 @@ tasks:
     cmds:
       - find . -type d -name '.venv' -exec rm -rf {} +
 
+  system-cleanup:
+    desc: Report regenerable system cache usage; does not delete data
+    cmds:
+      - scripts/system-cleanup.sh
+
+  system-cleanup-apply:
+    desc: Clear regenerable system caches, retaining JOURNAL_SIZE of journal logs (default 1G)
+    vars:
+      JOURNAL_SIZE: '{{default "1G" .JOURNAL_SIZE}}'
+    cmds:
+      - scripts/system-cleanup.sh --apply --journal-size {{.JOURNAL_SIZE}}
+
   btrfs-compsize:
     desc: Show btrfs compression statistics
     silent: true
