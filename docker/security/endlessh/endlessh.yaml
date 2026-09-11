@@ -25,6 +25,7 @@ services:
       - -log_dir=/config/logs/endlessh/
       - -enable_prometheus
       - -geoip_supplier=ip-api
+      - -healthcheck_enabled
     environment:
       PUID: ${PUID}
       PGID: ${PGID}
