@@ -164,13 +164,20 @@ or stopped (`state: down`).
 Run these commands on the Docker host from its infrastructure repository checkout:
 
 ```bash
+task docker:apply
+```
+
+When `config` is a shared Git repository, synchronize it before deployment:
+
+```bash
 task pull-config-repo
 task docker:apply
 ```
 
 `task pull-config-repo` only accepts fast-forward updates, so it cannot create a merge
 commit on the Docker host. Keep it separate from deployment to make configuration
-changes and service startup explicit actions.
+changes and service startup explicit actions. For a local-only configuration directory,
+run `task docker:apply` directly.
 
 ### 9. Configure the router
 
