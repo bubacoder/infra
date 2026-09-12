@@ -9,10 +9,11 @@
   - [3. Install Ubuntu Server VM (Docker host)](#3-install-ubuntu-server-vm-docker-host)
   - [4. Install and configure the required software using Ansible](#4-install-and-configure-the-required-software-using-ansible)
   - [5. Configure Docker environment files](#5-configure-docker-environment-files)
-  - [6. Configure core services](#6-configure-core-services)
-  - [7. Start the containers](#7-start-the-containers)
-  - [8. Configure the router](#8-configure-the-router)
-  - [9. Configure additional infrastructure services](#9-configure-additional-infrastructure-services)
+  - [6. Prepare the Docker host repository](#6-prepare-the-docker-host-repository)
+  - [7. Configure core services](#7-configure-core-services)
+  - [8. Start the containers](#8-start-the-containers)
+  - [9. Configure the router](#9-configure-the-router)
+  - [10. Configure additional infrastructure services](#10-configure-additional-infrastructure-services)
 
 ## Online service setup
 
@@ -109,6 +110,13 @@ The trailing `/.` includes the common `.env` file. Replace all example values be
 deployment. Put credentials only in the ignored `config` directory or the password
 vault, never in tracked files or commands.
 
+Keep `config` in a private Git repository shared by the administrative host and Docker
+hosts. On an existing deployment, clone that private repository into `config` before
+editing it. For a first deployment, create the directory from the examples above, then
+initialize and push it to a private repository using the organization's approved Git
+workflow. Docker hosts should use read-only, host-specific deploy keys for this
+repository.
+
 Warning: The files in the `config` folder are not committed to the repository (see: `.gitignore`) because they contain sensitive information.
 Ensure these files are backed up! For this, use `task backup-config` and store the generated backup file securely.
 
@@ -125,7 +133,22 @@ config/docker
     └── .env
 ```
 
-### 6. Configure core services
+### 6. Prepare the Docker host repository
+
+The Docker workflow runs on the Docker host and requires both the tracked infrastructure
+repository and its private `config` repository. After Ansible has configured the host,
+connect to it and clone both repositories:
+
+```bash
+mkdir -p ~/repos
+git clone <infrastructure-repository-url> ~/repos/infra
+git clone <private-config-repository-url> ~/repos/infra/config
+```
+
+The private configuration repository must contain the host-specific directory under
+`config/docker/<hostname>/`. Do not store Git write credentials on a Docker host.
+
+### 7. Configure core services
 
 TODO: Separate core services, like Traefik and Homepage
 
@@ -133,14 +156,23 @@ TODO: Describe the minimally required core service configuration
 
 For central authentication and SSO, see [Authentik Getting Started](authentik.md).
 
-### 7. Start the containers
+### 8. Start the containers
 
 Edit `config/docker/<hostname>/services.yaml` to select which services (stacks) should be started (`state: up`)
 or stopped (`state: down`).
 
-To apply the changes run `task docker:apply`.
+Run these commands on the Docker host from its infrastructure repository checkout:
 
-### 8. Configure the router
+```bash
+task pull-config-repo
+task docker:apply
+```
+
+`task pull-config-repo` only accepts fast-forward updates, so it cannot create a merge
+commit on the Docker host. Keep it separate from deployment to make configuration
+changes and service startup explicit actions.
+
+### 9. Configure the router
 
 After setting up the VM, configure the following on the router:
 - Fix IP (static DHCP lease) for the Docker host
@@ -157,7 +189,7 @@ ipconfig /all
 ipconfig /release && ipconfig /renew
 ```
 
-### 9. Configure additional infrastructure services
+### 10. Configure additional infrastructure services
 
 TODO: Describe configuration
 
