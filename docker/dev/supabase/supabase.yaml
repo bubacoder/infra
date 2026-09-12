@@ -440,7 +440,7 @@ services:
 
   db:
     container_name: supabase-db
-    image: supabase/postgres:15.14.1.170
+    image: supabase/postgres:15.14.1.171
     restart: unless-stopped
     volumes:
       - ./config/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
