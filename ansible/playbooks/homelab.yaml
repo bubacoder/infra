@@ -8,29 +8,24 @@
 
 - name: Setup Docker-host
   hosts:
-    - nas
-    - nest
-    - hive
-    - colony
+    - docker_hosts
   roles:
     - role: debian_docker_host
 
 - name: Setup Debian tools
   hosts:
-    - nest
-    - hive
-    - colony
+    - debian_tools_hosts
   roles:
     - role: debian_tools
 
 - name: Setup Samba client
   hosts:
-    - nest
+    - debian_samba_client_hosts
   roles:
     - role: debian_samba_client
 
 - name: Setup Ubuntu desktop software
   hosts:
-    - colony
+    - ubuntu_desktop_hosts
   roles:
     - role: ubuntu_desktop

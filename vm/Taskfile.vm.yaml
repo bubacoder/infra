@@ -1,0 +1,34 @@
+version: '3'
+
+tasks:
+  ubuntu-cloud-init:
+    desc: Create the local Ubuntu cloud VM configuration
+    silent: true
+    cmds:
+      - |
+        if [ -e config/vm/proxmox/ubuntu-cloud.env ]; then
+          echo "Configuration already exists: config/vm/proxmox/ubuntu-cloud.env"
+          exit 0
+        fi
+        mkdir -p config/vm/proxmox
+        cp config-example/vm/proxmox/ubuntu-cloud.env config/vm/proxmox/
+        echo "Created config/vm/proxmox/ubuntu-cloud.env; edit it before provisioning."
+
+  ubuntu-cloud-provision:
+    desc: Create, start, and wait for an Ubuntu cloud VM on Proxmox
+    silent: true
+    dotenv:
+      - config/vm/proxmox/ubuntu-cloud.env
+    vars:
+      PROXMOX_TARGET: '{{default "proxmox" .PROXMOX_HOST}}'
+    preconditions:
+      - sh: test -r config/vm/proxmox/ubuntu-cloud.env
+        msg: Run 'task vm:ubuntu-cloud-init' and edit the configuration first.
+      - sh: test -n "${VMID:-}"
+        msg: VMID must be set in the VM configuration.
+    cmds:
+      - echo "Provisioning VM ${VMID} on {{.PROXMOX_TARGET}}"
+      - rsync -a vm/ config/vm/ "{{.PROXMOX_TARGET}}:/tmp/vm/"
+      - ssh "{{.PROXMOX_TARGET}}" sudo bash /tmp/vm/proxmox/create-ubuntu-cloud-vm.sh
+      - ssh "{{.PROXMOX_TARGET}}" sudo qm start "${VMID}"
+      - ssh "{{.PROXMOX_TARGET}}" sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}"

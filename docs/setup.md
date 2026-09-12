@@ -57,26 +57,23 @@ Steps:
 - Update the configuration files:
   - `ansible/inventory/group_vars/debian/vars.yaml`
     - Place the SSH public key at the path indicated by `debian_base_ssh_key_file` (e.g. `~/.ssh/id_ed25519.pub`)
-  - `ansible/inventory/inventory.yaml`
-    - Add your host
-  - `ansible/playbooks/homelab.yaml`
-    - Include your host with the `debian_tools` role (which handles Homebrew setup internally); add `debian_docker_host` if this host will also run Docker containers
+  - `config/ansible/inventory/inventory.yaml`
+    - Copy the [inventory example](../config-example/ansible/inventory/inventory.yaml), add each host and its address under `debian`, then add it to the groups for the roles it needs. This ignored overlay keeps host-specific addresses out of tracked files.
 - Apply the playbook locally: `ansible/apply-localhost.sh --ask-become-pass`
   - (After passwordless sudo is configured, the `--ask-become-pass` parameter can be dropped)
 
 ### 3. Install Ubuntu Server VM (Docker host)
 
-Edit the parameters in `vm/proxmox/create-ubuntu-server-vm.sh`, then sync and run from the admin host:
+Use the automated cloud-image workflow:
 
 ```bash
-rsync -a vm/ root@proxmox:/tmp/vm/
-ssh root@proxmox bash /tmp/vm/proxmox/create-ubuntu-server-vm.sh
+task vm:ubuntu-cloud-init
+# Edit config/vm/proxmox/ubuntu-cloud.env
+task vm:ubuntu-cloud-provision
 ```
 
-Note - Alternatives:
-- Create the VM using the Proxmox web interface, download and attach the installer ISO, then proceed with manual installation
-- Use Terraform to deploy the VM via the [Proxmox Terraform provider](https://registry.terraform.io/providers/Telmate/proxmox/latest/docs)
-- Install Ubuntu as an LXC container (note that there may be some limitations)
+Reserve the VM's DHCP lease before adding it to the Ansible inventory. See
+[Ubuntu VM installation](../vm/proxmox/ubuntu.md) for configuration and alternatives.
 
 ### 4. Install and configure the required software using Ansible
 
@@ -84,7 +81,11 @@ Required and recommended software (like Docker, tmux, ...) are installed and con
 See the [Ansible README](../ansible/README.md) for details on roles, inventories, and useful run options (`--limit`, `--verbose`).
 
 Execute on the admin host:
-`ansible/apply-homelab.sh`
+`ansible/apply-homelab.sh --limit <host>`
+
+Use a host limit for a new deployment so the playbook does not apply to unrelated
+inventory hosts. Omit the limit only when applying the intended configuration to all
+managed hosts.
 
 ### 5. Configure Docker environment files
 
@@ -97,7 +98,16 @@ Docker Compose's variables are defined in `.env` files with different scopes:
 | `config/docker/<host_name>/.env`                | Host-specific variables                                   |
 | `config/docker/<host_name>/.env.<service_name>` | Variables scoped to a specific service on a specific host |
 
-Copy `config-example/docker/*` to `config/docker/*` as a starting point of configuration of the Docker-based services.
+Create the ignored Docker configuration directory from the examples:
+
+```bash
+mkdir -p config/docker
+cp -a config-example/docker/. config/docker/
+```
+
+The trailing `/.` includes the common `.env` file. Replace all example values before
+deployment. Put credentials only in the ignored `config` directory or the password
+vault, never in tracked files or commands.
 
 Warning: The files in the `config` folder are not committed to the repository (see: `.gitignore`) because they contain sensitive information.
 Ensure these files are backed up! For this, use `task backup-config` and store the generated backup file securely.

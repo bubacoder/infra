@@ -14,22 +14,24 @@ This is the recommended method for fully automated VM creation with zero manual 
 - Downloads pre-installed Ubuntu cloud image (~700MB vs ~2.5GB ISO)
 - Imports the image directly as a VM disk (no installer needed)
 - Cloud-init configures hostname, users, SSH keys, and packages on first boot
-- VM boots directly to a configured state in ~30-60 seconds
+- VM starts in ~30-60 seconds; first boot can take several additional minutes while
+  cloud-init installs packages and applies updates
 
 **Quickstart:**
 
-- Setup SSH access to the PVE host
-- Edit `create-ubuntu-cloud-vm.sh` to match the desired configuration
-- Execute to deploy an Ubuntu Server VM:
+- Set up SSH access to the PVE host
+- Initialize and edit the VM configuration:
 ```bash
-ssh root@proxmox "bash -s" -- < create-ubuntu-cloud-vm.sh
+task vm:ubuntu-cloud-init
 ```
-- Start the VM - it will boot directly to a ready-to-use system
+- Provision the VM:
+```bash
+task vm:ubuntu-cloud-provision
+```
 
-**Verify cloud-init status:**
-```bash
-ssh buba@<vm-ip> "cloud-init status --wait"
-```
+The task syncs the provisioning files to `PROXMOX_HOST`, creates and starts the VM,
+then waits up to 10 minutes for the guest agent, DHCP, and cloud-init. The Proxmox
+user's `~/.ssh/authorized_keys` must contain the public key used to access the VM.
 
 **Limitations:**
 - Uses default disk layout (cannot customize partitions/LVM like autoinstall)
@@ -49,10 +51,12 @@ Use this method when you need custom storage layouts (LVM, partitions, RAID).
 **Quickstart:**
 
 - Setup SSH access to the PVE host
-- Edit `create-ubuntu-server-vm.sh` to match the desired configuration
+- Copy `config-example/vm/proxmox/ubuntu-server.env` to
+  `config/vm/proxmox/ubuntu-server.env` and edit the VM configuration
 - Execute to deploy an Ubuntu Server VM:
 ```bash
-ssh root@proxmox "bash -s" -- < create-ubuntu-server-vm.sh
+rsync -a vm/ config/vm/ proxmox:/tmp/vm/
+ssh proxmox sudo bash /tmp/vm/proxmox/create-ubuntu-server-vm.sh
 ```
 - Start the VM and confirm the installation ("Continue with autoinstall?" prompt)
 
@@ -79,10 +83,12 @@ To achieve fully unattended autoinstall, you would need to modify the installati
 This method creates a VM, downloads the installation media and attaches it for manual installation.
 
 - Setup SSH access to the PVE host
-- Edit `create-ubuntu-server-vm.sh` to match the desired configuration and set: `AUTOINSTALL=false`
+- Copy `config-example/vm/proxmox/ubuntu-server.env` to
+  `config/vm/proxmox/ubuntu-server.env`, edit it, and set `AUTOINSTALL=false`
 - Execute to deploy an Ubuntu Server VM:
 ```bash
-ssh root@proxmox "bash -s" -- < create-ubuntu-server-vm.sh
+rsync -a vm/ config/vm/ proxmox:/tmp/vm/
+ssh proxmox sudo bash /tmp/vm/proxmox/create-ubuntu-server-vm.sh
 ```
 - Start the VM and use the installer
 

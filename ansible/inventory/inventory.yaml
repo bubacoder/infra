@@ -1,12 +1,12 @@
 ---
 
+# Managed Debian and Ubuntu hosts
 debian:
   vars:
     ansible_connection: ssh
     ansible_user: buba
 
   hosts:
-    # Also update in config/docker/.env
     nas:
       # Pin Docker to older versions due to kernel 5.13.8 incompatibility with runc 1.3.x
       # See: https://github.com/opencontainers/runc/issues/4233
@@ -60,13 +60,13 @@ debian:
         terraform: true
         kubernetes: true
 
-    # Cloud. Excluded in apply-homelab.sh
+    # Cloud host; excluded by apply-homelab.sh.
     azure-vm:
       ansible_user: azureuser
       ansible_host: buba-nest.westeurope.cloudapp.azure.com
       ansible_ssh_private_key_file: ~/.ssh/id_rsa_azure_vm
 
-    # Only for ad-hoc playbooks. Excluded in apply-homelab.sh
+    # Ad-hoc local target; excluded by apply-homelab.sh.
     local-debian:
       ansible_connection: local
       debian_tools_brew_install_groups:
@@ -76,6 +76,30 @@ debian:
         terraform: true
         kubernetes: true
 
+# Role assignments
+# Add Docker hosts to config/docker/.env as well.
+docker_hosts:
+  hosts:
+    nas:
+    nest:
+    hive:
+    colony:
+
+debian_tools_hosts:
+  hosts:
+    nest:
+    hive:
+    colony:
+
+debian_samba_client_hosts:
+  hosts:
+    nest:
+
+ubuntu_desktop_hosts:
+  hosts:
+    colony:
+
+# Local workstations
 mac:
   hosts:
     local-mac:

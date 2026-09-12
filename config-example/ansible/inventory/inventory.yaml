@@ -1,0 +1,21 @@
+---
+
+# Managed Debian and Ubuntu hosts
+# Copy this file to config/ansible/inventory/inventory.yaml and add each managed
+# host without committing its address.
+debian:
+  hosts: {}
+
+# Role assignments
+# Add each host to the groups for the roles it needs.
+docker_hosts:
+  hosts: {}
+
+debian_tools_hosts:
+  hosts: {}
+
+debian_samba_client_hosts:
+  hosts: {}
+
+ubuntu_desktop_hosts:
+  hosts: {}
