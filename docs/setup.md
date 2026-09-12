@@ -154,6 +154,41 @@ TODO: Separate core services, like Traefik and Homepage
 
 TODO: Describe the minimally required core service configuration
 
+#### Traefik HTTPS with Cloudflare DNS-01
+
+The supplied Traefik configuration obtains a certificate for the value of `MYDOMAIN`
+and its `MYDOMAIN_TLS_SANS` entries through Cloudflare DNS-01. DNS-01 supports wildcard
+certificates and does not require inbound internet access for certificate issuance.
+
+For a host using `test.example.com`, set these non-secret values in
+`config/docker/.env`:
+
+```dotenv
+MYDOMAIN=test.example.com
+MYDOMAIN_TLS_SANS=*.${MYDOMAIN}
+ADMIN_EMAIL=<Let's Encrypt registration email>
+```
+
+Set these host-specific values in `config/docker/<hostname>/.env`:
+
+```dotenv
+DOCKER_VOLUMES=/mnt/docker-volumes
+CROWDSEC_ENABLED=false
+CLOUDFLARE_DNS_API_TOKEN=<store in the password vault or ignored config only>
+```
+
+`CLOUDFLARE_DNS_API_TOKEN` is a secret. Create a Cloudflare API token scoped to the
+zone containing `MYDOMAIN` with `Zone:Read` and `DNS:Edit` permissions; never put its value in
+tracked files or commands. Keep `CROWDSEC_ENABLED=false` for a minimal local-only
+deployment. Set it to `true` only after deploying CrowdSec and generating
+`CROWDSEC_BOUNCER_API_KEY` in the same host-specific file.
+
+For local HTTPS access, configure the local DNS server to resolve both
+`test.example.com` and `*.test.example.com` to the Docker host. The Cloudflare token lets
+Traefik create the temporary `_acme-challenge` DNS record needed by Let's Encrypt.
+Public DNS records and router port forwarding are only required when external access
+is in scope.
+
 For central authentication and SSO, see [Authentik Getting Started](authentik.md).
 
 ### 8. Start the containers
