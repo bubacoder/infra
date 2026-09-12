@@ -17,6 +17,7 @@ services:
       TZ: ${TIMEZONE}
       MYDOMAIN: ${MYDOMAIN}
       CLOUDFLARE_DNS_API_TOKEN: ${CLOUDFLARE_DNS_API_TOKEN}
+      CROWDSEC_ENABLED: ${CROWDSEC_ENABLED:-false}
       # Generate key within the crowdsec container: cscli bouncers add traefik-bouncer
       CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_API_KEY}
       # Used in static configuration (traefik.yml)
