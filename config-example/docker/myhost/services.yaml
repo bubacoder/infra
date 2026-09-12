@@ -24,12 +24,12 @@ services:
 
   - infra:
       - name: portainer
-        state: up
+        state: down
       - name: adguardhome
         state: up
       - name: adguardhome-sync
         state: up
-      - name: unifi-controller
+      - name: unifi-network-application
         state: up
       - name: ddclient
         state: up
@@ -57,64 +57,59 @@ services:
   - media/video:
       - name: jellyfin
         state: up
-        note: Storage on NAS
-      - name: jellyfin-vue
-        state: up
-        note: Storage on NAS
       - name: metube
         state: up
-        note: Storage on NAS
+
+  - media/photo:
+      - name: immich
+        state: up
 
   - media/audio:
       - name: navidrome
         state: up
-        note: Storage on NAS
 
   - media/ebook:
       - name: calibre
+        state: down
+      - name: calibre-web-automated
         state: up
-        note: Storage on NAS
-      - name: calibre-web
-        state: up
-        note: Storage on NAS
       - name: kiwix-serve
         state: up
 
   - storage:
-      - name: syncthing
+      - name: samba
         state: up
-        note: Storage on NAS
-      - name: filebrowser
-        state: up
-      - name: minio
-        state: down
-      - name: webdav
-        state: up
-      - name: bees
-        state: up
+  #     - name: syncthing
+  #       state: up
+  #     - name: minio
+  #       state: down
+  #     - name: webdav
+  #       state: up
+  #     - name: bees
+  #       state: down
 
   - database:
       - name: adminer
         state: up
       - name: couchdb
         state: up
-      - name: mssql-server
+      - name: mongodb
         state: up
       - name: postgresql
         state: up
+      - name: mssql-server
+        state: down
 
   - backup:
-      - name: kopia-nas
-        state: down
-        note: Storage on NAS
       - name: kopia-b2
         state: up
-        note: Storage on NAS
 
   - dev:
       - name: code-server
         state: up
       - name: gitea
+        state: up
+      - name: act-runner
         state: up
       - name: gitlab
         state: down
@@ -122,10 +117,14 @@ services:
         state: down
       - name: supabase
         state: down
+      - name: httpbin
+        state: up
+      - name: dev-sites
+        state: up
 
   - tools:
-      # - name: homelab-docs
-      #   state: up
+      - name: homelab-docs
+        state: up
       - name: vaultwarden
         state: up
       - name: openspeedtest
@@ -135,11 +134,13 @@ services:
       - name: guacamole
         state: up
       - name: kasm
-        state: up
+        state: down
       - name: stirling-pdf
-        state: up
+        state: down
       - name: searxng
         state: up
+      - name: firefox
+        state: down
       - name: obsidian
         state: up
       - name: scanservjs
@@ -153,11 +154,11 @@ services:
       - name: open-webui
         state: up
       - name: open-webui-pipelines
-        state: up
+        state: down
       - name: autogenstudio
-        state: up
+        state: down
       - name: sillytavern
-        state: up
+        state: down
       - name: qdrant
         state: up
 
@@ -165,22 +166,23 @@ services:
       - name: mattermost
         state: up
 
-  - arr:
-      - name: radarr
-        state: down
-      - name: sonarr
-        state: down
-      - name: bazarr
-        state: down
-      # TODO Deprecated - replace with Lazy Librarian - https://lazylibrarian.gitlab.io/
-      # - name: readarr
-      #   state: down
-      - name: prowlarr
-        state: down
-      - name: jellyseerr
-        state: down
-      - name: flaresolverr
-        state: down
+  - fileshare:
+      - name: qbittorrent
+        state: up
+
+  # - arr:
+  #     - name: radarr
+  #       state: down
+  #     - name: sonarr
+  #       state: down
+  #     - name: bazarr
+  #       state: down
+  #     - name: prowlarr
+  #       state: down
+  #     - name: jellyseerr
+  #       state: down
+  #     - name: flaresolverr
+  #       state: down
 
   # - game:
   #     - name: legendary-minecraft
