@@ -190,6 +190,16 @@ tasks:
           git push
         fi
 
+  pull-config-repo:
+    desc: Fast-forward the private configuration repository
+    cmds:
+      - |
+        if [ ! -d "config/.git" ]; then
+          echo "Error: .git folder not found in 'config'"
+          exit 1
+        fi
+        git -C config pull --ff-only
+
   # Run `task setup-crontab` to install the cron schedule automatically.
   backup:
     desc: Create backup of the configuration directory and the Obsidian vault
