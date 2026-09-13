@@ -8,8 +8,7 @@ ARG CROWDSEC_PLUGIN_TAG_SHA=bef5dfaadbb07381af02ec4e7391e49214ebf953
 RUN apk add --no-cache git \
     && git clone --depth 1 --branch "$CROWDSEC_PLUGIN_REF" \
         https://github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin.git /plugin \
-    && test "$(git -C /plugin rev-parse "$CROWDSEC_PLUGIN_REF")" = "$CROWDSEC_PLUGIN_TAG_SHA" \
-    && test "$(git -C /plugin rev-parse 'HEAD^{commit}')" = "$(git -C /plugin rev-parse "${CROWDSEC_PLUGIN_REF}^{commit}")" \
+    && test "$(git -C /plugin rev-parse 'HEAD^{commit}')" = "$CROWDSEC_PLUGIN_TAG_SHA" \
     && rm -rf /plugin/.git
 
 # Traefik binds privileged ports and accesses the root-owned Docker socket.
