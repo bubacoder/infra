@@ -8,8 +8,10 @@
   ansible.builtin.service:
     name: systemd-resolved
     state: restarted
+  become: true
 
 - name: Restart service crowdsec-firewall-bouncer
   ansible.builtin.service:
     name: crowdsec-firewall-bouncer
     state: restarted
+  become: true
