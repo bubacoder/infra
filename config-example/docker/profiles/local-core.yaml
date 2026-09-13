@@ -1,0 +1,10 @@
+# Minimal local core deployment: reverse proxy and dashboard only.
+# yaml-language-server: $schema=../services-schema.yaml
+---
+services:
+  - security:
+      - name: traefik
+        state: up
+  - dashboard:
+      - name: homepage
+        state: up

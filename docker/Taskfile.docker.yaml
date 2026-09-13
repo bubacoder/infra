@@ -1,6 +1,37 @@
 version: '3'
 
 tasks:
+  init-local-config:
+    desc: Create a local minimal Docker configuration for this host
+    silent: true
+    vars:
+      HOSTNAME:
+        sh: hostname --short
+    preconditions:
+      - sh: test ! -e "config/docker/{{.HOSTNAME}}/services.yaml"
+        msg: Host configuration already exists. Edit it directly instead of overwriting it.
+    cmds:
+      - |
+        set -eu
+        mkdir -p "config/docker/{{.HOSTNAME}}"
+        if [ ! -e config/docker/.env ]; then
+          cp config-example/docker/.env config/docker/.env
+        fi
+        cp config-example/docker/minimal-host.env "config/docker/{{.HOSTNAME}}/.env"
+        cp config-example/docker/profiles/local-core.yaml "config/docker/{{.HOSTNAME}}/services.yaml"
+        cp config-example/docker/services-schema.yaml config/docker/services-schema.yaml
+        echo "Created local core configuration for {{.HOSTNAME}}. Set the required values before deployment."
+
+  check-host:
+    desc: Verify Docker bridge networking and required host prerequisites
+    preconditions:
+      - sh: command -v docker >/dev/null
+        msg: Docker must be installed before running this check.
+    cmds:
+      - docker info >/dev/null
+      - docker run --rm alpine:3.21 sh -ec 'ping -c 1 -W 3 1.1.1.1 >/dev/null; nslookup dl-cdn.alpinelinux.org >/dev/null'
+      - echo "Docker bridge networking is working."
+
   command:
     internal: true
     cmds:

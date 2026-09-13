@@ -19,16 +19,38 @@ tasks:
     silent: true
     dotenv:
       - config/vm/proxmox/ubuntu-cloud.env
-    vars:
-      PROXMOX_TARGET: '{{default "proxmox" .PROXMOX_HOST}}'
     preconditions:
       - sh: test -r config/vm/proxmox/ubuntu-cloud.env
         msg: Run 'task vm:ubuntu-cloud-init' and edit the configuration first.
       - sh: test -n "${VMID:-}"
         msg: VMID must be set in the VM configuration.
     cmds:
-      - echo "Provisioning VM ${VMID} on {{.PROXMOX_TARGET}}"
-      - rsync -a vm/ config/vm/ "{{.PROXMOX_TARGET}}:/tmp/vm/"
-      - ssh "{{.PROXMOX_TARGET}}" sudo bash /tmp/vm/proxmox/create-ubuntu-cloud-vm.sh
-      - ssh "{{.PROXMOX_TARGET}}" sudo qm start "${VMID}"
-      - ssh "{{.PROXMOX_TARGET}}" sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}"
+      - echo "Provisioning VM ${VMID} on ${PROXMOX_HOST:-proxmox}"
+      - rsync -a vm/ config/vm/ "${PROXMOX_HOST:-proxmox}:/tmp/vm/"
+      - ssh "${PROXMOX_HOST:-proxmox}" sudo bash /tmp/vm/proxmox/create-ubuntu-cloud-vm.sh
+      - ssh "${PROXMOX_HOST:-proxmox}" sudo qm start "${VMID}"
+      - ssh "${PROXMOX_HOST:-proxmox}" sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}"
+
+  ubuntu-cloud-preflight:
+    desc: Read-only validation of the Ubuntu cloud VM target
+    silent: true
+    dotenv:
+      - config/vm/proxmox/ubuntu-cloud.env
+    preconditions:
+      - sh: test -r config/vm/proxmox/ubuntu-cloud.env
+        msg: Run 'task vm:ubuntu-cloud-init' and edit the configuration first.
+      - sh: test -n "${VMID:-}" && test -n "${VM_STORAGE:-}" && test -n "${VM_BRIDGE:-}"
+        msg: VMID, VM_STORAGE, and VM_BRIDGE must be set in the VM configuration.
+      - sh: command -v ssh >/dev/null && command -v rsync >/dev/null
+        msg: ssh and rsync must be installed on the administrative host.
+    cmds:
+      - |
+        set -eu
+        if ssh "${PROXMOX_HOST:-proxmox}" "sudo test -e /etc/pve/qemu-server/${VMID}.conf"; then
+          echo "Error: VM ${VMID} already exists on ${PROXMOX_HOST:-proxmox}." >&2
+          exit 1
+        fi
+        ssh "${PROXMOX_HOST:-proxmox}" "sudo pvesm status --storage '${VM_STORAGE}' >/dev/null"
+        ssh "${PROXMOX_HOST:-proxmox}" "ip link show '${VM_BRIDGE}' >/dev/null"
+        ssh "${PROXMOX_HOST:-proxmox}" "sudo test -s \"\$HOME/.ssh/authorized_keys\""
+        echo "Preflight passed: VM ID ${VMID} is unused; storage ${VM_STORAGE} and bridge ${VM_BRIDGE} are available."
