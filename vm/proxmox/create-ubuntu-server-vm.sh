@@ -1,32 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Deploy from adminhost:
-#   rsync -a vm/ root@proxmox:/tmp/vm/ && ssh root@proxmox bash /tmp/vm/proxmox/create-ubuntu-server-vm.sh
+readonly SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
+readonly CONFIG_FILE="${VM_CONFIG_FILE:-${SCRIPT_DIR}/ubuntu-server.env}"
+
+if [ ! -r "${CONFIG_FILE}" ]; then
+    echo "VM configuration not found: ${CONFIG_FILE}" >&2
+    echo "Copy config-example/vm/proxmox/ubuntu-server.env to config/vm/proxmox/, edit it, and sync config/vm/ with vm/." >&2
+    exit 1
+fi
+
+# shellcheck source=/dev/null
+source "${CONFIG_FILE}"
 
 # shellcheck source=../lib-common.sh
-source "$(dirname "${BASH_SOURCE[0]}")/../lib-common.sh"
+source "${SCRIPT_DIR}/../lib-common.sh"
 
-# === User configuration ===
-
-# Check https://releases.ubuntu.com/ for latest LTS point release; update manually.
-readonly UBUNTU_VERSION="26.04"
-
-# false: Manual installation is needed.
-# true:  Edit the autoinstall config below. Only need to approve the start of the installer on the VM console.
-readonly AUTOINSTALL=true
-
-readonly USERNAME="buba"
-# Password ("initial_pswd") hash created with: docker run -it --rm alpine mkpasswd --method=SHA-512
-# shellcheck disable=SC2016
-readonly PASSWORD_HASH='$5$ZZvSaWFZz6GSdet7$spw97QIa9A1KmbWLHS0mqJuyUsRAfKJu4lWglYSaFK7'
-
-readonly VMNAME="ubuntu-server-test"
-readonly VMID=300
-readonly CPU_CORES=4
-readonly MAX_MEMORY_SIZE=4096 # MB
-readonly MIN_MEMORY_SIZE=1024 # MB (memory ballooning)
-readonly DISK_SIZE=256 # GB (thin provisioned)
+validate_vm_config
+: "${UBUNTU_VERSION:?Missing required configuration value: UBUNTU_VERSION}"
+: "${AUTOINSTALL:?Missing required configuration value: AUTOINSTALL}"
 
 # === Derived (do not edit) ===
 
@@ -34,14 +26,8 @@ readonly INSTALL_ISO="ubuntu-${UBUNTU_VERSION}-live-server-amd64.iso"
 readonly CHECKSUM_URL="https://releases.ubuntu.com/${UBUNTU_VERSION}/SHA256SUMS"
 
 get_authorized_keys_autoinstall() {
-    local actual_user="${SUDO_USER:-${USER:-root}}"
-    local actual_home
-    actual_home=$(getent passwd "${actual_user}" | cut -d: -f6)
-    local AUTHORIZED_KEYS_FILE="${actual_home}/.ssh/authorized_keys"
-    if [ -s "$AUTHORIZED_KEYS_FILE" ]; then
-        echo "    authorized-keys:"
-        sed 's/^/\      - "/; s/$/"/' "$AUTHORIZED_KEYS_FILE"
-    fi
+    echo "    authorized-keys:"
+    sed 's/^/\      - "/; s/$/"/' "$(get_authorized_keys_file)"
 }
 
 create_autoinstall_config() {
@@ -62,10 +48,11 @@ autoinstall:
     geoip: true
   identity:
     hostname: ${VMNAME}
-    password: ${PASSWORD_HASH}
+    # SSH-key-only access; the installer locks this local password.
+    password: "!"
     username: ${USERNAME}
   ssh:
-    allow-pw: true
+    allow-pw: false
     install-server: true
 $(get_authorized_keys_autoinstall)
   storage:
@@ -110,7 +97,7 @@ create_vm() {
       --tags ubuntu \
       --memory "${MAX_MEMORY_SIZE}" --balloon "${MIN_MEMORY_SIZE}" \
       --cpu cputype=host --cores "${CPU_CORES}" \
-      --net0 virtio,bridge=vmbr0,firewall=0 \
+      --net0 "virtio,bridge=${VM_BRIDGE},firewall=0" \
       --agent enabled=1,freeze-fs-on-backup=1,type=virtio \
       --serial0 socket --tablet 0 \
       --scsihw virtio-scsi-single \
@@ -128,6 +115,11 @@ create_vm() {
 }
 
 parse_download_only_arg "$@"
+
+if [ "$DOWNLOAD_ONLY" = false ] && [ "$AUTOINSTALL" = true ]; then
+    require_authorized_keys
+fi
+
 download_installer
 
 if [ "$DOWNLOAD_ONLY" = true ]; then
