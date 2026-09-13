@@ -36,13 +36,13 @@ create_cloud_init_config() {
     mkdir -p "${SNIPPETS_DIR}"
     write_ubuntu_cloud_user_data "${SNIPPETS_DIR}/${CLOUD_USER_DATA_FILE}"
 
-    # This VM creates one Ethernet NIC, so match it without relying on its OS-specific name.
+    # The VM NIC is VirtIO. Matching its driver keeps Netplan from managing Docker bridges.
     cat > "${SNIPPETS_DIR}/${CLOUD_NETWORK_CONFIG_FILE}" << EOF
 version: 2
 ethernets:
   primary:
     match:
-      name: "*"
+      driver: virtio_net
     dhcp4: true
 EOF
 }
