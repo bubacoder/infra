@@ -14,8 +14,6 @@ services:
     container_name: homepage
     restart: unless-stopped
     environment:
-      PUID: ${PUID}
-      PGID: ${PGID}
       # Using Environment Secrets:
       #  https://gethomepage.dev/latest/installation/docker/#using-environment-secrets
       HOMEPAGE_VAR_TIMEZONE: ${TIMEZONE}
