@@ -70,6 +70,7 @@ Use the automated cloud-image workflow:
 ```bash
 task vm:ubuntu-cloud-init
 # Edit config/vm/proxmox/ubuntu-cloud.env
+task vm:ubuntu-cloud-preflight
 task vm:ubuntu-cloud-provision
 ```
 
@@ -88,6 +89,9 @@ Use a host limit for a new deployment so the playbook does not apply to unrelate
 inventory hosts. Omit the limit only when applying the intended configuration to all
 managed hosts.
 
+The Docker host repository setup in the next steps includes a Docker bridge networking
+check before any service deployment.
+
 ### 5. Configure Docker environment files
 
 Docker Compose's variables are defined in `.env` files with different scopes:
@@ -99,7 +103,8 @@ Docker Compose's variables are defined in `.env` files with different scopes:
 | `config/docker/<host_name>/.env`                | Host-specific variables                                   |
 | `config/docker/<host_name>/.env.<service_name>` | Variables scoped to a specific service on a specific host |
 
-Create the ignored Docker configuration directory from the examples:
+For a shared configuration repository, seed the ignored Docker configuration directory
+from the examples on the administrative host:
 
 ```bash
 mkdir -p config/docker
@@ -108,7 +113,8 @@ cp -a config-example/docker/. config/docker/
 
 The trailing `/.` includes the common `.env` file. Replace all example values before
 deployment. Put credentials only in the ignored `config` directory or the password
-vault, never in tracked files or commands.
+vault, never in tracked files or commands. For a local first installation, use the
+minimal initializer in the next step instead; it avoids copying the full service list.
 
 Keep `config` in a private Git repository shared by the administrative host and Docker
 hosts. On an existing deployment, clone that private repository into `config` before
@@ -148,11 +154,25 @@ git clone <private-config-repository-url> ~/repos/infra/config
 The private configuration repository must contain the host-specific directory under
 `config/docker/<hostname>/`. Do not store Git write credentials on a Docker host.
 
+For a local first installation without a shared configuration repository, initialize a
+minimal Traefik and Homepage profile on the Docker host instead:
+
+```bash
+cd ~/repos/infra
+task docker:init-local-config
+task docker:check-host
+```
+
+The initializer creates `config/docker/<hostname>/services.yaml` with only Traefik and
+Homepage, a minimal host `.env`, and a common `.env` copied from the example. Edit the
+common and host-specific environment files before deployment. The initializer refuses
+to overwrite an existing host configuration.
+
 ### 7. Configure core services
 
-TODO: Separate core services, like Traefik and Homepage
-
-TODO: Describe the minimally required core service configuration
+The local configuration initializer selects Traefik and Homepage as the minimal core
+profile. Edit `config/docker/<hostname>/services.yaml` to add services only after their
+configuration and secret requirements have been completed.
 
 #### Traefik HTTPS with Cloudflare DNS-01
 
