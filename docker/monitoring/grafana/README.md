@@ -13,8 +13,9 @@ config/docker/<host>/grafana/authentik-client-secret
 ```
 
 Set its mode to `0600`, then set `GRAFANA_AUTHENTIK_CLIENT_ID` and
-`GRAFANA_AUTHENTIK_CLIENT_SECRET_PATH` in the ignored host `.env` file. Create
-the Authentik resources and recreate Grafana:
+`GRAFANA_AUTHENTIK_CLIENT_SECRET_PATH` in the ignored
+`config/docker/<host>/.env.grafana` file. Create the Authentik resources and
+recreate Grafana:
 
 ```bash
 scripts/authentik-apps.py --application grafana --apply
