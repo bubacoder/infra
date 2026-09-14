@@ -131,12 +131,15 @@ Sample folder structure:
 ```
 config/docker
 ├── .env
+├── .env.<service_name>
 ├── nas
 │   ├── services.yaml
-│   └── .env
+│   ├── .env
+│   └── .env.<service_name>
 └── nest
-    ├── services.yaml
-    └── .env
+    ├── .env
+    ├── .env.<service_name>
+    └── services.yaml
 ```
 
 ### 6. Prepare the Docker host repository
@@ -180,13 +183,14 @@ The supplied Traefik configuration obtains a certificate for the value of `MYDOM
 and its `MYDOMAIN_TLS_SANS` entries through Cloudflare DNS-01. DNS-01 supports wildcard
 certificates and does not require inbound internet access for certificate issuance.
 
-For a host using `test.example.com`, set these non-secret values in
+For a host using `test.example.com`, set these shared values in
 `config/docker/.env`:
 
 ```dotenv
 MYDOMAIN=test.example.com
 MYDOMAIN_TLS_SANS=*.${MYDOMAIN}
 ADMIN_EMAIL=<Let's Encrypt registration email>
+CLOUDFLARE_DNS_API_TOKEN=<store in the password vault or ignored config only>
 ```
 
 Set these host-specific values in `config/docker/<hostname>/.env`:
@@ -194,14 +198,13 @@ Set these host-specific values in `config/docker/<hostname>/.env`:
 ```dotenv
 DOCKER_VOLUMES=/mnt/docker-volumes
 CROWDSEC_ENABLED=false
-CLOUDFLARE_DNS_API_TOKEN=<store in the password vault or ignored config only>
 ```
 
 `CLOUDFLARE_DNS_API_TOKEN` is a secret. Create a Cloudflare API token scoped to the
 zone containing `MYDOMAIN` with `Zone:Read` and `DNS:Edit` permissions; never put its value in
 tracked files or commands. Keep `CROWDSEC_ENABLED=false` for a minimal local-only
 deployment. Set it to `true` only after deploying CrowdSec and generating
-`CROWDSEC_BOUNCER_API_KEY` in the same host-specific file.
+`CROWDSEC_BOUNCER_API_KEY` in `config/docker/<hostname>/.env.traefik`.
 
 For local HTTPS access, configure the local DNS server to resolve both
 `test.example.com` and `*.test.example.com` to the Docker host. The Cloudflare token lets

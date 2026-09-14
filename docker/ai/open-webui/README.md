@@ -8,9 +8,10 @@ Authentik by default while retaining password authentication for recovery; use
 
 Create `config/docker/<host>/open-webui/authentik-client-secret` with mode
 `0600`. Set `OPEN_WEBUI_AUTHENTIK_CLIENT_ID`,
-`OPEN_WEBUI_AUTHENTIK_CLIENT_SECRET`, and `OPEN_WEBUI_AUTHENTIK_SIGNING_KEY` in
-ignored host configuration. The signing key is an asymmetric Authentik
-certificate/key UUID used for ID-token validation.
+`OPEN_WEBUI_AUTHENTIK_CLIENT_SECRET` in ignored
+`config/docker/<host>/.env.open-webui`, and set
+`OPEN_WEBUI_AUTHENTIK_SIGNING_KEY` in the ignored host `.env`. The signing key
+is an asymmetric Authentik certificate/key UUID used for ID-token validation.
 
 ```bash
 scripts/authentik-apps.py --application open-webui --apply

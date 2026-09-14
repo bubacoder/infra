@@ -46,7 +46,8 @@ openssl rand -out secret-key -hex 60
 chmod 600 postgresql-password secret-key
 ```
 
-5. Set the host-specific service environment variable:
+5. Set the host-specific service environment variable in
+   `config/docker/<host>/.env.authentik`:
 
 ```dotenv
 AUTHENTIK_SECRETS_PATH=${INFRA_CONFIG_PATH}/docker/<host>/authentik
