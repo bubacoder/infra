@@ -37,7 +37,8 @@ GRANT ALL PRIVILEGES ON DATABASE mattermost TO mattermost;
 
 ## Environment Configuration
 
-Add the following variables to your `config/docker/<hostname>/.env` file:
+Add the following variables to your
+`config/docker/<hostname>/.env.mattermost` file:
 
 ```bash
 ### Mattermost configuration

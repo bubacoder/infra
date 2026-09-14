@@ -8,7 +8,8 @@ non-browser clients do not use browser OIDC.
 
 Create `config/docker/<host>/calibre-web-automated/authentik-client-secret`
 with mode `0600`, set `CALIBRE_WEB_AUTOMATED_AUTHENTIK_CLIENT_ID` in ignored
-host configuration, then create the Authentik application:
+`config/docker/<host>/.env.calibre-web-automated`, then create the Authentik
+application:
 
 ```bash
 scripts/authentik-apps.py --application calibre-web-automated --apply
