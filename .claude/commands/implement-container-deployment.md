@@ -35,9 +35,10 @@ patterns described in the `docker/guidelines.md` file.
 - **Homepage dashboard labels.** Add the dashboard labels using the PRP metadata: `homepage.group` = `Dashboard Group`, `homepage.name` = `Application name`, `homepage.icon` = `Dashboard Icon`, `homepage.href` = the service URL, `homepage.description` = `Short description`.
 - If the PRP identifies supported SSO, add a TODO that names the recommended
   integration but keep the initial deployment on `localaccess@file`.
-- **Environment variables.** Reuse the existing common variables (`TIMEZONE`, `PUID`, `PGID`, `MYDOMAIN`, `DOCKER_VOLUMES`) — they are already defined, do not redefine them. For any *new* variable the service needs, add it with a **placeholder value only (never a real secret)** to the correct `.env` example file, following the precedence in the guidelines:
-  - Common, non-secret, same for every host → `config-example/docker/.env`
-  - Host-specific values or secrets/API keys → `config-example/docker/myhost/.env` (the usual case for a new service)
+- **Environment variables.** Reuse the existing common variables (`TIMEZONE`, `PUID`, `PGID`, `MYDOMAIN`) and host-specific `DOCKER_VOLUMES` — they are already defined, do not redefine them. For any *new* variable the service needs, add it with a **placeholder value only (never a real secret)** to the correct `.env` example file, following the precedence in the guidelines:
+   - Common, non-secret, same for every host and service → `config-example/docker/.env`
+   - Host-wide paths and settings shared by services on that host → `config-example/docker/myhost/.env`
+   - Service settings, credentials, and API keys → `config-example/docker/myhost/.env.<service-name>` (the usual case for a new service)
 
 #### AMD GPU acceleration (only if the PRP says the app supports it)
 

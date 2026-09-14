@@ -184,8 +184,10 @@ Common environment variables include:
 - `PGID`: Group Id on the host machine
 - `TIMEZONE`: Timezone setting
 - `MYDOMAIN`: Base domain for all services
-- `DOCKER_VOLUMES`: Base path for persistent volumes
-- Service-specific credentials and API keys
+
+Host-specific files contain values such as `DOCKER_VOLUMES` and storage paths.
+Service credentials, API keys, and other application settings belong in the
+service-specific file, using the host-specific variant when they differ by host.
 
 ## Volume Management
 
@@ -210,10 +212,15 @@ task docker:pull-all    # Pull latest container images
 task docker:stop        # Stop configured containers
 ```
 
-Under the hood, these tasks use the `docker compose` command with the following pattern:
+Under the hood, `labctl.py` passes each existing file in the documented order to
+`docker compose`; later files override earlier values:
 
 ```bash
-docker compose -f "$yaml_file" --env-file "$env_file" up --detach
+docker compose -f "$yaml_file" \
+  --env-file config/docker/.env \
+  --env-file config/docker/<hostname>/.env \
+  --env-file config/docker/.env.<service-name> \
+  --env-file config/docker/<hostname>/.env.<service-name> up --detach
 ```
 
 ### Service Registration
