@@ -68,8 +68,8 @@ entryPoints:
     http3:
       advertisedPort: 443
     http:
-      tls:
-        # The default TLS store supplies the wildcard certificate.
+      # Enable TLS routing; the default TLS store supplies the wildcard certificate.
+      tls: {}
       middlewares:
         - https-only@file
 
