@@ -260,7 +260,7 @@ CLOUDFLARE_DNS_API_TOKEN=<store in the password vault or ignored config only>
 Set these host-specific values in `config/docker/<hostname>/.env`:
 
 ```dotenv
-DOCKER_VOLUMES=/mnt/docker-volumes
+DOCKER_VOLUMES=/srv/docker-volumes
 CROWDSEC_ENABLED=false
 ```
 
