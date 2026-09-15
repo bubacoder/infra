@@ -257,7 +257,6 @@ For a host using `test.example.com`, set these shared values in
 
 ```dotenv
 MYDOMAIN=test.example.com
-MYDOMAIN_TLS_SANS=*.${MYDOMAIN}
 ADMIN_EMAIL=<Let's Encrypt registration email>
 ```
 
@@ -273,6 +272,9 @@ Set `CLOUDFLARE_DNS_API_TOKEN` in the host-and-service file
 permissions for the zone containing `MYDOMAIN`. Keep `CROWDSEC_ENABLED=false`
 for a minimal local deployment. Set it to `true` only after deploying CrowdSec
 and generating `CROWDSEC_BOUNCER_API_KEY` in the same file.
+
+Traefik obtains one certificate for `MYDOMAIN` and `*.MYDOMAIN`, which it uses
+for all configured HTTPS routes.
 
 For central authentication and SSO, see [Authentik Getting Started](authentik.md).
 

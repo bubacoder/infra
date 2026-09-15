@@ -69,8 +69,7 @@ entryPoints:
       advertisedPort: 443
     http:
       tls:
-        certResolver: letsencrypt # Configures the HTTPS entrypoint to use certificates obtained from the Let's Encrypt CA
-        # domains: -> configured by TRAEFIK_ENTRYPOINTS_WEBSECURE_HTTP_TLS_DOMAINS_* env var
+        # The default TLS store supplies the wildcard certificate.
       middlewares:
         - https-only@file
 
