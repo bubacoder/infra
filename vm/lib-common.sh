@@ -79,6 +79,14 @@ download_cloud_image() {
 # Uses caller-defined: VMNAME, USERNAME
 write_ubuntu_cloud_user_data() {
     local -r DEST_FILE="$1"
+    local primary_group=""
+
+    # Ubuntu cloud images reserve the admin group, which conflicts with useradd's
+    # default private-group creation for the documented admin account.
+    if [ "${USERNAME}" = "admin" ]; then
+        primary_group="    primary_group: admin"
+    fi
+
     # Reference: https://cloudinit.readthedocs.io/en/latest/reference/examples.html
     cat > "${DEST_FILE}" << EOF
 #cloud-config
@@ -88,6 +96,7 @@ manage_etc_hosts: true
 
 users:
   - name: ${USERNAME}
+${primary_group}
     groups: sudo
     shell: /bin/bash
     sudo: ALL=(ALL) NOPASSWD:ALL

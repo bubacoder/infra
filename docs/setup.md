@@ -106,11 +106,20 @@ cp -a config-example/ansible config/
 
 - Add each host and address to `config/ansible/inventory/inventory.yaml` under
   `debian`, then assign the host to the groups for its required roles.
+- For a newly provisioned VM, set its `ansible_user` to the same username as
+  `USERNAME` in `config/vm/proxmox/ubuntu-cloud.env`. Ansible uses this account
+  as the managed administrator by default. Override `admin_user` per host only
+  when the connection and managed accounts must differ.
 - Set `debian_base_ssh_key_file` in
   `ansible/inventory/group_vars/debian/vars.yaml` and place the matching public
   key at that path, for example `~/.ssh/id_ed25519.pub`.
-- For a separate Docker host, reserve its address before adding it to the
-  inventory.
+- For a separate Docker host, add its current DHCP address as `ansible_host`
+  in the ignored inventory for the initial Ansible run. It is safe to use this
+  address before DNS is configured. Reserve the DHCP lease and configure the
+  hostname in local DNS in [Phase 5](#phase-5-configure-networking), then
+  update the inventory to use the hostname.
+- Connect once with `ssh <initial-user>@<dhcp-address>` and verify the host
+  key before running Ansible. Do not disable SSH host-key verification.
 
 See the [Ansible README](../ansible/README.md) for inventory structure,
 bootstrap authentication, and troubleshooting options.
@@ -193,6 +202,7 @@ task docker:check-host
 ```
 
 The initializer creates a minimal Traefik and Homepage profile and refuses to
+overwrite an existing host configuration.
 
 ### Configure Environment Files
 
