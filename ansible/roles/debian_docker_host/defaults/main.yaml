@@ -14,3 +14,6 @@ debian_docker_host_containerd_io_version: "latest"
 # Set to true to prevent Docker packages from being automatically upgraded
 # Useful for systems with compatibility constraints (e.g., older kernels)
 debian_docker_host_hold_docker_packages: false
+
+# Persistent host path used by Docker Compose bind mounts.
+debian_docker_host_volumes_path: /srv/docker-volumes
