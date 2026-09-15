@@ -1,71 +1,128 @@
 # Getting Started<!-- omit in toc -->
 
-- [Online service setup](#online-service-setup)
-- [Local configuration](#local-configuration)
-  - [1. Install Proxmox Virtual Environment](#1-install-proxmox-virtual-environment)
-  - [2. Setup development/admin environment](#2-setup-developmentadmin-environment)
-    - [Option A - Use devcontainer (easy method)](#option-a---use-devcontainer-easy-method)
-    - [Option B - Use a dev/admin host](#option-b---use-a-devadmin-host)
-  - [3. Install Ubuntu Server VM (Docker host)](#3-install-ubuntu-server-vm-docker-host)
-  - [4. Install and configure the required software using Ansible](#4-install-and-configure-the-required-software-using-ansible)
-  - [5. Configure Docker environment files](#5-configure-docker-environment-files)
-  - [6. Prepare the Docker host repository](#6-prepare-the-docker-host-repository)
-  - [7. Configure core services](#7-configure-core-services)
-  - [8. Start the containers](#8-start-the-containers)
-  - [9. Configure the router](#9-configure-the-router)
-  - [10. Configure additional infrastructure services](#10-configure-additional-infrastructure-services)
+- [Before You Start](#before-you-start)
+- [Online Prerequisites](#online-prerequisites)
+- [Phase 1: Prepare the Admin Environment](#phase-1-prepare-the-admin-environment)
+- [Phase 2: Provision the Docker Host](#phase-2-provision-the-docker-host)
+- [Phase 3: Configure the Docker Host with Ansible](#phase-3-configure-the-docker-host-with-ansible)
+- [Phase 4: Configure and Deploy Services](#phase-4-configure-and-deploy-services)
+- [Phase 5: Configure Networking](#phase-5-configure-networking)
 
-## Online service setup
+This guide deploys services to a Debian- or Ubuntu-based Docker host, normally a
+VM on Proxmox VE. It identifies where each command runs so the same workflow
+supports a combined Docker and admin host or a separate admin host.
 
-This setup uses a public domain name to allow publishing local services and to have a recognized TLS certificate.
-An alternative is to use free subdomains (e.g. duckdns.org) but their support is not included in this setup.
+## Before You Start
 
-1. Register a Domain Name, e.g. at [OVHcloud](https://www.ovhcloud.com/en/) - but the registrar does not matter, see next step
-2. Transfer the DNS Zone administration to [Cloudflare](https://www.cloudflare.com/application-services/products/dns/) - Traefik reverse proxy certificate renewal is configured to use Cloudflare
+### Roles
 
-## Local configuration
+| Role | Responsibility | Can be combined? |
+| --- | --- | --- |
+| Proxmox host | Runs the Docker-host VM | Separate from the Docker host |
+| Admin environment | Holds the infrastructure and private configuration repositories; runs Ansible | May be the Docker host |
+| Docker host | Runs Docker Compose services | May be the admin environment |
 
-The recommended setup is to install Proxmox VE and deploy a Debian- or Ubuntu-based VM to host the Docker services.
-For development and administrative purposes, a separate VM can be used with additional tools installed. This separation from the Docker host is a best practice, but to simplify the setup these two roles can be unified.
+The **admin environment** may be a separate Debian/Ubuntu workstation, a
+devcontainer running on that workstation, or the Docker host itself. A separate
+admin environment is recommended for a persistent deployment because the Docker
+host needs only read-only access to the private configuration repository. A new
+Docker-host VM needs a temporary admin environment until it is provisioned; it
+can become the admin environment afterwards in single-host mode.
 
-### 1. Install Proxmox Virtual Environment
+Choose one of these operating models before continuing:
 
---> See [Proxmox VE](../vm/proxmox/README.md)
+| Model | Admin environment | Docker host | Ansible command |
+| --- | --- | --- | --- |
+| Single-host | Docker host | Same machine | `ansible/apply-localhost.sh` |
+| Separate admin host | Admin workstation or devcontainer | Separate VM | `ansible/apply-homelab.sh --limit <host>` |
 
-### 2. Setup development/admin environment
+In single-host mode, follow every step labelled **Admin environment** and
+**Docker host** on the same machine. In separate-admin-host mode, use SSH to run
+the Docker-host steps after Ansible has configured the VM.
 
-#### Option A - Use devcontainer (easy method)
+### Workflow Order
 
-The repository includes a [Dev Container](https://code.visualstudio.com/docs/devcontainers/containers) configuration.
-Using Visual Studio Code, the [Dev Containers Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) and Docker, the development (e.g. adding more services, building the documentation) and administration tasks (e.g. running an Ansible playbook) can be performed on any environment without additional software installation.
+| Model | Follow this order |
+| --- | --- |
+| Single-host with a new VM | Use a temporary admin environment for Phase 2, then complete Phases 1, 3, 4, and 5 on the new Docker host. |
+| Single-host with an existing Docker host | Complete Phases 1, 3, 4, and 5 on that host. |
+| Separate admin host | Complete Phases 1, 2, and 3 from the admin environment, then complete Phases 4 and 5 on the Docker host. |
 
-Follow the [Dev Containers tutorial](https://code.visualstudio.com/docs/devcontainers/tutorial) to get started.
-For troubleshooting, tips and tricks see [Dev Containers](../.devcontainer/README.md).
+### Command Locations
 
-Note: The resulting container image is quite large (4+ GB) as it includes all software configured in `ansible/inventory/group_vars/debian/vars.yaml`.
+- **Admin environment:** A machine or devcontainer that runs Ansible and keeps
+  the private configuration repository.
+- **Proxmox host:** The hypervisor that creates and runs the Docker-host VM.
+- **Docker host:** The VM that runs the container services.
 
-#### Option B - Use a dev/admin host
+## Online Prerequisites
 
-The development/administrative host is used for the initial configuration and for development.
+This setup uses a public domain name for published services and recognized TLS
+certificates. Free subdomains such as DuckDNS can work, but are not covered by
+this setup.
 
-Supported OS: Debian/Ubuntu (even in [WSL](https://learn.microsoft.com/en-us/windows/wsl/)).
-MacOS is also supported, but only for working with Ansible remotely and applying the `mac_base` role locally.
+1. Register a domain name, for example with [OVHcloud](https://www.ovhcloud.com/en/).
+2. Transfer DNS zone administration to [Cloudflare](https://www.cloudflare.com/application-services/products/dns/).
+   Traefik uses Cloudflare for DNS-01 certificate renewal.
 
-Steps:
-- Clone the repository on a supported OS: `git clone <repository url>`
-- Install Ansible with: `sudo ansible/bootstrap-ansible.sh`
-  - Complete guide: [Ansible setup steps](../ansible/README.md#setup-steps)
-- Update the configuration files:
-  - `ansible/inventory/group_vars/debian/vars.yaml`
-    - Place the SSH public key at the path indicated by `debian_base_ssh_key_file` (e.g. `~/.ssh/id_ed25519.pub`)
-  - `config/ansible/inventory/inventory.yaml`
-    - Copy the [inventory example](../config-example/ansible/inventory/inventory.yaml), add each host and its address under `debian`, then add it to the groups for the roles it needs. This ignored overlay keeps host-specific addresses out of tracked files.
-- Apply the playbook locally: `ansible/apply-localhost.sh --ask-become-pass`
-  - (After passwordless sudo is configured, the `--ask-become-pass` parameter can be dropped)
+## Phase 1: Prepare the Admin Environment
 
-### 3. Install Ubuntu Server VM (Docker host)
+**Where:** Admin environment
 
-Use the automated cloud-image workflow:
+In single-host mode, use a temporary admin environment to provision the Docker
+host, then complete this phase on the Docker host. In separate-admin-host mode,
+complete it on the dedicated admin workstation before provisioning or
+configuring the Docker host.
+
+### Choose the Tooling Environment
+
+Use one of these options:
+
+- **Devcontainer:** The repository includes a [Dev Container](https://code.visualstudio.com/docs/devcontainers/containers)
+  configuration. Use the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+  with Visual Studio Code. See [Dev Containers](../.devcontainer/README.md) for
+  troubleshooting. The image is large because it includes the administration
+  tooling configured in `ansible/inventory/group_vars/debian/vars.yaml`.
+- **Local tools:** Use Debian/Ubuntu, including WSL. macOS supports remote
+  Ansible administration and the local `mac_base` role.
+
+### Prepare Repositories and Ansible
+
+Clone the infrastructure repository and bootstrap Ansible:
+
+```bash
+git clone <infrastructure-repository-url> ~/repos/infra
+cd ~/repos/infra
+sudo ansible/bootstrap-ansible.sh
+```
+
+Create the ignored configuration overlay from its examples, then edit the
+inventory and shared variables:
+
+```bash
+mkdir -p config
+cp -a config-example/ansible config/
+```
+
+- Add each host and address to `config/ansible/inventory/inventory.yaml` under
+  `debian`, then assign the host to the groups for its required roles.
+- Set `debian_base_ssh_key_file` in
+  `ansible/inventory/group_vars/debian/vars.yaml` and place the matching public
+  key at that path, for example `~/.ssh/id_ed25519.pub`.
+- For a separate Docker host, reserve its address before adding it to the
+  inventory.
+
+See the [Ansible README](../ansible/README.md) for inventory structure,
+bootstrap authentication, and troubleshooting options.
+
+## Phase 2: Provision the Docker Host
+
+**Where:** Admin environment and Proxmox host
+
+Install Proxmox VE first. See [Proxmox VE](../vm/proxmox/README.md).
+
+From the infrastructure checkout on the admin environment, use the automated
+cloud-image workflow:
 
 ```bash
 task vm:ubuntu-cloud-init
@@ -74,91 +131,60 @@ task vm:ubuntu-cloud-preflight
 task vm:ubuntu-cloud-provision
 ```
 
-Reserve the VM's DHCP lease before adding it to the Ansible inventory. See
-[Ubuntu VM installation](../vm/proxmox/ubuntu.md) for configuration and alternatives.
+The tasks connect to the Proxmox host and create the VM. Reserve its DHCP lease
+before the Ansible phase. For prerequisites, configuration, and autoinstall or
+manual alternatives, see [Ubuntu VM installation](../vm/proxmox/ubuntu.md).
 
-### 4. Install and configure the required software using Ansible
+Skip this phase only when an existing machine will be the Docker host.
 
-Required and recommended software (like Docker, tmux, ...) are installed and configured by Ansible.
-See the [Ansible README](../ansible/README.md) for details on roles, inventories, and useful run options (`--limit`, `--verbose`).
+## Phase 3: Configure the Docker Host with Ansible
 
-Execute on the admin host:
-`ansible/apply-homelab.sh --limit <host>`
+**Where:** Admin environment
 
-Use a host limit for a new deployment so the playbook does not apply to unrelated
-inventory hosts. Omit the limit only when applying the intended configuration to all
-managed hosts.
+Ansible configures Docker and the required host software. The Docker host must
+be present in the inventory and the `docker_hosts` group.
 
-The Docker host repository setup in the next steps includes a Docker bridge networking
-check before any service deployment.
-
-### 5. Configure Docker environment files
-
-Docker Compose's variables are defined in `.env` files with different scopes:
-
-| File                                            | Purpose                                                   |
-| ----------------------------------------------- | --------------------------------------------------------- |
-| `config/docker/.env`                            | Common variables, can be used in all hosts and services   |
-| `config/docker/.env.<service_name>`             | Variables scoped to a service                             |
-| `config/docker/<host_name>/.env`                | Host-specific variables                                   |
-| `config/docker/<host_name>/.env.<service_name>` | Variables scoped to a specific service on a specific host |
-
-For a shared configuration repository, seed the ignored Docker configuration directory
-from the examples on the administrative host:
+For a separate Docker host, run:
 
 ```bash
-mkdir -p config/docker
-cp -a config-example/docker/. config/docker/
+ansible/apply-homelab.sh --limit <host>
 ```
 
-The trailing `/.` includes the common `.env` file. Replace all example values before
-deployment. Put credentials only in the ignored `config` directory or the password
-vault, never in tracked files or commands. For a local first installation, use the
-minimal initializer in the next step instead; it avoids copying the full service list.
+For single-host mode, run this on the Docker host after its inventory hostname
+has been assigned to `docker_hosts`:
 
-Keep `config` in a private Git repository shared by the administrative host and Docker
-hosts. On an existing deployment, clone that private repository into `config` before
-editing it. For a first deployment, create the directory from the examples above, then
-initialize and push it to a private repository using the organization's approved Git
-workflow. Docker hosts should use read-only, host-specific deploy keys for this
-repository.
-
-Warning: The files in the `config` folder are not committed to the repository (see: `.gitignore`) because they contain sensitive information.
-Ensure these files are backed up! For this, use `task backup-config` and store the generated backup file securely.
-
-Sample folder structure:
-
-```
-config/docker
-├── .env
-├── .env.<service_name>
-├── nas
-│   ├── services.yaml
-│   ├── .env
-│   └── .env.<service_name>
-└── nest
-    ├── .env
-    ├── .env.<service_name>
-    └── services.yaml
+```bash
+ansible/apply-localhost.sh
 ```
 
-### 6. Prepare the Docker host repository
+Use `--ask-become-pass` when the initial account requires a sudo password. Use
+a host limit for a new remote deployment so the playbook does not apply to
+unrelated inventory hosts.
 
-The Docker workflow runs on the Docker host and requires both the tracked infrastructure
-repository and its private `config` repository. After Ansible has configured the host,
-connect to it and clone both repositories:
+## Phase 4: Configure and Deploy Services
+
+### Prepare Docker-Host Repositories
+
+**Where:** Docker host
+
+The Docker host needs the tracked infrastructure repository and configuration.
+For a separate admin environment, give the Docker host a read-only deploy key
+to the private configuration repository:
 
 ```bash
 mkdir -p ~/repos
 git clone <infrastructure-repository-url> ~/repos/infra
 git clone <private-config-repository-url> ~/repos/infra/config
+cd ~/repos/infra
+task docker:check-host
 ```
 
-The private configuration repository must contain the host-specific directory under
-`config/docker/<hostname>/`. Do not store Git write credentials on a Docker host.
+The private configuration repository must contain
+`config/docker/<hostname>/`. Do not store Git write credentials on a Docker
+host.
 
-For a local first installation without a shared configuration repository, initialize a
-minimal Traefik and Homepage profile on the Docker host instead:
+For a single-host installation without a private configuration repository, use
+the local initializer instead:
 
 ```bash
 cd ~/repos/infra
@@ -166,22 +192,50 @@ task docker:init-local-config
 task docker:check-host
 ```
 
-The initializer creates `config/docker/<hostname>/services.yaml` with only Traefik and
-Homepage, a minimal host `.env`, and a common `.env` copied from the example. Edit the
-common and host-specific environment files before deployment. The initializer refuses
-to overwrite an existing host configuration.
+The initializer creates a minimal Traefik and Homepage profile and refuses to
 
-### 7. Configure core services
+### Configure Environment Files
 
-The local configuration initializer selects Traefik and Homepage as the minimal core
-profile. Edit `config/docker/<hostname>/services.yaml` to add services only after their
-configuration and secret requirements have been completed.
+Docker Compose variables use four scopes. `labctl.py` loads each existing file
+in this order, so later files override earlier values:
 
-#### Traefik HTTPS with Cloudflare DNS-01
+| File | Purpose |
+| --- | --- |
+| `config/docker/.env` | Common variables for every host and service |
+| `config/docker/<hostname>/.env` | Host-specific variables |
+| `config/docker/.env.<service-name>` | Common service-specific variables |
+| `config/docker/<hostname>/.env.<service-name>` | Host- and service-specific variables |
 
-The supplied Traefik configuration obtains a certificate for the value of `MYDOMAIN`
-and its `MYDOMAIN_TLS_SANS` entries through Cloudflare DNS-01. DNS-01 supports wildcard
-certificates and does not require inbound internet access for certificate issuance.
+For a shared configuration repository, seed `config/docker` on the admin
+environment from the examples before committing it to the private repository:
+
+```bash
+mkdir -p config/docker
+cp -a config-example/docker/. config/docker/
+```
+
+Replace all example values before deployment. Keep credentials only in ignored
+`config` files or the password vault, never in tracked files or commands. Back
+up the private configuration repository and use `task backup-config` for an
+offline copy stored securely.
+
+Example layout:
+
+```text
+config/docker
+├── .env
+├── .env.<service-name>
+└── <hostname>
+    ├── .env
+    ├── .env.<service-name>
+    └── services.yaml
+```
+
+### Configure Core Services
+
+The minimal local profile selects Traefik and Homepage. Add other services to
+`config/docker/<hostname>/services.yaml` only after completing their
+configuration and secret requirements.
 
 For a host using `test.example.com`, set these shared values in
 `config/docker/.env`:
@@ -200,65 +254,47 @@ DOCKER_VOLUMES=/mnt/docker-volumes
 CROWDSEC_ENABLED=false
 ```
 
-`CLOUDFLARE_DNS_API_TOKEN` is a secret. Create a Cloudflare API token scoped to the
-zone containing `MYDOMAIN` with `Zone:Read` and `DNS:Edit` permissions; never put its value in
-tracked files or commands. Keep `CROWDSEC_ENABLED=false` for a minimal local-only
+`CLOUDFLARE_DNS_API_TOKEN` needs `Zone:Read` and `DNS:Edit` permissions for the
+zone containing `MYDOMAIN`. Keep `CROWDSEC_ENABLED=false` for a minimal local
 deployment. Set it to `true` only after deploying CrowdSec and generating
 `CROWDSEC_BOUNCER_API_KEY` in `config/docker/<hostname>/.env.traefik`.
 
-For local HTTPS access, configure the local DNS server to resolve both
-`test.example.com` and `*.test.example.com` to the Docker host. The Cloudflare token lets
-Traefik create the temporary `_acme-challenge` DNS record needed by Let's Encrypt.
-Public DNS records and router port forwarding are only required when external access
-is in scope.
-
 For central authentication and SSO, see [Authentik Getting Started](authentik.md).
 
-### 8. Start the containers
+### Deploy Services
 
-Edit `config/docker/<hostname>/services.yaml` to select which services (stacks) should be started (`state: up`)
-or stopped (`state: down`).
+**Where:** Docker host
 
-Run these commands on the Docker host from its infrastructure repository checkout:
+Select services in `config/docker/<hostname>/services.yaml` with `state: up`
 
 ```bash
 task docker:apply
 ```
 
-When `config` is a shared Git repository, synchronize it before deployment:
+When `config` is a private Git repository, synchronize it before deploying:
 
 ```bash
 task pull-config-repo
 task docker:apply
 ```
 
-`task pull-config-repo` only accepts fast-forward updates, so it cannot create a merge
-commit on the Docker host. Keep it separate from deployment to make configuration
-changes and service startup explicit actions. For a local-only configuration directory,
-run `task docker:apply` directly.
+`task pull-config-repo` accepts only fast-forward updates, keeping configuration
+updates and deployments as separate actions. For a local-only `config`
+directory, run `task docker:apply` directly.
 
-### 9. Configure the router
+## Phase 5: Configure Networking
 
-After setting up the VM, configure the following on the router:
-- Fix IP (static DHCP lease) for the Docker host
-- To enable external access to selected services: Port forward to the VM (In OpenWrt: Network -> Firewall -> Port Forwards)
-  - HTTPS - Port 443 TCP & UDP
-  - WireGuard - Port 51820 UDP
-- DHCP settings: set the DNS server address to the IP of your AdGuard Home service (set both instances if you are using AdGuard Home Sync)
-- Configure the local DNS service to resolve your domain name to the main Docker host. This is to provide uninterrupted DNS name resolution of the local services in case of the internet access fails.
-  - In AdGuard Home: Filters -> DNS Rewrites -> Add <hostname> AND *.<hostname>
+**Where:** Router and local DNS service
 
-Note: Query and refresh IP configuration on Windows:
-```sh
-ipconfig /all
-ipconfig /release && ipconfig /renew
-```
+Configure the following after the Docker host is online:
 
-### 10. Configure additional infrastructure services
+- Reserve a static DHCP lease for the Docker host.
+- Configure local DNS to resolve `test.example.com` and `*.test.example.com` to
+  the Docker host. In AdGuard Home, use **Filters > DNS Rewrites**.
+- Set router DHCP clients to use the local DNS service, such as AdGuard Home.
+- For external access only, forward HTTPS ports `443/TCP` and `443/UDP` to the
+  Docker host. Forward `51820/UDP` only when using WireGuard.
 
-TODO: Describe configuration
-
-- AdGuard: local domain, router DHCP
-- Cloudflare
-- Monitoring
-- Backup
+Cloudflare DNS-01 lets Traefik create temporary `_acme-challenge` records for
+Let's Encrypt. Public DNS records and port forwarding are not required for
+local-only HTTPS access.
