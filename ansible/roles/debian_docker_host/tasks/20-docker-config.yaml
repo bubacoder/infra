@@ -1,6 +1,6 @@
 - name: Create docker-volumes directory
   ansible.builtin.file:
-    path: /srv/docker-volumes
+    path: "{{ debian_docker_host_volumes_path }}"
     state: directory
     owner: root
     group: root
