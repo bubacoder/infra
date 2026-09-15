@@ -254,7 +254,6 @@ For a host using `test.example.com`, set these shared values in
 MYDOMAIN=test.example.com
 MYDOMAIN_TLS_SANS=*.${MYDOMAIN}
 ADMIN_EMAIL=<Let's Encrypt registration email>
-CLOUDFLARE_DNS_API_TOKEN=<store in the password vault or ignored config only>
 ```
 
 Set these host-specific values in `config/docker/<hostname>/.env`:
@@ -264,10 +263,11 @@ DOCKER_VOLUMES=/srv/docker-volumes
 CROWDSEC_ENABLED=false
 ```
 
-`CLOUDFLARE_DNS_API_TOKEN` needs `Zone:Read` and `DNS:Edit` permissions for the
-zone containing `MYDOMAIN`. Keep `CROWDSEC_ENABLED=false` for a minimal local
-deployment. Set it to `true` only after deploying CrowdSec and generating
-`CROWDSEC_BOUNCER_API_KEY` in `config/docker/<hostname>/.env.traefik`.
+Set `CLOUDFLARE_DNS_API_TOKEN` in the host-and-service file
+`config/docker/<hostname>/.env.traefik`. It needs `Zone:Read` and `DNS:Edit`
+permissions for the zone containing `MYDOMAIN`. Keep `CROWDSEC_ENABLED=false`
+for a minimal local deployment. Set it to `true` only after deploying CrowdSec
+and generating `CROWDSEC_BOUNCER_API_KEY` in the same file.
 
 For central authentication and SSO, see [Authentik Getting Started](authentik.md).
 
