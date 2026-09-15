@@ -2,7 +2,9 @@
 
 ansible_python_interpreter: /usr/bin/python3
 
-admin_user: "buba"
+# New hosts use their Ansible connection account as the managed administrator.
+# Override this per host only when those accounts intentionally differ.
+admin_user: "{{ ansible_user }}"
 admin_name: "Buba"
 admin_email: "bubacoder@gmail.com"
 
