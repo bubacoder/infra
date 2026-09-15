@@ -170,6 +170,11 @@ Use `--ask-become-pass` when the initial account requires a sudo password. Use
 a host limit for a new remote deployment so the playbook does not apply to
 unrelated inventory hosts.
 
+Docker data defaults to `/srv/docker-volumes`. Override
+`debian_docker_host_volumes_path` in the host inventory before running Ansible
+when using another path, then set `DOCKER_VOLUMES` to the same value in the
+host's Docker environment file.
+
 ## Phase 4: Configure and Deploy Services
 
 ### Prepare Docker-Host Repositories
