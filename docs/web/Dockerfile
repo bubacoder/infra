@@ -13,16 +13,14 @@ RUN --mount=type=bind,ro,source=.,target=/repo /repo/docs/web/update-docs.py --r
 #####################################################################
 #                            Build Stage                            #
 #####################################################################
-FROM hugomods/hugo:exts-0.153.4 AS build
+FROM hugomods/hugo:0.165.0 AS build
 
 # Set base URL
 ARG HUGO_BASEURL
 ENV HUGO_BASEURL=${HUGO_BASEURL}
 
-# Install modules
 COPY docs/web/src/go.mod docs/web/src/go.sum /src/
 COPY docs/web/src/config.module.yaml /src/config.yaml
-RUN hugo mod get
 
 # Build site
 COPY docs/web/src/config.yaml /src/
