@@ -550,10 +550,10 @@ def discover_vm_ipv4(plan: BootstrapPlan, runner: Runner) -> str:
         interfaces = json.loads(output)
         if isinstance(interfaces, dict):
             interfaces = interfaces.get("result", interfaces)
-        if not isinstance(interfaces, list):
-            raise ValueError
-    except (json.JSONDecodeError, ValueError) as error:
+    except json.JSONDecodeError as error:
         raise BootstrapError(f"Could not read network interfaces from Proxmox guest agent for VM {plan.vm_id}") from error
+    if not isinstance(interfaces, list):
+        raise BootstrapError(f"Could not read network interfaces from Proxmox guest agent for VM {plan.vm_id}")
 
     addresses: set[str] = set()
     for interface in interfaces:
@@ -570,9 +570,7 @@ def discover_vm_ipv4(plan: BootstrapPlan, runner: Runner) -> str:
                 addresses.add(str(ipv4))
     if len(addresses) != 1:
         found = ", ".join(sorted(addresses)) or "none"
-        raise BootstrapError(
-            f"Expected exactly one usable IPv4 address on VM {plan.vm_id} interface {plan.mac}; found: {found}"
-        )
+        raise BootstrapError(f"Expected exactly one usable IPv4 address on VM {plan.vm_id} interface {plan.mac}; found: {found}")
     return addresses.pop()
 
 
