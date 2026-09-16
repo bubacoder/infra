@@ -15,9 +15,11 @@ tasks:
         set -eu
         mkdir -p "config/docker/{{.HOSTNAME}}"
         if [ ! -e config/docker/.env ]; then
-          cp config-example/docker/.env config/docker/.env
+          cp config-example/docker/minimal-common.env config/docker/.env
         fi
         cp config-example/docker/minimal-host.env "config/docker/{{.HOSTNAME}}/.env"
+        cp config-example/docker/minimal-traefik.env "config/docker/{{.HOSTNAME}}/.env.traefik"
+        chmod 600 "config/docker/{{.HOSTNAME}}/.env.traefik"
         cp config-example/docker/profiles/local-core.yaml "config/docker/{{.HOSTNAME}}/services.yaml"
         cp config-example/docker/services-schema.yaml config/docker/services-schema.yaml
         echo "Created local core configuration for {{.HOSTNAME}}. Set the required values before deployment."
