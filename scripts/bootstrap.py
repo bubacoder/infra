@@ -84,7 +84,7 @@ class DnsConfig:
 
 @dataclass(frozen=True)
 class NetworkConfig:
-    expected_ipv4: str
+    expected_ipv4: str | None
     domain: str
     dns: DnsConfig
 
@@ -345,10 +345,14 @@ def load_config(path: Path, root: Path = ROOT) -> BootstrapConfig:  # noqa: PLR0
         {"expected_ipv4", "domain", "dns"},
         {"expected_ipv4", "domain", "dns"},
     )
-    try:
-        expected_ipv4 = str(ipaddress.IPv4Address(require_string(network_raw["expected_ipv4"], "network.expected_ipv4")))
-    except ipaddress.AddressValueError as error:
-        raise ConfigError("network.expected_ipv4 must be an IPv4 address") from error
+    expected_ipv4_value = require_string(network_raw["expected_ipv4"], "network.expected_ipv4")
+    if expected_ipv4_value == "auto":
+        expected_ipv4 = None
+    else:
+        try:
+            expected_ipv4 = str(ipaddress.IPv4Address(expected_ipv4_value))
+        except ipaddress.AddressValueError as error:
+            raise ConfigError("network.expected_ipv4 must be an IPv4 address or 'auto'") from error
     dns_raw = require_mapping(network_raw["dns"], "network.dns", {"mode", "verify"}, {"mode", "verify"})
     if dns_raw["mode"] != "external" or dns_raw["verify"] is not True:
         raise ConfigError("network.dns currently requires mode: external and verify: true")
@@ -492,7 +496,10 @@ def print_plan(plan: BootstrapPlan) -> None:
             "ssh_public_key": str(plan.config.vm.ssh_public_key),
             "exists": plan.vm_exists,
         },
-        "network": asdict(plan.config.network),
+        "network": {
+            **asdict(plan.config.network),
+            "expected_ipv4": plan.config.network.expected_ipv4 or "auto",
+        },
         "host": asdict(plan.config.host),
         "tls": {
             "provider": plan.config.tls.provider,
@@ -503,8 +510,7 @@ def print_plan(plan: BootstrapPlan) -> None:
     print(yaml.safe_dump(summary, sort_keys=False).rstrip())
 
 
-def verify_dns(plan: BootstrapPlan) -> None:
-    expected = plan.config.network.expected_ipv4
+def verify_dns(plan: BootstrapPlan, expected: str, *, discovered: bool = False) -> None:
     names = [
         plan.config.network.domain,
         *(f"{service.rsplit('/', 1)[-1]}.{plan.config.network.domain}" for service in plan.config.deployment.services),
@@ -519,10 +525,54 @@ def verify_dns(plan: BootstrapPlan) -> None:
         if addresses != {expected}:
             failures.append(name)
     if failures:
+        if discovered:
+            names_text = ", ".join(names)
+            raise BootstrapError(
+                f"Networking checkpoint: VM {plan.vm_id} was discovered at {expected}. "
+                "Ask the operator to map its base domain and service names to that address, "
+                f"then rerun bootstrap. Required names: {names_text}"
+            )
         raise BootstrapError(
             "External DHCP/DNS checkpoint is incomplete. Reserve "
             f"{plan.mac} as {expected}, then point the base domain and wildcard to that address. Failed names: {', '.join(failures)}"
         )
+
+
+def discover_vm_ipv4(plan: BootstrapPlan, runner: Runner) -> str:
+    output = remote(
+        runner,
+        plan.config.proxmox.ssh_target,
+        f"sudo qm guest cmd {plan.vm_id} network-get-interfaces",
+        capture=True,
+    )
+    try:
+        interfaces = json.loads(output)
+        if isinstance(interfaces, dict):
+            interfaces = interfaces.get("result", interfaces)
+        if not isinstance(interfaces, list):
+            raise ValueError
+    except (json.JSONDecodeError, ValueError) as error:
+        raise BootstrapError(f"Could not read network interfaces from Proxmox guest agent for VM {plan.vm_id}") from error
+
+    addresses: set[str] = set()
+    for interface in interfaces:
+        if not isinstance(interface, dict) or str(interface.get("hardware-address", "")).upper() != plan.mac:
+            continue
+        for address in interface.get("ip-addresses", []):
+            if not isinstance(address, dict) or address.get("ip-address-type") != "ipv4":
+                continue
+            try:
+                ipv4 = ipaddress.IPv4Address(str(address.get("ip-address", "")))
+            except ipaddress.AddressValueError:
+                continue
+            if not ipv4.is_loopback and not ipv4.is_unspecified and not ipv4.is_multicast:
+                addresses.add(str(ipv4))
+    if len(addresses) != 1:
+        found = ", ".join(sorted(addresses)) or "none"
+        raise BootstrapError(
+            f"Expected exactly one usable IPv4 address on VM {plan.vm_id} interface {plan.mac}; found: {found}"
+        )
+    return addresses.pop()
 
 
 def verify_existing_vm(plan: BootstrapPlan, runner: Runner) -> None:
@@ -575,7 +625,8 @@ def preflight(plan: BootstrapPlan, runner: Runner) -> None:
         )
         if mac_status != "available":
             raise BootstrapError(f"MAC address is already used: {plan.mac}")
-    verify_dns(plan)
+    if plan.config.network.expected_ipv4:
+        verify_dns(plan, plan.config.network.expected_ipv4)
 
 
 def atomic_write(path: Path, content: str, mode: int = 0o600) -> None:
@@ -600,7 +651,7 @@ def render_services(services: tuple[str, ...]) -> str:
     return yaml.safe_dump({"services": [{category: entries} for category, entries in categories.items()]}, sort_keys=False)
 
 
-def render_config(plan: BootstrapPlan, root: Path = ROOT) -> None:
+def render_vm_config(plan: BootstrapPlan, expected_ipv4: str, root: Path = ROOT) -> None:
     config = plan.config
     vm_dir = root / "config/vm/proxmox"
     public_key_target = vm_dir / "bootstrap-authorized-key.pub"
@@ -618,10 +669,18 @@ DISK_SIZE={config.vm.disk_size}
 VM_STORAGE={config.vm.storage}
 VM_BRIDGE={config.vm.bridge}
 VM_MAC={plan.mac}
-EXPECTED_IPV4={config.network.expected_ipv4}
+EXPECTED_IPV4={expected_ipv4}
 SSH_PUBLIC_KEY_FILE=/tmp/vm/proxmox/bootstrap-authorized-key.pub
 """
     atomic_write(vm_dir / "ubuntu-cloud.env", env)
+
+
+def render_config(plan: BootstrapPlan, root: Path = ROOT, expected_ipv4: str | None = None) -> None:
+    config = plan.config
+    expected_ipv4 = expected_ipv4 or config.network.expected_ipv4
+    if expected_ipv4 is None:
+        raise BootstrapError("Cannot render host configuration before the VM IPv4 address is known")
+    render_vm_config(plan, expected_ipv4, root)
 
     inventory_path = root / "config/ansible/inventory/inventory.yaml"
     if inventory_path.exists():
@@ -631,7 +690,7 @@ SSH_PUBLIC_KEY_FILE=/tmp/vm/proxmox/bootstrap-authorized-key.pub
     debian_hosts = inventory.setdefault("debian", {}).setdefault("hosts", {})
     existing = debian_hosts.get(config.vm.name)
     desired_host: dict[str, object] = {
-        "ansible_host": config.network.expected_ipv4,
+        "ansible_host": expected_ipv4,
         "ansible_user": config.vm.username,
         "debian_base_ssh_key_file": str(config.vm.ssh_public_key),
         "debian_docker_host_volumes_path": config.host.docker_volumes,
@@ -852,19 +911,26 @@ def confirm(plan: BootstrapPlan) -> None:
 def apply(plan: BootstrapPlan, runner: Runner, *, assume_yes: bool = False, root: Path = ROOT) -> None:
     if not assume_yes:
         confirm(plan)
-    print("[1/7] Rendering ignored configuration")
-    render_config(plan, root)
+    print("[1/7] Rendering VM configuration")
+    render_vm_config(plan, plan.config.network.expected_ipv4 or "", root)
     print("[2/7] Provisioning or resuming the VM")
     provision_vm(plan, runner)
-    print("[3/7] Verifying and trusting the VM SSH host key")
+    expected_ipv4 = plan.config.network.expected_ipv4
+    if expected_ipv4 is None:
+        expected_ipv4 = discover_vm_ipv4(plan, runner)
+        print(f"Discovered VM {plan.vm_id} IPv4 address: {expected_ipv4}")
+        verify_dns(plan, expected_ipv4, discovered=True)
+    print("[3/7] Rendering host configuration")
+    render_config(plan, root, expected_ipv4)
+    print("[4/7] Verifying and trusting the VM SSH host key")
     establish_ssh_trust(plan, runner)
-    print("[4/7] Configuring the Docker host with Ansible")
+    print("[5/7] Configuring the Docker host with Ansible")
     configure_host(plan, runner)
-    print("[5/7] Preparing the remote repository and service configuration")
+    print("[6/7] Preparing the remote repository and service configuration")
     prepare_remote_repository(plan, runner, root)
-    print("[6/7] Deploying services")
+    print("[7/7] Deploying services")
     deploy_services(plan, runner)
-    print("[7/7] Verifying service health, TLS, DNS, persistence, and repeat deployment")
+    print("Verifying service health, TLS, DNS, persistence, and repeat deployment")
     verify_services(plan, runner)
     print("Bootstrap completed successfully.")
 
