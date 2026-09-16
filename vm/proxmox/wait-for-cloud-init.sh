@@ -2,16 +2,17 @@
 set -euo pipefail
 
 usage() {
-    echo "Usage: $0 <vmid> [timeout-seconds]" >&2
+    echo "Usage: $0 <vmid> [timeout-seconds] [expected-ipv4]" >&2
 }
 
-if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+if [ "$#" -lt 1 ] || [ "$#" -gt 3 ]; then
     usage
     exit 1
 fi
 
 readonly VMID="$1"
 readonly TIMEOUT_SECONDS="${2:-600}"
+readonly EXPECTED_IPV4="${3:-}"
 
 if ! [[ "${VMID}" =~ ^[0-9]+$ ]] || ! [[ "${TIMEOUT_SECONDS}" =~ ^[1-9][0-9]*$ ]]; then
     usage
@@ -28,16 +29,18 @@ command -v perl >/dev/null 2>&1 || {
 while [ "${SECONDS}" -lt "${DEADLINE}" ]; do
     if interfaces=$(qm guest cmd "${VMID}" network-get-interfaces 2>/dev/null); then
         ipv4=$(perl -MJSON::PP -0777 -e '
+            my $expected = shift;
             my $interfaces = decode_json(<STDIN>);
             for my $interface (@{$interfaces}) {
                 for my $address (@{$interface->{"ip-addresses"} // []}) {
                     next unless $address->{"ip-address-type"} eq "ipv4";
                     next if $address->{"ip-address"} eq "127.0.0.1";
+                    next if $expected ne q{} && $address->{"ip-address"} ne $expected;
                     print $address->{"ip-address"};
                     exit;
                 }
             }
-        ' <<<"${interfaces}")
+        ' "${EXPECTED_IPV4}" <<<"${interfaces}")
         if [ -n "${ipv4}" ]; then
             echo "Guest agent ready; DHCP address: ${ipv4}"
             break
@@ -47,7 +50,7 @@ while [ "${SECONDS}" -lt "${DEADLINE}" ]; do
 done
 
 if [ -z "${ipv4:-}" ]; then
-    echo "Timed out waiting ${TIMEOUT_SECONDS}s for guest agent and DHCP address on VM ${VMID}." >&2
+    echo "Timed out waiting ${TIMEOUT_SECONDS}s for guest agent and expected DHCP address on VM ${VMID}." >&2
     exit 1
 fi
 

@@ -7,6 +7,13 @@ trap 'rm -rf "${TEST_DIR}"' EXIT
 # shellcheck source=lib-common.sh
 source "$(dirname "$0")/lib-common.sh"
 
+export SSH_PUBLIC_KEY_FILE="${TEST_DIR}/bootstrap.pub"
+touch "${SSH_PUBLIC_KEY_FILE}"
+if [ "$(get_authorized_keys_file)" != "${SSH_PUBLIC_KEY_FILE}" ]; then
+    echo "Configured SSH public key file was not selected" >&2
+    exit 1
+fi
+
 get_authorized_keys() {
     printf '%s\n' '      - ssh-ed25519 test-key'
 }

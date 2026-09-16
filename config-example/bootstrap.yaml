@@ -1,0 +1,50 @@
+# Copy to config/bootstrap.yaml, set mode 0600, and replace every placeholder.
+version: 1
+
+# Optional. Omit this section to use the current repository origin and branch.
+repository:
+  url: https://github.com/example/infra.git
+  branch: bootstrap
+
+deployment:
+  # Version 1 supports a separate administrative host only.
+  admin_model: separate
+  services:
+    - security/traefik
+    - dashboard/homepage
+
+proxmox:
+  ssh_target: user@proxmox
+
+vm:
+  # Use a numeric ID or "auto".
+  id: auto
+  name: docker-host
+  ubuntu_version: "26.04"
+  username: admin
+  cpu_cores: 4
+  memory_max_mib: 4096
+  memory_min_mib: 1024
+  disk_size: 256G
+  storage: local-lvm
+  bridge: vmbr0
+  # Optional. When omitted, bootstrap generates a stable local MAC.
+  mac:
+  ssh_public_key: ~/.ssh/id_ed25519.pub
+
+network:
+  # Create this DHCP reservation before applying the plan.
+  expected_ipv4: 192.0.2.10
+  domain: homelab.example.com
+  dns:
+    mode: external
+    verify: true
+
+host:
+  docker_volumes: /srv/docker-volumes
+  timezone: Etc/UTC
+
+tls:
+  provider: cloudflare
+  acme_email: admin@example.com
+  token: replace-with-cloudflare-token

@@ -26,9 +26,19 @@ validate_vm_config() {
         echo "VMID, CPU_CORES, MAX_MEMORY_SIZE, and MIN_MEMORY_SIZE must be positive integers." >&2
         exit 1
     fi
+
+    if [ -n "${VM_MAC:-}" ] && ! [[ "${VM_MAC}" =~ ^([[:xdigit:]]{2}:){5}[[:xdigit:]]{2}$ ]]; then
+        echo "VM_MAC must be a colon-separated MAC address." >&2
+        exit 1
+    fi
 }
 
 get_authorized_keys_file() {
+    if [ -n "${SSH_PUBLIC_KEY_FILE:-}" ]; then
+        printf '%s\n' "${SSH_PUBLIC_KEY_FILE}"
+        return
+    fi
+
     local actual_user="${SUDO_USER:-${USER:-root}}"
     local actual_home
     actual_home=$(getent passwd "${actual_user}" | cut -d: -f6)
