@@ -14,7 +14,7 @@ import stat
 import subprocess
 import sys
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
@@ -576,6 +576,10 @@ def discover_vm_ipv4(plan: BootstrapPlan, runner: Runner) -> str:
     return addresses.pop()
 
 
+def with_expected_ipv4(plan: BootstrapPlan, expected_ipv4: str) -> BootstrapPlan:
+    return replace(plan, config=replace(plan.config, network=replace(plan.config.network, expected_ipv4=expected_ipv4)))
+
+
 def verify_existing_vm(plan: BootstrapPlan, runner: Runner) -> None:
     if not plan.vm_exists:
         return
@@ -925,6 +929,7 @@ def apply(plan: BootstrapPlan, runner: Runner, *, assume_yes: bool = False, root
         expected_ipv4 = discover_vm_ipv4(plan, runner)
         print(f"Discovered VM {plan.vm_id} IPv4 address: {expected_ipv4}")
         verify_dns(plan, expected_ipv4, discovered=True)
+        plan = with_expected_ipv4(plan, expected_ipv4)
     print("[3/7] Rendering host configuration")
     render_config(plan, root, expected_ipv4)
     print("[4/7] Verifying and trusting the VM SSH host key")
