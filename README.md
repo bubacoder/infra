@@ -64,7 +64,8 @@ The long-term goal is to reduce these dependencies and provide offline alternati
 
 ## Getting Started
 
-The recommended configuration is to set up Proxmox VE and install a Debian- or Ubuntu-based VM to host the Docker services.
+The recommended path uses `config/bootstrap.yaml` to provision an Ubuntu VM on
+Proxmox, configure the host, and deploy the core Docker services end to end.
 
 -> See [Getting Started](docs/setup.md)
 

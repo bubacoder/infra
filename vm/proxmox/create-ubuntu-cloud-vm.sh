@@ -49,6 +49,11 @@ EOF
 
 create_vm() {
     local -r IMAGE_PATH="${IMAGE_DIR}/${CLOUD_IMAGE}"
+    local network="virtio,bridge=${VM_BRIDGE},firewall=0"
+
+    if [ -n "${VM_MAC:-}" ]; then
+        network="virtio=${VM_MAC},bridge=${VM_BRIDGE},firewall=0"
+    fi
 
     check_vm_not_exists
 
@@ -60,11 +65,11 @@ create_vm() {
         --tags ubuntu,cloud-init \
         --memory "${MAX_MEMORY_SIZE}" --balloon "${MIN_MEMORY_SIZE}" \
         --cpu cputype=host --cores "${CPU_CORES}" \
-        --net0 "virtio,bridge=${VM_BRIDGE},firewall=0" \
+        --net0 "${network}" \
         --agent enabled=1,freeze-fs-on-backup=1,type=virtio \
         --serial0 socket --tablet 0 \
         --scsihw virtio-scsi-single \
-        --boot order="scsi0" --autostart 1
+        --boot order="scsi0" --onboot 1
 
     echo "Importing cloud image as VM disk..."
     qm importdisk "${VMID}" "${IMAGE_PATH}" "${VM_STORAGE}" --format raw

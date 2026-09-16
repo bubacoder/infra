@@ -1,0 +1,153 @@
+version: '3'
+
+tasks:
+  init:
+    desc: Create the protected local bootstrap configuration
+    silent: true
+    cmds:
+      - |
+        set -eu
+        if [ -e config/bootstrap.yaml ]; then
+          echo "Configuration already exists: config/bootstrap.yaml"
+          exit 0
+        fi
+        mkdir -p config
+        cp config-example/bootstrap.yaml config/bootstrap.yaml
+        chmod 600 config/bootstrap.yaml
+        echo "Created config/bootstrap.yaml with mode 0600; replace every placeholder before planning."
+
+  test:
+    desc: Run bootstrap orchestrator unit and shell tests
+    cmds:
+      - python3 scripts/test_bootstrap.py
+      - bash vm/test-lib-common.sh
+
+  plan:
+    desc: Validate and show the bootstrap deployment plan
+    env:
+      BOOTSTRAP_CONFIG: '{{default "config/bootstrap.yaml" .CONFIG}}'
+    cmds:
+      - scripts/bootstrap.py --config "$BOOTSTRAP_CONFIG" --plan
+
+  apply:
+    desc: Bootstrap the configured VM and core services
+    env:
+      BOOTSTRAP_CONFIG: '{{default "config/bootstrap.yaml" .CONFIG}}'
+    cmds:
+      - scripts/bootstrap.py --config "$BOOTSTRAP_CONFIG" --apply {{if .YES}}--yes{{end}}
+
+  vm-init:
+    desc: Create the local Ubuntu cloud VM configuration
+    silent: true
+    cmds:
+      - |
+        if [ -e config/vm/proxmox/ubuntu-cloud.env ]; then
+          echo "Configuration already exists: config/vm/proxmox/ubuntu-cloud.env"
+          exit 0
+        fi
+        mkdir -p config/vm/proxmox
+        cp config-example/vm/proxmox/ubuntu-cloud.env config/vm/proxmox/
+        echo "Created config/vm/proxmox/ubuntu-cloud.env; edit it before provisioning."
+
+  vm-provision:
+    desc: Create, start, and wait for an Ubuntu cloud VM on Proxmox
+    silent: true
+    dotenv:
+      - config/vm/proxmox/ubuntu-cloud.env
+    preconditions:
+      - sh: test -r config/vm/proxmox/ubuntu-cloud.env
+        msg: Run 'task bootstrap:vm-init' and edit the configuration first.
+      - sh: test -n "${VMID:-}"
+        msg: VMID must be set in the VM configuration.
+      - sh: case "${VMID:-}" in *[!0-9]*|'') exit 1;; esac
+        msg: VMID must be a positive integer.
+    cmds:
+      - echo "Provisioning VM ${VMID} on ${PROXMOX_HOST:-proxmox}"
+      - rsync -a vm/ config/vm/ "${PROXMOX_HOST:-proxmox}:/tmp/vm/"
+      - ssh "${PROXMOX_HOST:-proxmox}" sudo bash /tmp/vm/proxmox/create-ubuntu-cloud-vm.sh
+      - ssh "${PROXMOX_HOST:-proxmox}" sudo qm start "${VMID}"
+      - ssh "${PROXMOX_HOST:-proxmox}" sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
+
+  vm-wait:
+    desc: Wait for an existing Ubuntu cloud VM to finish cloud-init
+    silent: true
+    dotenv:
+      - config/vm/proxmox/ubuntu-cloud.env
+    preconditions:
+      - sh: test -r config/vm/proxmox/ubuntu-cloud.env
+        msg: Run 'task bootstrap:vm-init' and edit the configuration first.
+      - sh: case "${VMID:-}" in *[!0-9]*|'') exit 1;; esac
+        msg: VMID must be a positive integer.
+    cmds:
+      - rsync -a vm/ config/vm/ "${PROXMOX_HOST:-proxmox}:/tmp/vm/"
+      - ssh "${PROXMOX_HOST:-proxmox}" sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
+
+  vm-preflight:
+    desc: Validate the Ubuntu cloud VM target without modifying it
+    silent: true
+    dotenv:
+      - config/vm/proxmox/ubuntu-cloud.env
+    preconditions:
+      - sh: test -r config/vm/proxmox/ubuntu-cloud.env
+        msg: Run 'task bootstrap:vm-init' and edit the configuration first.
+      - sh: test -n "${VMID:-}" && test -n "${VM_STORAGE:-}" && test -n "${VM_BRIDGE:-}"
+        msg: VMID, VM_STORAGE, and VM_BRIDGE must be set in the VM configuration.
+      - sh: case "${VMID:-}" in *[!0-9]*|'') exit 1;; esac
+        msg: VMID must be a positive integer.
+      - sh: command -v ssh >/dev/null && command -v rsync >/dev/null
+        msg: ssh and rsync must be installed on the administrative host.
+    cmds:
+      - |
+        set -eu
+        ssh "${PROXMOX_HOST:-proxmox}" bash -s -- "${VMID}" "${VMNAME}" "${VM_MAC:-}" "${VM_STORAGE}" "${VM_BRIDGE}" <<'REMOTE'
+        set -eu
+        vmid="$1"
+        name="$2"
+        mac="$3"
+        storage="$4"
+        bridge="$5"
+        if sudo test -e "/etc/pve/qemu-server/${vmid}.conf"; then
+          echo "Error: VM ${vmid} already exists." >&2
+          exit 1
+        fi
+        if sudo qm list | awk -v name="${name}" 'NR > 1 && $2 == name {found=1} END {exit !found}'; then
+          echo "Error: VM name ${name} already exists." >&2
+          exit 1
+        fi
+        if [ -n "${mac}" ] && sudo grep -Riq -- "${mac}" /etc/pve/qemu-server; then
+          echo "Error: MAC ${mac} is already used." >&2
+          exit 1
+        fi
+        sudo pvesm status --storage "${storage}" >/dev/null
+        ip link show "${bridge}" >/dev/null
+        sudo pvesm config local | awk '$1 == "content" {print $2}' | tr ',' '\n' | grep -qx snippets
+        REMOTE
+        if [ -n "${SSH_PUBLIC_KEY_FILE:-}" ]; then
+          test -s config/vm/proxmox/bootstrap-authorized-key.pub
+        else
+          ssh "${PROXMOX_HOST:-proxmox}" "sudo test -s \"\$HOME/.ssh/authorized_keys\""
+        fi
+        echo "Preflight passed: VM ID ${VMID}, name ${VMNAME}, and MAC ${VM_MAC} are available."
+
+  init-local-config:
+    desc: Create a local minimal Docker configuration for this host
+    silent: true
+    vars:
+      HOSTNAME:
+        sh: hostname --short
+    preconditions:
+      - sh: test ! -e "config/docker/{{.HOSTNAME}}/services.yaml"
+        msg: Host configuration already exists. Edit it directly instead of overwriting it.
+    cmds:
+      - |
+        set -eu
+        mkdir -p "config/docker/{{.HOSTNAME}}"
+        if [ ! -e config/docker/.env ]; then
+          cp config-example/docker/minimal-common.env config/docker/.env
+        fi
+        cp config-example/docker/minimal-host.env "config/docker/{{.HOSTNAME}}/.env"
+        cp config-example/docker/minimal-traefik.env "config/docker/{{.HOSTNAME}}/.env.traefik"
+        chmod 600 "config/docker/{{.HOSTNAME}}/.env.traefik"
+        cp config-example/docker/profiles/local-core.yaml "config/docker/{{.HOSTNAME}}/services.yaml"
+        cp config-example/docker/services-schema.yaml config/docker/services-schema.yaml
+        echo "Created local core configuration for {{.HOSTNAME}}. Set the required values before deployment."

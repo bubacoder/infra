@@ -23,11 +23,11 @@ This is the recommended method for fully automated VM creation with zero manual 
 - Set up SSH access to the PVE host
 - Initialize and edit the VM configuration:
 ```bash
-task vm:ubuntu-cloud-init
+task bootstrap:vm-init
 ```
 - Provision the VM:
 ```bash
-task vm:ubuntu-cloud-provision
+task bootstrap:vm-provision
 ```
 
 The task syncs the provisioning files to `PROXMOX_HOST`, creates and starts the VM,
