@@ -238,6 +238,15 @@ class BootstrapTests(unittest.TestCase):
 
         self.assertEqual(bootstrap.discover_vm_ipv4(plan, StubRunner()), "192.0.2.10")
 
+    def test_binds_discovered_address_to_runtime_plan(self) -> None:
+        document = self.document()
+        document["network"]["expected_ipv4"] = "auto"
+        self.write_config(document)
+        plan = self.plan(self.load())
+        resolved = bootstrap.with_expected_ipv4(plan, "192.0.2.10")
+        self.assertEqual(resolved.config.network.expected_ipv4, "192.0.2.10")
+        self.assertIsNone(plan.config.network.expected_ipv4)
+
     def test_rejects_ambiguous_discovered_addresses(self) -> None:
         plan = self.plan()
 
