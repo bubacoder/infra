@@ -5,7 +5,8 @@ bootstrap orchestrator. The current automated scope is intentionally narrow:
 
 - Ubuntu cloud-image VM on Proxmox
 - Separate administrative host
-- DHCP with an externally managed reservation and local DNS
+- DHCP with an externally managed reservation and local DNS, or a test-only
+  operator-managed `/etc/hosts` checkpoint after address discovery
 - Local ignored configuration on the Docker host
 - Cloudflare DNS-01 certificates
 - Traefik and Homepage
@@ -22,7 +23,10 @@ Before starting, prepare:
 - Proxmox storage named `local` with snippet content enabled.
 - An unused VM name and either a preferred VM ID or automatic allocation.
 - A public SSH key and its corresponding private key or SSH-agent identity.
-- Control of the DHCP server and local DNS resolver.
+- Control of the DHCP server and local DNS resolver for the fully preflighted
+  path. For a test-only `network.expected_ipv4: auto` deployment, administrator
+  access to the admin host's `/etc/hosts` is sufficient after the VM address is
+  discovered.
 - A public domain administered through Cloudflare.
 - A Cloudflare token with `Zone:Read` and `DNS:Edit` for that domain.
 - Git, Python 3, PyYAML, SSH, rsync, Ansible, curl, and
@@ -82,6 +86,20 @@ the reservation and DNS records do not exist yet. Use the printed MAC and
 Bootstrap verifies observable DNS results but does not change the router, DHCP
 server, or DNS service.
 
+### Unknown DHCP address (test-only)
+
+Set `network.expected_ipv4: auto` only when a reservation cannot be created
+before provisioning. The initial plan validates everything except address and
+DNS checks. The first apply creates or resumes the VM, obtains exactly one
+non-loopback IPv4 address from the Proxmox guest agent interface matching the
+planned MAC, and stops at a networking checkpoint.
+
+Add that address to the administrative host's `/etc/hosts` for all of the names
+reported by bootstrap, then rerun the same apply command. For the core profile,
+these are the base domain, `home`, `traefik`, and `bootstrap-check` names. Host
+files have no wildcard support. Bootstrap does not edit `/etc/hosts` and fails
+rather than choosing between multiple guest IPv4 addresses.
+
 ## Apply
 
 Start the deployment and approve the displayed target:
@@ -107,6 +125,10 @@ The orchestrator performs these stages:
    stable containers and trusted HTTPS routes.
 9. Repeats the Docker deployment and verifies that it does not recreate the
    running core containers.
+
+With `network.expected_ipv4: auto`, stage 3 waits for cloud-init without an
+address filter, then stops after guest-agent discovery until the operator has
+completed the networking checkpoint described above.
 
 The process never deletes an existing VM, disk, or persistent service data.
 

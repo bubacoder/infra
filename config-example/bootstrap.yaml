@@ -33,7 +33,8 @@ vm:
   ssh_public_key: ~/.ssh/id_ed25519.pub
 
 network:
-  # Create this DHCP reservation before applying the plan.
+  # Use a reserved address for the fully preflighted path, or "auto" to discover
+  # the address from the Proxmox guest agent after provisioning.
   expected_ipv4: 192.0.2.10
   domain: homelab.example.com
   dns:
