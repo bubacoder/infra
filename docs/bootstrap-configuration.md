@@ -50,8 +50,9 @@ vm:
 
 network:
   # DHCP is the only supported guest-addressing mode. Create a reservation for
-  # the planned MAC at this address before applying.
-  expected_ipv4: <reserved-address>
+  # the planned MAC at this address before applying. For a test-only deployment
+  # without a reservation, use "auto" and complete the later operator checkpoint.
+  expected_ipv4: <reserved-address-or-auto>
 
   # Base domain for the wildcard certificate and service routes.
   domain: <public-base-domain>
@@ -88,6 +89,19 @@ Bootstrap refuses a group- or world-accessible configuration. Generated secret
 files are written atomically with mode `0600`; plans display `<redacted>` rather
 than the token.
 
+## Address Discovery
+
+The recommended value for `network.expected_ipv4` is the reserved DHCP address.
+It lets `bootstrap:plan` verify address and DNS before the VM is created.
+
+`auto` is a test-only alternative when the address cannot be reserved first.
+Bootstrap creates or resumes the VM, finds the single usable IPv4 address on the
+guest-agent interface matching the planned MAC, and stops for the operator to
+map the required names. Add the reported base domain, service names, and
+`bootstrap-check` name to the administrative host's `/etc/hosts`, then rerun
+the same apply command. Bootstrap does not modify resolver configuration and
+refuses ambiguous guest addresses.
+
 ## Implementation Map
 
 | Configuration | Generated target or check | Existing consumer |
@@ -100,7 +114,7 @@ than the token.
 | VM compute/storage fields | `config/vm/proxmox/ubuntu-cloud.env` | `vm/proxmox/create-ubuntu-cloud-vm.sh` |
 | `vm.mac` | `VM_MAC` and Proxmox `net0` | `qm create` in the cloud-image script |
 | `vm.ssh_public_key` | Ignored copied public key and inventory key paths | Cloud-init and `debian_base` |
-| `network.expected_ipv4` | `EXPECTED_IPV4` and `ansible_host` | Cloud-init wait and `ansible/apply-homelab.sh` |
+| `network.expected_ipv4` | `EXPECTED_IPV4` and `ansible_host` | Cloud-init wait and `ansible/apply-homelab.sh`; `auto` uses the guest agent after provisioning |
 | `network.domain` | Host `MYDOMAIN` | Traefik and Homepage Compose files |
 | `network.dns` | Base, service, and wildcard-probe lookups | Python preflight and HTTPS verification |
 | `host.docker_volumes` | Ansible host variable and host `DOCKER_VOLUMES` | `debian_docker_host` and Compose |

@@ -187,15 +187,46 @@ class BootstrapTests(unittest.TestCase):
     def test_dns_checkpoint_accepts_only_expected_address(self) -> None:
         expected = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("192.0.2.10", 0))]
         with patch.object(bootstrap.socket, "getaddrinfo", return_value=expected):
-            bootstrap.verify_dns(self.plan())
+            bootstrap.verify_dns(self.plan(), "192.0.2.10")
 
     def test_dns_checkpoint_reports_failed_names_without_secrets(self) -> None:
         with (
             patch.object(bootstrap.socket, "getaddrinfo", side_effect=socket.gaierror),
             self.assertRaisesRegex(bootstrap.BootstrapError, "External DHCP/DNS checkpoint") as raised,
         ):
-            bootstrap.verify_dns(self.plan())
+            bootstrap.verify_dns(self.plan(), "192.0.2.10")
         self.assertNotIn("test_token-value", str(raised.exception))
+
+    def test_accepts_auto_ipv4_discovery(self) -> None:
+        document = self.document()
+        document["network"]["expected_ipv4"] = "auto"
+        self.write_config(document)
+        self.assertIsNone(self.load().network.expected_ipv4)
+
+    def test_discovers_only_address_on_planned_interface(self) -> None:
+        plan = self.plan()
+
+        class StubRunner:
+            def run(self, _: list[str], **__: object) -> str:
+                return """[
+                  {"hardware-address": "02:00:00:00:00:01", "ip-addresses": [{"ip-address-type": "ipv4", "ip-address": "192.0.2.11"}]},
+                  {"hardware-address": "%s", "ip-addresses": [{"ip-address-type": "ipv4", "ip-address": "192.0.2.10"}]}
+                ]""" % plan.mac
+
+        self.assertEqual(bootstrap.discover_vm_ipv4(plan, StubRunner()), "192.0.2.10")
+
+    def test_rejects_ambiguous_discovered_addresses(self) -> None:
+        plan = self.plan()
+
+        class StubRunner:
+            def run(self, _: list[str], **__: object) -> str:
+                return """[{"hardware-address": "%s", "ip-addresses": [
+                  {"ip-address-type": "ipv4", "ip-address": "192.0.2.10"},
+                  {"ip-address-type": "ipv4", "ip-address": "192.0.2.11"}
+                ]}]""" % plan.mac
+
+        with self.assertRaisesRegex(bootstrap.BootstrapError, "exactly one usable IPv4"):
+            bootstrap.discover_vm_ipv4(plan, StubRunner())
 
     def test_partial_existing_vm_is_not_resumed(self) -> None:
         plan = bootstrap.BootstrapPlan(
