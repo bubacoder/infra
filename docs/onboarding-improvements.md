@@ -30,3 +30,10 @@
   preflight with configurable warn/fail thresholds before creating a disk.
 - Expected benefit: makes storage risk visible before allocation and avoids preventable outages.
 - Decision or dependency: define acceptable overcommit and autoextend policies for each target.
+
+## Proxmox command locale warnings
+
+- Observed friction: every Proxmox CLI call emitted repeated Perl locale warnings, obscuring bootstrap progress and failures.
+- Proposed improvement: run bootstrap's remote Proxmox commands with a stable `C` locale or document the required Proxmox locale configuration.
+- Expected benefit: clearer deployment diagnostics without changing host resources or service behavior.
+- Decision or dependency: choose whether locale normalization belongs in bootstrap commands or Proxmox host configuration.

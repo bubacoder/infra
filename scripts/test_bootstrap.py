@@ -5,6 +5,7 @@
 import contextlib
 import importlib.util
 import io
+import json
 import os
 import socket
 import tempfile
@@ -231,10 +232,12 @@ class BootstrapTests(unittest.TestCase):
 
         class StubRunner:
             def run(self, _: list[str], **__: object) -> str:
-                return """[
-                  {"hardware-address": "02:00:00:00:00:01", "ip-addresses": [{"ip-address-type": "ipv4", "ip-address": "192.0.2.11"}]},
-                  {"hardware-address": "%s", "ip-addresses": [{"ip-address-type": "ipv4", "ip-address": "192.0.2.10"}]}
-                ]""" % plan.mac
+                return json.dumps(
+                    [
+                        {"hardware-address": "02:00:00:00:00:01", "ip-addresses": [{"ip-address-type": "ipv4", "ip-address": "192.0.2.11"}]},
+                        {"hardware-address": plan.mac, "ip-addresses": [{"ip-address-type": "ipv4", "ip-address": "192.0.2.10"}]},
+                    ]
+                )
 
         self.assertEqual(bootstrap.discover_vm_ipv4(plan, StubRunner()), "192.0.2.10")
 
@@ -252,10 +255,17 @@ class BootstrapTests(unittest.TestCase):
 
         class StubRunner:
             def run(self, _: list[str], **__: object) -> str:
-                return """[{"hardware-address": "%s", "ip-addresses": [
-                  {"ip-address-type": "ipv4", "ip-address": "192.0.2.10"},
-                  {"ip-address-type": "ipv4", "ip-address": "192.0.2.11"}
-                ]}]""" % plan.mac
+                return json.dumps(
+                    [
+                        {
+                            "hardware-address": plan.mac,
+                            "ip-addresses": [
+                                {"ip-address-type": "ipv4", "ip-address": "192.0.2.10"},
+                                {"ip-address-type": "ipv4", "ip-address": "192.0.2.11"},
+                            ],
+                        }
+                    ]
+                )
 
         with self.assertRaisesRegex(bootstrap.BootstrapError, "exactly one usable IPv4"):
             bootstrap.discover_vm_ipv4(plan, StubRunner())
