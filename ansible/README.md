@@ -22,11 +22,11 @@ https://www.ansible.com/
 
 ## Setup steps
 
-1. Install Ansible on the selected admin environment with `sudo bootstrap-ansible.sh`. This can be the Docker host in single-host mode. (See: [Ansible control node](https://docs.ansible.com/ansible/latest/network/getting_started/basic_concepts.html#control-node))
-2. Configure variables in `inventory/group_vars/`
-3. Add hosts to `inventory/inventory.yaml`
-4. Assign roles to hosts in `playbooks/`
-5. Run `apply-<playbook>.sh` to execute a playbook
+1. From the repository root, install Ansible on the selected admin environment with `sudo ansible/bootstrap-ansible.sh`. This can be the Docker host in single-host mode. (See: [Ansible control node](https://docs.ansible.com/ansible/latest/network/getting_started/basic_concepts.html#control-node))
+2. Copy `config-example/ansible` to the ignored `config/ansible` overlay and configure its inventory and secret variables.
+3. Add hosts to `config/ansible/inventory/inventory.yaml`.
+4. Assign roles by adding hosts to the corresponding inventory groups, such as `docker_hosts`.
+5. Run `ansible/apply-<playbook>.sh` from the repository root to execute a playbook.
    - If you use a non-root user and `sudo` requires a password (indicated by the "Missing sudo password" error message), use `apply-<playbook>.sh --ask-become-pass` and specify the password when requested ("BECOME password" message)
    - The playbook will set up passwordless `sudo`, so next time the `--ask-become-pass` parameter will not be required
 6. When the administrative user is already created, use that user in the inventory instead of `root` (`ansible_user: <adminuser>`). This is more secure and also required by Homebrew.
@@ -38,7 +38,8 @@ For the complete infrastructure setup walkthrough using these playbooks, see [Ge
 1. Copy public SSH key, e.g.:
    `ssh-copy-id -i ~/.ssh/id_ed25519.pub root@192.168.1.50`
 2. Run playbook with existing user (`root` or your admin user if already created)
-3. Verify the connection with: `ansible all -m ping`
+3. From the repository root, verify one host with both inventory sources:
+   `ansible <host> -m ping -i ansible/inventory/inventory.yaml -i config/ansible/inventory/inventory.yaml`
 
 ## Useful options
 

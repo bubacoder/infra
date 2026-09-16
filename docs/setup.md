@@ -84,7 +84,10 @@ Use one of these options:
   troubleshooting. The image is large because it includes the administration
   tooling configured in `ansible/inventory/group_vars/debian/vars.yaml`.
 - **Local tools:** Use Debian/Ubuntu, including WSL. macOS supports remote
-  Ansible administration and the local `mac_base` role.
+  Ansible administration and the local `mac_base` role. Install
+  [Task](https://taskfile.dev/docs/installation) using an official package,
+  then verify `task --version`; Phase 2 uses Task before Ansible configures the
+  Docker host.
 
 ### Prepare Repositories and Ansible
 
@@ -140,9 +143,11 @@ task vm:ubuntu-cloud-preflight
 task vm:ubuntu-cloud-provision
 ```
 
-The tasks connect to the Proxmox host and create the VM. Reserve its DHCP lease
-before the Ansible phase. For prerequisites, configuration, and autoinstall or
-manual alternatives, see [Ubuntu VM installation](../vm/proxmox/ubuntu.md).
+The tasks connect to the Proxmox host and create the VM. Record its DHCP address
+for the initial Ansible run. Reserve the lease before relying on hostname or
+service DNS; the initial Ansible run may use the current lease as described in
+Phase 1. For prerequisites, configuration, and autoinstall or manual
+alternatives, see [Ubuntu VM installation](../vm/proxmox/ubuntu.md).
 
 Skip this phase only when an existing machine will be the Docker host.
 
@@ -197,8 +202,8 @@ The private configuration repository must contain
 `config/docker/<hostname>/`. Do not store Git write credentials on a Docker
 host.
 
-For a single-host installation without a private configuration repository, use
-the local initializer instead:
+For a Docker host using local-only configuration without a private
+configuration repository, use the local initializer on that host instead:
 
 ```bash
 cd ~/repos/infra
@@ -206,7 +211,8 @@ task docker:init-local-config
 task docker:check-host
 ```
 
-The initializer creates a minimal Traefik and Homepage profile and refuses to
+The initializer creates a minimal Traefik and Homepage profile, including the
+shared, host, and mode-`0600` Traefik environment files. It refuses to
 overwrite an existing host configuration.
 
 ### Configure Environment Files
@@ -298,6 +304,29 @@ task docker:apply
 `task pull-config-repo` accepts only fast-forward updates, keeping configuration
 updates and deployments as separate actions. For a local-only `config`
 directory, run `task docker:apply` directly.
+
+### Verify Core Services
+
+**Where:** Docker host
+
+Confirm that the core containers remain running and are not restarting:
+
+```bash
+docker container list --filter name=traefik --filter name=homepage
+docker inspect --format '{{.Name}} running={{.State.Running}} restarts={{.RestartCount}}' traefik homepage
+```
+
+After Phase 5 DNS is configured, verify the normal access paths from the admin
+environment. Replace `<domain>` with `MYDOMAIN`:
+
+```bash
+curl --fail --show-error --output /dev/null https://home.<domain>/
+curl --fail --show-error --output /dev/null https://traefik.<domain>/dashboard/
+```
+
+Use `docker logs traefik` and `docker logs homepage` when either check fails.
+`task docker:stop` stops the configured containers without deleting their
+persistent data. Run `task docker:apply` to start them again.
 
 ## Phase 5: Configure Networking
 

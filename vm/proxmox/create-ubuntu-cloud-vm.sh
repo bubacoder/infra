@@ -25,8 +25,8 @@ validate_vm_config
 # === Derived (do not edit) ===
 
 readonly CLOUD_IMAGE="ubuntu-${UBUNTU_VERSION}-server-cloudimg-amd64.img"
-readonly CLOUD_USER_DATA_FILE="ubuntu-${UBUNTU_VERSION}-cloud-user.yaml"
-readonly CLOUD_NETWORK_CONFIG_FILE="ubuntu-${UBUNTU_VERSION}-cloud-network.yaml"
+readonly CLOUD_USER_DATA_FILE="ubuntu-${UBUNTU_VERSION}-${VMID}-cloud-user.yaml"
+readonly CLOUD_NETWORK_CONFIG_FILE="ubuntu-${UBUNTU_VERSION}-${VMID}-cloud-network.yaml"
 # shellcheck disable=SC2034  # consumed by download_cloud_image() in lib-common.sh
 readonly CLOUD_IMAGE_URL="https://cloud-images.ubuntu.com/releases/${UBUNTU_VERSION}/release/${CLOUD_IMAGE}"
 # shellcheck disable=SC2034  # consumed by download_cloud_image() in lib-common.sh
