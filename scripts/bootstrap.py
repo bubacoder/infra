@@ -606,13 +606,17 @@ def preflight(plan: BootstrapPlan, runner: Runner) -> None:
     bridge = shlex.quote(plan.config.vm.bridge)
     remote(runner, target, f"sudo pvesm status --storage {storage} >/dev/null")
     remote(runner, target, f"ip link show {bridge} >/dev/null")
-    snippet_status = remote(
+    storage_config = remote(
         runner,
         target,
-        "sudo pvesm config local | awk '$1 == \"content\" {print $2}' | tr ',' '\\n' | grep -qx snippets && printf available || printf missing",
+        "sudo pvesh get /storage/local --output-format json",
         capture=True,
     )
-    if snippet_status != "available":
+    try:
+        storage_content = json.loads(storage_config)["content"].split(",")
+    except (json.JSONDecodeError, KeyError, AttributeError) as error:
+        raise BootstrapError("Could not read Proxmox storage 'local' configuration") from error
+    if "snippets" not in storage_content:
         raise BootstrapError("Proxmox storage 'local' must allow snippet content")
     if not plan.vm_exists:
         mac = shlex.quote(plan.mac)
