@@ -186,8 +186,11 @@ class BootstrapTests(unittest.TestCase):
 
     def test_dns_checkpoint_accepts_only_expected_address(self) -> None:
         expected = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("192.0.2.10", 0))]
-        with patch.object(bootstrap.socket, "getaddrinfo", return_value=expected):
+        with patch.object(bootstrap.socket, "getaddrinfo", return_value=expected) as resolver:
             bootstrap.verify_dns(self.plan(), "192.0.2.10")
+        names = {call.args[0] for call in resolver.call_args_list}
+        self.assertIn("home.homelab.example.com", names)
+        self.assertNotIn("homepage.homelab.example.com", names)
 
     def test_dns_checkpoint_reports_failed_names_without_secrets(self) -> None:
         with (
