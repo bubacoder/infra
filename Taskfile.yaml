@@ -6,7 +6,7 @@ version: '3'
 
 includes:
   ansible: ./ansible/Taskfile.ansible.yaml
-  vm: ./vm/Taskfile.vm.yaml
+  bootstrap: ./bootstrap/Taskfile.bootstrap.yaml
   docker: ./docker/Taskfile.docker.yaml
   app: ./docker/Taskfile.apps.yaml
   crowdsec: ./docker/Taskfile.crowdsec.yaml
@@ -60,6 +60,7 @@ tasks:
   build:
     desc: Run all linting and build tasks
     cmds:
+      - task: bootstrap:test
       - task: lint
       - task: docker:update-example-env
       - task: docs:build

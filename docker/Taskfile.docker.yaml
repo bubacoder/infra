@@ -1,29 +1,6 @@
 version: '3'
 
 tasks:
-  init-local-config:
-    desc: Create a local minimal Docker configuration for this host
-    silent: true
-    vars:
-      HOSTNAME:
-        sh: hostname --short
-    preconditions:
-      - sh: test ! -e "config/docker/{{.HOSTNAME}}/services.yaml"
-        msg: Host configuration already exists. Edit it directly instead of overwriting it.
-    cmds:
-      - |
-        set -eu
-        mkdir -p "config/docker/{{.HOSTNAME}}"
-        if [ ! -e config/docker/.env ]; then
-          cp config-example/docker/minimal-common.env config/docker/.env
-        fi
-        cp config-example/docker/minimal-host.env "config/docker/{{.HOSTNAME}}/.env"
-        cp config-example/docker/minimal-traefik.env "config/docker/{{.HOSTNAME}}/.env.traefik"
-        chmod 600 "config/docker/{{.HOSTNAME}}/.env.traefik"
-        cp config-example/docker/profiles/local-core.yaml "config/docker/{{.HOSTNAME}}/services.yaml"
-        cp config-example/docker/services-schema.yaml config/docker/services-schema.yaml
-        echo "Created local core configuration for {{.HOSTNAME}}. Set the required values before deployment."
-
   check-host:
     desc: Verify Docker bridge networking and required host prerequisites
     preconditions:
