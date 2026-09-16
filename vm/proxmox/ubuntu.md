@@ -14,6 +14,7 @@ This is the recommended method for fully automated VM creation with zero manual 
 - Downloads pre-installed Ubuntu cloud image (~700MB vs ~2.5GB ISO)
 - Imports the image directly as a VM disk (no installer needed)
 - Cloud-init configures hostname, users, SSH keys, and packages on first boot
+- Cloud-init snippets are named per VM ID so provisioning another VM cannot overwrite them
 - VM starts in ~30-60 seconds; first boot can take several additional minutes while
   cloud-init installs packages and applies updates
 
