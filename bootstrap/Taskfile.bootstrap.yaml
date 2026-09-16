@@ -64,9 +64,9 @@ tasks:
     cmds:
       - echo "Provisioning VM ${VMID} on ${PROXMOX_HOST:-proxmox}"
       - rsync -a vm/ config/vm/ "${PROXMOX_HOST:-proxmox}:/tmp/vm/"
-      - ssh "${PROXMOX_HOST:-proxmox}" sudo bash /tmp/vm/proxmox/create-ubuntu-cloud-vm.sh
-      - ssh "${PROXMOX_HOST:-proxmox}" sudo qm start "${VMID}"
-      - ssh "${PROXMOX_HOST:-proxmox}" sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
+       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/create-ubuntu-cloud-vm.sh
+       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo qm start "${VMID}"
+       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
 
   vm-wait:
     desc: Wait for an existing Ubuntu cloud VM to finish cloud-init
@@ -80,7 +80,7 @@ tasks:
         msg: VMID must be a positive integer.
     cmds:
       - rsync -a vm/ config/vm/ "${PROXMOX_HOST:-proxmox}:/tmp/vm/"
-      - ssh "${PROXMOX_HOST:-proxmox}" sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
+       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
 
   vm-preflight:
     desc: Validate the Ubuntu cloud VM target without modifying it
@@ -99,7 +99,7 @@ tasks:
     cmds:
       - |
         set -eu
-        ssh "${PROXMOX_HOST:-proxmox}" bash -s -- "${VMID}" "${VMNAME}" "${VM_MAC:-}" "${VM_STORAGE}" "${VM_BRIDGE}" <<'REMOTE'
+        ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C bash -s -- "${VMID}" "${VMNAME}" "${VM_MAC:-}" "${VM_STORAGE}" "${VM_BRIDGE}" <<'REMOTE'
         set -eu
         vmid="$1"
         name="$2"
@@ -125,7 +125,7 @@ tasks:
         if [ -n "${SSH_PUBLIC_KEY_FILE:-}" ]; then
           test -s config/vm/proxmox/bootstrap-authorized-key.pub
         else
-          ssh "${PROXMOX_HOST:-proxmox}" "sudo test -s \"\$HOME/.ssh/authorized_keys\""
+          ssh "${PROXMOX_HOST:-proxmox}" "LC_ALL=C LANG=C sudo test -s \"\$HOME/.ssh/authorized_keys\""
         fi
         echo "Preflight passed: VM ID ${VMID}, name ${VMNAME}, and MAC ${VM_MAC} are available."
 
