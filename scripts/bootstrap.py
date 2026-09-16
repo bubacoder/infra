@@ -417,7 +417,7 @@ def load_config(path: Path, root: Path = ROOT) -> BootstrapConfig:  # noqa: PLR0
 
 
 def remote(runner: Runner, target: str, command: str, *, capture: bool = False, timeout: int | None = None) -> str:
-    return runner.run(["ssh", "-o", "BatchMode=yes", target, command], capture=capture, timeout=timeout)
+    return runner.run(["ssh", "-o", "BatchMode=yes", target, f"LC_ALL=C LANG=C {command}"], capture=capture, timeout=timeout)
 
 
 def detect_repository(config: BootstrapConfig, runner: Runner, root: Path = ROOT) -> RepositoryConfig:

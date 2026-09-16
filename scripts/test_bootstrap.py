@@ -154,6 +154,11 @@ class BootstrapTests(unittest.TestCase):
         self.assertEqual(first[:2], "02")
         self.assertEqual(int(first[:2], 16) & 1, 0)
 
+    def test_remote_uses_stable_locale(self) -> None:
+        runner = Mock()
+        bootstrap.remote(runner, "user@proxmox", "sudo qm list", capture=True)
+        runner.run.assert_called_once_with(["ssh", "-o", "BatchMode=yes", "user@proxmox", "LC_ALL=C LANG=C sudo qm list"], capture=True, timeout=None)
+
     def test_plan_redacts_token(self) -> None:
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
