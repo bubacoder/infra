@@ -513,7 +513,8 @@ def print_plan(plan: BootstrapPlan) -> None:
 def verify_dns(plan: BootstrapPlan, expected: str, *, discovered: bool = False) -> None:
     names = [
         plan.config.network.domain,
-        *(f"{service.rsplit('/', 1)[-1]}.{plan.config.network.domain}" for service in plan.config.deployment.services),
+        f"traefik.{plan.config.network.domain}",
+        f"home.{plan.config.network.domain}",
     ]
     names.append(f"bootstrap-check.{plan.config.network.domain}")
     failures: list[str] = []
