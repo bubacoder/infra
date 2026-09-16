@@ -197,6 +197,26 @@ class BootstrapTests(unittest.TestCase):
             bootstrap.verify_dns(self.plan(), "192.0.2.10")
         self.assertNotIn("test_token-value", str(raised.exception))
 
+    def test_preflight_reads_storage_from_proxmox_api(self) -> None:
+        plan = self.plan()
+
+        class StubRunner:
+            def __init__(self) -> None:
+                self.commands: list[list[str]] = []
+
+            def run(self, command: list[str], **_: object) -> str:
+                self.commands.append(command)
+                if "pvesh get /storage/local" in command[-1]:
+                    return '{"content":"iso,snippets"}'
+                if "grep -Riq" in command[-1]:
+                    return "available"
+                return ""
+
+        runner = StubRunner()
+        with patch.object(bootstrap, "verify_dns"):
+            bootstrap.preflight(plan, runner)
+        self.assertTrue(any("pvesh get /storage/local" in command[-1] for command in runner.commands))
+
     def test_accepts_auto_ipv4_discovery(self) -> None:
         document = self.document()
         document["network"]["expected_ipv4"] = "auto"

@@ -120,7 +120,7 @@ tasks:
         fi
         sudo pvesm status --storage "${storage}" >/dev/null
         ip link show "${bridge}" >/dev/null
-        sudo pvesm config local | awk '$1 == "content" {print $2}' | tr ',' '\n' | grep -qx snippets
+        sudo pvesh get /storage/local --output-format json | perl -MJSON::PP -e '$content = decode_json(<STDIN>)->{"content"} // q{}; exit !(grep { $_ eq "snippets" } split /,/, $content)'
         REMOTE
         if [ -n "${SSH_PUBLIC_KEY_FILE:-}" ]; then
           test -s config/vm/proxmox/bootstrap-authorized-key.pub
