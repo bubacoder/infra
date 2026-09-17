@@ -97,8 +97,23 @@ planned MAC, and stops at a networking checkpoint.
 Add that address to the administrative host's `/etc/hosts` for all of the names
 reported by bootstrap, then rerun the same apply command. For the core profile,
 these are the base domain, `home`, `traefik`, and `bootstrap-check` names. Host
-files have no wildcard support. Bootstrap does not edit `/etc/hosts` and fails
-rather than choosing between multiple guest IPv4 addresses.
+files have no wildcard support. Bootstrap does not add mappings automatically or
+edit `/etc/hosts`, and fails rather than choosing between multiple guest IPv4
+addresses.
+
+For this test-only checkpoint, optionally put your manual entries in this exact
+named block, replacing `docker-host` with the VM name:
+
+```text
+# BEGIN infra docker-host temporary DNS
+192.0.2.10 example.com home.example.com traefik.example.com bootstrap-check.example.com
+# END infra docker-host temporary DNS
+```
+
+After testing, remove only that block explicitly with `task
+bootstrap:cleanup-hosts NAME=docker-host`. The command uses `sudo`, validates the
+lowercase hostname label, and refuses to change `/etc/hosts` if the block is
+missing, duplicated, incomplete, or malformed.
 
 ## Apply
 
@@ -140,7 +155,9 @@ ID, name, MAC, disks, guest agent, and VM-specific cloud-init snippets match the
 plan. A conflicting or partially created resource stops the process for manual
 inspection.
 
-Useful lower-level checks remain available:
+The commands below are advanced/manual recovery and debugging commands. Normal
+users should use `task bootstrap:init`, then `task bootstrap:plan`, then `task
+bootstrap:apply`.
 
 ```bash
 task bootstrap:vm-preflight
