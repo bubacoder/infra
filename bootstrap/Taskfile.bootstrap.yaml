@@ -19,7 +19,8 @@ tasks:
   test:
     desc: Run bootstrap orchestrator unit and shell tests
     cmds:
-      - python3 scripts/test_bootstrap.py
+      - python3 -m unittest bootstrap.test_bootstrap
+      - python3 -m unittest bootstrap.test_hosts
       - bash vm/test-lib-common.sh
 
   plan:
@@ -27,17 +28,27 @@ tasks:
     env:
       BOOTSTRAP_CONFIG: '{{default "config/bootstrap.yaml" .CONFIG}}'
     cmds:
-      - scripts/bootstrap.py --config "$BOOTSTRAP_CONFIG" --plan
+      - python3 -m bootstrap --config "$BOOTSTRAP_CONFIG" --plan
 
   apply:
     desc: Bootstrap the configured VM and core services
     env:
       BOOTSTRAP_CONFIG: '{{default "config/bootstrap.yaml" .CONFIG}}'
     cmds:
-      - scripts/bootstrap.py --config "$BOOTSTRAP_CONFIG" --apply {{if .YES}}--yes{{end}}
+      - python3 -m bootstrap --config "$BOOTSTRAP_CONFIG" --apply {{if .YES}}--yes{{end}}
+
+  cleanup-hosts:
+    desc: "Advanced/manual: remove one test-only temporary DNS /etc/hosts block"
+    env:
+      BOOTSTRAP_HOSTS_NAME: '{{.NAME}}'
+    preconditions:
+      - sh: test -n "$BOOTSTRAP_HOSTS_NAME"
+        msg: "NAME is required, for example: task bootstrap:cleanup-hosts NAME=docker-host"
+    cmds:
+      - sudo python3 -m bootstrap.hosts --name "$BOOTSTRAP_HOSTS_NAME"
 
   vm-init:
-    desc: Create the local Ubuntu cloud VM configuration
+    desc: "Advanced/manual: create the local Ubuntu cloud VM configuration (normal: bootstrap:init -> plan -> apply)"
     silent: true
     cmds:
       - |
@@ -50,7 +61,7 @@ tasks:
         echo "Created config/vm/proxmox/ubuntu-cloud.env; edit it before provisioning."
 
   vm-provision:
-    desc: Create, start, and wait for an Ubuntu cloud VM on Proxmox
+    desc: "Advanced/manual: create, start, and wait for an Ubuntu cloud VM (normal: bootstrap:init -> plan -> apply)"
     silent: true
     dotenv:
       - config/vm/proxmox/ubuntu-cloud.env
@@ -69,7 +80,7 @@ tasks:
        - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
 
   vm-wait:
-    desc: Wait for an existing Ubuntu cloud VM to finish cloud-init
+    desc: "Advanced/manual: wait for an existing Ubuntu cloud VM (normal: bootstrap:init -> plan -> apply)"
     silent: true
     dotenv:
       - config/vm/proxmox/ubuntu-cloud.env
@@ -83,7 +94,7 @@ tasks:
        - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
 
   vm-preflight:
-    desc: Validate the Ubuntu cloud VM target without modifying it
+    desc: "Advanced/manual: validate the Ubuntu cloud VM target (normal: bootstrap:init -> plan -> apply)"
     silent: true
     dotenv:
       - config/vm/proxmox/ubuntu-cloud.env
@@ -130,7 +141,7 @@ tasks:
         echo "Preflight passed: VM ID ${VMID}, name ${VMNAME}, and MAC ${VM_MAC} are available."
 
   init-local-config:
-    desc: Create a local minimal Docker configuration for this host
+    desc: "Advanced/manual: create local Docker configuration (normal: bootstrap:init -> plan -> apply)"
     silent: true
     vars:
       HOSTNAME:
