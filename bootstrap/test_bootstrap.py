@@ -3,7 +3,6 @@
 # ruff: noqa: PT009, PT027
 
 import contextlib
-import importlib.util
 import io
 import json
 import os
@@ -15,12 +14,7 @@ from unittest.mock import Mock, patch
 
 import yaml
 
-MODULE_PATH = Path(__file__).with_name("bootstrap.py")
-SPEC = importlib.util.spec_from_file_location("bootstrap_script", MODULE_PATH)
-bootstrap = importlib.util.module_from_spec(SPEC)
-if SPEC.loader is None:
-    raise RuntimeError("Cannot load bootstrap.py")
-SPEC.loader.exec_module(bootstrap)
+from bootstrap import config, core, deploy, proxmox
 
 
 class BootstrapTests(unittest.TestCase):
@@ -73,22 +67,22 @@ class BootstrapTests(unittest.TestCase):
         self.config_path.write_text(yaml.safe_dump(document or self.document(), sort_keys=False))
         self.config_path.chmod(mode)
 
-    def load(self) -> bootstrap.BootstrapConfig:
-        return bootstrap.load_config(self.config_path, self.root)
+    def load(self) -> core.BootstrapConfig:
+        return config.load_config(self.config_path, self.root)
 
-    def plan(self, config: bootstrap.BootstrapConfig | None = None) -> bootstrap.BootstrapPlan:
+    def plan(self, config: core.BootstrapConfig | None = None) -> core.BootstrapPlan:
         loaded = config or self.load()
-        return bootstrap.BootstrapPlan(
+        return core.BootstrapPlan(
             config=loaded,
             repository=self.repository(),
             vm_id=400,
-            mac=loaded.vm.mac or bootstrap.generated_mac(loaded.proxmox.ssh_target, loaded.vm.name),
+            mac=loaded.vm.mac or proxmox.generated_mac(loaded.proxmox.ssh_target, loaded.vm.name),
             vm_exists=False,
         )
 
     @staticmethod
-    def repository() -> bootstrap.RepositoryConfig:
-        return bootstrap.RepositoryConfig(
+    def repository() -> core.RepositoryConfig:
+        return core.RepositoryConfig(
             url="https://example.com/infra.git",
             branch="bootstrap",
             commit="a" * 40,
@@ -97,25 +91,25 @@ class BootstrapTests(unittest.TestCase):
     def test_loads_supported_configuration(self) -> None:
         config = self.load()
         self.assertEqual(config.vm.name, "docker-host")
-        self.assertEqual(config.deployment.services, bootstrap.SUPPORTED_SERVICES)
+        self.assertEqual(config.deployment.services, core.SUPPORTED_SERVICES)
         self.assertEqual(config.tls.token, "test_token-value")
 
     def test_rejects_insecure_configuration_permissions(self) -> None:
         self.config_path.chmod(0o644)
-        with self.assertRaisesRegex(bootstrap.ConfigError, "chmod 600"):
+        with self.assertRaisesRegex(core.ConfigError, "chmod 600"):
             self.load()
 
     def test_rejects_unknown_fields(self) -> None:
         document = self.document()
         document["vm"]["unsupported"] = True
         self.write_config(document)
-        with self.assertRaisesRegex(bootstrap.ConfigError, "unknown fields"):
+        with self.assertRaisesRegex(core.ConfigError, "unknown fields"):
             self.load()
 
     def test_malformed_yaml_error_does_not_include_source_content(self) -> None:
         self.config_path.write_text("tls:\n  token: secret-token\n  invalid: [\n")
         self.config_path.chmod(0o600)
-        with self.assertRaises(bootstrap.ConfigError) as raised:
+        with self.assertRaises(core.ConfigError) as raised:
             self.load()
         self.assertNotIn("secret-token", str(raised.exception))
         self.assertIn("Cannot parse bootstrap configuration", str(raised.exception))
@@ -124,45 +118,45 @@ class BootstrapTests(unittest.TestCase):
         document = self.document()
         document["repository"] = {"url": "https://token@example.com/infra.git", "branch": "bootstrap"}
         self.write_config(document)
-        with self.assertRaisesRegex(bootstrap.ConfigError, "must not contain credentials"):
+        with self.assertRaisesRegex(core.ConfigError, "must not contain credentials"):
             self.load()
 
     def test_rejects_ssh_repository_url_password(self) -> None:
         document = self.document()
         document["repository"] = {"url": "ssh://user:password@example.com/infra.git", "branch": "bootstrap"}
         self.write_config(document)
-        with self.assertRaisesRegex(bootstrap.ConfigError, "must not contain credentials"):
+        with self.assertRaisesRegex(core.ConfigError, "must not contain credentials"):
             self.load()
 
     def test_rejects_credentials_in_detected_origin(self) -> None:
         runner = Mock()
         runner.run.side_effect = ["", "bootstrap", "https://user:secret@example.com/infra.git"]
-        with self.assertRaisesRegex(bootstrap.ConfigError, "must not contain credentials"):
-            bootstrap.detect_repository(self.load(), runner, self.root)
+        with self.assertRaisesRegex(core.ConfigError, "must not contain credentials"):
+            config.detect_repository(self.load(), runner, self.root)
 
     def test_rejects_unsupported_service_set(self) -> None:
         document = self.document()
         document["deployment"]["services"].append("security/authentik")
         self.write_config(document)
-        with self.assertRaisesRegex(bootstrap.ConfigError, "currently must be"):
+        with self.assertRaisesRegex(core.ConfigError, "currently must be"):
             self.load()
 
     def test_generated_mac_is_stable_local_and_unicast(self) -> None:
-        first = bootstrap.generated_mac("user@proxmox", "docker-host")
-        second = bootstrap.generated_mac("user@proxmox", "docker-host")
+        first = proxmox.generated_mac("user@proxmox", "docker-host")
+        second = proxmox.generated_mac("user@proxmox", "docker-host")
         self.assertEqual(first, second)
         self.assertEqual(first[:2], "02")
         self.assertEqual(int(first[:2], 16) & 1, 0)
 
     def test_remote_uses_stable_locale(self) -> None:
         runner = Mock()
-        bootstrap.remote(runner, "user@proxmox", "sudo qm list", capture=True)
+        core.remote(runner, "user@proxmox", "sudo qm list", capture=True)
         runner.run.assert_called_once_with(["ssh", "-o", "BatchMode=yes", "user@proxmox", "LC_ALL=C LANG=C sudo qm list"], capture=True, timeout=None)
 
     def test_plan_redacts_token(self) -> None:
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
-            bootstrap.print_plan(self.plan())
+            proxmox.print_plan(self.plan())
         self.assertNotIn("test_token-value", output.getvalue())
         self.assertIn("<redacted>", output.getvalue())
 
@@ -171,7 +165,7 @@ class BootstrapTests(unittest.TestCase):
         private_key.write_text("not-a-real-private-key")
         private_key.chmod(0o600)
         plan = self.plan()
-        bootstrap.render_config(plan, self.root)
+        deploy.render_config(plan, self.root)
 
         vm_env = (self.root / "config/vm/proxmox/ubuntu-cloud.env").read_text()
         self.assertIn(f"VM_MAC={plan.mac}", vm_env)
@@ -192,18 +186,18 @@ class BootstrapTests(unittest.TestCase):
 
     def test_dns_checkpoint_accepts_only_expected_address(self) -> None:
         expected = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("192.0.2.10", 0))]
-        with patch.object(bootstrap.socket, "getaddrinfo", return_value=expected) as resolver:
-            bootstrap.verify_dns(self.plan(), "192.0.2.10")
+        with patch.object(proxmox.socket, "getaddrinfo", return_value=expected) as resolver:
+            proxmox.verify_dns(self.plan(), "192.0.2.10")
         names = {call.args[0] for call in resolver.call_args_list}
         self.assertIn("home.homelab.example.com", names)
         self.assertNotIn("homepage.homelab.example.com", names)
 
     def test_dns_checkpoint_reports_failed_names_without_secrets(self) -> None:
         with (
-            patch.object(bootstrap.socket, "getaddrinfo", side_effect=socket.gaierror),
-            self.assertRaisesRegex(bootstrap.BootstrapError, "External DHCP/DNS checkpoint") as raised,
+            patch.object(proxmox.socket, "getaddrinfo", side_effect=socket.gaierror),
+            self.assertRaisesRegex(core.BootstrapError, "External DHCP/DNS checkpoint") as raised,
         ):
-            bootstrap.verify_dns(self.plan(), "192.0.2.10")
+            proxmox.verify_dns(self.plan(), "192.0.2.10")
         self.assertNotIn("test_token-value", str(raised.exception))
 
     def test_preflight_reads_storage_from_proxmox_api(self) -> None:
@@ -222,8 +216,8 @@ class BootstrapTests(unittest.TestCase):
                 return ""
 
         runner = StubRunner()
-        with patch.object(bootstrap, "verify_dns"):
-            bootstrap.preflight(plan, runner)
+        with patch.object(proxmox, "verify_dns"):
+            proxmox.preflight(plan, runner)
         self.assertTrue(any("pvesh get /storage/local" in command[-1] for command in runner.commands))
 
     def test_accepts_auto_ipv4_discovery(self) -> None:
@@ -244,14 +238,14 @@ class BootstrapTests(unittest.TestCase):
                     ]
                 )
 
-        self.assertEqual(bootstrap.discover_vm_ipv4(plan, StubRunner()), "192.0.2.10")
+        self.assertEqual(proxmox.discover_vm_ipv4(plan, StubRunner()), "192.0.2.10")
 
     def test_binds_discovered_address_to_runtime_plan(self) -> None:
         document = self.document()
         document["network"]["expected_ipv4"] = "auto"
         self.write_config(document)
         plan = self.plan(self.load())
-        resolved = bootstrap.with_expected_ipv4(plan, "192.0.2.10")
+        resolved = proxmox.with_expected_ipv4(plan, "192.0.2.10")
         self.assertEqual(resolved.config.network.expected_ipv4, "192.0.2.10")
         self.assertIsNone(plan.config.network.expected_ipv4)
 
@@ -272,11 +266,11 @@ class BootstrapTests(unittest.TestCase):
                     ]
                 )
 
-        with self.assertRaisesRegex(bootstrap.BootstrapError, "exactly one usable IPv4"):
-            bootstrap.discover_vm_ipv4(plan, StubRunner())
+        with self.assertRaisesRegex(core.BootstrapError, "exactly one usable IPv4"):
+            proxmox.discover_vm_ipv4(plan, StubRunner())
 
     def test_partial_existing_vm_is_not_resumed(self) -> None:
-        plan = bootstrap.BootstrapPlan(
+        plan = core.BootstrapPlan(
             config=self.load(),
             repository=self.repository(),
             vm_id=400,
@@ -288,8 +282,8 @@ class BootstrapTests(unittest.TestCase):
             def run(self, command: list[str], **_: object) -> str:
                 return "name: docker-host\nnet0: virtio=02:00:00:00:00:04,bridge=vmbr0\n"
 
-        with self.assertRaisesRegex(bootstrap.BootstrapError, "incomplete"):
-            bootstrap.verify_existing_vm(plan, StubRunner())
+        with self.assertRaisesRegex(core.BootstrapError, "incomplete"):
+            proxmox.verify_existing_vm(plan, StubRunner())
 
 
 if __name__ == "__main__":

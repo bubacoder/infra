@@ -1,6 +1,6 @@
 # Bootstrap Configuration
 
-`scripts/bootstrap.py` reads `config/bootstrap.yaml` and orchestrates the
+`python3 -m bootstrap` reads `config/bootstrap.yaml` and orchestrates the
 supported first-time deployment. The tracked
 `config-example/bootstrap.yaml` is the canonical starting point.
 
@@ -99,8 +99,27 @@ Bootstrap creates or resumes the VM, finds the single usable IPv4 address on the
 guest-agent interface matching the planned MAC, and stops for the operator to
 map the required names. Add the reported base domain, service names, and
 `bootstrap-check` name to the administrative host's `/etc/hosts`, then rerun
-the same apply command. Bootstrap does not modify resolver configuration and
-refuses ambiguous guest addresses.
+the same apply command. Bootstrap does not add mappings automatically or modify
+resolver configuration, and refuses ambiguous guest addresses.
+
+For test-only manual mappings, use one exact named block so it can be removed
+later without touching unrelated entries:
+
+```text
+# BEGIN infra docker-host temporary DNS
+192.0.2.10 example.com home.example.com traefik.example.com bootstrap-check.example.com
+# END infra docker-host temporary DNS
+```
+
+Replace `docker-host` with the lowercase VM hostname label. Cleanup is always
+explicit and runs with `sudo`; bootstrap never invokes it automatically:
+
+```bash
+task bootstrap:cleanup-hosts NAME=docker-host
+```
+
+The cleanup refuses to modify `/etc/hosts` when the named block is absent,
+duplicated, incomplete, or malformed.
 
 ## Implementation Map
 
@@ -165,12 +184,17 @@ task bootstrap:apply
 task bootstrap:apply YES=1
 ```
 
+`bootstrap:vm-init`, `bootstrap:vm-preflight`, `bootstrap:vm-provision`,
+`bootstrap:vm-wait`, and `bootstrap:init-local-config` are advanced/manual
+commands for recovery and debugging. Normal users should use `bootstrap:init`,
+then `bootstrap:plan`, then `bootstrap:apply`.
+
 The same operations are directly available as:
 
 ```bash
-scripts/bootstrap.py --config config/bootstrap.yaml --plan
-scripts/bootstrap.py --config config/bootstrap.yaml --apply
-scripts/bootstrap.py --config config/bootstrap.yaml --apply --yes
+python3 -m bootstrap --config config/bootstrap.yaml --plan
+python3 -m bootstrap --config config/bootstrap.yaml --apply
+python3 -m bootstrap --config config/bootstrap.yaml --apply --yes
 ```
 
 Rerunning apply is the recovery mechanism. The renderer and Docker apply are
