@@ -185,9 +185,10 @@ def verify_services(plan: BootstrapPlan, runner: Runner, timeout: int = 180) -> 
 
 
 def apply(plan: BootstrapPlan, runner: Runner, *, assume_yes: bool = False, root: Path = ROOT) -> None:
-    if not assume_yes:
-        if input(f"Create or resume VM {plan.config.vm.name} (ID {plan.vm_id}) and deploy core services? [y/N] ").strip().lower() not in {"y", "yes"}:
-            raise BootstrapError("Bootstrap cancelled")
+    if not assume_yes and input(
+        f"Create or resume VM {plan.config.vm.name} (ID {plan.vm_id}) and deploy core services? [y/N] "
+    ).strip().lower() not in {"y", "yes"}:
+        raise BootstrapError("Bootstrap cancelled")
     print("[1/7] Rendering VM configuration")
     render_vm_config(plan, plan.config.network.expected_ipv4 or "", root)
     print("[2/7] Provisioning or resuming the VM")
