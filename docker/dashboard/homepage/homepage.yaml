@@ -10,12 +10,10 @@
 name: homepage
 services:
   homepage:
-    image: ghcr.io/gethomepage/homepage:v2.3.0
+    image: ghcr.io/gethomepage/homepage:v2.2.0
     container_name: homepage
     restart: unless-stopped
     environment:
-      PUID: ${PUID}
-      PGID: ${PGID}
       # Using Environment Secrets:
       #  https://gethomepage.dev/latest/installation/docker/#using-environment-secrets
       HOMEPAGE_VAR_TIMEZONE: ${TIMEZONE}

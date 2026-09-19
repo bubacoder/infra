@@ -16,8 +16,8 @@ openssl rand -out secret-key -hex 60
 chmod 600 postgresql-password secret-key
 ```
 
-Set `AUTHENTIK_SECRETS_PATH` in the host `.env` to this directory. Do not
-commit the generated files.
+Set `AUTHENTIK_SECRETS_PATH` in `config/docker/<host>/.env.authentik` to this
+directory. Do not commit the generated files.
 
 ## Application SSO
 

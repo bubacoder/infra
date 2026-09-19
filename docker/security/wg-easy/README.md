@@ -7,7 +7,8 @@ to LAN/VPN through `localaccess@file`.
 ## Setup
 
 Set `WG_EASY_AUTHENTIK_CLIENT_ID` and `WG_EASY_AUTHENTIK_CLIENT_SECRET` in
-ignored host configuration, then create the Authentik application:
+ignored `config/docker/<host>/.env.wg-easy`, then create the Authentik
+application:
 
 ```bash
 scripts/authentik-apps.py --application wg-easy --apply

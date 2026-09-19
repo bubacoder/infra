@@ -55,7 +55,7 @@ The long-term goal is to reduce these dependencies and provide offline alternati
 | Plugins, Modules (e.g., CrowdSec)                                        | Various plugins for services             | Downloaded on first use. TODO: create inventory                         |
 | Large Language Models                                                    | Optional, used by Ollama                 | Downloaded on first use                                                 |
 | [OVHcloud](https://www.ovhcloud.com/en/) (or other registrar)            | Domain name registration                 | Required for remote access and TLS certificates. TODO: document fallback |
-| [Cloudflare](https://www.cloudflare.com/)                                | DNS zone administration, tunnel          | Optional, for remote access                                             |
+| [Cloudflare](https://www.cloudflare.com/)                                | DNS zone administration, tunnel          | DNS administration is required by the documented TLS setup; tunnels are optional |
 | [Let's Encrypt](https://letsencrypt.org/)                                | TLS certificates (managed by Traefik)    | Required. TODO: document local CA setup for fallback                    |
 | [Backblaze B2](https://www.backblaze.com/cloud-storage)                  | Backup storage                           | Optional, local backup also configured                                  |
 | [CrowdSec](https://app.crowdsec.net/)                                    | Crowd-sourced IP blocklist               | Optional, security service, can be disabled                             |
@@ -64,7 +64,8 @@ The long-term goal is to reduce these dependencies and provide offline alternati
 
 ## Getting Started
 
-The recommended configuration is to set up Proxmox VE and install a Debian- or Ubuntu-based VM to host the Docker services.
+The recommended path uses `config/bootstrap.yaml` to provision an Ubuntu VM on
+Proxmox, configure the host, and deploy the core Docker services end to end.
 
 -> See [Getting Started](docs/setup.md)
 

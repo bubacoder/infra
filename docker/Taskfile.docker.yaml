@@ -1,6 +1,16 @@
 version: '3'
 
 tasks:
+  check-host:
+    desc: Verify Docker bridge networking and required host prerequisites
+    preconditions:
+      - sh: command -v docker >/dev/null
+        msg: Docker must be installed before running this check.
+    cmds:
+      - docker info >/dev/null
+      - docker run --rm alpine:3.21 sh -ec 'ping -c 1 -W 3 1.1.1.1 >/dev/null; nslookup dl-cdn.alpinelinux.org >/dev/null'
+      - echo "Docker bridge networking is working."
+
   command:
     internal: true
     cmds:
