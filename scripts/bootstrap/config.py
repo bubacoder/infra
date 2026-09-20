@@ -39,6 +39,8 @@ SHELL_TOKEN_PATTERN = re.compile(r"[A-Za-z0-9_.:/@+-]+")
 def require_mapping(value: object, field: str, allowed: set[str], required: set[str]) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ConfigError(f"{field} must be a mapping")
+    if any(not isinstance(key, str) for key in value):
+        raise ConfigError(f"{field} field names must be strings")
     unknown, missing = set(value) - allowed, required - set(value)
     if unknown:
         raise ConfigError(f"{field} contains unknown fields: {', '.join(sorted(unknown))}")

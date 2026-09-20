@@ -17,10 +17,9 @@ tasks:
         echo "Created config/bootstrap.yaml with mode 0600; replace every placeholder before planning."
 
   test:
-    desc: Run bootstrap orchestrator unit and shell tests
+    desc: Run Python unit tests and bootstrap shell tests
     cmds:
-      - python3 -m unittest bootstrap.test_bootstrap
-      - python3 -m unittest bootstrap.test_hosts
+      - task test
       - bash vm/test-lib-common.sh
 
   plan:
@@ -28,14 +27,14 @@ tasks:
     env:
       BOOTSTRAP_CONFIG: '{{default "config/bootstrap.yaml" .CONFIG}}'
     cmds:
-      - python3 -m bootstrap --config "$BOOTSTRAP_CONFIG" --plan
+      - python3 -m scripts.bootstrap --config "$BOOTSTRAP_CONFIG" --plan
 
   apply:
     desc: Bootstrap the configured VM and core services
     env:
       BOOTSTRAP_CONFIG: '{{default "config/bootstrap.yaml" .CONFIG}}'
     cmds:
-      - python3 -m bootstrap --config "$BOOTSTRAP_CONFIG" --apply {{if .YES}}--yes{{end}}
+      - python3 -m scripts.bootstrap --config "$BOOTSTRAP_CONFIG" --apply {{if .YES}}--yes{{end}}
 
   cleanup-hosts:
     desc: "Advanced/manual: remove one test-only temporary DNS /etc/hosts block"
@@ -45,7 +44,7 @@ tasks:
       - sh: test -n "$BOOTSTRAP_HOSTS_NAME"
         msg: "NAME is required, for example: task bootstrap:cleanup-hosts NAME=docker-host"
     cmds:
-      - sudo python3 -m bootstrap.hosts --name "$BOOTSTRAP_HOSTS_NAME"
+      - sudo python3 -m scripts.bootstrap.hosts --name "$BOOTSTRAP_HOSTS_NAME"
 
   vm-init:
     desc: "Advanced/manual: create the local Ubuntu cloud VM configuration (normal: bootstrap:init -> plan -> apply)"

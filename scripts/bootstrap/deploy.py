@@ -61,14 +61,21 @@ def render_config(plan: BootstrapPlan, root: Path = ROOT, expected_ipv4: str | N
     expected_ipv4 = expected_ipv4 or plan.config.network.expected_ipv4
     if expected_ipv4 is None:
         raise BootstrapError("Cannot render host configuration before the VM IPv4 address is known")
-    render_vm_config(plan, expected_ipv4, root)
     inventory_path = root / "config/ansible/inventory/inventory.yaml"
-    inventory = (
-        yaml.safe_load(inventory_path.read_text())
-        if inventory_path.exists()
-        else yaml.safe_load((root / "config-example/ansible/inventory/inventory.yaml").read_text())
-    )
+    source = inventory_path if inventory_path.exists() else root / "config-example/ansible/inventory/inventory.yaml"
+    try:
+        inventory = yaml.safe_load(source.read_text())
+    except (OSError, yaml.YAMLError) as error:
+        raise BootstrapError(f"Cannot read Ansible inventory: {source}") from error
     inventory = inventory or {}
+    if not isinstance(inventory, dict):
+        raise BootstrapError("Ansible inventory must be a mapping")
+    for group in ("debian", "docker_hosts"):
+        if group in inventory and not isinstance(inventory[group], dict):
+            raise BootstrapError(f"{group} inventory group must be a mapping")
+        if isinstance(inventory.get(group), dict) and "hosts" in inventory[group] and not isinstance(inventory[group]["hosts"], dict):
+            raise BootstrapError(f"{group}.hosts must be a mapping")
+    render_vm_config(plan, expected_ipv4, root)
     config, name = plan.config, plan.config.vm.name
     hosts = inventory.setdefault("debian", {}).setdefault("hosts", {})
     existing = hosts.get(name)

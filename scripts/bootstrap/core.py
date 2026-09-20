@@ -5,7 +5,7 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent.parent.parent
 DEFAULT_CONFIG = ROOT / "config/bootstrap.yaml"
 SUPPORTED_SERVICES = ("security/traefik", "dashboard/homepage")
 SERVICE_CONTAINERS = ("traefik", "logrotate", "homepage", "dockerproxy")
