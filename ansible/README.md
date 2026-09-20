@@ -27,7 +27,7 @@ https://www.ansible.com/
 3. Add hosts to `config/ansible/inventory/inventory.yaml`.
 4. Assign roles by adding hosts to the corresponding inventory groups, such as `docker_hosts`.
 5. Run `ansible/apply-<playbook>.sh` from the repository root to execute a playbook.
-   - If you use a non-root user and `sudo` requires a password (indicated by the "Missing sudo password" error message), use `apply-<playbook>.sh --ask-become-pass` and specify the password when requested ("BECOME password" message)
+   - If you use a non-root user and `sudo` requires a password (indicated by the "Missing sudo password" error message), use `ansible/apply-<playbook>.sh --ask-become-pass` and specify the password when requested ("BECOME password" message)
    - The playbook will set up passwordless `sudo`, so next time the `--ask-become-pass` parameter will not be required
 6. When the administrative user is already created, use that user in the inventory instead of `root` (`ansible_user: <adminuser>`). This is more secure and also required by Homebrew.
 

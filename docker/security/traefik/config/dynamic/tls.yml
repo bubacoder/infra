@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://json.schemastore.org/traefik-v3.json
 
-# Issue one ACME certificate for the base domain and all first-level subdomains.
+# Issue one ACME certificate for the base domain, first-level subdomains, and development sites.
 tls:
   stores:
     default:
@@ -10,3 +10,4 @@ tls:
           main: '{{env "MYDOMAIN"}}'
           sans:
             - '*.{{env "MYDOMAIN"}}'
+            - '*.dev.{{env "MYDOMAIN"}}'
