@@ -69,6 +69,8 @@ def mask_line(line: str) -> str:
     variable, _ = line.strip().split("=", 1)
     variable = variable.strip()
     normalized_variable = variable.upper()
+    if "SECRET_PATH" in normalized_variable:
+        return line.strip()
     generalized_value = get_generalized_value(normalized_variable)
 
     if generalized_value is not None:

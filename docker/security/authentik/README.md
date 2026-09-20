@@ -11,9 +11,10 @@ Create the ignored `config/docker/<host>/authentik/` directory and generate the
 required secret files:
 
 ```bash
-openssl rand -out postgresql-password -base64 36
-openssl rand -out secret-key -hex 60
-chmod 600 postgresql-password secret-key
+mkdir -p config/docker/<host>/authentik
+openssl rand -out config/docker/<host>/authentik/postgresql-password -base64 36
+openssl rand -out config/docker/<host>/authentik/secret-key -hex 60
+chmod 600 config/docker/<host>/authentik/postgresql-password config/docker/<host>/authentik/secret-key
 ```
 
 Set `AUTHENTIK_SECRETS_PATH` in `config/docker/<host>/.env.authentik` to this

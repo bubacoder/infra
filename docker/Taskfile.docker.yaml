@@ -8,7 +8,7 @@ tasks:
         msg: Docker must be installed before running this check.
     cmds:
       - docker info >/dev/null
-      - docker run --rm alpine:3.21 sh -ec 'ping -c 1 -W 3 1.1.1.1 >/dev/null; nslookup dl-cdn.alpinelinux.org >/dev/null'
+      - docker run --rm alpine:3.21 sh -ec 'nslookup dl-cdn.alpinelinux.org >/dev/null; wget -q --spider https://dl-cdn.alpinelinux.org/'
       - echo "Docker bridge networking is working."
 
   command:
