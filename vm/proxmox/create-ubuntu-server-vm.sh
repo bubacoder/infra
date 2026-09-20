@@ -19,6 +19,13 @@ source "${SCRIPT_DIR}/../lib-common.sh"
 validate_vm_config
 : "${UBUNTU_VERSION:?Missing required configuration value: UBUNTU_VERSION}"
 : "${AUTOINSTALL:?Missing required configuration value: AUTOINSTALL}"
+case "${AUTOINSTALL}" in
+    true|false) ;;
+    *)
+        echo "AUTOINSTALL must be true or false." >&2
+        exit 1
+        ;;
+esac
 
 # === Derived (do not edit) ===
 

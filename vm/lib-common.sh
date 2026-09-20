@@ -21,7 +21,7 @@ validate_vm_config() {
         fi
     done
 
-    if ! [[ "${VMID}" =~ ^[0-9]+$ ]] || ! [[ "${CPU_CORES}" =~ ^[1-9][0-9]*$ ]] || \
+    if ! [[ "${VMID}" =~ ^[1-9][0-9]*$ ]] || ! [[ "${CPU_CORES}" =~ ^[1-9][0-9]*$ ]] || \
         ! [[ "${MAX_MEMORY_SIZE}" =~ ^[1-9][0-9]*$ ]] || ! [[ "${MIN_MEMORY_SIZE}" =~ ^[1-9][0-9]*$ ]]; then
         echo "VMID, CPU_CORES, MAX_MEMORY_SIZE, and MIN_MEMORY_SIZE must be positive integers." >&2
         exit 1
