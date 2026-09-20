@@ -10,7 +10,7 @@ from pathlib import Path
 
 import yaml
 
-MODULE_PATH = Path(__file__).with_name("split-compose-env.py")
+MODULE_PATH = Path(__file__).parent.parent / "scripts/split-compose-env.py"
 SPEC = importlib.util.spec_from_file_location("split_compose_env", MODULE_PATH)
 split_compose_env = importlib.util.module_from_spec(SPEC)
 if SPEC.loader is None:
@@ -61,6 +61,11 @@ class SplitEnvironmentTests(unittest.TestCase):
         alpha = (self.host / ".env.alpha").read_text()
         if alpha.count("ALPHA_ONLY=") != 1 or "ALPHA_ONLY=override" not in alpha:
             self.fail("Existing service override was changed or duplicated")
+
+    def test_creates_service_files_with_private_permissions(self) -> None:
+        split_compose_env.split_environment(self.host, self.stacks)
+        if (self.host / ".env.alpha").stat().st_mode & 0o777 != 0o600:
+            self.fail("New service environment file is not private")
 
     def test_check_mode_does_not_modify_files(self) -> None:
         before = (self.host / ".env").read_text()

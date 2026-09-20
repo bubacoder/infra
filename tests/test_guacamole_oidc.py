@@ -4,7 +4,7 @@ import importlib.util
 import unittest
 from pathlib import Path
 
-MODULE_PATH = Path(__file__).with_name("guacamole-oidc.py")
+MODULE_PATH = Path(__file__).parent.parent / "docker/tools/guacamole/guacamole-oidc.py"
 SPEC = importlib.util.spec_from_file_location("guacamole_oidc", MODULE_PATH)
 guacamole_oidc = importlib.util.module_from_spec(SPEC)
 if SPEC.loader is None:
