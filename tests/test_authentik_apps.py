@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-MODULE_PATH = Path(__file__).with_name("authentik-apps.py")
+MODULE_PATH = Path(__file__).parent.parent / "scripts/authentik-apps.py"
 SPEC = importlib.util.spec_from_file_location("authentik_apps", MODULE_PATH)
 authentik_apps = importlib.util.module_from_spec(SPEC)
 if SPEC.loader is None:

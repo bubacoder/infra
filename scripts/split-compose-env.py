@@ -141,7 +141,6 @@ def split_environment(host_dir: Path, stacks_dir: Path, write: bool = True) -> d
     if not write:
         return result
 
-    main_env.write_text(render(main_entries, trailing))
     for service, values in service_entries.items():
         target = host_dir / f".env.{service}"
         existing_names = defined_names(target)
@@ -155,7 +154,10 @@ def split_environment(host_dir: Path, stacks_dir: Path, write: bool = True) -> d
             addition_lines.pop(0)
         content = "\n".join([*prefix, *addition_lines]).strip()
         separator = "\n" if existing else ""
+        if not target.exists():
+            target.touch(mode=0o600)
         target.write_text(f"{existing}\n{separator}{content}\n")
+    main_env.write_text(render(main_entries, trailing))
     return result
 
 
