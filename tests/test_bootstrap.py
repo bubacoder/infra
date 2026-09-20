@@ -14,7 +14,7 @@ from unittest.mock import Mock, patch
 
 import yaml
 
-from bootstrap import config, core, deploy, proxmox
+from scripts.bootstrap import config, core, deploy, proxmox
 
 
 class BootstrapTests(unittest.TestCase):
@@ -106,6 +106,10 @@ class BootstrapTests(unittest.TestCase):
         with self.assertRaisesRegex(core.ConfigError, "unknown fields"):
             self.load()
 
+    def test_rejects_non_string_mapping_keys(self) -> None:
+        with self.assertRaisesRegex(core.ConfigError, "field names must be strings"):
+            config.require_mapping({1: "value"}, "test", set(), set())
+
     def test_malformed_yaml_error_does_not_include_source_content(self) -> None:
         self.config_path.write_text("tls:\n  token: secret-token\n  invalid: [\n")
         self.config_path.chmod(0o600)
@@ -183,6 +187,16 @@ class BootstrapTests(unittest.TestCase):
         self.assertEqual(os.stat(host_dir / ".env.traefik").st_mode & 0o777, 0o600)
         services = yaml.safe_load((host_dir / "services.yaml").read_text())
         self.assertEqual(services["services"][0]["security"][0]["name"], "traefik")
+
+    def test_render_rejects_invalid_inventory_before_writing_vm_configuration(self) -> None:
+        inventory = self.root / "config/ansible/inventory"
+        inventory.mkdir(parents=True)
+        (inventory / "inventory.yaml").write_text("debian: invalid\n")
+
+        with self.assertRaisesRegex(core.BootstrapError, "debian inventory group"):
+            deploy.render_config(self.plan(), self.root)
+
+        self.assertFalse((self.root / "config/vm/proxmox/ubuntu-cloud.env").exists())
 
     def test_dns_checkpoint_accepts_only_expected_address(self) -> None:
         expected = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("192.0.2.10", 0))]

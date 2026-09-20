@@ -6,7 +6,7 @@ version: '3'
 
 includes:
   ansible: ./ansible/Taskfile.ansible.yaml
-  bootstrap: ./bootstrap/Taskfile.bootstrap.yaml
+  bootstrap: ./scripts/bootstrap/Taskfile.bootstrap.yaml
   docker: ./docker/Taskfile.docker.yaml
   app: ./docker/Taskfile.apps.yaml
   crowdsec: ./docker/Taskfile.crowdsec.yaml
@@ -50,6 +50,11 @@ tasks:
       SKIP: "renovate-config-validator,terraform_fmt,terraform_docs,terraform_validate,terraform_tflint,ansible-lint,kics-scan"
     cmds:
       - pre-commit run --all-files
+
+  test:
+    desc: Run Python unit tests
+    cmds:
+      - uv run --with-requirements scripts/requirements.txt python3 -m unittest discover --start-directory tests --top-level-directory .
 
   git-rebase-fixup:
     desc: Interactively rebase current branch to origin/main (stash, rebase, pop)

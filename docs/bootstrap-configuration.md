@@ -1,6 +1,6 @@
 # Bootstrap Configuration
 
-`python3 -m bootstrap` reads `config/bootstrap.yaml` and orchestrates the
+`python3 -m scripts.bootstrap` reads `config/bootstrap.yaml` and orchestrates the
 supported first-time deployment. The tracked
 `config-example/bootstrap.yaml` is the canonical starting point.
 
@@ -126,7 +126,7 @@ duplicated, incomplete, or malformed.
 | Configuration | Generated target or check | Existing consumer |
 | --- | --- | --- |
 | `repository` | Local revision validation and remote checkout | `git ls-remote`, `git clone` |
-| `proxmox.ssh_target` | `PROXMOX_HOST` | `bootstrap/Taskfile.bootstrap.yaml` |
+| `proxmox.ssh_target` | `PROXMOX_HOST` | `scripts/bootstrap/Taskfile.bootstrap.yaml` |
 | `vm.id` | `VMID` | `qm`, `vm/lib-common.sh` |
 | `vm.name` | `VMNAME` and ignored inventory hostname | Cloud-init, Ansible, Docker host config |
 | `vm.ubuntu_version` | `UBUNTU_VERSION` | `vm/proxmox/create-ubuntu-cloud-vm.sh` |
@@ -192,9 +192,9 @@ then `bootstrap:plan`, then `bootstrap:apply`.
 The same operations are directly available as:
 
 ```bash
-python3 -m bootstrap --config config/bootstrap.yaml --plan
-python3 -m bootstrap --config config/bootstrap.yaml --apply
-python3 -m bootstrap --config config/bootstrap.yaml --apply --yes
+python3 -m scripts.bootstrap --config config/bootstrap.yaml --plan
+python3 -m scripts.bootstrap --config config/bootstrap.yaml --apply
+python3 -m scripts.bootstrap --config config/bootstrap.yaml --apply --yes
 ```
 
 Rerunning apply is the recovery mechanism. The renderer and Docker apply are

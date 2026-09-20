@@ -7,8 +7,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from bootstrap.core import BootstrapError
-from bootstrap.hosts import remove_temporary_dns_block
+from scripts.bootstrap.core import BootstrapError
+from scripts.bootstrap.hosts import remove_temporary_dns_block
 
 
 class HostsCleanupTests(unittest.TestCase):
