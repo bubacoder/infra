@@ -100,7 +100,12 @@ guest-agent interface matching the planned MAC, and stops for the operator to
 map the required names. Add the reported base domain, service names, and
 `bootstrap-check` name to the administrative host's `/etc/hosts`, then rerun
 the same apply command. Bootstrap does not add mappings automatically or modify
-resolver configuration, and refuses ambiguous guest addresses.
+resolver configuration, and refuses ambiguous guest addresses. To add the
+documented temporary block explicitly, run:
+
+```bash
+task bootstrap:add-hosts NAME=docker-host ADDRESS=192.0.2.10 DOMAIN=example.com
+```
 
 For test-only manual mappings, use one exact named block so it can be removed
 later without touching unrelated entries:
@@ -118,8 +123,9 @@ explicit and runs with `sudo`; bootstrap never invokes it automatically:
 task bootstrap:cleanup-hosts NAME=docker-host
 ```
 
-The cleanup refuses to modify `/etc/hosts` when the named block is absent,
-duplicated, incomplete, or malformed.
+The add helper validates the hostname, IPv4 address, and domain and refuses an
+existing or malformed named block. Cleanup refuses to modify `/etc/hosts` when
+the named block is absent, duplicated, incomplete, or malformed.
 
 ## Implementation Map
 

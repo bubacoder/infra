@@ -45,7 +45,19 @@ tasks:
       - sh: test -n "$BOOTSTRAP_HOSTS_NAME"
         msg: "NAME is required, for example: task bootstrap:cleanup-hosts NAME=docker-host"
     cmds:
-      - sudo python3 -m scripts.bootstrap.hosts --name "$BOOTSTRAP_HOSTS_NAME"
+      - sudo python3 -m scripts.bootstrap.hosts --remove --name "$BOOTSTRAP_HOSTS_NAME"
+
+  add-hosts:
+    desc: "Advanced/manual: add one test-only temporary DNS /etc/hosts block"
+    env:
+      BOOTSTRAP_HOSTS_NAME: '{{.NAME}}'
+      BOOTSTRAP_HOSTS_ADDRESS: '{{.ADDRESS}}'
+      BOOTSTRAP_HOSTS_DOMAIN: '{{.DOMAIN}}'
+    preconditions:
+      - sh: test -n "$BOOTSTRAP_HOSTS_NAME" && test -n "$BOOTSTRAP_HOSTS_ADDRESS" && test -n "$BOOTSTRAP_HOSTS_DOMAIN"
+        msg: "NAME, ADDRESS, and DOMAIN are required, for example: task bootstrap:add-hosts NAME=docker-host ADDRESS=192.0.2.10 DOMAIN=example.com"
+    cmds:
+      - sudo python3 -m scripts.bootstrap.hosts --add --name "$BOOTSTRAP_HOSTS_NAME" --address "$BOOTSTRAP_HOSTS_ADDRESS" --domain "$BOOTSTRAP_HOSTS_DOMAIN"
 
   vm-init:
     desc: "Advanced/manual: create the local Ubuntu cloud VM configuration (normal: bootstrap:init -> plan -> apply)"

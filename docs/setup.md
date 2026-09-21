@@ -94,12 +94,18 @@ DNS checks. The first apply creates or resumes the VM, obtains exactly one
 non-loopback IPv4 address from the Proxmox guest agent interface matching the
 planned MAC, and stops at a networking checkpoint.
 
-Add that address to the administrative host's `/etc/hosts` for all of the names
-reported by bootstrap, then rerun the same apply command. For the core profile,
-these are the base domain, `home`, `traefik`, and `bootstrap-check` names. Host
-files have no wildcard support. Bootstrap does not add mappings automatically or
-edit `/etc/hosts`, and fails rather than choosing between multiple guest IPv4
-addresses.
+Add the reported address to the administrative host's `/etc/hosts` for all of
+the names reported by bootstrap, then rerun the same apply command. For the
+core profile, these are the base domain, `home`, `traefik`, and
+`bootstrap-check` names. Host files have no wildcard support. Bootstrap does
+not add mappings automatically or edit `/etc/hosts`, and fails rather than
+choosing between multiple guest IPv4 addresses.
+
+Use this explicit, privileged helper instead of editing the file manually:
+
+```bash
+task bootstrap:add-hosts NAME=docker-host ADDRESS=192.0.2.10 DOMAIN=example.com
+```
 
 For this test-only checkpoint, optionally put your manual entries in this exact
 named block, replacing `docker-host` with the VM name:
@@ -111,8 +117,9 @@ named block, replacing `docker-host` with the VM name:
 ```
 
 After testing, remove only that block explicitly with `task
-bootstrap:cleanup-hosts NAME=docker-host`. The command uses `sudo`, validates the
-lowercase hostname label, and refuses to change `/etc/hosts` if the block is
+bootstrap:cleanup-hosts NAME=docker-host`. Both commands use `sudo`; the add
+helper validates its hostname, IPv4 address, and domain and refuses an existing
+or malformed block. Cleanup refuses to change `/etc/hosts` if the block is
 missing, duplicated, incomplete, or malformed.
 
 ## Apply
