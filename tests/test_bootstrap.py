@@ -299,6 +299,31 @@ class BootstrapTests(unittest.TestCase):
         with self.assertRaisesRegex(core.BootstrapError, "incomplete"):
             proxmox.verify_existing_vm(plan, StubRunner())
 
+    def test_existing_vm_created_by_cloud_provisioner_is_resumed(self) -> None:
+        plan = core.BootstrapPlan(
+            config=self.load(),
+            repository=self.repository(),
+            vm_id=400,
+            mac="02:00:00:00:00:04",
+            vm_exists=True,
+        )
+
+        class StubRunner:
+            def run(self, _: list[str], **__: object) -> str:
+                return "\n".join(
+                    (
+                        "name: docker-host",
+                        "net0: virtio=02:00:00:00:00:04,bridge=vmbr0,firewall=0",
+                        "scsi0: local-lvm:vm-400-disk-0,ssd=1",
+                        "ide2: local-lvm:vm-400-cloudinit,media=cdrom",
+                        "agent: enabled=1,freeze-fs-on-backup=1,type=virtio",
+                        "ciuser: admin",
+                        "cicustom: user=local:snippets/ubuntu-26.04-400-cloud-user.yaml,network=local:snippets/ubuntu-26.04-400-cloud-network.yaml",
+                    )
+                )
+
+        proxmox.verify_existing_vm(plan, StubRunner())
+
     def test_existing_vm_with_wrong_bridge_is_not_resumed(self) -> None:
         plan = core.BootstrapPlan(
             config=self.load(),
@@ -315,7 +340,7 @@ class BootstrapTests(unittest.TestCase):
                         "name: docker-host",
                         "net0: virtio=02:00:00:00:00:04,bridge=vmbr1,firewall=0",
                         "scsi0: local-lvm:vm-400-disk-0,ssd=1",
-                        "ide2: local-lvm:cloudinit,media=cdrom",
+                        "ide2: local-lvm:vm-400-cloudinit,media=cdrom",
                         "agent: enabled=1,freeze-fs-on-backup=1,type=virtio",
                         "cicustom: user=local:snippets/ubuntu-26.04-400-cloud-user.yaml,network=local:snippets/ubuntu-26.04-400-cloud-network.yaml",
                     )
@@ -340,7 +365,7 @@ class BootstrapTests(unittest.TestCase):
                         "name: docker-host",
                         "net0: virtio=02:00:00:00:00:04,bridge=vmbr0,firewall=0",
                         "scsi0: local-lvm:vm-400-disk-0,ssd=1",
-                        "ide2: local-lvm:cloudinit,media=cdrom",
+                        "ide2: local-lvm:vm-400-cloudinit,media=cdrom",
                         "agent: enabled=1,freeze-fs-on-backup=1,type=virtio",
                         "ciuser: another-user",
                         "cicustom: user=local:snippets/ubuntu-26.04-400-cloud-user.yaml,network=local:snippets/ubuntu-26.04-400-cloud-network.yaml",
