@@ -8,7 +8,7 @@
     owner: root
     group: root
     mode: "0600"
-  when: admin_password is defined
+  when: admin_password | default('') | length > 0
   no_log: true
 
 - name: Create mount base directory for {{ samba_server.hostname }}
@@ -18,7 +18,7 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0777"
-  when: admin_password is defined
+  when: admin_password | default('') | length > 0
 
 - name: Create mount directories for {{ samba_server.hostname }}
   ansible.builtin.file:
@@ -28,7 +28,7 @@
     group: "{{ admin_user }}"
     mode: "0777"
   loop: "{{ samba_server.shares }}"
-  when: admin_password is defined
+  when: admin_password | default('') | length > 0
 
 - name: Mount shares from {{ samba_server.hostname }}
   ansible.posix.mount:
@@ -38,4 +38,4 @@
     opts: "credentials=/root/.smbcredentials_{{ samba_server.hostname }},{{ debian_samba_client_mount_opts_default }}"
     state: mounted
   loop: "{{ samba_server.shares }}"
-  when: admin_password is defined
+  when: admin_password | default('') | length > 0
