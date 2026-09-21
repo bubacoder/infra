@@ -23,7 +23,7 @@ Configuration files:
 - Configure which services to start (`state: up`) or stop (`state: down`): `config/docker/<hostname>/services.yaml`
 
 The configuration files are not committed to the repository. See [Configure Docker
-environment files](../docs/setup.md#configure-environment-files) for their
+environment files](../docs/manual-setup.md#configure-environment-files) for their
 loading order and back them up separately.
 
 ## Services

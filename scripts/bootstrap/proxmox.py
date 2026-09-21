@@ -142,7 +142,7 @@ def verify_existing_vm(plan: BootstrapPlan, runner: Runner) -> None:
         and network.get("virtio", "").upper() == plan.mac
         and network.get("bridge") == plan.config.vm.bridge
         and disk == f"{plan.config.vm.storage}:vm-{plan.vm_id}-disk-0"
-        and cloud_init_drive == f"{plan.config.vm.storage}:cloudinit"
+        and cloud_init_drive == f"{plan.config.vm.storage}:vm-{plan.vm_id}-cloudinit"
         and agent.get("enabled") == "1"
         and fields.get("ciuser") == plan.config.vm.username
         and cloud_init.get("user") == expected_user_data
