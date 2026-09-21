@@ -8,7 +8,7 @@ import unittest
 from pathlib import Path
 
 from scripts.bootstrap.core import BootstrapError
-from scripts.bootstrap.hosts import remove_temporary_dns_block
+from scripts.bootstrap.hosts import add_temporary_dns_block, remove_temporary_dns_block
 
 
 class HostsCleanupTests(unittest.TestCase):
@@ -46,6 +46,40 @@ class HostsCleanupTests(unittest.TestCase):
             "192.0.2.20 unrelated.example\n",
         )
         self.assertEqual(os.stat(self.hosts_path).st_mode & 0o777, 0o640)
+
+    def test_adds_one_exact_block_and_preserves_permissions(self) -> None:
+        self.write_hosts("127.0.0.1 localhost\n")
+
+        add_temporary_dns_block("docker-host", "192.0.2.10", "example.com", self.hosts_path)
+
+        self.assertEqual(
+            self.hosts_path.read_text(),
+            "127.0.0.1 localhost\n"
+            "# BEGIN infra docker-host temporary DNS\n"
+            "192.0.2.10 example.com home.example.com traefik.example.com bootstrap-check.example.com\n"
+            "# END infra docker-host temporary DNS\n",
+        )
+        self.assertEqual(os.stat(self.hosts_path).st_mode & 0o777, 0o640)
+
+    def test_add_refuses_existing_or_malformed_block_without_changing_file(self) -> None:
+        self.write_hosts("# BEGIN infra docker-host temporary DNS\n")
+        original = self.hosts_path.read_bytes()
+
+        with self.assertRaisesRegex(BootstrapError, "already exists or is malformed"):
+            add_temporary_dns_block("docker-host", "192.0.2.10", "example.com", self.hosts_path)
+
+        self.assertEqual(self.hosts_path.read_bytes(), original)
+
+    def test_add_refuses_invalid_values_without_changing_file(self) -> None:
+        self.write_hosts("127.0.0.1 localhost\n")
+        original = self.hosts_path.read_bytes()
+
+        with self.assertRaisesRegex(BootstrapError, "IPv4"):
+            add_temporary_dns_block("docker-host", "not-an-address", "example.com", self.hosts_path)
+        with self.assertRaisesRegex(BootstrapError, "lowercase DNS"):
+            add_temporary_dns_block("docker-host", "192.0.2.10", "Example.com", self.hosts_path)
+
+        self.assertEqual(self.hosts_path.read_bytes(), original)
 
     def test_refuses_absent_block_without_changing_file(self) -> None:
         self.write_hosts("127.0.0.1 localhost\n")
