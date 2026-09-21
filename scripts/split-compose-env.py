@@ -102,7 +102,11 @@ def render(entries: list[EnvironmentEntry], trailing: list[str]) -> str:
 
 
 def split_environment(host_dir: Path, stacks_dir: Path, write: bool = True) -> dict[str, object]:
-    """Split host_dir/.env into common, non-Compose, and per-service files."""
+    """Classify variables by Compose use and optionally write the split files.
+
+    Return the common, operational, and per-service variable names without
+    modifying files when ``write`` is false.
+    """
     main_env = host_dir / ".env"
     if not main_env.is_file():
         raise ValueError(f"Host environment file does not exist: {main_env}")

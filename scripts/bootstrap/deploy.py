@@ -12,6 +12,7 @@ from .proxmox import discover_vm_ipv4, establish_ssh_trust, provision_vm, verify
 
 
 def atomic_write(path: Path, content: str, mode: int = 0o600) -> None:
+    """Write content by atomic replacement and set the resulting file mode."""
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
     try:
@@ -25,6 +26,7 @@ def atomic_write(path: Path, content: str, mode: int = 0o600) -> None:
 
 
 def render_services(services: tuple[str, ...]) -> str:
+    """Serialize service paths as enabled Docker deployment configuration."""
     categories: dict[str, list[dict[str, str]]] = {}
     for service in services:
         category, name = service.rsplit("/", 1)
@@ -33,6 +35,7 @@ def render_services(services: tuple[str, ...]) -> str:
 
 
 def render_vm_config(plan: BootstrapPlan, expected_ipv4: str, root: Path = ROOT) -> None:
+    """Write the VM provisioner environment and authorized public key."""
     vm_dir = root / "config/vm/proxmox"
     atomic_write(vm_dir / "bootstrap-authorized-key.pub", plan.config.vm.ssh_public_key.read_text(), 0o600)
     config = plan.config
@@ -58,6 +61,7 @@ SSH_PUBLIC_KEY_FILE=/tmp/vm/proxmox/bootstrap-authorized-key.pub
 
 
 def render_config(plan: BootstrapPlan, root: Path = ROOT, expected_ipv4: str | None = None) -> None:
+    """Write VM, Ansible inventory, and Docker host configuration for the plan."""
     expected_ipv4 = expected_ipv4 or plan.config.network.expected_ipv4
     if expected_ipv4 is None:
         raise BootstrapError("Cannot render host configuration before the VM IPv4 address is known")
@@ -115,6 +119,7 @@ CROWDSEC_ENABLED=false
 
 
 def configure_host(plan: BootstrapPlan, runner: Runner) -> None:
+    """Apply Ansible to the VM and verify its Docker host prerequisites."""
     runner.run(["ansible/apply-homelab.sh", "--limit", plan.config.vm.name], timeout=1800)
     name = shlex.quote(plan.config.vm.name)
     runner.run(
@@ -126,6 +131,7 @@ def configure_host(plan: BootstrapPlan, runner: Runner) -> None:
 
 
 def prepare_remote_repository(plan: BootstrapPlan, runner: Runner, root: Path = ROOT) -> None:
+    """Synchronize the pinned remote checkout and generated Docker configuration."""
     checkout, repository = "$HOME/repos/infra", plan.repository
     branch, url = shlex.quote(repository.branch), shlex.quote(repository.url)
     state = runner.run(
@@ -156,10 +162,12 @@ def prepare_remote_repository(plan: BootstrapPlan, runner: Runner, root: Path = 
 
 
 def deploy_services(plan: BootstrapPlan, runner: Runner) -> None:
+    """Apply the Docker service configuration from the remote checkout."""
     runner.run(vm_ssh_command(plan, "cd $HOME/repos/infra && task docker:apply"), timeout=1800)
 
 
 def verify_services(plan: BootstrapPlan, runner: Runner, timeout: int = 180) -> None:
+    """Verify core service health, persistence, and idempotent redeployment."""
     containers, checkout = " ".join(SERVICE_CONTAINERS), "$HOME/repos/infra"
     status = f"docker inspect --format '{{{{.State.Running}}}}:{{{{.RestartCount}}}}' {containers}"
     deadline = time.monotonic() + timeout
@@ -192,6 +200,7 @@ def verify_services(plan: BootstrapPlan, runner: Runner, timeout: int = 180) -> 
 
 
 def apply(plan: BootstrapPlan, runner: Runner, *, assume_yes: bool = False, root: Path = ROOT) -> None:
+    """Run the confirmed bootstrap sequence and its acceptance checks."""
     if not assume_yes and input(
         f"Create or resume VM {plan.config.vm.name} (ID {plan.vm_id}) and deploy core services? [y/N] "
     ).strip().lower() not in {"y", "yes"}:

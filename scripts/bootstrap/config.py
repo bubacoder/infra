@@ -37,6 +37,7 @@ SHELL_TOKEN_PATTERN = re.compile(r"[A-Za-z0-9_.:/@+-]+")
 
 
 def require_mapping(value: object, field: str, allowed: set[str], required: set[str]) -> dict[str, Any]:
+    """Return a mapping whose string keys satisfy the allowed and required sets."""
     if not isinstance(value, dict):
         raise ConfigError(f"{field} must be a mapping")
     if any(not isinstance(key, str) for key in value):
@@ -50,18 +51,21 @@ def require_mapping(value: object, field: str, allowed: set[str], required: set[
 
 
 def require_string(value: object, field: str) -> str:
+    """Return a stripped, nonempty single-line string."""
     if not isinstance(value, str) or not value.strip() or "\n" in value:
         raise ConfigError(f"{field} must be a non-empty string")
     return value.strip()
 
 
 def require_positive_int(value: object, field: str) -> int:
+    """Return a positive integer, rejecting booleans."""
     if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
         raise ConfigError(f"{field} must be a positive integer")
     return value
 
 
 def require_shell_token(value: object, field: str) -> str:
+    """Return a nonempty string containing only supported shell-token characters."""
     token = require_string(value, field)
     if not SHELL_TOKEN_PATTERN.fullmatch(token):
         raise ConfigError(f"{field} contains unsupported characters")
@@ -69,6 +73,7 @@ def require_shell_token(value: object, field: str) -> str:
 
 
 def validate_file_security(path: Path, root: Path) -> Path:
+    """Resolve a private bootstrap configuration path located under root/config."""
     resolved, config_dir = path.expanduser().resolve(), (root / "config").resolve()
     if not resolved.is_relative_to(config_dir):
         raise ConfigError(f"Bootstrap configuration must be stored under {config_dir}")
@@ -82,6 +87,7 @@ def validate_file_security(path: Path, root: Path) -> Path:
 
 
 def validate_name(value: object, field: str) -> str:
+    """Return a value normalized as a lowercase hostname label."""
     name = require_string(value, field).lower()
     if not NAME_PATTERN.fullmatch(name):
         raise ConfigError(f"{field} must be a valid lowercase hostname label")
@@ -89,6 +95,7 @@ def validate_name(value: object, field: str) -> str:
 
 
 def validate_mac(value: object, field: str = "vm.mac") -> str:
+    """Return an uppercase, colon-separated unicast MAC address."""
     mac = require_string(value, field).upper()
     if not MAC_PATTERN.fullmatch(mac):
         raise ConfigError(f"{field} must be a colon-separated MAC address")
@@ -98,6 +105,7 @@ def validate_mac(value: object, field: str = "vm.mac") -> str:
 
 
 def validate_domain(value: object) -> str:
+    """Return a lowercase domain name without a trailing dot."""
     domain = require_string(value, "network.domain").lower().rstrip(".")
     if len(domain.split(".")) < 2 or any(not NAME_PATTERN.fullmatch(label) for label in domain.split(".")):
         raise ConfigError("network.domain must be a valid domain name")
@@ -105,6 +113,7 @@ def validate_domain(value: object) -> str:
 
 
 def validate_repository_url(url: str) -> None:
+    """Reject repository URLs containing credentials or unsafe argument syntax."""
     if url.startswith("-"):
         raise ConfigError("repository.url is invalid")
     parsed = urlparse(url)
@@ -113,6 +122,7 @@ def validate_repository_url(url: str) -> None:
 
 
 def validate_repository_input(value: object) -> dict[str, str] | None:
+    """Validate an optional repository override and return its normalized fields."""
     if value is None:
         return None
     repository = require_mapping(value, "repository", {"url", "branch"}, {"url", "branch"})
@@ -124,6 +134,7 @@ def validate_repository_input(value: object) -> dict[str, str] | None:
 
 
 def load_config(path: Path, root: Path = ROOT) -> BootstrapConfig:  # noqa: PLR0912
+    """Load and validate a version 1 bootstrap YAML document."""
     source = validate_file_security(path, root)
     try:
         raw = yaml.safe_load(source.read_text())
@@ -248,6 +259,7 @@ def load_config(path: Path, root: Path = ROOT) -> BootstrapConfig:  # noqa: PLR0
 
 
 def detect_repository(config: BootstrapConfig, runner: Runner, root: Path = ROOT) -> RepositoryConfig:
+    """Return remote metadata for a clean checkout at its selected branch tip."""
     if runner.run(["git", "status", "--porcelain", "--untracked-files=no"], capture=True, cwd=root):
         raise BootstrapError("Repository has uncommitted tracked changes; commit them before bootstrap")
     branch = runner.run(["git", "branch", "--show-current"], capture=True, cwd=root)
