@@ -21,6 +21,7 @@ tasks:
     cmds:
       - task test
       - bash vm/test-lib-common.sh
+      - bash vm/test-wait-for-cloud-init.sh
 
   plan:
     desc: Validate and show the bootstrap deployment plan
@@ -74,9 +75,9 @@ tasks:
     cmds:
       - echo "Provisioning VM ${VMID} on ${PROXMOX_HOST:-proxmox}"
       - rsync -a vm/ config/vm/ "${PROXMOX_HOST:-proxmox}:/tmp/vm/"
-       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/create-ubuntu-cloud-vm.sh
-       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo qm start "${VMID}"
-       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
+      - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/create-ubuntu-cloud-vm.sh
+      - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo qm start "${VMID}"
+      - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
 
   vm-wait:
     desc: "Advanced/manual: wait for an existing Ubuntu cloud VM (normal: bootstrap:init -> plan -> apply)"
@@ -90,7 +91,7 @@ tasks:
         msg: VMID must be a positive integer.
     cmds:
       - rsync -a vm/ config/vm/ "${PROXMOX_HOST:-proxmox}:/tmp/vm/"
-       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
+      - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
 
   vm-preflight:
     desc: "Advanced/manual: validate the Ubuntu cloud VM target (normal: bootstrap:init -> plan -> apply)"
@@ -137,7 +138,7 @@ tasks:
         else
           ssh "${PROXMOX_HOST:-proxmox}" "LC_ALL=C LANG=C sudo test -s \"\$HOME/.ssh/authorized_keys\""
         fi
-        echo "Preflight passed: VM ID ${VMID}, name ${VMNAME}, and MAC ${VM_MAC} are available."
+        echo "Preflight passed: VM ID ${VMID}, name ${VMNAME}, and MAC ${VM_MAC:-} are available."
 
   init-local-config:
     desc: "Advanced/manual: create local Docker configuration (normal: bootstrap:init -> plan -> apply)"

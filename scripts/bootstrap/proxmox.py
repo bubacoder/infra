@@ -126,17 +126,29 @@ def with_expected_ipv4(plan: BootstrapPlan, expected_ipv4: str) -> BootstrapPlan
 def verify_existing_vm(plan: BootstrapPlan, runner: Runner) -> None:
     if not plan.vm_exists:
         return
-    output = remote(runner, plan.config.proxmox.ssh_target, f"sudo qm config {plan.vm_id}", capture=True).upper()
-    fragments = (
-        f"NAME: {plan.config.vm.name}".upper(),
-        plan.mac,
-        "SCSI0:",
-        "IDE2:",
-        "AGENT:",
-        f"USER=LOCAL:SNIPPETS/UBUNTU-{plan.config.vm.ubuntu_version}-{plan.vm_id}-CLOUD-USER.YAML",
-        f"NETWORK=LOCAL:SNIPPETS/UBUNTU-{plan.config.vm.ubuntu_version}-{plan.vm_id}-CLOUD-NETWORK.YAML",
+    output = remote(runner, plan.config.proxmox.ssh_target, f"sudo qm config {plan.vm_id}", capture=True)
+    fields = dict(line.split(": ", 1) for line in output.splitlines() if ": " in line)
+
+    def options(value: str) -> dict[str, str]:
+        return dict(part.split("=", 1) for part in value.split(",") if "=" in part)
+
+    network, agent, cloud_init = options(fields.get("net0", "")), options(fields.get("agent", "")), options(fields.get("cicustom", ""))
+    disk = fields.get("scsi0", "").split(",", 1)[0]
+    cloud_init_drive = fields.get("ide2", "").split(",", 1)[0]
+    expected_user_data = f"local:snippets/ubuntu-{plan.config.vm.ubuntu_version}-{plan.vm_id}-cloud-user.yaml"
+    expected_network_data = f"local:snippets/ubuntu-{plan.config.vm.ubuntu_version}-{plan.vm_id}-cloud-network.yaml"
+    matches = (
+        fields.get("name") == plan.config.vm.name
+        and network.get("virtio", "").upper() == plan.mac
+        and network.get("bridge") == plan.config.vm.bridge
+        and disk == f"{plan.config.vm.storage}:vm-{plan.vm_id}-disk-0"
+        and cloud_init_drive == f"{plan.config.vm.storage}:cloudinit"
+        and agent.get("enabled") == "1"
+        and fields.get("ciuser") == plan.config.vm.username
+        and cloud_init.get("user") == expected_user_data
+        and cloud_init.get("network") == expected_network_data
     )
-    if any(fragment not in output for fragment in fragments):
+    if not matches:
         raise BootstrapError(
             f"Existing VM {plan.vm_id} is incomplete or does not match the expected name, MAC, disks, agent, and cloud-init configuration; inspect it before retrying"
         )
