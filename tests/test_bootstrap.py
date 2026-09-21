@@ -230,7 +230,7 @@ class BootstrapTests(unittest.TestCase):
                 return ""
 
         runner = StubRunner()
-        with patch.object(proxmox, "verify_dns"):
+        with patch.object(proxmox, "verify_dns"), patch.object(proxmox.shutil, "which", return_value="/usr/bin/stub"):
             proxmox.preflight(plan, runner)
         self.assertTrue(any("pvesh get /storage/local" in command[-1] for command in runner.commands))
 
@@ -297,6 +297,57 @@ class BootstrapTests(unittest.TestCase):
                 return "name: docker-host\nnet0: virtio=02:00:00:00:00:04,bridge=vmbr0\n"
 
         with self.assertRaisesRegex(core.BootstrapError, "incomplete"):
+            proxmox.verify_existing_vm(plan, StubRunner())
+
+    def test_existing_vm_with_wrong_bridge_is_not_resumed(self) -> None:
+        plan = core.BootstrapPlan(
+            config=self.load(),
+            repository=self.repository(),
+            vm_id=400,
+            mac="02:00:00:00:00:04",
+            vm_exists=True,
+        )
+
+        class StubRunner:
+            def run(self, _: list[str], **__: object) -> str:
+                return "\n".join(
+                    (
+                        "name: docker-host",
+                        "net0: virtio=02:00:00:00:00:04,bridge=vmbr1,firewall=0",
+                        "scsi0: local-lvm:vm-400-disk-0,ssd=1",
+                        "ide2: local-lvm:cloudinit,media=cdrom",
+                        "agent: enabled=1,freeze-fs-on-backup=1,type=virtio",
+                        "cicustom: user=local:snippets/ubuntu-26.04-400-cloud-user.yaml,network=local:snippets/ubuntu-26.04-400-cloud-network.yaml",
+                    )
+                )
+
+        with self.assertRaisesRegex(core.BootstrapError, "does not match"):
+            proxmox.verify_existing_vm(plan, StubRunner())
+
+    def test_existing_vm_with_wrong_cloud_init_user_is_not_resumed(self) -> None:
+        plan = core.BootstrapPlan(
+            config=self.load(),
+            repository=self.repository(),
+            vm_id=400,
+            mac="02:00:00:00:00:04",
+            vm_exists=True,
+        )
+
+        class StubRunner:
+            def run(self, _: list[str], **__: object) -> str:
+                return "\n".join(
+                    (
+                        "name: docker-host",
+                        "net0: virtio=02:00:00:00:00:04,bridge=vmbr0,firewall=0",
+                        "scsi0: local-lvm:vm-400-disk-0,ssd=1",
+                        "ide2: local-lvm:cloudinit,media=cdrom",
+                        "agent: enabled=1,freeze-fs-on-backup=1,type=virtio",
+                        "ciuser: another-user",
+                        "cicustom: user=local:snippets/ubuntu-26.04-400-cloud-user.yaml,network=local:snippets/ubuntu-26.04-400-cloud-network.yaml",
+                    )
+                )
+
+        with self.assertRaisesRegex(core.BootstrapError, "does not match"):
             proxmox.verify_existing_vm(plan, StubRunner())
 
 

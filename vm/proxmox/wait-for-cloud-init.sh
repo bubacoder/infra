@@ -31,6 +31,8 @@ while [ "${SECONDS}" -lt "${DEADLINE}" ]; do
         ipv4=$(perl -MJSON::PP -0777 -e '
             my $expected = shift;
             my $interfaces = decode_json(<STDIN>);
+            $interfaces = $interfaces->{result} if ref $interfaces eq "HASH";
+            die "Guest agent returned invalid network interfaces\n" unless ref $interfaces eq "ARRAY";
             for my $interface (@{$interfaces}) {
                 for my $address (@{$interface->{"ip-addresses"} // []}) {
                     next unless $address->{"ip-address-type"} eq "ipv4";
