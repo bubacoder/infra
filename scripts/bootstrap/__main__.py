@@ -10,6 +10,7 @@ from .core import DEFAULT_CONFIG, BootstrapError, ConfigError, Runner
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse bootstrap command-line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="Bootstrap YAML path")
     operation = parser.add_mutually_exclusive_group(required=True)
@@ -20,6 +21,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """Validate, plan, and optionally apply the configured bootstrap."""
     args = parse_args()
     if args.yes and not args.apply:
         raise ConfigError("--yes requires --apply")

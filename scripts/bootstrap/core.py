@@ -111,6 +111,11 @@ class Runner:
         cwd: Path = ROOT,
         timeout: int | None = None,
     ) -> str:
+        """Run a command and optionally return its stripped standard output.
+
+        Raises:
+            BootstrapError: If the executable is missing, times out, or exits unsuccessfully.
+        """
         executable = command[0]
         if "/" not in executable:
             resolved = shutil.which(executable)
@@ -137,19 +142,23 @@ class Runner:
 
 
 def remote(runner: Runner, target: str, command: str, *, capture: bool = False, timeout: int | None = None) -> str:
+    """Run a batch SSH command under a stable locale."""
     return runner.run(["ssh", "-o", "BatchMode=yes", target, f"LC_ALL=C LANG=C {command}"], capture=capture, timeout=timeout)
 
 
 def task(runner: Runner, name: str, timeout: int = 1200) -> None:
+    """Run a Task target with the requested timeout."""
     runner.run(["task", name], timeout=timeout)
 
 
 def private_key_for(public_key: Path) -> Path | None:
+    """Return the matching private-key path when it exists."""
     private_key = public_key.with_suffix("")
     return private_key if private_key.is_file() else None
 
 
 def vm_ssh_command(plan: BootstrapPlan, remote_command: str) -> list[str]:
+    """Build a batch SSH command for the planned VM and available private key."""
     command = ["ssh", "-o", "BatchMode=yes"]
     if private_key := private_key_for(plan.config.vm.ssh_public_key):
         command.extend(["-i", str(private_key)])

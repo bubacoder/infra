@@ -59,9 +59,9 @@ def get_generalized_value(variable_name: str) -> str | None:
 
 
 def mask_line(line: str) -> str:
-    """Mask sensitive values in a single environment file line.
+    """Mask or generalize one dotenv line except for SECRET_PATH variables.
 
-    Returns the processed line with sensitive values replaced.
+    Return the processed line with surrounding whitespace removed.
     """
     if "=" not in line:
         return line.strip()

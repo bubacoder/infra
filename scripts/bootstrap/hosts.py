@@ -15,15 +15,18 @@ DOMAIN = re.compile(r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\Z")
 
 
 def marker(name: str, boundary: str) -> bytes:
+    """Encode a boundary marker for a VM's temporary hosts block."""
     return f"# {boundary} infra {name} temporary DNS".encode()
 
 
 def validate_name(name: str) -> None:
+    """Require a lowercase hostname label."""
     if not HOSTNAME_LABEL.fullmatch(name):
         raise BootstrapError("NAME must be a lowercase hostname label")
 
 
 def validate_address(address: str) -> None:
+    """Require an IPv4 address."""
     try:
         ipaddress.IPv4Address(address)
     except ipaddress.AddressValueError as error:
@@ -31,11 +34,13 @@ def validate_address(address: str) -> None:
 
 
 def validate_domain(domain: str) -> None:
+    """Require a lowercase DNS domain."""
     if not DOMAIN.fullmatch(domain):
         raise BootstrapError("DOMAIN must be a lowercase DNS domain")
 
 
 def replace_hosts_content(hosts_path: Path, content: bytes) -> None:
+    """Atomically replace a hosts file while preserving its mode."""
     file_mode = stat.S_IMODE(hosts_path.stat().st_mode)
     with tempfile.NamedTemporaryFile(dir=hosts_path.parent, delete=False) as temporary:
         temporary.write(content)
@@ -94,6 +99,7 @@ def remove_temporary_dns_block(name: str, hosts_path: Path = Path("/etc/hosts"))
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse temporary DNS block command-line arguments."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--name", required=True, help="Lowercase VM hostname label")
     action = parser.add_mutually_exclusive_group(required=True)
@@ -106,6 +112,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """Add or remove the requested temporary DNS block as root."""
     args = parse_args()
     if os.geteuid() != 0:
         raise BootstrapError("Temporary DNS updates must run as root")
