@@ -117,7 +117,7 @@ cp -a config-example/ansible config/
   as the managed administrator by default. Override `admin_user` per host only
   when the connection and managed accounts must differ.
 - Set `debian_base_ssh_key_file` in
-  `ansible/inventory/group_vars/debian/vars.yaml` and place the matching public
+  `config/ansible/inventory/group_vars/debian/vars.yaml` and place the matching public
   key at that path, for example `~/.ssh/id_ed25519.pub`.
 - For a separate Docker host, add its current DHCP address as `ansible_host`
   in the ignored inventory for the initial Ansible run. It is safe to use this

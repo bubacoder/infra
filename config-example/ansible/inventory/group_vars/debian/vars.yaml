@@ -1,0 +1,4 @@
+---
+
+# Deployment-specific public key used for administrator access.
+debian_base_ssh_key_file: "~/.ssh/id_ed25519.pub"
