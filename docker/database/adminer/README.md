@@ -1,4 +1,18 @@
-# Adminer Authentik ForwardAuth
+Adminer is a full-featured database management tool written in PHP that consists
+of a single file ready to deploy to the target server. It supports MySQL, MariaDB,
+PostgreSQL, CockroachDB, SQLite, MS SQL, Oracle, and through plugins: Elasticsearch,
+SimpleDB, MongoDB, Firebird, ClickHouse, and IMAP systems.
+
+Links:
+- Home: [Adminer - Database management in a single PHP file](https://www.adminer.org)
+- Source: [GitHub - vrana/adminer: Database management in a single PHP file](https://github.com/vrana/adminer)
+- Docs: [adminer - Official Image | Docker Hub](https://hub.docker.com/_/adminer/)
+
+TODO: Enable custom plugins via ADMINER_PLUGINS environment variable
+TODO: Consider mounting custom CSS themes for UI customization
+TODO: Create dedicated database network for secure database connections
+
+# Authentik ForwardAuth
 
 Authentik ForwardAuth limits the Adminer browser UI to the `developers` group.
 It is only an outer access gate: database-native credentials remain required.

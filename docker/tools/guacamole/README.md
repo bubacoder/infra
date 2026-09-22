@@ -1,4 +1,13 @@
-# Guacamole Authentik OIDC
+Apache Guacamole is a clientless remote desktop gateway. It supports standard protocols like VNC and RDP. We call it clientless because no plugins or client software are required.
+Thanks to HTML5, once Guacamole is installed on a server, all you need to access your desktops is a web browser.
+
+The default username is `guacadmin` with password `guacadmin`.
+
+Links:
+- Home: [Apache Guacamole®](https://guacamole.apache.org/)
+- Image: [flcontainers/guacamole - Docker Image](https://hub.docker.com/r/flcontainers/guacamole)
+
+# Authentik OIDC
 
 Guacamole uses native OIDC for Authentik's `admins` group and its embedded
 PostgreSQL database for local recovery and connection permissions. Do not remove

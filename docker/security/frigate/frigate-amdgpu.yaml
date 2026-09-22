@@ -1,9 +1,3 @@
-# GPU override for Frigate — AMD VAAPI video decode for camera streams.
-# Enable by setting GPU_COMPOSE_SUFFIX=amdgpu in config/docker/<hostname>/.env
-# Also set hwaccel in config/config.yml:
-#   ffmpeg:
-#     hwaccel_args: preset-vaapi
----
 name: frigate
 services:
   frigate:

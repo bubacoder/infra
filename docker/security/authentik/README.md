@@ -24,3 +24,16 @@ directory. Do not commit the generated files.
 
 For adding or migrating applications to Authentik, read
 [`app-onboarding.md`](app-onboarding.md).
+
+Authentik is an identity provider and SSO platform supporting OIDC, OAuth2,
+SAML, LDAP, social login sources, and proxy authentication outposts.
+
+The embedded proxy outpost is used, so the worker does not need access to the
+Docker socket. Do not change the sso hostname after configuring OIDC clients;
+it forms part of the permanent issuer URL.
+
+Links:
+- Home: [Welcome | authentik](https://goauthentik.io/)
+- Source: [GitHub - goauthentik/authentik: The authentication glue you need.](https://github.com/goauthentik/authentik)
+- Docs: [Welcome to authentik | authentik](https://docs.goauthentik.io/)
+- Docker Compose: [Docker Compose installation | authentik](https://docs.goauthentik.io/install-config/install/docker-compose/)

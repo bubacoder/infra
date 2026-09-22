@@ -6,7 +6,7 @@
 
 > NickelMenu adds custom menu items to various menus in Kobo's eReader software. It works on all recent firmware versions, and persists between firmware upgrades. There are many built-in actions for controlling Nickel and for running external software.
 
-Follow the instructions on https://pgaskin.net/NickelMenu/:
+Follow the instructions on [NickelMenu](https://pgaskin.net/NickelMenu/):
 
 1. Connect your Kobo eReader to your computer over USB.
 2. Download [KoboRoot.tgz](https://github.com/pgaskin/NickelMenu/releases) into `KOBOeReader/.kobo`. You may need to show hidden files to see the folder.

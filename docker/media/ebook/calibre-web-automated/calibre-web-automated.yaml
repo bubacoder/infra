@@ -1,21 +1,3 @@
-# Calibre-Web Automated (formerly Calibre-Web Automator) combines the modern lightweight Calibre-Web UI with the robust feature set of Calibre, plus a slew of extra automations.
-# It provides automatic ingest, conversion, metadata fetch, cover/metadata enforcement, EPUB fixing, duplicate detection, KOReader syncing (KOSync), enhanced OAuth 2.0/OIDC authentication and more.
-#
-# Default login: `admin` / `admin123`
-#
-# Links:
-# - Home: https://github.com/crocodilestick/Calibre-Web-Automated
-# - Source: https://github.com/crocodilestick/Calibre-Web-Automated
-# - Docs: https://github.com/crocodilestick/Calibre-Web-Automated/wiki
-# - Compose example: https://github.com/crocodilestick/Calibre-Web-Automated/blob/main/docker-compose.yml
-#
-# TODO: Change the default admin credentials after first login and enable Uploads under
-#   Settings -> Basic Configuration -> Feature Configuration.
-# TODO: Configure CWA-specific behaviour in the CWA Settings panel (target format, ignored / auto-converted formats).
-# TODO: Consider migrating/replacing the existing calibre-web service to avoid two services managing the same library.
-# TODO: Optional: set HARDCOVER_TOKEN for the Hardcover metadata provider (https://docs.hardcover.app/api/getting-started/).
-# TODO: Optional: bind a Calibre plugins folder to /config/.config/calibre/plugins and copy customize.py.json into it.
----
 name: calibre-web-automated
 services:
   calibre-web-automated:

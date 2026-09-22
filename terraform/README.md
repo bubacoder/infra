@@ -4,8 +4,8 @@
 
 > Infrastructure automation to provision and manage resources in any cloud or data center.
 
-Home: https://www.terraform.io/  
-Releases: https://github.com/hashicorp/terraform/releases  
+Home: [Terraform | HashiCorp Developer](https://www.terraform.io/)  
+Releases: [Releases · hashicorp/terraform](https://github.com/hashicorp/terraform/releases)  
 Final version with *Mozilla Public License*: 1.5.7  
 The newer versions are released under *Business Source License*.  
 
@@ -13,8 +13,8 @@ The newer versions are released under *Business Source License*.
 
 > The open source infrastructure as code tool
 
-Home: https://opentofu.org/  
-Releases: https://github.com/opentofu/opentofu/releases  
+Home: [OpenTofu](https://opentofu.org/)  
+Releases: [Releases · opentofu/opentofu](https://github.com/opentofu/opentofu/releases)  
 
 ## Basic Terraform commands - Cheat sheet
 
@@ -33,3 +33,4 @@ Releases: https://github.com/opentofu/opentofu/releases
 ## Deployments
 
 - `terraform/azure-vm` – [Full module docs](./azure-vm/README.md): A simple VM on Azure for testing infra deployment.
+- `terraform/aws-vm` – [Full module docs](./aws-vm/README.md): An EC2 VM with persistent EBS storage and Secrets Manager.

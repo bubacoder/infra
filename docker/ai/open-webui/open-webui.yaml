@@ -1,12 +1,3 @@
-# Open WebUI is an extensible, feature-rich, and user-friendly self-hosted WebUI for various LLM runners, supported LLM runners include Ollama and OpenAI-compatible APIs.
-#
-# Links:
-# - Home: https://openwebui.com/
-# - Source: https://github.com/open-webui/open-webui/
-# - https://docs.openwebui.com/getting-started/
-#
-# Compose file based on: https://github.com/open-webui/open-webui/blob/main/docker-compose.yaml
----
 name: open-webui
 services:
   open-webui:

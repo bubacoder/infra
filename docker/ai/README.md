@@ -57,7 +57,7 @@ Example - with Docker:
 
 ### Ollama API
 
-https://github.com/ollama/ollama/blob/main/docs/api.md
+[ollama/docs/api.md at main · ollama/ollama](https://github.com/ollama/ollama/blob/main/docs/api.md)
 
 Examples:
 
