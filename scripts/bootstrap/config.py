@@ -259,7 +259,11 @@ def load_config(path: Path, root: Path = ROOT) -> BootstrapConfig:  # noqa: PLR0
 
 
 def detect_repository(config: BootstrapConfig, runner: Runner, root: Path = ROOT) -> RepositoryConfig:
-    """Return remote metadata for a clean checkout at its selected branch tip."""
+    """Return selected remote metadata for the current checkout.
+
+    The checkout must be on a branch with no tracked changes, and its revision
+    must match the selected remote branch tip.
+    """
     if runner.run(["git", "status", "--porcelain", "--untracked-files=no"], capture=True, cwd=root):
         raise BootstrapError("Repository has uncommitted tracked changes; commit them before bootstrap")
     branch = runner.run(["git", "branch", "--show-current"], capture=True, cwd=root)

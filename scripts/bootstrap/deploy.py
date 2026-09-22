@@ -167,7 +167,7 @@ def deploy_services(plan: BootstrapPlan, runner: Runner) -> None:
 
 
 def verify_services(plan: BootstrapPlan, runner: Runner, timeout: int = 180) -> None:
-    """Verify core service health, persistence, and idempotent redeployment."""
+    """Verify core containers, HTTPS routes, persistence, and idempotent redeployment."""
     containers, checkout = " ".join(SERVICE_CONTAINERS), "$HOME/repos/infra"
     status = f"docker inspect --format '{{{{.State.Running}}}}:{{{{.RestartCount}}}}' {containers}"
     deadline = time.monotonic() + timeout
