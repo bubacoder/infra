@@ -15,6 +15,7 @@ class LinkProcessor:
         markdown_locations: list[tuple[str, str, int]],
         repository_path: Path,
         output_content_path: Path,
+        repository_url: str,
     ) -> None:
         """Initialize the LinkProcessor.
 
@@ -23,11 +24,13 @@ class LinkProcessor:
             markdown_locations: List of (source, target, weight) tuples for markdown file locations
             repository_path: Path to the repository root
             output_content_path: Path to the output directory for generated content
+            repository_url: GitHub repository URL for source files not included in the site
         """
         self.logger = logger
         self.markdown_locations = markdown_locations
         self.repository_path = repository_path
         self.output_content_path = output_content_path
+        self.repository_url = repository_url.rstrip("/")
         self._link_pattern = re.compile(r"\[([^\]]+)\]\(([^\)]+)\)")
 
     def extract_relative_links(self, content: str) -> list[tuple[str, str]]:
@@ -97,6 +100,11 @@ class LinkProcessor:
 
         if new_relative_link:
             return new_relative_link + anchor
+
+        if original_target.exists() and original_target.is_relative_to(self.repository_path):
+            resource_type = "tree" if original_target.is_dir() else "blob"
+            source_relative = original_target.relative_to(self.repository_path).as_posix()
+            return f"{self.repository_url}/{resource_type}/main/{source_relative}{anchor}"
 
         self.logger.warning(f"Could not update link: {link_url} - target file not found in markdown locations")
         return link_url

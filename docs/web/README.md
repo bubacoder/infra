@@ -40,9 +40,9 @@ Use `docker pull hugomods/hugo:exts` to update Hugo.
 
 ### Theme
 
-- https://mcshelby.github.io/hugo-theme-relearn/
+- [Hugo Relearn Theme](https://mcshelby.github.io/hugo-theme-relearn/)
 - https://mcshelby.github.io/hugo-theme-relearn/basics/installation/index.html
-- https://github.com/McShelby/hugo-theme-relearn/blob/main/exampleSite/
+- [hugo-theme-relearn/exampleSite at main · McShelby/hugo-theme-relearn](https://github.com/McShelby/hugo-theme-relearn/blob/main/exampleSite/)
 
 Clone repo:
 `git clone https://github.com/McShelby/hugo-theme-relearn.git --depth 1`

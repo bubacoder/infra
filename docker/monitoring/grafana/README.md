@@ -1,4 +1,21 @@
-# Grafana Authentik OIDC
+Grafana open source software enables you to query, visualize, alert on, and explore your metrics, logs, and traces wherever they are stored.
+Grafana OSS provides you with tools to turn your time-series database (TSDB) data into insightful graphs and visualizations.
+The Grafana OSS plugin framework also enables you to connect other data sources like NoSQL/SQL databases, ticketing tools like Jira or ServiceNow, and CI/CD tooling like GitLab.
+([source](https://grafana.com/docs/grafana/latest/introduction/))
+
+Default admin user credentials: `admin` / `admin`
+
+Links:
+- Home: [Grafana Dashboards & Visualization | Grafana Cloud | Grafana Labs](https://grafana.com/grafana/)
+- Image: [grafana/grafana-oss - Docker Image](https://hub.docker.com/r/grafana/grafana-oss)
+- Getting Started: [Get started with Grafana Open Source | Grafana documentation](https://grafana.com/docs/grafana/latest/fundamentals/getting-started/)
+- New in v12: [What's new in Grafana v12.0 | Grafana documentation](https://grafana.com/docs/grafana/latest/whatsnew/whats-new-in-v12-0/)
+
+Recommended dashboards to import:
+- [Node Exporter Full | Grafana Labs](https://grafana.com/grafana/dashboards/1860-node-exporter-full/)
+- [Cadvisor exporter | Grafana Labs](https://grafana.com/grafana/dashboards/14282-cadvisor-exporter/)
+
+# Authentik OIDC
 
 Grafana uses native OIDC for Authentik's `monitoring` group. Keep a local
 Grafana administrator enabled for recovery. API tokens and service accounts are

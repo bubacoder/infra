@@ -2,16 +2,16 @@
 
 > Proxmox Virtual Environment is a complete, open-source server management platform for enterprise virtualization. It tightly integrates the KVM hypervisor and Linux Containers (LXC), software-defined storage and networking functionality, on a single platform. With the integrated web-based user interface you can manage VMs and containers, high availability for clusters, or the integrated disaster recovery tools with ease.
 
-See more: https://www.proxmox.com/en/proxmox-virtual-environment/overview
+See more: [Proxmox Virtual Environment - Open-Source Server Virtualization Platform](https://www.proxmox.com/en/proxmox-virtual-environment/overview)
 
-Download: https://www.proxmox.com/en/downloads/proxmox-virtual-environment
+Download: [Downloads - Proxmox Virtual Environment](https://www.proxmox.com/en/downloads/proxmox-virtual-environment)
 
 - [Mobile Application](https://play.google.com/store/apps/details?id=com.proxmox.app.pve_flutter_frontend)
 - [Scripts for Streamlining Your Homelab with Proxmox VE](https://tteck.github.io/Proxmox/)
 - [Collection of tools for Proxmox](https://github.com/DerDanilo/proxmox-stuff)
 
 Post-install configuration:
-- https://pve.proxmox.com/wiki/Package_Repositories#sysadmin_no_subscription_repo
+- [Package Repositories - Proxmox VE](https://pve.proxmox.com/wiki/Package_Repositories#sysadmin_no_subscription_repo)
 - [Powertop](https://wiki.archlinux.org/title/Powertop) - Optimize power consumption and power management: `powertop --auto-tune`.
 
 ## Upgrade to Proxmox v9
@@ -35,7 +35,7 @@ See example: `create-ubuntu-server-vm.sh`
 ### Kernel Samepage Merging (KSM)
 
 KSM is a memory-saving de-duplication feature.
-See more: https://docs.kernel.org/admin-guide/mm/ksm.html
+See more: [Kernel Samepage Merging — The Linux Kernel documentation](https://docs.kernel.org/admin-guide/mm/ksm.html)
 
 Check KSM statistics: `watch cat /sys/kernel/mm/ksm/pages_sharing`  
 Note: a page is 4096 bytes.
@@ -81,7 +81,7 @@ Connect to terminal: `pct enter <CTID>`
 ### Create a container
 
 proxmox_lxc_pct_provisioner.sh
-https://gist.github.com/tinoji/7e066d61a84d98374b08d2414d9524f2
+[Create and provision Proxmox LXC by pct command](https://gist.github.com/tinoji/7e066d61a84d98374b08d2414d9524f2)
 `pct create <id> /var/lib/vz/template/cache/centos-7-default_20170504_amd64.tar.xz ...`
 
 CLI examples (TODO cleanup):

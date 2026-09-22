@@ -1,4 +1,13 @@
-# Open WebUI Authentik OIDC
+Open WebUI is an extensible, feature-rich, and user-friendly self-hosted WebUI for various LLM runners, supported LLM runners include Ollama and OpenAI-compatible APIs.
+
+Links:
+- Home: [Open WebUI: Self-Hosted AI Platform](https://openwebui.com/)
+- Source: [GitHub - open-webui/open-webui: User-friendly AI Interface (Supports Ollama, OpenAI API, ...)](https://github.com/open-webui/open-webui/)
+- [Getting Started / Open WebUI](https://docs.openwebui.com/getting-started/)
+
+Compose file based on: [open-webui/docker-compose.yaml at main · open-webui/open-webui](https://github.com/open-webui/open-webui/blob/main/docker-compose.yaml)
+
+# Authentik OIDC
 
 Open WebUI uses native OIDC for Authentik's `users` group. It redirects to
 Authentik by default while retaining password authentication for recovery; use

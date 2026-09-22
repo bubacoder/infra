@@ -36,8 +36,8 @@ class DockerComposeScanner:
                 - file_path: Path to compose file relative to docker directory
                 - category: Category path (e.g., "security", "media/video")
                 - metadata: dict with name, description, icon, icon_url
-                - head_lines: list of comment lines before "---"
-                - yaml_lines: list of YAML content lines after "---"
+                - yaml_lines: list of Compose YAML lines
+                - readme_path: Service README path relative to docker directory, if present
                 - has_readme: bool indicating if category contains README.md
         """
         source_dir = self.repository_path / docker_path
@@ -69,8 +69,10 @@ class DockerComposeScanner:
                         "file_path": str(compose_file.relative_to(source_dir)),
                         "category": category,
                         "metadata": data["metadata"],
-                        "head_lines": data["head_lines"],
                         "yaml_lines": data["yaml_lines"],
+                        "readme_path": (
+                            str((compose_file.parent / "README.md").relative_to(source_dir)) if (compose_file.parent / "README.md").exists() else None
+                        ),
                         "has_readme": has_readme,
                     }
                 )

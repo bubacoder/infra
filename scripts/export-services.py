@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Script to export all Docker Compose services metadata and documentation to YAML."""
+"""Script to export all Docker Compose services metadata and README paths to YAML."""
 
 import argparse
 import logging
@@ -65,10 +65,8 @@ def build_service_data(service: dict[str, Any]) -> dict[str, Any]:
         service: Service data from scanner
 
     Returns:
-        Dictionary with service name, description, file path, category, and optional documentation
+        Dictionary with service name, description, file path, category, and optional README path
     """
-    documentation = "\n".join(line.rstrip("\n") for line in service["head_lines"]).strip()
-
     service_data = {
         "name": service["metadata"]["name"],
         "description": service["metadata"]["description"],
@@ -76,8 +74,8 @@ def build_service_data(service: dict[str, Any]) -> dict[str, Any]:
         "category": service["category"],
     }
 
-    if documentation:
-        service_data["documentation"] = documentation
+    if service["readme_path"]:
+        service_data["readme_path"] = service["readme_path"]
 
     return service_data
 
@@ -136,7 +134,7 @@ def export_services(
 
 def main() -> None:
     """Parse arguments and execute the export."""
-    parser = argparse.ArgumentParser(description="Export Docker Compose services metadata and documentation to YAML.")
+    parser = argparse.ArgumentParser(description="Export Docker Compose services metadata and README paths to YAML.")
     parser.add_argument(
         "--verbose",
         action="store_true",

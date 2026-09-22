@@ -1,6 +1,6 @@
 # Ansible
 
-https://www.ansible.com/
+[Ansible Collaborative](https://www.ansible.com/)
 
 > Automation for everyone
 > No matter your role, or what your automation goals are, Ansible can help you demonstrate value, connect teams, and deliver efficiencies for your organization.
@@ -52,6 +52,4 @@ See `man ansible-playbook` for more.
 
 ## GUI
 
-https://github.com/ansible/awx
-
-> ansible/awx: AWX provides a web-based user interface, REST API, and task engine built on top of Ansible. It is one of the upstream projects for Red Hat Ansible Automation Platform.
+[GitHub - ansible/awx: AWX provides a web-based user interface, REST API, and task engine built on top of Ansible. It is one of the upstream projects for Red Hat Ansible Automation Platform.](https://github.com/ansible/awx)

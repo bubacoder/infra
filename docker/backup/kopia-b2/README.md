@@ -1,4 +1,14 @@
-# Kopia B2 Authentik ForwardAuth
+Encrypted, Compressed, and Deduplicated Backups Using the Cloud Storage You Pick
+Cross-platform backup tool for Windows, macOS & Linux with fast, incremental backups, client-side end-to-end encryption, compression and data deduplication. CLI and GUI included.
+
+This instance's repository is configured for **Backbaze B2** storage
+
+Links:
+- Home: [Kopia](https://kopia.io/)
+- Source: [GitHub - kopia/kopia: Cross-platform backup tool for Windows, macOS & Linux with fast, incremental backups, client-side end-to-end encryption, compression and data deduplication. CLI and GUI included.](https://github.com/kopia/kopia)
+- Compose: [kopia/tools/docker at master · kopia/kopia](https://github.com/kopia/kopia/tree/master/tools/docker)
+
+# Authentik ForwardAuth
 
 Authentik ForwardAuth is Kopia B2's browser access gate for the `admins` group.
 Kopia's repository password remains separate from browser authentication. The

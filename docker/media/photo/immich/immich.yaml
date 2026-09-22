@@ -1,13 +1,3 @@
-# Immich is a high-performance self-hosted solution for backing up, organizing, and viewing photos and videos, with mobile clients, multi-user support, and local machine-learning search and recognition.
-#
-# Links:
-# - Home: https://immich.app
-# - Source: https://github.com/immich-app/immich
-# - Docs: https://immich.app/docs/install/docker-compose
-# - Compose: https://github.com/immich-app/immich/releases/latest/download/docker-compose.yml
-#
-# TODO: Configure and regularly test 3-2-1 backups for the library and PostgreSQL volume; review metrics and SSO requirements.
----
 name: immich
 services:
   immich-server:

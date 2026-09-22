@@ -1,4 +1,24 @@
-# Gitea Authentik OIDC
+
+Gitea is a lightweight, open-source self-hosted Git service.
+It's a community-managed fork of Gogs with enhanced features focused on Git management and CI/CD integration.
+
+Installation:
+The following commands will output a new SECRET_KEY and INTERNAL_TOKEN to stdout, which you can then place in your environment variables.
+```
+docker run -it --rm docker.gitea.com/gitea:1 gitea generate secret SECRET_KEY
+docker run -it --rm docker.gitea.com/gitea:1 gitea generate secret INTERNAL_TOKEN
+```
+Do not lose/change your SECRET_KEY after the installation, otherwise the encrypted data can not be decrypted anymore.
+
+Links:
+- Home: [Gitea Official Website](https://about.gitea.com/)
+- Source: [GitHub - go-gitea/gitea: Git with a cup of tea! Painless self-hosted all-in-one software development service, including Git hosting, code review, team collaboration, package registry and CI/CD](https://github.com/go-gitea/gitea)
+- Docs: [Installation with Docker | Gitea Documentation](https://docs.gitea.com/installation/install-with-docker)
+
+TODO: Generate SECRET_KEY and INTERNAL_TOKEN for enhanced security
+TODO: Consider switching to PostgreSQL for improved performance with large repositories
+
+# Authentik OIDC
 
 Gitea uses native OIDC for Authentik's `developers` group. Browser SSO does not
 replace Git-over-SSH keys, Git HTTPS personal access tokens, or runner tokens.

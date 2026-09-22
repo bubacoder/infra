@@ -11,4 +11,4 @@ Helper utility for the software above:
 - Flaresolverr -- Bypass Cloudflare protection (used by Prowlarr)
 - Jellyseerr -- Managing requests for your media library
 
-Detailed documentation: https://wiki.servarr.com/
+Detailed documentation: [Servarr | Servarr Wiki](https://wiki.servarr.com/)

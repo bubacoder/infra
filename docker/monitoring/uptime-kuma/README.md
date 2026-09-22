@@ -1,4 +1,14 @@
-# Uptime Kuma Authentik ForwardAuth
+Uptime Kuma is an easy-to-use self-hosted monitoring tool.
+
+TODO Possible improvement:  
+AutoKuma is a utility that automates the creation of Uptime Kuma monitors based on Docker container labels - [GitHub - BigBoot/AutoKuma: AutoKuma is a utility that automates the creation of Uptime Kuma monitors based on Docker container labels. With AutoKuma, you can eliminate the need for manual monitor creation in the Uptime Kuma UI.](https://github.com/BigBoot/AutoKuma)
+
+Links:
+- Home: [Uptime Kuma](https://uptime.kuma.pet/)
+- Source: [GitHub - louislam/uptime-kuma: A fancy self-hosted monitoring tool](https://github.com/louislam/uptime-kuma)
+- Image: [louislam/uptime-kuma - Docker Image](https://hub.docker.com/r/louislam/uptime-kuma)
+
+# Authentik ForwardAuth
 
 Uptime Kuma has no native OIDC configuration. Traefik protects its browser UI
 with Authentik ForwardAuth for the `monitoring` group. Do not publish its UI

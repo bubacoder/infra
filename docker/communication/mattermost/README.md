@@ -1,4 +1,21 @@
-# Mattermost Deployment Guide
+Mattermost is a collaboration platform for mission-critical work that accelerates
+workflow by integrating people, processes, tools and AI infrastructure on a resilient
+and adaptable platform. The official Docker deployment solution provides enterprise-ready
+team messaging with extensive customization options.
+
+Links:
+- Home: [Mattermost | Collaboration Platform for Mission Critical Work](https://mattermost.com)
+- Source: [GitHub - mattermost/docker: Install Mattermost server via Docker](https://github.com/mattermost/docker)
+- Docs: [Deploy Mattermost using Containers | Mattermost Documentation](https://docs.mattermost.com/deployment-guide/server/deploy-containers.html)
+
+TODO: Configure S3-compatible storage (MinIO) for file uploads
+TODO: Set up GitLab SSO integration (requires mounting PKI chain)
+TODO: Configure SMTP settings for email notifications
+TODO: Set up Prometheus metrics endpoint for monitoring
+TODO: Configure automated backup strategy for Mattermost data
+TODO: Review and configure Mattermost Calls settings for audio/video
+
+# Deployment Guide
 
 Mattermost is a secure collaboration platform for mission-critical work that provides enterprise-ready team messaging with extensive customization options.
 
@@ -200,7 +217,7 @@ scripts/labctl.py service recreate communication/mattermost
 
 ## Resources
 
-- Official Documentation: https://docs.mattermost.com/
-- Docker Deployment Guide: https://docs.mattermost.com/deployment-guide/server/deploy-containers.html
-- GitHub Repository: https://github.com/mattermost/docker
-- Community Forum: https://forum.mattermost.com/
+- Official Documentation: [Mattermost Documentation](https://docs.mattermost.com/)
+- Docker Deployment Guide: [Deploy Mattermost using Containers | Mattermost Documentation](https://docs.mattermost.com/deployment-guide/server/deploy-containers.html)
+- GitHub Repository: [GitHub - mattermost/docker: Install Mattermost server via Docker](https://github.com/mattermost/docker)
+- Community Forum: [Mattermost Discussion Forums - Discussion forums for Mattermost and our open source community](https://forum.mattermost.com/)

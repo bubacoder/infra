@@ -1,4 +1,17 @@
-# Obsidian Authentik ForwardAuth
+
+A powerful knowledge base that works on top of a local folder of plain text Markdown files.
+Obsidian is a free and flexible app for your private thoughts that stores notes locally
+with extensive plugin support and open file formats.
+
+Links:
+- Home: [Obsidian - Sharpen your thinking](https://obsidian.md)
+- Source: [Obsidian.md](https://github.com/obsidianmd)
+- Docs: [obsidian - LinuxServer.io](https://docs.linuxserver.io/images/docker-obsidian/)
+
+TODO: Set up regular backups of the /config/vaults volume containing vault data
+TODO: Consider GPU acceleration configuration if needed for advanced use cases
+
+# Authentik ForwardAuth
 
 Authentik ForwardAuth limits access to the browser-hosted Obsidian desktop to
 the `admins` group. All admitted users share the same desktop, vault, terminal,
