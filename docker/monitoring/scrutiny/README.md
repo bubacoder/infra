@@ -18,3 +18,11 @@ web UI directly.
 
 Confirm authorized UI access, non-member denial, proxy-session group revocation,
 logout, and continued internal health checks and collector operation.
+
+Hard Drive S.M.A.R.T Monitoring, Historical Trends & Real World Failure Thresholds
+
+Links:
+- Source: https://github.com/AnalogJ/scrutiny
+
+In addition to the Omnibus image (available under the latest tag) you can deploy in Hub/Spoke mode.
+Details: https://github.com/AnalogJ/scrutiny/blob/master/docker/example.hubspoke.docker-compose.yml

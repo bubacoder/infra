@@ -21,3 +21,13 @@ configuration routes `/outpost.goauthentik.io/` for the application hostname.
 Confirm a `monitoring` member reaches the UI and live updates work. Confirm a
 non-member is denied, group removal is applied after the proxy session refresh,
 logout returns to the intended login flow, and no direct UI path exists.
+
+Uptime Kuma is an easy-to-use self-hosted monitoring tool.
+
+TODO Possible improvement:  
+AutoKuma is a utility that automates the creation of Uptime Kuma monitors based on Docker container labels - https://github.com/BigBoot/AutoKuma
+
+Links:
+- Home: https://uptime.kuma.pet/
+- Source: https://github.com/louislam/uptime-kuma
+- Image: https://hub.docker.com/r/louislam/uptime-kuma

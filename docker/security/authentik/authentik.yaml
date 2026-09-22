@@ -1,16 +1,3 @@
-# Authentik is an identity provider and SSO platform supporting OIDC, OAuth2,
-# SAML, LDAP, social login sources, and proxy authentication outposts.
-#
-# The embedded proxy outpost is used, so the worker does not need access to the
-# Docker socket. Do not change the sso hostname after configuring OIDC clients;
-# it forms part of the permanent issuer URL.
-#
-# Links:
-# - Home: https://goauthentik.io/
-# - Source: https://github.com/goauthentik/authentik
-# - Docs: https://docs.goauthentik.io/
-# - Docker Compose: https://docs.goauthentik.io/install-config/install/docker-compose/
----
 name: authentik
 services:
   postgresql:

@@ -18,3 +18,11 @@ need a deliberate alternative, not a broadly unauthenticated route.
 
 Confirm a `media` member can use the UI, a non-member is denied, downloads work,
 group removal applies after session refresh, and no direct UI route exists.
+
+Web GUI for youtube-dl (using the yt-dlp fork) with playlist support. Allows you to download videos from YouTube and dozens of other sites
+
+Links:
+- Source: https://github.com/alexta69/metube
+- Supported sites: https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md
+- Browser plugin for Chrome/Chromium based browsers: https://chromewebstore.google.com/detail/metube-downloader/fbmkmdnlhacefjljljlbhkodfmfkijdh
+- Browser plugin for Firefox: https://addons.mozilla.org/en-US/firefox/addon/metube-downloader/

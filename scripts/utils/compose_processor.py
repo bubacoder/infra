@@ -196,6 +196,10 @@ class ComposeFileProcessor:
         Returns:
             Tuple of (head_lines, yaml_lines)
         """
+        separator_index = next((index for index, line in enumerate(lines) if line.strip() == "---"), None)
+        if separator_index is None:
+            return [], lines
+
         head_lines = []
         yaml_lines = []
         yaml_started = False

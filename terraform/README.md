@@ -33,3 +33,4 @@ Releases: https://github.com/opentofu/opentofu/releases
 ## Deployments
 
 - `terraform/azure-vm` – [Full module docs](./azure-vm/README.md): A simple VM on Azure for testing infra deployment.
+- `terraform/aws-vm` – [Full module docs](./aws-vm/README.md): An EC2 VM with persistent EBS storage and Secrets Manager.

@@ -26,3 +26,12 @@ requires Authentik to provide verified, unique email addresses.
 
 Confirm an authorized user can sign in, a user outside `users` is denied, an
 existing account links as intended, and local-password recovery still works.
+
+Open WebUI is an extensible, feature-rich, and user-friendly self-hosted WebUI for various LLM runners, supported LLM runners include Ollama and OpenAI-compatible APIs.
+
+Links:
+- Home: https://openwebui.com/
+- Source: https://github.com/open-webui/open-webui/
+- https://docs.openwebui.com/getting-started/
+
+Compose file based on: https://github.com/open-webui/open-webui/blob/main/docker-compose.yaml

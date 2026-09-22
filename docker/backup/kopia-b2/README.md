@@ -23,3 +23,13 @@ network access is possible.
 Confirm an `admins` member can use the UI, a non-member is denied, group removal
 applies after session refresh, recovery works, and no direct container or host
 path reaches the UI.
+
+Encrypted, Compressed, and Deduplicated Backups Using the Cloud Storage You Pick
+Cross-platform backup tool for Windows, macOS & Linux with fast, incremental backups, client-side end-to-end encryption, compression and data deduplication. CLI and GUI included.
+
+This instance's repository is configured for **Backbaze B2** storage
+
+Links:
+- Home: https://kopia.io/
+- Source: https://github.com/kopia/kopia
+- Compose: https://github.com/kopia/kopia/tree/master/tools/docker
