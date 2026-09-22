@@ -114,7 +114,8 @@ class Runner:
         """Run a command and optionally return its stripped standard output.
 
         Raises:
-            BootstrapError: If the executable is missing, times out, or exits unsuccessfully.
+            BootstrapError: If a command name cannot be resolved on ``PATH``, or
+                the command times out or exits unsuccessfully.
         """
         executable = command[0]
         if "/" not in executable:

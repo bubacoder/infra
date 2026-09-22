@@ -126,7 +126,7 @@ def discover_vm_ipv4(plan: BootstrapPlan, runner: Runner) -> str:
 
 
 def with_expected_ipv4(plan: BootstrapPlan, expected_ipv4: str) -> BootstrapPlan:
-    """Return a copy of the plan bound to the discovered IPv4 address."""
+    """Return a copy of the plan bound to the given expected IPv4 address."""
     return replace(plan, config=replace(plan.config, network=replace(plan.config.network, expected_ipv4=expected_ipv4)))
 
 
