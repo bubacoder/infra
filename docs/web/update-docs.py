@@ -32,15 +32,16 @@ class DocsProcessor:
             output_content_path: Path to the output directory for generated content
             verbose: Whether to enable verbose logging
         """
-        self.repository_path = repository_path
+        self.repository_path = repository_path.resolve()
         self.output_content_path = output_content_path
         self.logger = self._setup_logging(verbose)
-        self.markdown_locations = self._load_config()
+        self.markdown_locations, repository_url = self._load_config()
         self.link_processor = LinkProcessor(
             self.logger,
             self.markdown_locations,
             self.repository_path,
             self.output_content_path,
+            repository_url,
         )
         self.docker_scanner = DockerComposeScanner(self.repository_path, self.logger)
 
@@ -65,11 +66,11 @@ class DocsProcessor:
 
         return logger
 
-    def _load_config(self) -> list[tuple[str, str, int]]:
+    def _load_config(self) -> tuple[list[tuple[str, str, int]], str]:
         """Load markdown locations from YAML configuration file.
 
         Returns:
-            List of tuples containing (source_path, target_path, weight)
+            Markdown locations and the repository URL for excluded source files
 
         Raises:
             SystemExit: If configuration file cannot be loaded
@@ -78,7 +79,7 @@ class DocsProcessor:
         try:
             with config_path.open() as config_file:
                 data = yaml.safe_load(config_file)
-                return data.get("locations", [])
+                return data.get("locations", []), data["repository_url"]
         except FileNotFoundError:
             self.logger.exception(f"Configuration file not found: {config_path}")
             sys.exit(1)
@@ -277,7 +278,7 @@ class DocsProcessor:
         self,
         target_path: Path,
         metadata: dict,
-        head_lines: list[str],
+        readme_path: Path | None,
         yaml_lines: list[str],
     ) -> None:
         """Write service markdown file with frontmatter and content.
@@ -285,11 +286,12 @@ class DocsProcessor:
         Args:
             target_path: Target markdown file path
             metadata: Service metadata dictionary
-            head_lines: Comment lines from compose file
+            readme_path: Service README file, if present
             yaml_lines: YAML content lines from compose file
         """
         lines = self._build_service_frontmatter(metadata)
-        lines.extend(head_lines)
+        if readme_path:
+            lines.extend(readme_path.read_text(encoding="utf-8").splitlines(keepends=True))
 
         if yaml_lines:
             lines.append("```yaml\n")
@@ -339,7 +341,7 @@ class DocsProcessor:
             self._write_service_markdown(
                 target_markdown,
                 service["metadata"],
-                service["head_lines"],
+                source_dir / service["readme_path"] if service["readme_path"] else None,
                 service["yaml_lines"],
             )
 

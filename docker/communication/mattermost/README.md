@@ -204,3 +204,20 @@ scripts/labctl.py service recreate communication/mattermost
 - Docker Deployment Guide: https://docs.mattermost.com/deployment-guide/server/deploy-containers.html
 - GitHub Repository: https://github.com/mattermost/docker
 - Community Forum: https://forum.mattermost.com/
+
+Mattermost is a collaboration platform for mission-critical work that accelerates
+workflow by integrating people, processes, tools and AI infrastructure on a resilient
+and adaptable platform. The official Docker deployment solution provides enterprise-ready
+team messaging with extensive customization options.
+
+Links:
+- Home: https://mattermost.com
+- Source: https://github.com/mattermost/docker
+- Docs: https://docs.mattermost.com/deployment-guide/server/deploy-containers.html
+
+TODO: Configure S3-compatible storage (MinIO) for file uploads
+TODO: Set up GitLab SSO integration (requires mounting PKI chain)
+TODO: Configure SMTP settings for email notifications
+TODO: Set up Prometheus metrics endpoint for monitoring
+TODO: Configure automated backup strategy for Mattermost data
+TODO: Review and configure Mattermost Calls settings for audio/video

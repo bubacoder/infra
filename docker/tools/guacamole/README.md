@@ -33,3 +33,12 @@ denied. OIDC identities are created as JDBC users without connection
 permissions; assign only required groups and connections with the local
 administrator. Verify local recovery, SSH/RDP/VNC connections, logout, and
 session expiry.
+
+Apache Guacamole is a clientless remote desktop gateway. It supports standard protocols like VNC and RDP. We call it clientless because no plugins or client software are required.
+Thanks to HTML5, once Guacamole is installed on a server, all you need to access your desktops is a web browser.
+
+The default username is `guacadmin` with password `guacadmin`.
+
+Links:
+- Home: https://guacamole.apache.org/
+- Image: https://hub.docker.com/r/flcontainers/guacamole

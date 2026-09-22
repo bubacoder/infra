@@ -1,13 +1,3 @@
-# GPU acceleration intentionally disabled for Immich on this host.
-#
-# Our host has an AMD Vega gfx90c iGPU. Immich's ROCm/MIGraphX ML image causes
-# GPU hangs and kernel resets that interrupt the desktop display. Immich issue
-# #21648 documents gfx90c APU support being removed from current ROCm images:
-# https://github.com/immich-app/immich/issues/21648
-#
-# GPU_COMPOSE_SUFFIX=amdgpu is shared by other services on this host, so retain
-# this no-op override to keep Immich on CPU until upstream support is verified.
----
 name: immich
 services: {}
 

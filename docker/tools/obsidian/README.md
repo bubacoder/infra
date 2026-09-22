@@ -19,3 +19,15 @@ native recovery path when configured through ignored host values.
 
 Confirm authorized access, non-member denial, logout, session-refresh group
 revocation, local recovery, and absence of a direct browser route.
+
+A powerful knowledge base that works on top of a local folder of plain text Markdown files.
+Obsidian is a free and flexible app for your private thoughts that stores notes locally
+with extensive plugin support and open file formats.
+
+Links:
+- Home: https://obsidian.md
+- Source: https://github.com/obsidianmd
+- Docs: https://docs.linuxserver.io/images/docker-obsidian/
+
+TODO: Set up regular backups of the /config/vaults volume containing vault data
+TODO: Consider GPU acceleration configuration if needed for advanced use cases
