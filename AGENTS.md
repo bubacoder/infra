@@ -116,7 +116,7 @@ The infrastructure is designed around the following components:
     - **Security**: Traefik (reverse proxy), Authentik (primary identity/SSO), Cloudflared (tunnel)
    - **Monitoring**: Grafana, Prometheus, Node-exporter, Uptime-kuma
    - **Media**: Jellyfin, Metube, Navidrome, Calibre
-   - **Storage**: MinIO, Syncthing, FileSharing
+   - **Storage**: Syncthing, FileSharing
    - **AI Tools**: Ollama, Open-WebUI, LiteLLM, AutogenStudio
    - **Tools**: Guacamole, Homepage (dashboard), Vaultwarden
 
