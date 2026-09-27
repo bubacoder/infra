@@ -1,0 +1,9 @@
+FROM alpine:3.24
+
+# hadolint ignore=DL3018
+RUN apk add --no-cache gettext
+
+COPY envsubst-entrypoint.sh /usr/local/bin/envsubst-entrypoint
+RUN chmod 755 /usr/local/bin/envsubst-entrypoint
+
+ENTRYPOINT ["/usr/local/bin/envsubst-entrypoint"]
