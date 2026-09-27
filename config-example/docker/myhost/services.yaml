@@ -81,8 +81,6 @@ services:
         state: up
   #     - name: syncthing
   #       state: up
-  #     - name: minio
-  #       state: down
   #     - name: webdav
   #       state: up
   #     - name: bees
