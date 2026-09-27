@@ -1,7 +1,7 @@
 name: adminer
 services:
   adminer:
-    image: adminer:6.0.1-standalone
+    image: adminer:6.1.1-standalone
     container_name: adminer
     restart: unless-stopped
     environment:
