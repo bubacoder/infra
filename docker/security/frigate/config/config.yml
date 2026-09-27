@@ -50,9 +50,13 @@ cameras:
       motion:
         days: 14
     motion:
-      mask: 0.343,0.071,0.647,0.071,0.647,0.022,0.343,0.022
+      mask:
 
-# Docs: https://docs.frigate.video/configuration/object_detectors/
+        # Docs: https://docs.frigate.video/configuration/object_detectors/
+        motion_mask_1:
+          friendly_name: Motion Mask 1
+          enabled: true
+          coordinates: 0.343,0.071,0.647,0.071,0.647,0.022,0.343,0.022
 detectors:
   ov_0:
     type: openvino
@@ -73,4 +77,4 @@ model:
 detect:
   enabled: true
 
-version: 0.17-0
+version: 0.18-0
