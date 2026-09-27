@@ -1,10 +1,11 @@
 name: ddclient
 services:
-  # envsubst initcontainer - replaces environment variables in config files
-  #   https://hub.docker.com/r/dibi/envsubst
-  #   Test: docker run --rm -v $(pwd)/workdir:/workdir -v $(pwd)/processed:/processed -e "CLOUDFLARE_DNS_API_TOKEN=AAA" -e "MYDOMAIN=BBB" dibi/envsubst:latest
+  # Replaces environment variables in config files before ddclient starts.
   initContainer:
-    image: dibi/envsubst:latest # TODO release date: 2020!
+    build:
+      context: .
+      dockerfile: Dockerfile.envsubst
+    image: local/ddclient-envsubst:latest
     environment:
       CLOUDFLARE_DNS_API_TOKEN: ${CLOUDFLARE_DNS_API_TOKEN}
       MYDOMAIN: ${MYDOMAIN}
