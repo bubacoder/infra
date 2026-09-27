@@ -2,6 +2,7 @@ name: homelab-docs
 services:
   homelab-docs:
     image: local/docs.${MYDOMAIN}:latest
+    pull_policy: never
     container_name: homelab-docs
     restart: unless-stopped
     networks:
