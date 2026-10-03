@@ -1,7 +1,7 @@
 name: scrutiny-collector
 services:
   scrutiny-collector:
-    image: 'ghcr.io/analogj/scrutiny:v0.9.4-collector'
+    image: 'ghcr.io/analogj/scrutiny:v0.9.5-collector'
     container_name: scrutiny-collector
     restart: unless-stopped
     cap_add:

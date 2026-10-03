@@ -1,7 +1,7 @@
 name: homeassistant
 services:
   homeassistant:
-    image: lscr.io/linuxserver/homeassistant:2026.9.3
+    image: lscr.io/linuxserver/homeassistant:2026.9.4
     container_name: homeassistant
     restart: unless-stopped
     network_mode: host
