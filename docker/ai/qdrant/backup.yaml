@@ -1,0 +1,8 @@
+version: 1
+databases:
+  engine: qdrant
+  container: qdrant
+files:
+  ignore:
+    # Live collections and aliases are covered by the native full-storage snapshot export.
+    - /qdrant/storage

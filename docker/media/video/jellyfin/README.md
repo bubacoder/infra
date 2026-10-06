@@ -8,5 +8,5 @@ Links:
 Desktop client: [GitHub - jellyfin/jellyfin-desktop: Jellyfin Desktop Client](https://github.com/jellyfin/jellyfin-media-player)
 
 GPU override for Jellyfin — AMD VAAPI hardware transcoding.
-Enable by setting GPU_COMPOSE_SUFFIX=amdgpu in config/docker/<hostname>/.env
+Enable by setting `GPU_COMPOSE_SUFFIX=amdgpu` in `config/docker/<hostname>/.env`.
 After deploying, configure VA-API in Jellyfin UI: Dashboard → Playback → Transcoding → VA-API

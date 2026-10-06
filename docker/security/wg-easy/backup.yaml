@@ -1,0 +1,15 @@
+version: 1
+databases:
+  engine: sqlite
+  storage_root: wg-easy-v15
+  database: wg-easy-v15/wg-easy.db
+files:
+  root: wg-easy-v15
+  required:
+    - wg0.conf
+  ignore:
+    # Live SQLite database and sidecars are covered by the standalone database export.
+    - /wg-easy-v15/wg-easy.db
+    - /wg-easy-v15/wg-easy.db-wal
+    - /wg-easy-v15/wg-easy.db-shm
+    - /wg-easy-v15/wg-easy.db-journal

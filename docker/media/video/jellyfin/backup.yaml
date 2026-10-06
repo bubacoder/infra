@@ -1,0 +1,12 @@
+version: 1
+files:
+  ignore:
+    - jellyfin/log
+    - jellyfin/cache
+    - jellyfin/data/transcodes
+    - jellyfin/data/metadata
+    # Desktop/font/GPU caches are recreated by the container.
+    - /jellyfin/.cache
+    # Obsolete library database backups and migration leftovers; retain active databases.
+    - /jellyfin/data/data/library.db.bak*
+    - /jellyfin/data/data/library.db.old*

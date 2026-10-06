@@ -19,7 +19,7 @@ TODO: Configure motion detection zones to reduce false positives
 TODO: Set up recording retention policies in config.yml
 
 GPU override for Frigate — AMD VAAPI video decode for camera streams.
-Enable by setting GPU_COMPOSE_SUFFIX=amdgpu in config/docker/<hostname>/.env
+Enable by setting `GPU_COMPOSE_SUFFIX=amdgpu` in `config/docker/<hostname>/.env`.
 Also set hwaccel in config/config.yml:
   ffmpeg:
     hwaccel_args: preset-vaapi

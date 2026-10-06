@@ -1,0 +1,5 @@
+version: 1
+files:
+  ignore:
+    # Desktop and ebook-viewer caches are recreated; retain preferences and plugins.
+    - /calibre/.cache

@@ -1,0 +1,34 @@
+version: 1
+databases:
+  engine: postgresql
+  container: guacamole
+  database: guacamole_db
+  user: guacamole
+files:
+  root: guacamole
+  required:
+    - guacamole/guacamole.properties
+    - guacamole/extensions
+    - guacamole/lib
+  ignore:
+    # Live PostgreSQL data is covered by logical exports; retain the database configuration files.
+    - /guacamole/postgres/base
+    - /guacamole/postgres/global
+    - /guacamole/postgres/pg_commit_ts
+    - /guacamole/postgres/pg_dynshmem
+    - /guacamole/postgres/pg_logical
+    - /guacamole/postgres/pg_multixact
+    - /guacamole/postgres/pg_notify
+    - /guacamole/postgres/pg_replslot
+    - /guacamole/postgres/pg_serial
+    - /guacamole/postgres/pg_snapshots
+    - /guacamole/postgres/pg_stat
+    - /guacamole/postgres/pg_stat_tmp
+    - /guacamole/postgres/pg_subtrans
+    - /guacamole/postgres/pg_tblspc
+    - /guacamole/postgres/pg_twophase
+    - /guacamole/postgres/pg_wal
+    - /guacamole/postgres/pg_xact
+    - /guacamole/postgres/PG_VERSION
+    - /guacamole/postgres/postmaster.opts
+    - /guacamole/postgres/postmaster.pid

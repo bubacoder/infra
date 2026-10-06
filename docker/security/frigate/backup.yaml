@@ -1,0 +1,5 @@
+version: 1
+files:
+  ignore:
+    # Downloaded detector models are reproducible; keep custom models outside this cache.
+    - /frigate/model_cache

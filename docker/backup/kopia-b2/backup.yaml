@@ -1,0 +1,5 @@
+version: 1
+files:
+  ignore:
+    - kopia-b2/cache
+    - kopia-b2/logs

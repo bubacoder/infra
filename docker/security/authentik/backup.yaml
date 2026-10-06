@@ -1,0 +1,10 @@
+version: 1
+databases:
+  engine: postgresql
+  container: authentik-postgresql
+  database: authentik
+  user: authentik
+files:
+  ignore:
+    # Live PostgreSQL cluster is covered by the logical database and roles exports.
+    - /authentik/postgresql

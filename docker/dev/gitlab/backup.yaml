@@ -1,0 +1,6 @@
+version: 1
+files:
+  ignore:
+    - gitlab/data/prometheus/data
+    # Service logs are disposable; retain repositories, configuration and databases.
+    - /gitlab/logs

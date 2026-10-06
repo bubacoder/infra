@@ -1,0 +1,16 @@
+version: 1
+files:
+  ignore:
+    # Desktop and Electron rendering caches are recreated; retain IndexedDB and application state.
+    - /obsidian/.cache
+    - /obsidian/.config/obsidian/Cache
+    - /obsidian/.config/obsidian/Code Cache
+    - /obsidian/.config/obsidian/GPUCache
+    - /obsidian/.config/obsidian/DawnGraphiteCache
+    - /obsidian/.config/obsidian/DawnWebGPUCache
+    - /obsidian/.config/obsidian/Crashpad
+    - /obsidian/.config/chromium/ShaderCache
+    - /obsidian/.config/chromium/GrShaderCache
+    - /obsidian/.config/chromium/GraphiteDawnCache
+    - /obsidian/.config/chromium/GPUPersistentCache
+    - /obsidian/.config/chromium/Crash Reports

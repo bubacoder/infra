@@ -1,0 +1,34 @@
+version: 1
+databases:
+  engine: sqlite
+  database: open-webui/webui.db
+  additional_databases:
+    - name: chroma
+      database: open-webui/vector_db/chroma.sqlite3
+files:
+  root: open-webui
+  offline_model:
+    model: sentence-transformers/all-MiniLM-L6-v2
+    revision: 1110a243fdf4706b3f48f1d95db1a4f5529b4d41
+  required:
+    - uploads
+    - docs
+    - vector_db
+    - functions
+    - tools
+    - litellm
+    - cache
+    - offline-models/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/model.tar.gz
+    - offline-models/all-MiniLM-L6-v2/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/manifest.json
+  ignore:
+    # Live SQLite databases and sidecars are covered by two standalone exports; retain vector index files.
+    - /open-webui/webui.db
+    - /open-webui/webui.db-wal
+    - /open-webui/webui.db-shm
+    - /open-webui/webui.db-journal
+    - /open-webui/vector_db/chroma.sqlite3
+    - /open-webui/vector_db/chroma.sqlite3-wal
+    - /open-webui/vector_db/chroma.sqlite3-shm
+    - /open-webui/vector_db/chroma.sqlite3-journal
+    # Downloaded speech-model weights are reproducible; preserve uploads and pinned offline embedding models.
+    - /open-webui/cache/whisper/models

@@ -1,5 +1,10 @@
 # Runbooks
 
+## Backup and recovery
+
+See [Backup and recovery](backup.md) for backup operations and snapshot selection,
+then follow the application README's recovery steps for the selected service.
+
 ## Reinstall a Docker host
 
 Note: This method is a bit unconventional but simplifies the deployment (and possible rollback) procedure a lot.

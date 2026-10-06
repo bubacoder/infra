@@ -1,0 +1,5 @@
+version: 1
+files:
+  ignore:
+    # Server logs are disposable; retain files, settings, plugins and paired search indexes.
+    - /mattermost/logs

@@ -1,0 +1,15 @@
+version: 1
+databases:
+  engine: sqlite
+  database: vaultwarden/db.sqlite3
+files:
+  ignore:
+    # Live SQLite database and sidecars are covered by the standalone database export.
+    - /vaultwarden/db.sqlite3
+    - /vaultwarden/db.sqlite3-wal
+    - /vaultwarden/db.sqlite3-shm
+    - /vaultwarden/db.sqlite3-journal
+    # Downloaded icons, temporary files and server logs are disposable.
+    - /vaultwarden/icon_cache
+    - /vaultwarden/tmp
+    - /vaultwarden/vaultwarden.log*

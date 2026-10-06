@@ -1,0 +1,20 @@
+version: 1
+files:
+  ignore:
+    - kasm/opt/docker
+    # Service logs and temporary runtime files are disposable.
+    - /kasm/opt/kasm/*/log
+    - /kasm/opt/kasm/*/tmp
+    # Desktop and browser caches are recreated; preserve profile settings and user storage.
+    - /kasm/profiles/*/*/.cache
+    - /kasm/profiles/*/*/.config/google-chrome/extensions_crx_cache
+    - /kasm/profiles/*/*/.config/google-chrome/component_crx_cache
+    - /kasm/profiles/*/*/.config/google-chrome/ShaderCache
+    - /kasm/profiles/*/*/.config/google-chrome/GrShaderCache
+    - /kasm/profiles/*/*/.config/google-chrome/GraphiteDawnCache
+    - /kasm/profiles/*/*/.config/google-chrome/Crash Reports
+    - /kasm/profiles/*/*/.config/google-chrome/*/Cache
+    - /kasm/profiles/*/*/.config/google-chrome/*/Code Cache
+    - /kasm/profiles/*/*/.config/google-chrome/*/GPUCache
+    - /kasm/profiles/*/*/.config/google-chrome/*/DawnGraphiteCache
+    - /kasm/profiles/*/*/.config/google-chrome/*/DawnWebGPUCache

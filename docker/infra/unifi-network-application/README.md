@@ -32,6 +32,37 @@ Must be created against `admin` (not `unifi`) to match MONGO_AUTHSOURCE=admin be
 more than just the main db (`_stat`, `_audit`, `_restore`, `clusterMonitor` too)
 The databases themselves don't need to pre-exist — Mongo creates them lazily on first write.
 
-Links:
+## References
+
 - Home: [Software Downloads - Ubiquiti](https://ui.com/download/releases/network-server)
 - Image: [GitHub - linuxserver/docker-unifi-network-application](https://github.com/linuxserver/docker-unifi-network-application)
+
+## Backup
+
+The shared MongoDB backup job briefly stops and restarts UniFi to get a
+consistent standalone database export. Restore it with this application's
+`/config` data from the paired B2 application-volume snapshot and the original MongoDB
+credentials/controller settings. See the [backup guide](../../../docs/backup.md)
+for commands, retention and snapshot selection.
+
+### Recovery
+
+1. Keep the destination controller stopped and follow
+   [MongoDB recovery](../../database/mongodb/README.md#recovery) for the full-instance
+   `database.archive.gz`, including original databases/users/roles and credentials.
+2. Restore `${DOCKER_VOLUMES}/unifi-network-application/data` and other required
+   `/config` state from the paired application snapshot, preserving controller
+   identity, keystore/certificates, ownership and original host configuration.
+3. Start MongoDB before the matching controller image. Preserve the controller
+   hostname/inform path; a test restore must not take over production adoption.
+
+The exporter assumes UniFi is MongoDB's only writer. It normally restarts the
+paused controller on failure; after a killed job/host interruption, check whether
+UniFi needs to be started manually.
+
+### Post-restore check
+
+Restore shared MongoDB and paired UniFi config first. Sign in with the existing
+local administrator and confirm sites, networks and adopted devices. Keep a
+test restore off the production controller/inform path; after actual recovery,
+verify one device reconnects without re-adoption.
