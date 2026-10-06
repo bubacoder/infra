@@ -1,0 +1,26 @@
+version: 1
+policies:
+  - source: /sources/local/db-backups
+    # Host latest.py job prepares a frozen view and snapshots it at 01:15.
+    manual: true
+    retention:
+      latest: 10
+      hourly: 48
+      daily: 7
+      weekly: 4
+      monthly: 6
+      annual: 0
+    ignore:
+      # Only published exports belong in snapshots, not staging or advisory locks.
+      - "/*/.incomplete-*"
+      - "/*/.lock"
+  - source: /sources/local/docker-volumes
+    time: "01:20"
+    retention:
+      latest: 10
+      hourly: 48
+      daily: 7
+      weekly: 4
+      monthly: 6
+      annual: 0
+    application_ignores: true

@@ -1,0 +1,31 @@
+version: 1
+databases:
+  engine: sqlite
+  database: gitea/gitea/gitea.db
+files:
+  root: gitea
+  required:
+    - git/repositories
+    - git/lfs
+    - gitea/conf/app.ini
+    - gitea/attachments
+    - gitea/actions_artifacts
+    - gitea/avatars
+    - gitea/packages
+    - gitea/jwt
+    - ssh
+  ignore:
+    # Live SQLite database and sidecars are covered by the standalone database export.
+    - /gitea/gitea/gitea.db
+    - /gitea/gitea/gitea.db-wal
+    - /gitea/gitea/gitea.db-shm
+    - /gitea/gitea/gitea.db-journal
+    # Server logs, rebuildable search indexes and generated repository archives.
+    - /gitea/gitea/log
+    - /gitea/gitea/indexers
+    - /gitea/gitea/repo-archive
+    # Incomplete uploads are temporary; completed attachments and artifacts remain included.
+    - /gitea/gitea/attachments/tmp
+    - /gitea/gitea/avatars/tmp
+    - /gitea/gitea/actions_artifacts/tmp
+    - /gitea/gitea/actions_log/tmp

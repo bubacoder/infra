@@ -35,14 +35,12 @@ services:
       - ${DOCKER_VOLUMES}/kopia-b2/logs:/app/logs
 
       # Local (source)
-      - /etc:/sources/nest/etc:ro
-      - ${DOCKER_VOLUMES}:/sources/nest/docker-volumes:ro
-      - ${ADMIN_HOME}/repos:/sources/nest/repos:ro
-
-      # Sources will be migrated ho hostname-neutral path
       - /etc:/sources/local/etc:ro
-      - ${DOCKER_VOLUMES}:/sources/local/docker-volumes:ro
       - ${ADMIN_HOME}/repos:/sources/local/repos:ro
+      # Snapshot policy is managed by scripts/backup
+      - ${DOCKER_VOLUMES}:/sources/local/docker-volumes:ro
+      # Snapshot policy is managed by scripts/backup
+      - ${DB_BACKUP_ROOT}/latest:/sources/local/db-backups:ro
 
       # NAS (source)
       - ${STORAGE_FAMILYMEDIA}:/sources/nas/family-media:ro

@@ -1,21 +1,26 @@
 Encrypted, Compressed, and Deduplicated Backups Using the Cloud Storage You Pick
 Cross-platform backup tool for Windows, macOS & Linux with fast, incremental backups, client-side end-to-end encryption, compression and data deduplication. CLI and GUI included.
 
-This instance's repository is configured for **Backbaze B2** storage
+This instance's repository uses **Backblaze B2** through Kopia's deprecated
+native `b2` provider. The migration plan describes moving the repository to the
+S3-compatible provider and the rollback procedure. See
+[`docs/plans/kopia-b2-s3-provider.md`](../../../docs/plans/kopia-b2-s3-provider.md)
+for migration details.
 
-Links:
+## References
+
 - Home: [Kopia](https://kopia.io/)
 - Source: [GitHub - kopia/kopia: Cross-platform backup tool for Windows, macOS & Linux with fast, incremental backups, client-side end-to-end encryption, compression and data deduplication. CLI and GUI included.](https://github.com/kopia/kopia)
 - Compose: [kopia/tools/docker at master · kopia/kopia](https://github.com/kopia/kopia/tree/master/tools/docker)
 
-# Authentik ForwardAuth
+## Authentik
 
 Authentik ForwardAuth is Kopia B2's browser access gate for the `admins` group.
 Kopia's repository password remains separate from browser authentication. The
 service depends on the isolated `backup-kopia` network and Traefik as its sole
 UI path.
 
-## Setup
+### Setup
 
 ```bash
 scripts/authentik-apps.py --application kopia-b2 --apply
@@ -28,7 +33,7 @@ flags deliberately disable its own browser login because the network boundary
 and ForwardAuth are required; do not reuse this configuration where direct
 network access is possible.
 
-## Verify
+### Verify
 
 Confirm an `admins` member can use the UI, a non-member is denied, group removal
 applies after session refresh, recovery works, and no direct container or host

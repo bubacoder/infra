@@ -1,0 +1,6 @@
+version: 1
+files:
+  ignore:
+    # Transfer logs and caches are disposable; retain torrent metadata and resume state.
+    - /qbittorrent/qBittorrent/logs
+    - /qbittorrent/.cache

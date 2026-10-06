@@ -1,0 +1,10 @@
+version: 1
+files:
+  ignore:
+    # Download/metadata caches and editor logs are recreated; retain extensions and local file history.
+    - /code-server/.cache
+    - /code-server/data/CachedExtensions
+    - /code-server/data/CachedExtensionVSIXs
+    - /code-server/data/CachedProfilesData
+    - /code-server/data/logs
+    - /code-server/data/User/caches

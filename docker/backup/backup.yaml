@@ -1,0 +1,5 @@
+version: 1
+files:
+  ignore:
+    # Cross-application log rule from the existing Docker-volumes policy.
+    - "**/log/nginx/**"

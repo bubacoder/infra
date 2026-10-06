@@ -1,0 +1,29 @@
+version: 1
+databases:
+  # Native export settings, including validation of files inside the archive.
+  engine: homeassistant
+  container: homeassistant
+  data: homeassistant
+  token_file: homeassistant/backup-token
+  required_files:
+    - data/configuration.yaml
+    - data/secrets.yaml
+    - data/automations.yaml
+    - data/scripts.yaml
+    - data/scenes.yaml
+    - data/.storage/auth
+    - data/.storage/auth_provider.homeassistant
+    - data/.storage/core.config_entries
+    - data/.storage/core.device_registry
+    - data/.storage/core.entity_registry
+    - data/home-assistant_v2.db
+files:
+  ignore:
+    # Live recorder database and sidecars are covered by the native archive and standalone SQLite export.
+    - /homeassistant/home-assistant_v2.db
+    - /homeassistant/home-assistant_v2.db-wal
+    - /homeassistant/home-assistant_v2.db-shm
+    - /homeassistant/home-assistant_v2.db-journal
+    # Runtime logs and caches are disposable; native archives still retain their own payload.
+    - /homeassistant/home-assistant.log*
+    - /homeassistant/.cache

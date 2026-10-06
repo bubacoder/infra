@@ -1,0 +1,12 @@
+version: 1
+databases:
+  engine: mongodb
+  container: mongodb
+  writer: unifi-network-application
+files:
+  root: unifi-network-application
+  required:
+    - data
+  ignore:
+    # Live MongoDB storage is covered by the full-instance archive export.
+    - /mongodb/data

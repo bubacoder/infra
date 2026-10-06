@@ -1,0 +1,6 @@
+version: 1
+files:
+  ignore:
+    # Logs and crash telemetry are disposable; retain databases and native backups.
+    - /prowlarr/logs
+    - /prowlarr/Sentry

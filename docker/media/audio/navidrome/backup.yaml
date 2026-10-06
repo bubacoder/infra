@@ -1,0 +1,5 @@
+version: 1
+files:
+  ignore:
+    # Generated artwork thumbnails, transcodes and plugin compilation caches are recreated.
+    - /navidrome/cache

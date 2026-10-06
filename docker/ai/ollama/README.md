@@ -5,7 +5,7 @@ Links:
 - Source: [GitHub - ollama/ollama: Get up and running with Kimi, GLM, MiniMax, DeepSeek, gpt-oss, Qwen, Gemma and other models.](https://github.com/ollama/ollama)
 
 GPU override for Ollama — AMD iGPU inference via the Vulkan backend.
-Enable by setting GPU_COMPOSE_SUFFIX=amdgpu in config/docker/<hostname>/.env
+Enable by setting `GPU_COMPOSE_SUFFIX=amdgpu` in `config/docker/<hostname>/.env`.
 NOTE: deliberately the STANDARD image, not :rocm — colony's Vega iGPU
 (Ryzen 7 5825U, gfx90c) has no rocblas kernels in ROCm builds ("dropping
 ROCm device"), while the standard image ships the ggml Vulkan backend

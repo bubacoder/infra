@@ -1,0 +1,11 @@
+version: 1
+files:
+  ignore:
+    # Generated book thumbnails and conversion caches are recreated from the library.
+    - /calibre-web-automated/thumbnails
+    - /calibre-web-automated/.cache
+    - /calibre-web-automated/.config/calibre/caches
+    - /calibre-web-automated/.cwa_conversion_tmp
+    # Conversion logs are disposable; retain databases, processed originals and credentials.
+    - /calibre-web-automated/log_archive
+    - /calibre-web-automated/epub-fixer.log*

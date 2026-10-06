@@ -1,0 +1,17 @@
+version: 1
+databases:
+  engine: postgresql
+  container: postgresql
+  user: postgres
+  all_databases: true
+files:
+  root: mattermost
+  required:
+    - config
+    - data
+    - plugins
+    - client-plugins
+    - bleve-indexes
+  ignore:
+    # Live PostgreSQL cluster is covered by logical exports of all databases and roles.
+    - /postgresql/data

@@ -1,0 +1,5 @@
+version: 1
+files:
+  ignore:
+    # Application logs are disposable; retain settings, custom assets and OCR language files.
+    - /stirling-pdf/logs

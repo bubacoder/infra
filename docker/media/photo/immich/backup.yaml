@@ -1,0 +1,12 @@
+version: 1
+databases:
+  engine: postgresql
+  container: immich-postgres
+  database: immich
+  user: immich
+files:
+  ignore:
+    - immich/library/encoded-video
+    - immich/library/thumbs
+    # Native SQL archives duplicate our checked database exports; keep them locally.
+    - /immich/library/backups/immich-db-backup-*.sql.gz

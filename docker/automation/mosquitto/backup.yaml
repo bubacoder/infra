@@ -1,0 +1,5 @@
+version: 1
+files:
+  ignore:
+    # Broker logs are disposable; retain persistence data, configuration and certificates.
+    - /mosquitto/log

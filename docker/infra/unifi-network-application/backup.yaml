@@ -1,0 +1,6 @@
+version: 1
+files:
+  ignore:
+    # Controller logs and runtime files are disposable; retain the data paired with MongoDB exports.
+    - /unifi-network-application/logs
+    - /unifi-network-application/run

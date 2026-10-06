@@ -1,0 +1,19 @@
+version: 1
+databases:
+  engine: postgresql
+  container: n8n-postgres
+  database: n8n
+  user: root
+files:
+  root: n8n
+  required:
+    - config
+    - binaryData
+    - git
+    - ssh
+    - nodes
+  ignore:
+    # Live PostgreSQL cluster is covered by the logical database and roles exports.
+    - /n8n/postgres-data
+    # Event logs are disposable; retain credentials, configuration and persistent user data.
+    - /n8n/n8nEventLog*.log

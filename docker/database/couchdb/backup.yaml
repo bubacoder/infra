@@ -1,0 +1,10 @@
+version: 1
+databases:
+  engine: couchdb
+  container: couchdb
+  data: couchdb/data
+  config: couchdb/etc
+files:
+  ignore:
+    # Live database shards, system files and indexes are covered by the staged CouchDB export.
+    - /couchdb/data

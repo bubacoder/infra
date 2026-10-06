@@ -126,18 +126,16 @@ Back up all of these together:
 - The ignored Authentik secret files.
 - The tracked Compose and Traefik configuration.
 
-Example logical database backup:
+Use the shared host-side exporter for checked database/role artifacts:
 
 ```bash
-docker exec authentik-postgresql pg_dump -U authentik -d authentik -Fc \
-  -f /tmp/authentik.dump
-docker cp authentik-postgresql:/tmp/authentik.dump /secure-backup/authentik.dump
-docker exec authentik-postgresql rm /tmp/authentik.dump
-chmod 600 /secure-backup/authentik.dump
+python3 scripts/backup/run.py security/authentik
+python3 scripts/backup/run.py security/authentik --verify-latest
 ```
 
-Test a restore in a temporary database before relying on the backup. Never
-restore over the live `authentik` database as a test.
+See [Backup and recovery](backup.md) for snapshot selection and
+[Authentik recovery](../docker/security/authentik/README.md#recovery) for database,
+files and original-secret restore order. Use a separate destination for a test.
 
 ## Create Groups
 

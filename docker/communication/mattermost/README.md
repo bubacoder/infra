@@ -3,40 +3,49 @@ workflow by integrating people, processes, tools and AI infrastructure on a resi
 and adaptable platform. The official Docker deployment solution provides enterprise-ready
 team messaging with extensive customization options.
 
-Links:
+## References
+
 - Home: [Mattermost | Collaboration Platform for Mission Critical Work](https://mattermost.com)
 - Source: [GitHub - mattermost/docker: Install Mattermost server via Docker](https://github.com/mattermost/docker)
 - Docs: [Deploy Mattermost using Containers | Mattermost Documentation](https://docs.mattermost.com/deployment-guide/server/deploy-containers.html)
+
+### Additional resources
+
+- Official Documentation: [Mattermost Documentation](https://docs.mattermost.com/)
+- Docker Deployment Guide: [Deploy Mattermost using Containers | Mattermost Documentation](https://docs.mattermost.com/deployment-guide/server/deploy-containers.html)
+- GitHub Repository: [GitHub - mattermost/docker: Install Mattermost server via Docker](https://github.com/mattermost/docker)
+- Community Forum: [Mattermost Discussion Forums - Discussion forums for Mattermost and our open source community](https://forum.mattermost.com/)
+
+## TODO
 
 TODO: Configure S3-compatible storage (MinIO) for file uploads
 TODO: Set up GitLab SSO integration (requires mounting PKI chain)
 TODO: Configure SMTP settings for email notifications
 TODO: Set up Prometheus metrics endpoint for monitoring
-TODO: Configure automated backup strategy for Mattermost data
 TODO: Review and configure Mattermost Calls settings for audio/video
 
-# Deployment Guide
+## Deployment Guide
 
 Mattermost is a secure collaboration platform for mission-critical work that provides enterprise-ready team messaging with extensive customization options.
 
-## Prerequisites
+### Prerequisites
 
 Before deploying Mattermost, ensure the following services are running:
 
 1. **PostgreSQL** - Database backend (deployed via `docker/database/postgresql/postgresql.yaml`)
 2. **Traefik** - Reverse proxy for HTTPS access
 
-## Database Setup
+### Database Setup
 
 Mattermost requires its own database within the PostgreSQL instance. Create the database and user before starting Mattermost:
 
-### Step 1: Access PostgreSQL Container
+#### Step 1: Access PostgreSQL Container
 
 ```bash
 docker exec -it postgresql psql -U postgres
 ```
 
-### Step 2: Create Mattermost Database and User
+#### Step 2: Create Mattermost Database and User
 
 ```sql
 -- Create the Mattermost user
@@ -52,7 +61,7 @@ GRANT ALL PRIVILEGES ON DATABASE mattermost TO mattermost;
 \q
 ```
 
-## Environment Configuration
+### Environment Configuration
 
 Add the following variables to your
 `config/docker/<hostname>/.env.mattermost` file:
@@ -66,7 +75,7 @@ MATTERMOST_POSTGRES_DB="mattermost"
 
 **Important**: Use the same password you set when creating the PostgreSQL user.
 
-## Deployment
+### Deployment
 
 Deploy Mattermost using the standard workflow:
 
@@ -78,15 +87,15 @@ task docker:apply
 scripts/labctl.py service up communication/mattermost
 ```
 
-## Initial Setup
+### Initial Setup
 
 1. Access Mattermost at: `https://mattermost.${MYDOMAIN}/`
 2. Create the first admin account during initial setup
 3. Configure team settings and channels as needed
 
-## Configuration
+### Configuration
 
-### File Permissions
+#### File Permissions
 
 Mattermost container runs as UID/GID 2000. If you encounter permission issues:
 
@@ -94,11 +103,11 @@ Mattermost container runs as UID/GID 2000. If you encounter permission issues:
 sudo chown -R 2000:2000 ${DOCKER_VOLUMES}/mattermost
 ```
 
-### Site URL
+#### Site URL
 
 The site URL is automatically configured via the `MM_SERVICESETTINGS_SITEURL` environment variable to match your domain.
 
-### SMTP Configuration
+#### SMTP Configuration
 
 To enable email notifications, add the following environment variables to the compose file:
 
@@ -112,7 +121,7 @@ environment:
   MM_EMAILSETTINGS_FEEDBACKEMAIL: noreply@example.com
 ```
 
-### S3 Storage (MinIO Integration)
+#### S3 Storage (MinIO Integration)
 
 To use MinIO for file uploads instead of local storage:
 
@@ -126,7 +135,7 @@ environment:
   MM_FILESETTINGS_AMAZONS3SSL: true
 ```
 
-### GitLab SSO
+#### GitLab SSO
 
 To enable GitLab SSO integration, mount the PKI chain and configure OAuth settings:
 
@@ -137,9 +146,9 @@ volumes:
 
 Then configure GitLab OAuth in Mattermost System Console.
 
-## Monitoring
+### Monitoring
 
-### Health Check
+#### Health Check
 
 Check if Mattermost is running:
 
@@ -147,13 +156,13 @@ Check if Mattermost is running:
 docker ps | grep mattermost
 ```
 
-### View Logs
+#### View Logs
 
 ```bash
 scripts/labctl.py service logs communication/mattermost
 ```
 
-### Prometheus Metrics
+#### Prometheus Metrics
 
 Mattermost exposes metrics at `/metrics` endpoint. Add to your Prometheus configuration:
 
@@ -163,46 +172,27 @@ Mattermost exposes metrics at `/metrics` endpoint. Add to your Prometheus config
     - targets: ['mattermost:8067']
 ```
 
-## Backup
+### Troubleshooting
 
-Back up the following:
-
-1. **Database**: Use `pg_dump` for PostgreSQL backup
-2. **Data directory**: `${DOCKER_VOLUMES}/mattermost/data`
-3. **Config directory**: `${DOCKER_VOLUMES}/mattermost/config`
-4. **Plugins**: `${DOCKER_VOLUMES}/mattermost/plugins`
-
-Example backup script:
-
-```bash
-# Backup database
-docker exec postgresql pg_dump -U mattermost mattermost > mattermost-db-backup.sql
-
-# Backup data directories
-tar -czf mattermost-data-backup.tar.gz ${DOCKER_VOLUMES}/mattermost/
-```
-
-## Troubleshooting
-
-### Connection Refused to PostgreSQL
+#### Connection Refused to PostgreSQL
 
 - Ensure PostgreSQL service is running: `docker ps | grep postgresql`
 - Check if database exists: `docker exec -it postgresql psql -U postgres -l`
 - Verify environment variables in `.env` file
 
-### Permission Denied Errors
+#### Permission Denied Errors
 
 ```bash
 sudo chown -R 2000:2000 ${DOCKER_VOLUMES}/mattermost
 ```
 
-### Cannot Access via Browser
+#### Cannot Access via Browser
 
 - Check Traefik logs: `docker logs traefik`
 - Verify DNS resolution: `nslookup mattermost.${MYDOMAIN}`
 - Check if service is in proxy network: `docker network inspect proxy`
 
-## Upgrading
+### Upgrading
 
 To upgrade Mattermost:
 
@@ -215,9 +205,31 @@ scripts/labctl.py service pull communication/mattermost
 scripts/labctl.py service recreate communication/mattermost
 ```
 
-## Resources
+## Backup
 
-- Official Documentation: [Mattermost Documentation](https://docs.mattermost.com/)
-- Docker Deployment Guide: [Deploy Mattermost using Containers | Mattermost Documentation](https://docs.mattermost.com/deployment-guide/server/deploy-containers.html)
-- GitHub Repository: [GitHub - mattermost/docker: Install Mattermost server via Docker](https://github.com/mattermost/docker)
-- Community Forum: [Mattermost Discussion Forums - Discussion forums for Mattermost and our open source community](https://forum.mattermost.com/)
+Mattermost's shared PostgreSQL database is covered by the host-side
+`docker/database/postgresql/backup.yaml` export. Restore it with this service's
+`/config`, `/data`, plugins and index data from the **paired** B2 application-volume
+snapshot. Preserve original config/secrets and database ownership. See the
+[backup guide](../../../docs/backup.md) for commands, retention and snapshot selection.
+
+### Recovery
+
+1. Stop the destination Mattermost. Follow
+   [shared PostgreSQL recovery](../../database/postgresql/README.md#recovery) for
+   its `database-mattermost.dump`, required roles and original DB ownership.
+2. Restore `${DOCKER_VOLUMES}/mattermost/{config,data,plugins,client-plugins,bleve-indexes}`
+   from the paired application snapshot and recover original config/secrets,
+   database credentials and expected directory ownership.
+3. Start PostgreSQL before the matching Mattermost image; check
+   `/api/v4/system/ping` before switching clients. Keep outbound notifications and
+   production integrations disconnected on an isolated recovery.
+
+DB and uploaded files are not an atomic capture; verify attachment references
+and plugin state as part of recovery.
+
+### Post-restore check
+
+Check the local system ping, sign in, open a known channel/message and download
+one existing attachment. Restore the original config/secrets and paired uploads
+with the database before evaluating missing data.
