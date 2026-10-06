@@ -6,6 +6,7 @@ services:
       context: .
       dockerfile: Dockerfile.envsubst
     image: local/ddclient-envsubst:latest
+    user: ${PUID}:${PGID} # Should be owner of volumes
     environment:
       CLOUDFLARE_DNS_API_TOKEN: ${CLOUDFLARE_DNS_API_TOKEN}
       MYDOMAIN: ${MYDOMAIN}
