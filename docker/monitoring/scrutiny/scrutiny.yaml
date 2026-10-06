@@ -15,7 +15,7 @@ services:
       retries: 20
 
   scrutiny-web:
-    image: ghcr.io/analogj/scrutiny:v0.9.4-web
+    image: ghcr.io/analogj/scrutiny:v0.9.5-web
     container_name: scrutiny-web
     restart: unless-stopped
     networks:
