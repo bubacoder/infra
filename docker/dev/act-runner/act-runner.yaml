@@ -1,7 +1,7 @@
 name: act-runner
 services:
   act-runner:
-    image: gitea/runner:3.5.0
+    image: gitea/runner:4.1.0
     container_name: act-runner
     restart: unless-stopped
     environment:
