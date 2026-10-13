@@ -1,6 +1,7 @@
 Prometheus is a systems and service monitoring system. It collects metrics from configured targets at given intervals, evaluates rule expressions, displays the results, and can trigger alerts if some condition is observed to be true.
 
-Links:
+## References
+
 - Home: [Prometheus - Monitoring system & time series database](https://prometheus.io/)
 - Image: [prom/prometheus - Docker Image](https://hub.docker.com/r/prom/prometheus)
 - Introduction: [Overview | Prometheus](https://prometheus.io/docs/introduction/overview/)

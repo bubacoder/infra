@@ -1,14 +1,15 @@
 Code-server is VS Code running on a remote server, accessible through the browser.
 
-Links:
+Alternative: OpenVSCode Server
+- [GitHub - gitpod-io/openvscode-server: Run upstream VS Code on a remote machine with access through a modern web browser from any device, anywhere.](https://github.com/gitpod-io/openvscode-server)
+- [OpenVSCode Server - LinuxServer.io](https://docs.linuxserver.io/images/docker-openvscode-server/)
+
+## References
+
 - Home: [Coder | Enterprise AI Development Infrastructure & Governance](https://coder.com/)
 - Image: [linuxserver/code-server - Docker Image](https://hub.docker.com/r/linuxserver/code-server)
 - Source: [GitHub - coder/code-server: VS Code in the browser](https://github.com/coder/code-server)
 - FAQ: [code-server/docs/FAQ.md at main · coder/code-server](https://github.com/coder/code-server/blob/main/docs/FAQ.md)
-
-Alternative: OpenVSCode Server
-- [GitHub - gitpod-io/openvscode-server: Run upstream VS Code on a remote machine with access through a modern web browser from any device, anywhere.](https://github.com/gitpod-io/openvscode-server)
-- [OpenVSCode Server - LinuxServer.io](https://docs.linuxserver.io/images/docker-openvscode-server/)
 
 # Authentik ForwardAuth
 

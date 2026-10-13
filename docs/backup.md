@@ -127,7 +127,7 @@ directory; missing credentials then report failure rather than silently dropping
   The NAS destination is unavailable after disk failure; independent on-site,
   WAN-free recovery remains unfinished. Verify the separate off-host `config/`
   copy and access to repository passwords, application secrets and unlock methods.
-  See the [offline-resilience plan](plans/offline-resilience.md).
+  Independent on-site recovery is a separate offline-resilience work item.
 
 ## Everyday operations
 
@@ -345,7 +345,7 @@ revision outside tagged caches, including model/license metadata. Model pruning
 follows successful remote coverage and keeps three recent revisions plus every
 revision referenced by a retained local DB export.
 
-Unfinished work remains in the [offline-resilience](plans/offline-resilience.md)
-and [B2 provider migration](plans/kopia-b2-s3-provider.md) plans. Additional native
+Unfinished work includes offline resilience and the
+[B2 provider migration](plans/kopia-b2-s3-provider.md). Additional native
 exporters, coverage/capacity alerts and broader RPO choices need separate decisions;
 they are not implied by file-snapshot coverage or this documentation cleanup.

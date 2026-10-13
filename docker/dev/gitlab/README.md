@@ -5,9 +5,14 @@ Visit the GitLab URL, and sign in with the username root and the password from t
 
 Register the runner (`gitlab-runner` service): [Registering runners | GitLab Docs](https://docs.gitlab.com/runner/register/index.html#docker)
 
----
+## References
 
-Upgrade Path:
+- Home: [Download and install GitLab](https://about.gitlab.com/install/ce-or-ee/)
+- Image: [gitlab/gitlab-ce - Docker Image](https://hub.docker.com/r/gitlab/gitlab-ce/)
+- Docker install instructions: [Install GitLab in a Docker container | GitLab Docs](https://docs.gitlab.com/ee/install/docker.html)
+
+## Upgrade Path
+
 GitLab requires stopping at intermediate versions (x.2, x.5, x.8, x.11) during upgrades.
 Background migrations must complete before proceeding to the next version.
 Example: 17.11 -> 18.2 -> 18.5 -> 18.8 (cannot skip intermediate stops)
@@ -21,10 +26,3 @@ docker exec -it gitlab gitlab-psql -c "SELECT job_class_name, table_name FROM ba
 
 Upgrade path calculator: [Upgrade Path](https://gitlab-com.gitlab.io/support/toolbox/upgrade-path/)
 Upgrade docs: [GitLab 18 upgrade notes | GitLab Docs](https://docs.gitlab.com/update/versions/gitlab_18_changes/)
-
----
-
-Links:
-- Home: [Download and install GitLab](https://about.gitlab.com/install/ce-or-ee/)
-- Image: [gitlab/gitlab-ce - Docker Image](https://hub.docker.com/r/gitlab/gitlab-ce/)
-- Docker install instructions: [Install GitLab in a Docker container | GitLab Docs](https://docs.gitlab.com/ee/install/docker.html)

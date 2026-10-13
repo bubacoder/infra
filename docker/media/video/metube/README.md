@@ -1,6 +1,7 @@
 Web GUI for youtube-dl (using the yt-dlp fork) with playlist support. Allows you to download videos from YouTube and dozens of other sites
 
-Links:
+## References
+
 - Source: [GitHub - alexta69/metube: Self-hosted video downloader for YouTube and other sites (web UI for yt-dlp)](https://github.com/alexta69/metube)
 - Supported sites: [yt-dlp/supportedsites.md at master · yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)
 - Browser plugin for Chrome/Chromium based browsers: [MeTube Downloader](https://chromewebstore.google.com/detail/metube-downloader/fbmkmdnlhacefjljljlbhkodfmfkijdh)

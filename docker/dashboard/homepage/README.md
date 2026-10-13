@@ -1,6 +1,7 @@
 A highly customizable homepage (or startpage / application dashboard) with Docker and service API integrations.
 
-Links:
+## References
+
 - Home: [Home - Homepage](https://gethomepage.dev/)
 - Source: [GitHub - gethomepage/homepage: A highly customizable homepage (or startpage / application dashboard) with Docker and service API integrations.](https://github.com/gethomepage/homepage/)
 - Docker integration: [Docker Installation - Homepage](https://gethomepage.dev/installation/docker/)

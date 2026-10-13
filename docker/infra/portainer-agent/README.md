@@ -3,6 +3,7 @@ It is designed to be as simple to deploy as it is to use. The application allows
 
 Portainer uses the Portainer Agent container to communicate with the Portainer Server instance and provide access to the node's resources.
 
-Links:
+## References
+
 - Home: [Portainer — One platform, not twelve tools — Portainer](https://www.portainer.io/)
 - Source: [GitHub - portainer/portainer: Making Docker and Kubernetes management easy.](https://github.com/portainer/portainer)

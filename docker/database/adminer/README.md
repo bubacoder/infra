@@ -3,14 +3,15 @@ of a single file ready to deploy to the target server. It supports MySQL, MariaD
 PostgreSQL, CockroachDB, SQLite, MS SQL, Oracle, and through plugins: Elasticsearch,
 SimpleDB, MongoDB, Firebird, ClickHouse, and IMAP systems.
 
-Links:
-- Home: [Adminer - Database management in a single PHP file](https://www.adminer.org)
-- Source: [GitHub - vrana/adminer: Database management in a single PHP file](https://github.com/vrana/adminer)
-- Docs: [adminer - Official Image | Docker Hub](https://hub.docker.com/_/adminer/)
-
 TODO: Enable custom plugins via ADMINER_PLUGINS environment variable
 TODO: Consider mounting custom CSS themes for UI customization
 TODO: Create dedicated database network for secure database connections
+
+## References
+
+- Home: [Adminer - Database management in a single PHP file](https://www.adminer.org)
+- Source: [GitHub - vrana/adminer: Database management in a single PHP file](https://github.com/vrana/adminer)
+- Docs: [adminer - Official Image | Docker Hub](https://hub.docker.com/_/adminer/)
 
 # Authentik ForwardAuth
 

@@ -7,5 +7,6 @@ Note:
 > The same goes for Android, macOS, and iOS, where all servers are questioned at once, and the fastest to answer is considered correct.
 See more: [I now have two Pi-holes on my network instead of one, and if you have the spare resources, I highly recommend it](https://www.xda-developers.com/two-pi-holes-spare-resources-recommend/)
 
-Links:
+## References
+
 - Source: [GitHub - bakito/adguardhome-sync: 🛡️ Synchronize AdGuard Home config to replicas](https://github.com/bakito/adguardhome-sync)

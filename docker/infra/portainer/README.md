@@ -3,6 +3,7 @@ It is designed to be as simple to deploy as it is to use. The application allows
 
 In order to generate an API key, please follow the steps outlined here: https://docs.portainer.io/api/access
 
-Links:
+## References
+
 - Home: [Portainer — One platform, not twelve tools — Portainer](https://www.portainer.io/)
 - Source: https://github.com/portainer/portainer-ce
