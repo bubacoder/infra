@@ -7,6 +7,27 @@ A website is built with the [Hugo](https://gohugo.io/) static site generator, us
 
 **Build process:** The Markdown and Docker Compose files are collected and converted by `update-docs.py`, then `hugo` build is executed in a Docker container, producing a container image with `nginx` serving the static website.
 
+The Relearn revision is pinned in `src/go.mod` and its module/archive checksums
+are recorded in `src/go.sum`. Both Hugo configs use the public Go module proxy
+with checksum verification instead of direct GitHub Git fetching. The Docker
+build downloads modules in a cached layer before copying content; rendering then
+runs without network access and fails on warnings.
+`Dockerfile.dockerignore` keeps private host configuration, downloaded Terraform
+providers, virtual environments and generated content out of this build context.
+
+Build without deploying, from the repository root:
+
+```bash
+docker build -f docs/web/Dockerfile -t local/homelab-docs:check \
+  --build-arg HUGO_BASEURL=http://localhost/ .
+```
+
+After intentionally changing the theme pin, refresh `src/go.sum` using Hugo's
+module tooling with the configured proxy and rebuild. Keep `src/config.module.yaml`
+and the `module` settings in `src/config.yaml` aligned so cached downloads and
+rendering use the same dependency configuration. Repository-authored HTML is
+rendered; placeholders such as `<hostname>` belong in backticks or code blocks.
+
 Run `task docs:deploy` to build and locally deploy (using `docker/tools/homelab-docs/homelab-docs.yaml`) the site.
 
 ## Hugo

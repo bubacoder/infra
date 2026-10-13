@@ -1,7 +1,17 @@
+# Documentation builds need source/config examples, not host state or local caches.
 .git
-.terraform
-.env*
-.task
-.fact_cache
-.venv
-__pycache__
+config
+.opencode
+.ruff_cache
+.pytest_cache
+**/.terraform
+**/.venv
+**/__pycache__
+**/*.tfstate
+**/*.tfstate.*
+
+# Generated content is rebuilt by the collector.
+docs/web/public
+docs/web/src/content
+docs/web/src/public
+docs/web/src/resources

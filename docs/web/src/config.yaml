@@ -1,11 +1,19 @@
 title: HomeLab
-languageCode: en-us
+locale: en-us
 publishDir: ../public
 uglyURLs: false
 
 module:
+  proxy: https://proxy.golang.org
+  private: none
   imports:
     - path: github.com/McShelby/hugo-theme-relearn
+
+# Repository-authored Markdown contains HTML comments and occasional HTML markup.
+markup:
+  goldmark:
+    renderer:
+      unsafe: true
 
 params:
   # themeVariant: "zen-dark"

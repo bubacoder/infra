@@ -21,12 +21,14 @@ ENV HUGO_BASEURL=${HUGO_BASEURL}
 
 COPY docs/web/src/go.mod docs/web/src/go.sum /src/
 COPY docs/web/src/config.module.yaml /src/config.yaml
+RUN hugo mod graph
 
 # Build site
 COPY docs/web/src/config.yaml /src/
 COPY docs/web/src/layouts/ /src/layouts/
 COPY --from=collect /src/content/ /src/content/
-RUN hugo --minify --gc
+# Rendering uses the pinned modules cached above and must not fetch dependencies.
+RUN --network=none hugo --minify --gc --panicOnWarning
 
 #####################################################################
 #                            Final Stage                            #
