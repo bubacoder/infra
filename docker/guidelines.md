@@ -4,7 +4,19 @@ This document outlines the common architecture and patterns used in Docker Compo
 
 ## File Structure and Naming Conventions
 
-Each Docker service is defined in its own YAML file with the following structure:
+Each Docker service has its own directory containing documentation and Compose configuration:
+
+```text
+docker/<category>/<service-name>/
+├── README.md                      # Description, setup/operations, references, TODOs
+├── <service-name>.yaml            # Base Docker Compose configuration
+├── <service-name>-amdgpu.yaml     # Optional hardware-specific Compose override
+└── config/                        # Optional tracked application configuration
+```
+
+`<category>` is an existing category under `docker/` (e.g. `ai`, `tools`, `media/video`).
+The base Compose file lives at `docker/<category>/<service-name>/<service-name>.yaml`
+and contains runtime configuration, not a leading documentation comment block:
 
 ```yaml
 ---
@@ -25,13 +37,34 @@ networks:
     external: true
 ```
 
-Each service file lives at `docker/<category>/<service-name>/<service-name>.yaml`, where `<category>` is one of the subfolders under `docker/` (e.g. `ai`, `tools`, `media/video`).
-
 **Common Practices:**
-- Service metadata at the top with comments for documentation
-- Links to official sites, source repositories, and helpful guides
+- Keep descriptions, setup instructions, links, and TODOs in the service's `README.md`
+- Keep only configuration-specific comments beside the relevant YAML settings
 - Service-specific subdirectories for configuration files
 - Consistent naming conventions for container names
+
+### Service README Structure
+
+Every new service must include `README.md` beside its base Compose file. Use this structure:
+
+1. **Description:** Start with a short explanation of the application and its purpose
+   (typically 1–3 sentences). An application-name heading is optional.
+2. **TODOs, when applicable:** Record outstanding setup or follow-up work in the README,
+   either next to the relevant section or as `TODO:` lines / a dedicated section.
+   Do not add an empty TODO section or move general documentation back into YAML headers.
+3. **Setup and operational notes, when applicable:** Document required environment
+   variables by name and example-file location, first-run configuration, authentication
+   and access restrictions, and any manual steps. Add service-specific sections such as
+   GPU acceleration, upgrades, backup, or recovery only when needed. Link to longer
+   repository guides rather than duplicating them. Never include real credentials.
+4. **`## References`:** Use Markdown links in a bulleted list, with labels such as
+   `Home`, `Source`, `Docs`, `Image`, and `Docker Compose`. Include verified links
+   collected during research; omit unavailable links instead of inventing them.
+
+Examples: [HTTPBin](tools/httpbin/README.md) for a simple service,
+[Jellyfin](media/video/jellyfin/README.md) and [Ollama](ai/ollama/README.md) for GPU
+instructions, and [Authentik](security/authentik/README.md) for secrets, SSO, and recovery.
+The documentation exporter includes the service README alongside its Compose configuration.
 
 ## Core Infrastructure Components
 
@@ -259,7 +292,17 @@ services:
       - "${GPU_VIDEO_GID}"   # video group
 ```
 
-The override's header comment must state which acceleration it provides, the `GPU_COMPOSE_SUFFIX=<suffix>` enable line, and any **manual in-app steps** still required (e.g. Jellyfin: enable VA-API in Dashboard → Playback → Transcoding; Frigate: set `hwaccel_args: preset-vaapi` in `config/config.yml`). See the working examples: `docker/media/video/jellyfin/jellyfin-amdgpu.yaml`, `docker/ai/ollama/ollama-amdgpu.yaml`, `docker/security/frigate/frigate-amdgpu.yaml`.
+Document the override in the service's `README.md`: name the override file and
+acceleration backend, include the `GPU_COMPOSE_SUFFIX=<suffix>` enable line and
+required host environment variables, and list any **manual in-app steps** still
+required (e.g. Jellyfin: enable VA-API in Dashboard → Playback → Transcoding;
+Frigate: set `hwaccel_args: preset-vaapi` in `config/config.yml`). Keep the override
+itself limited to configuration and comments explaining individual settings.
+Use the backend and image supported by the target hardware; do not assume every
+AMD GPU requires ROCm (the Ollama example uses Vulkan).
+See the working examples and their adjacent READMEs:
+`docker/media/video/jellyfin/jellyfin-amdgpu.yaml`,
+`docker/ai/ollama/ollama-amdgpu.yaml`, `docker/security/frigate/frigate-amdgpu.yaml`.
 
 ## Service Categories
 
@@ -274,18 +317,37 @@ Services are organized into logical categories:
 
 ## Template for New Services
 
-When creating a new service, use this template:
+Create both `README.md` and `<service-name>.yaml` in the service directory.
+Use the [Service README Structure](#service-readme-structure) above and this
+Markdown template, omitting optional sections that do not apply:
+
+```markdown
+Brief description of the service in 1 to 3 sentences.
+
+## Setup
+
+Required configuration, environment-variable names and example-file locations,
+first-run steps, and access/authentication notes. Do not include real secrets.
+
+TODO: Specific outstanding setup or follow-up work, if any.
+
+## GPU Acceleration
+
+If supported: override filename, backend, host prerequisites, enable setting,
+and manual application configuration.
+
+## References
+
+- Home: [Application homepage](https://service-homepage.com/)
+- Source: [Source repository](https://github.com/vendor/service)
+- Docs: [Official documentation](https://docs.service.com/)
+- Image: [Container image](https://registry.example.com/vendor/service)
+```
+
+The URLs above are placeholders; replace them with verified links or omit them.
+Use this template for the base Compose file, without a documentation header:
 
 ```yaml
-# Brief description of the service in 1 to 3 sentences
-#
-# Links:
-# - Home: https://service-homepage.com/
-# - Source: https://github.com/vendor/service
-# - Docs: https://docs.service.com/
-#
-# TODO: List additional configuration tasks, possible enhancements
----
 name: service-name
 services:
   service-name:
