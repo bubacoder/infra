@@ -1,6 +1,7 @@
 LLM Frontend for Power Users.
 
-Links:
+## References
+
 - Home: [What is SillyTavern? | docs.ST.app](https://docs.sillytavern.app/)
 - Source: [GitHub - SillyTavern/SillyTavern: LLM Frontend for Power Users.](https://github.com/SillyTavern/SillyTavern)
 - Image: [Package sillytavern](https://github.com/SillyTavern/SillyTavern/pkgs/container/sillytavern)

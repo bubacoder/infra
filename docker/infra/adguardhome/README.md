@@ -8,6 +8,7 @@ Best practice:
  2. Setup adguardhome-sync to sync the settings
  3. Specify both DNS servers in the router's DHCP settings
 
-Links:
+## References
+
 - Home: [AdGuard Home | Network-wide software for any OS: Windows, macOS, Linux](https://adguard.com/en/adguard-home/overview.html)
 - Image: [adguard/adguardhome - Docker Image](https://hub.docker.com/r/adguard/adguardhome)

@@ -19,7 +19,8 @@ Recommended setup steps:
 - Configure categories (Settings menu) to specify default download locations
 - Setup forwarding of port 6881 (TCP, UDP) in the router, check open port: [Open Port Check Tool - Test Port Forwarding on Your Router](https://www.yougetsignal.com/tools/open-ports/)
 
-Links:
+## References
+
 - Home: [qBittorrent Official Website](https://www.qbittorrent.org/)
 - Image: [linuxserver/qbittorrent - Docker Image](https://hub.docker.com/r/linuxserver/qbittorrent)
 

@@ -3,11 +3,13 @@ The purpose is to put your real SSH server on another port and then let the scri
 
 endlessh-go is a golang implementation of endlessh exporting Prometheus metrics, visualized by a Grafana dashboard.
 
-Links:
+## Grafana dashboard
+
+- [GitHub - shizunge/endlessh-go: A golang implementation of endlessh (SSH tarpit) exporting Prometheus metrics, visualized by a Grafana dashboard.](https://github.com/shizunge/endlessh-go/?tab=readme-ov-file#dashboard)
+- [Endlessh | Grafana Labs](https://grafana.com/grafana/dashboards/15156-endlessh/)
+
+## References
+
 - Source: [GitHub - shizunge/endlessh-go: A golang implementation of endlessh (SSH tarpit) exporting Prometheus metrics, visualized by a Grafana dashboard.](https://github.com/shizunge/endlessh-go/)
 - C implementation: [GitHub - skeeto/endlessh: SSH tarpit that slowly sends an endless banner](https://github.com/skeeto/endlessh/)
 - Developer's blogpost: [Endlessh: an SSH Tarpit](https://nullprogram.com/blog/2019/03/22/)
-
-Setup Grafana dashboard:
-- [GitHub - shizunge/endlessh-go: A golang implementation of endlessh (SSH tarpit) exporting Prometheus metrics, visualized by a Grafana dashboard.](https://github.com/shizunge/endlessh-go/?tab=readme-ov-file#dashboard)
-- [Endlessh | Grafana Labs](https://grafana.com/grafana/dashboards/15156-endlessh/)

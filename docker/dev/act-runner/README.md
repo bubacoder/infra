@@ -3,13 +3,6 @@ It connects to a Gitea instance and executes CI/CD workflows in isolated Docker 
 supporting three modes: host-level execution, Docker (bind-mounting the host Docker socket),
 and Docker-in-Docker (DinD) for full isolation.
 
-Links:
-- Home: [gitea/runner: Official runner for Gitea - runner - Gitea: Git with a cup of tea](https://gitea.com/gitea/runner)
-- Source: [gitea/runner: Official runner for Gitea - runner - Gitea: Git with a cup of tea](https://gitea.com/gitea/runner)
-- Docs: [Gitea Runner | Gitea Documentation](https://docs.gitea.com/usage/actions/act-runner)
-- Install instructions URL: [Gitea Runner | Gitea Documentation](https://docs.gitea.com/usage/actions/act-runner)
-- Compose: [Gitea Runner | Gitea Documentation](https://docs.gitea.com/usage/actions/act-runner)
-
 Registration:
 1. Navigate to Gitea Admin → Actions → Runners → Create Runner
 2. Copy the registration token and set GITEA_RUNNER_REGISTRATION_TOKEN in the host .env file
@@ -24,3 +17,11 @@ TODO: Configure a shared external cache server across multiple runners to avoid 
 TODO: Mount runner images from a local registry or mirror to avoid rate limits on Docker Hub
 TODO: Configure container.valid_volumes to restrict which host paths job containers can mount
 TODO: Join Traefik to the dev-act-runner network in docker/security/traefik/traefik.yaml if a web UI is added
+
+## References
+
+- Home: [gitea/runner: Official runner for Gitea - runner - Gitea: Git with a cup of tea](https://gitea.com/gitea/runner)
+- Source: [gitea/runner: Official runner for Gitea - runner - Gitea: Git with a cup of tea](https://gitea.com/gitea/runner)
+- Docs: [Gitea Runner | Gitea Documentation](https://docs.gitea.com/usage/actions/act-runner)
+- Install instructions URL: [Gitea Runner | Gitea Documentation](https://docs.gitea.com/usage/actions/act-runner)
+- Compose: [Gitea Runner | Gitea Documentation](https://docs.gitea.com/usage/actions/act-runner)

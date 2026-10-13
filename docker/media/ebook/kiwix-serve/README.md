@@ -9,7 +9,8 @@ To get content:
  4. Restart the container
 More information on the `.zim` files: https://download.kiwix.org/zim/README  
 
-Links:
+## References
+
 - Home: [Kiwix - Home](https://kiwix.org/)
 - Container: [Package kiwix-serve](https://github.com/kiwix/kiwix-tools/pkgs/container/kiwix-serve)
 - Applications for multiple platforms: [Kiwix - Applications](https://kiwix.org/en/applications/)

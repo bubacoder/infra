@@ -3,18 +3,19 @@ It provides automatic ingest, conversion, metadata fetch, cover/metadata enforce
 
 Default login: `admin` / `admin123`
 
-Links:
-- Home: [GitHub - crocodilestick/Calibre-Web-Automated](https://github.com/crocodilestick/Calibre-Web-Automated)
-- Source: [GitHub - crocodilestick/Calibre-Web-Automated](https://github.com/crocodilestick/Calibre-Web-Automated)
-- Docs: [Home · crocodilestick/Calibre-Web-Automated Wiki](https://github.com/crocodilestick/Calibre-Web-Automated/wiki)
-- Compose example: [Calibre-Web-Automated/docker-compose.yml at main · crocodilestick/Calibre-Web-Automated](https://github.com/crocodilestick/Calibre-Web-Automated/blob/main/docker-compose.yml)
-
 TODO: Change the default admin credentials after first login and enable Uploads under
   Settings -> Basic Configuration -> Feature Configuration.
 TODO: Configure CWA-specific behaviour in the CWA Settings panel (target format, ignored / auto-converted formats).
 TODO: Consider migrating/replacing the existing calibre-web service to avoid two services managing the same library.
 TODO: Optional: set HARDCOVER_TOKEN for the Hardcover metadata provider (https://docs.hardcover.app/api/getting-started/).
 TODO: Optional: bind a Calibre plugins folder to /config/.config/calibre/plugins and copy customize.py.json into it.
+
+## References
+
+- Home: [GitHub - crocodilestick/Calibre-Web-Automated](https://github.com/crocodilestick/Calibre-Web-Automated)
+- Source: [GitHub - crocodilestick/Calibre-Web-Automated](https://github.com/crocodilestick/Calibre-Web-Automated)
+- Docs: [Home · crocodilestick/Calibre-Web-Automated Wiki](https://github.com/crocodilestick/Calibre-Web-Automated/wiki)
+- Compose example: [Calibre-Web-Automated/docker-compose.yml at main · crocodilestick/Calibre-Web-Automated](https://github.com/crocodilestick/Calibre-Web-Automated/blob/main/docker-compose.yml)
 
 # Authentik OIDC
 

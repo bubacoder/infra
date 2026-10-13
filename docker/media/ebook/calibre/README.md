@@ -2,7 +2,8 @@ Calibre is a powerful and easy to use e-book manager. Users say it's outstanding
 It'll allow you to do nearly everything and it takes things a step beyond normal e-book software.
 It's also completely free and open source and great for both casual users and computer experts.
 
-Links:
+## References
+
 - Home: [calibre - E-book management](https://calibre-ebook.com/)
 - Image: [calibre - LinuxServer.io](https://docs.linuxserver.io/images/docker-calibre/)
 
