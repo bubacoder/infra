@@ -6,6 +6,7 @@ echo "Mounting storage..."
 
 # EBS volume ID injected by Terraform at provisioning time
 DATA_VOLUME_ID="${DATA_VOLUME_ID}"
+FORMAT_NEW_VOLUME="${FORMAT_NEW_VOLUME}"
 
 # Locate the block device for the given EBS volume ID.
 # On Nitro-based instances (t3, m5, t4g, etc.) EBS volumes appear as NVMe
@@ -24,7 +25,7 @@ find_device() {
     fi
 
     # Fallback: legacy xvd device (non-Nitro instances)
-    if [ -b "/dev/xvdf" ]; then
+    if [ -b "/dev/xvdf" ] && [ "$(lsblk -dn -o SERIAL /dev/xvdf | tr -d ' -')" = "$${vol_id_nodash}" ]; then
         echo "/dev/xvdf"
         return 0
     fi
@@ -49,10 +50,33 @@ fi
 
 echo "Found data volume at: $${DEVICE}"
 
-# Format with ext4 only if the volume has no existing filesystem (first boot only)
-if ! blkid "$${DEVICE}" | grep -q "UUID="; then
+# Refuse partitioned or unknown devices. Absence of a UUID alone is not blankness.
+if [ "$(lsblk -nr -o NAME "$${DEVICE}" | wc -l)" -ne 1 ]; then
+    echo "Error: refusing partitioned data device." >&2
+    exit 1
+fi
+FSTYPE=$(blkid -s TYPE -o value "$${DEVICE}" || true)
+# shellcheck disable=SC2193 # Terraform renders $${...} to bash variable expansion.
+if [ -z "$${FSTYPE}" ]; then
+    if [ -n "$(wipefs --no-act --noheadings --output TYPE "$${DEVICE}")" ]; then
+        echo "Error: refusing data device with unknown signatures." >&2
+        exit 1
+    fi
+    # External bootstrap authorizes first-time formatting from its private state,
+    # not from byte contents. Fresh encrypted EBS devices need not read as zeroes.
+    if [ "$${FORMAT_NEW_VOLUME}" != "true" ]; then
+        if [ "$${1:-}" = "--defer-initialization" ]; then
+            echo "Storage initialization deferred to the administrative host."
+            exit 0
+        fi
+        echo "Error: storage initialization requires administrative-host approval." >&2
+        exit 1
+    fi
     echo "Formatting $${DEVICE} as ext4..."
-    mkfs.ext4 -F "$${DEVICE}"
+    mkfs.ext4 "$${DEVICE}"
+elif [ "$${FSTYPE}" != "ext4" ]; then
+    echo "Error: refusing unsupported data filesystem." >&2
+    exit 1
 fi
 
 UUID=$(blkid -s UUID -o value "$${DEVICE}")
@@ -64,11 +88,21 @@ fi
 mkdir -p /storage
 
 # Persist the mount across reboots using stable UUID
-if ! grep -q "UUID=$${UUID}" /etc/fstab; then
+if awk '$2 == "/storage" {found=1} END {exit !found}' /etc/fstab; then
+    if ! awk -v expected="UUID=$${UUID}" '$2 == "/storage" && $1 != expected {bad=1} END {exit bad}' /etc/fstab; then
+        echo "Error: conflicting /storage entry in fstab." >&2
+        exit 1
+    fi
+else
     echo "UUID=$${UUID} /storage ext4 defaults,nofail 0 2" >> /etc/fstab
 fi
 
-mount "UUID=$${UUID}" /storage
+if mountpoint -q /storage; then
+    test "$(findmnt -n -o UUID --target /storage)" = "$${UUID}"
+else
+    mount "UUID=$${UUID}" /storage
+fi
+test "$(findmnt -n -o UUID --target /storage)" = "$${UUID}"
 
 # Create standard directory structure
 mkdir -p /storage/media/{movies,tvseries,audio}

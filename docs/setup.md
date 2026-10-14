@@ -1,5 +1,8 @@
 # Getting Started
 
+Choose the target: the guide below covers **Proxmox**. For the alternative AWS
+EC2 bootstrap workflow, see [Bootstrap on AWS](bootstrap-aws.md).
+
 The recommended installation path uses one mode-`0600` YAML file and the
 bootstrap orchestrator. The current automated scope is intentionally narrow:
 

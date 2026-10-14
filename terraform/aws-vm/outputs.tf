@@ -5,23 +5,23 @@ output "instance_id" {
 
 output "public_ip" {
   description = "Public IP address of the instance"
-  value       = module.ec2.public_ip
+  value       = var.allocate_elastic_ip ? aws_eip.main[0].public_ip : module.ec2.public_ip
 }
 
 output "ssh_private_key" {
   description = "SSH private key (ED25519) for connecting to the instance"
-  value       = tls_private_key.main.private_key_openssh
+  value       = var.ssh_public_key == null ? tls_private_key.main[0].private_key_openssh : null
   sensitive   = true
 }
 
 output "public_key_fingerprint_sha256" {
   description = "SHA-256 fingerprint of the SSH public key"
-  value       = tls_private_key.main.public_key_fingerprint_sha256
+  value       = var.ssh_public_key == null ? tls_private_key.main[0].public_key_fingerprint_sha256 : null
 }
 
 output "ami_id" {
   description = "AMI ID used for the instance"
-  value       = data.aws_ami.ubuntu.id
+  value       = var.ami_id != null ? var.ami_id : data.aws_ami.ubuntu[0].id
 }
 
 output "aws_region" {
@@ -31,7 +31,17 @@ output "aws_region" {
 
 output "secrets_manager_secret_name" {
   description = "Name of the Secrets Manager secret storing git credentials"
-  value       = aws_secretsmanager_secret.git_credentials.name
+  value       = var.bootstrap_mode == "standalone" ? aws_secretsmanager_secret.git_credentials[0].name : null
+}
+
+output "data_volume_id" {
+  description = "Persistent EBS data volume ID"
+  value       = aws_ebs_volume.data.id
+}
+
+output "ssh_public_key" {
+  description = "Public SSH key authorized for the administrator"
+  value       = var.ssh_public_key != null ? local.ssh_public_key : tls_private_key.main[0].public_key_openssh
 }
 
 output "spot_instance" {

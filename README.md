@@ -60,6 +60,7 @@ The long-term goal is to reduce these dependencies and provide offline alternati
 | [Backblaze B2](https://www.backblaze.com/cloud-storage)                  | Backup storage                           | Optional, local backup also configured                                  |
 | [CrowdSec](https://app.crowdsec.net/)                                    | Crowd-sourced IP blocklist               | Optional, security service, can be disabled                             |
 | [Azure](https://azure.microsoft.com/)                                    | Temporary VM, storage                    | Optional, not used by any lab components                                |
+| [AWS](https://aws.amazon.com/)                                           | EC2 VM, persistent EBS storage            | Optional, alternative cloud deployment                                  |
 | [Homepage Icons](https://github.com/walkxcode/dashboard-icons/tree/main) | Icon set for the services                | Optional, hosted on a CDN. TODO: host locally                           |
 
 ## Getting Started
@@ -68,6 +69,10 @@ The recommended path uses `config/bootstrap.yaml` to provision an Ubuntu VM on
 Proxmox, configure the host, and deploy the core Docker services end to end.
 
 -> See [Getting Started](docs/setup.md)
+
+For an alternative cloud deployment, see [Bootstrap on AWS](docs/bootstrap-aws.md)
+(initial implementation; see [validation results](docs/bootstrap-aws-validation.md)). The underlying
+[AWS EC2 Terraform configuration](terraform/aws-vm/README.md) also supports standalone use.
 
 ## Development
 

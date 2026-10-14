@@ -183,6 +183,7 @@ class BootstrapTests(unittest.TestCase):
 
         host_dir = self.root / "config/docker/docker-host"
         self.assertIn("MYDOMAIN=homelab.example.com", (host_dir / ".env").read_text())
+        self.assertNotIn("LOCAL_ACCESS_ADMIN_CIDR", (host_dir / ".env").read_text())
         self.assertIn("CLOUDFLARE_DNS_API_TOKEN=test_token-value", (host_dir / ".env.traefik").read_text())
         self.assertEqual(os.stat(host_dir / ".env.traefik").st_mode & 0o777, 0o600)
         services = yaml.safe_load((host_dir / "services.yaml").read_text())

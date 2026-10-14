@@ -4,15 +4,22 @@ tasks:
   init:
     desc: Create the protected local bootstrap configuration
     silent: true
+    env:
+      BOOTSTRAP_TARGET: '{{default "proxmox" .TARGET}}'
     cmds:
       - |
         set -eu
+        case "$BOOTSTRAP_TARGET" in
+          proxmox) example=config-example/bootstrap.yaml ;;
+          aws) example=config-example/bootstrap-aws.yaml ;;
+          *) echo "TARGET must be proxmox or aws" >&2; exit 1 ;;
+        esac
         if [ -e config/bootstrap.yaml ]; then
           echo "Configuration already exists: config/bootstrap.yaml"
           exit 0
         fi
         mkdir -p config
-        cp config-example/bootstrap.yaml config/bootstrap.yaml
+        cp "$example" config/bootstrap.yaml
         chmod 600 config/bootstrap.yaml
         echo "Created config/bootstrap.yaml with mode 0600; replace every placeholder before planning."
 
