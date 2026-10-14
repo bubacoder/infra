@@ -2,7 +2,7 @@
 
 The AWS target reuses `terraform/aws-vm` to create an Ubuntu EC2 Docker host,
 then uses the same separate-admin-host Ansible and core Docker deployment as
-Proxmox. The stages have unit, mocked Terraform and disposable live AWS validation.
+Proxmox. The full CLI workflow has unit, mocked Terraform and disposable live AWS validation.
 See [validation results and remaining boundaries](bootstrap-aws-validation.md)
 before treating the complete workflow as production-ready.
 
