@@ -26,12 +26,15 @@ services:
       - 443:443/tcp # HTTPS
       - 443:443/udp # HTTP/3 - QUIC
     networks:
-      - proxy
-      - security-authentik
-      - security-wg-easy
-      - dev-code-server
-      - tools-vaultwarden
-      - backup-kopia
+      proxy:
+        # Keep internal widget requests on Docker, preserving hostname/SNI for TLS.
+        aliases:
+          - traefik.${MYDOMAIN}
+      security-authentik: {}
+      security-wg-easy: {}
+      dev-code-server: {}
+      tools-vaultwarden: {}
+      backup-kopia: {}
     extra_hosts:
       - host.docker.internal:host-gateway
     labels:

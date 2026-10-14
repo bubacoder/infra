@@ -207,6 +207,27 @@ class BootstrapTests(unittest.TestCase):
         self.assertIn("home.homelab.example.com", names)
         self.assertNotIn("homepage.homelab.example.com", names)
 
+    def test_acceptance_rejects_a_broken_traefik_widget(self) -> None:
+        def respond(command: list[str], **_: object) -> str:
+            if command[0] == "curl":
+                return '{"error":"upstream failure"}' if "api/services/proxy" in command[-1] else ""
+            if ".State.Running" in command[-1]:
+                return "\n".join(["true:0"] * len(core.SERVICE_CONTAINERS))
+            return ""
+
+        runner = Mock()
+        runner.run.side_effect = respond
+        with (
+            patch.object(deploy.time, "monotonic", side_effect=[0, 0.1, 2]),
+            patch.object(deploy.time, "sleep"),
+            self.assertRaisesRegex(core.BootstrapError, "Core services"),
+        ):
+            deploy.verify_services(self.plan(), runner, timeout=1)
+
+    def test_traefik_widget_url_has_private_docker_dns_alias(self) -> None:
+        compose = yaml.safe_load((core.ROOT / "docker/security/traefik/traefik.yaml").read_text())
+        self.assertIn("traefik.${MYDOMAIN}", compose["services"]["traefik"]["networks"]["proxy"]["aliases"])
+
     def test_dns_checkpoint_reports_failed_names_without_secrets(self) -> None:
         with (
             patch.object(proxmox.socket, "getaddrinfo", side_effect=socket.gaierror),
