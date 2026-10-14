@@ -1,5 +1,6 @@
 """Render and deploy the configured Docker host."""
 
+import json
 import os
 import shlex
 import time
@@ -173,6 +174,18 @@ def deploy_services(plan: BootstrapPlan | AwsPlan, runner: Runner) -> None:
     runner.run(vm_ssh_command(plan, "cd $HOME/repos/infra && task docker:apply"), timeout=1800)
 
 
+def verify_traefik_widget(plan: BootstrapPlan | AwsPlan, runner: Runner) -> None:
+    """Require Homepage to reach Traefik's API, not just serve an HTML page."""
+    url = f"https://home.{plan.config.network.domain}/api/services/proxy?group=Infra&service=Traefik&index=0&endpoint=overview"
+    output = runner.run(["curl", "--fail", "--silent", "--show-error", "--connect-timeout", "5", "--max-time", "15", url], capture=True, timeout=20)
+    try:
+        data = json.loads(output)
+    except json.JSONDecodeError as error:
+        raise BootstrapError("Homepage Traefik widget did not return valid JSON") from error
+    if not isinstance(data, dict) or "error" in data or not isinstance(data.get("http"), dict):
+        raise BootstrapError("Homepage Traefik widget did not return API statistics")
+
+
 def verify_services(plan: BootstrapPlan | AwsPlan, runner: Runner, timeout: int = 180) -> None:
     """Verify core service health, persistence, and idempotent redeployment."""
     containers, checkout = " ".join(SERVICE_CONTAINERS), "$HOME/repos/infra"
@@ -187,6 +200,7 @@ def verify_services(plan: BootstrapPlan | AwsPlan, runner: Runner, timeout: int 
                         ["curl", "--fail", "--silent", "--show-error", "--connect-timeout", "5", "--max-time", "15", "--output", "/dev/null", url],
                         timeout=20,
                     )
+                verify_traefik_widget(plan, runner)
                 break
         except BootstrapError:
             pass
