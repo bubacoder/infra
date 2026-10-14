@@ -1,0 +1,44 @@
+# task bootstrap:init TARGET=aws creates config/bootstrap.yaml with mode 0600.
+# Replace all placeholders before planning. AWS credentials use the standard
+# credential chain/profile, never this file. Optional repository override omitted.
+version: 2
+target: aws
+
+deployment:
+  admin_model: separate
+  services:
+    - security/traefik
+    - dashboard/homepage
+
+vm:
+  name: docker-aws
+  username: ubuntu
+  ssh_public_key: ~/.ssh/id_ed25519.pub
+
+aws:
+  account_id: "123456789012"
+  region: eu-central-1
+  profile: homelab
+  ubuntu_version: ubuntu-resolute-26.04
+  architecture: x86_64
+  instance_type: t3.small
+  # Replace with your actual public IP/network. Documentation-only placeholder.
+  admin_source_cidr: 203.0.113.10/32
+  os_disk_size_gb: 20
+  data_disk_size_gb: 30
+
+network:
+  expected_ipv4: auto
+  domain: homelab.example.com
+  dns:
+    mode: external
+    verify: true
+
+host:
+  docker_volumes: /storage/docker-volumes
+  timezone: Etc/UTC
+
+tls:
+  provider: cloudflare
+  acme_email: admin@example.com
+  token: replace-with-cloudflare-token

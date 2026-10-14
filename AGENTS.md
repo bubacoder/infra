@@ -76,6 +76,15 @@ task ansible:apply-cloud
 ### Terraform Management
 
 ```bash
+# Plan AWS EC2 VM Terraform changes
+task aws-vm:plan
+
+# Apply AWS EC2 VM Terraform configuration
+task aws-vm:apply
+
+# Destroy AWS resources (persistent EBS data volume is protected)
+task aws-vm:destroy
+
 # Apply Azure VM Terraform configuration
 task azure-vm:apply
 
@@ -126,6 +135,7 @@ The infrastructure is designed around the following components:
    - `docs/`: Documentation and usage instructions
    - `terraform/`: IaC for cloud provisioning
      - `azure-vm/`: Azure Virtual Machine deployment with CloudInit
+     - `aws-vm/`: AWS EC2 Ubuntu VM deployment with cloud-init and persistent EBS storage
    - `vm/`: Scripts for VM creation and management
    - `scripts/`: Utility scripts for various tasks
    - `config/`: Host-specific configuration (not in repository)
@@ -189,6 +199,7 @@ Key directories and their purposes:
 │   └── tools/       # Various utility services
 ├── docs/            # Documentation
 ├── terraform/       # Terraform configurations
+│   ├── aws-vm/      # AWS EC2 VM deployment with cloud-init
 │   └── azure-vm/    # Azure VM deployment with CloudInit
 └── scripts/         # Utility scripts
 ```

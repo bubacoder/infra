@@ -1,6 +1,7 @@
 # Git credentials stored in AWS Secrets Manager.
 # The EC2 instance retrieves these at boot via its IAM role (no login required).
 resource "aws_secretsmanager_secret" "git_credentials" {
+  count                   = var.bootstrap_mode == "standalone" ? 1 : 0
   name                    = "${var.vm_name}/git-credentials"
   description             = "Git credentials for cloning the infrastructure repository"
   recovery_window_in_days = 0
@@ -8,6 +9,11 @@ resource "aws_secretsmanager_secret" "git_credentials" {
   tags = {
     Name = "${var.vm_name}-git-credentials"
   }
+}
+
+moved {
+  from = aws_secretsmanager_secret.git_credentials
+  to   = aws_secretsmanager_secret.git_credentials[0]
 }
 
 # NOTE: The secret value is intentionally NOT set here — storing credentials in

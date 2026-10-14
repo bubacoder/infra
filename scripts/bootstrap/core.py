@@ -38,6 +38,26 @@ class ProxmoxConfig:
 
 
 @dataclass(frozen=True)
+class AwsConfig:
+    account_id: str
+    region: str
+    profile: str | None
+    ubuntu_version: str
+    architecture: str
+    instance_type: str
+    admin_source_cidr: str
+    os_disk_size_gb: int
+    data_disk_size_gb: int
+
+
+@dataclass(frozen=True)
+class AwsVmConfig:
+    name: str
+    username: str
+    ssh_public_key: Path
+
+
+@dataclass(frozen=True)
 class VmConfig:
     vm_id: int | str
     name: str
@@ -84,11 +104,13 @@ class BootstrapConfig:
     source: Path
     repository_input: dict[str, str] | None
     deployment: DeploymentConfig
-    proxmox: ProxmoxConfig
-    vm: VmConfig
+    proxmox: ProxmoxConfig | None
+    vm: VmConfig | AwsVmConfig
     network: NetworkConfig
     host: HostConfig
     tls: TlsConfig
+    target: str = "proxmox"
+    aws: AwsConfig | None = None
 
 
 @dataclass(frozen=True)
@@ -98,6 +120,19 @@ class BootstrapPlan:
     vm_id: int
     mac: str
     vm_exists: bool
+
+
+@dataclass(frozen=True)
+class AwsPlan:
+    config: BootstrapConfig
+    repository: RepositoryConfig
+    directory: Path
+    ami_id: str
+
+    @property
+    def known_hosts(self) -> Path:
+        """Keep AWS host trust separate from unrelated operator entries."""
+        return self.directory / "known_hosts"
 
 
 class Runner:
@@ -110,6 +145,7 @@ class Runner:
         capture: bool = False,
         cwd: Path = ROOT,
         timeout: int | None = None,
+        env: dict[str, str] | None = None,
     ) -> str:
         """Run a command and optionally return its stripped standard output.
 
@@ -131,6 +167,7 @@ class Runner:
                 stdout=subprocess.PIPE if capture else None,
                 stderr=subprocess.PIPE if capture else None,
                 timeout=timeout,
+                env=env,
             )
         except subprocess.TimeoutExpired as error:
             raise BootstrapError(f"Command timed out: {command[0]}") from error
@@ -157,10 +194,18 @@ def private_key_for(public_key: Path) -> Path | None:
     return private_key if private_key.is_file() else None
 
 
-def vm_ssh_command(plan: BootstrapPlan, remote_command: str) -> list[str]:
+def vm_ssh_command(plan: BootstrapPlan | AwsPlan, remote_command: str) -> list[str]:
     """Build a batch SSH command for the planned VM and available private key."""
     command = ["ssh", "-o", "BatchMode=yes"]
+    command.extend(ssh_trust_options(plan))
     if private_key := private_key_for(plan.config.vm.ssh_public_key):
         command.extend(["-i", str(private_key)])
     command.extend([f"{plan.config.vm.username}@{plan.config.network.expected_ipv4}", remote_command])
     return command
+
+
+def ssh_trust_options(plan: BootstrapPlan | AwsPlan) -> list[str]:
+    """Return strict, deployment-scoped SSH options for AWS."""
+    if isinstance(plan, AwsPlan):
+        return ["-o", "StrictHostKeyChecking=yes", "-o", f"UserKnownHostsFile={plan.known_hosts}"]
+    return []

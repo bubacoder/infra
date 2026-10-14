@@ -5,13 +5,14 @@ import ipaddress
 import json
 import shlex
 import shutil
-import socket
 from dataclasses import asdict, replace
 
 import yaml
 
 from .config import detect_repository
 from .core import ROOT, BootstrapConfig, BootstrapError, BootstrapPlan, Runner, remote, task, vm_ssh_command
+from .network import socket as socket  # noqa: PLC0414
+from .network import verify_dns as verify_dns  # noqa: PLC0414
 
 
 def generated_mac(target: str, vm_name: str) -> str:
@@ -65,33 +66,6 @@ def print_plan(plan: BootstrapPlan) -> None:
         "tls": {"provider": plan.config.tls.provider, "acme_email": plan.config.tls.acme_email, "token": "<redacted>"},
     }
     print(yaml.safe_dump(summary, sort_keys=False).rstrip())
-
-
-def verify_dns(plan: BootstrapPlan, expected: str, *, discovered: bool = False) -> None:
-    """Require the base and bootstrap service names to resolve only to expected."""
-    names = [
-        plan.config.network.domain,
-        f"traefik.{plan.config.network.domain}",
-        f"home.{plan.config.network.domain}",
-        f"bootstrap-check.{plan.config.network.domain}",
-    ]
-    failures: list[str] = []
-    for name in names:
-        try:
-            addresses = {entry[4][0] for entry in socket.getaddrinfo(name, None, socket.AF_INET)}
-        except socket.gaierror:
-            addresses = set()
-        if addresses != {expected}:
-            failures.append(name)
-    if not failures:
-        return
-    if discovered:
-        raise BootstrapError(
-            f"Networking checkpoint: VM {plan.vm_id} was discovered at {expected}. Ask the operator to map its base domain and service names to that address, then rerun bootstrap. Required names: {', '.join(names)}"
-        )
-    raise BootstrapError(
-        f"External DHCP/DNS checkpoint is incomplete. Reserve {plan.mac} as {expected}, then point the base domain and wildcard to that address. Failed names: {', '.join(failures)}"
-    )
 
 
 def discover_vm_ipv4(plan: BootstrapPlan, runner: Runner) -> str:

@@ -8,6 +8,25 @@ Deploys an Ubuntu 26.04 LTS (Resolute Raccoon) EC2 instance on AWS with:
 
 Uses the [terraform-aws-modules](https://github.com/terraform-aws-modules/) community collection to minimise custom code.
 
+For the separate-admin-host bootstrap workflow, see [Bootstrap on AWS](../../docs/bootstrap-aws.md).
+It reuses this template with `bootstrap_mode = "external"`, a supplied public SSH
+key, pinned AMI, Elastic IP and SSM-based host trust. External mode mounts storage
+and prepares SSM but does not create Git credentials, clone the repository or run
+Ansible inside cloud-init. Standalone mode remains the default. Bootstrap owns
+separate state; do not use `task aws-vm:*` to manage bootstrap-created resources.
+
+External mode mounts existing ext4 storage and defers new-volume formatting to
+the administrative controller's one-time state receipt. Supplied SSH keys are
+registered without optional comments, because EC2 rejects non-ASCII comments.
+
+Offline checks (Terraform >= 1.7; AWS is mocked):
+
+```bash
+terraform -chdir=terraform/aws-vm init -backend=false
+terraform -chdir=terraform/aws-vm validate
+terraform -chdir=terraform/aws-vm test
+```
+
 ## Architecture
 
 ```
@@ -228,9 +247,12 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 | Name | Type |
 | ---- | ---- |
 | [aws_ebs_volume.data](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/ebs_volume) | resource |
+| [aws_eip.main](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip) | resource |
+| [aws_eip_association.main](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip_association) | resource |
 | [aws_iam_instance_profile.ec2](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_instance_profile) | resource |
 | [aws_iam_role.ec2](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role) | resource |
 | [aws_iam_role_policy.secrets_access](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy) | resource |
+| [aws_iam_role_policy_attachment.ssm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy_attachment) | resource |
 | [aws_secretsmanager_secret.git_credentials](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
 | [aws_volume_attachment.data](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/volume_attachment) | resource |
 | [tls_private_key.main](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) | resource |
@@ -244,15 +266,20 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 | ---- | ----------- | ---- | ------- | :------: |
 | admin\_source\_address | CIDR or IP allowed SSH and HTTPS access (e.g. your public IP: '1.2.3.4/32') | `string` | n/a | yes |
 | admin\_user | SSH admin username (Ubuntu default is 'ubuntu') | `string` | `"ubuntu"` | no |
+| allocate\_elastic\_ip | Allocate a stable public IPv4 address | `bool` | `false` | no |
+| ami\_id | Pinned official Ubuntu AMI; null selects the most recent release | `string` | `null` | no |
 | architecture | CPU architecture: 'x86\_64' or 'arm64' (Graviton) | `string` | `"x86_64"` | no |
 | aws\_region | AWS region for all resources | `string` | `"eu-central-1"` | no |
+| bootstrap\_mode | Standalone guest setup or external administrative-host orchestration | `string` | `"standalone"` | no |
 | data\_disk\_size\_gb | Persistent data EBS volume size in GB (survives instance termination) | `number` | `10` | no |
+| expected\_account\_id | Optional account guard; bootstrap always supplies its expected AWS account | `string` | `null` | no |
 | instance\_type | EC2 instance type. Defaults to t3.small (x86\_64) or t4g.small (arm64) when null. | `string` | `null` | no |
 | os\_disk\_size\_gb | Root OS disk size in GB | `number` | `20` | no |
 | repo\_directory | Local directory name for the cloned repository | `string` | `"infra"` | no |
-| repo\_url | URL of the infrastructure repository to clone | `string` | n/a | yes |
+| repo\_url | URL of the infrastructure repository to clone | `string` | `""` | no |
 | spot\_instance | Use a Spot instance instead of On-Demand. Reduces cost by ~70% but the instance may be interrupted. | `bool` | `false` | no |
 | spot\_price | Maximum spot bid price (USD/hr). null = on-demand price cap (recommended — avoids accidental overbidding). | `string` | `null` | no |
+| ssh\_public\_key | Existing public SSH key; null preserves standalone generated-key behavior | `string` | `null` | no |
 | ubuntu\_version | Ubuntu release string used in the AMI name (e.g. 'ubuntu-resolute-26.04', 'ubuntu-noble-24.04') | `string` | `"ubuntu-resolute-26.04"` | no |
 | vm\_name | Name tag and hostname of the VM | `string` | `"nest"` | no |
 
@@ -262,6 +289,7 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 | ---- | ----------- |
 | ami\_id | AMI ID used for the instance |
 | aws\_region | AWS region where resources are deployed |
+| data\_volume\_id | Persistent EBS data volume ID |
 | instance\_id | EC2 instance ID |
 | public\_ip | Public IP address of the instance |
 | public\_key\_fingerprint\_sha256 | SHA-256 fingerprint of the SSH public key |
@@ -270,4 +298,5 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 | spot\_instance | Whether a Spot instance is used |
 | spot\_request\_state | Spot instance request state (null for on-demand) |
 | ssh\_private\_key | SSH private key (ED25519) for connecting to the instance |
+| ssh\_public\_key | Public SSH key authorized for the administrator |
 <!-- END_TF_DOCS -->

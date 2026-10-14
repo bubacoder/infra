@@ -5,7 +5,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import config, deploy, proxmox
+from . import aws, config, deploy, proxmox
 from .core import DEFAULT_CONFIG, BootstrapError, ConfigError, Runner
 
 
@@ -27,6 +27,14 @@ def main() -> None:
         raise ConfigError("--yes requires --apply")
     runner = Runner()
     bootstrap_config = config.load_config(args.config)
+    if bootstrap_config.target == "aws":
+        with aws.deployment_lock(bootstrap_config):
+            plan = aws.resolve_plan(bootstrap_config, runner)
+            aws.preflight(plan, runner)
+            print("Preflight passed. No cloud resources have been changed.")
+            if args.apply:
+                aws.apply(plan, runner, assume_yes=args.yes)
+        return
     plan = proxmox.resolve_plan(bootstrap_config, runner)
     proxmox.print_plan(plan)
     proxmox.preflight(plan, runner)

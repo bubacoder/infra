@@ -1,5 +1,10 @@
 # Bootstrap Configuration
 
+Version 1 remains the Proxmox configuration described below. Version 2 requires
+`target: proxmox` or `target: aws`. Proxmox version 2 uses the same fields as
+version 1; AWS uses the separate [AWS example](../config-example/bootstrap-aws.yaml)
+and [AWS bootstrap guide](bootstrap-aws.md). Target-specific fields cannot be mixed.
+
 `python3 -m scripts.bootstrap` reads `config/bootstrap.yaml` and orchestrates the
 supported first-time deployment. The tracked
 `config-example/bootstrap.yaml` is the canonical starting point.

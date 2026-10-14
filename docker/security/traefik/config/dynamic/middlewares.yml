@@ -41,6 +41,7 @@ http:
           - 10.0.0.0/8      # private class A
           - 172.16.0.0/12   # private class B
           - 192.168.0.0/16  # private class C
+          - '{{env "LOCAL_ACCESS_ADMIN_CIDR"}}' # explicit cloud admin CIDR; loopback by default
 
     authentik:
       forwardAuth:
