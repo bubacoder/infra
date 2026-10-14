@@ -1,4 +1,8 @@
 locals {
+  # EC2 ImportKeyPair accepts ASCII material only. Comments are optional and can
+  # contain Unicode, so register only the OpenSSH key type and encoded key.
+  ssh_public_key = var.ssh_public_key == null ? null : join(" ", slice(regexall("\\S+", var.ssh_public_key), 0, 2))
+
   # Maps architecture to AMI name pattern and default instance type
   arch_config = {
     x86_64 = {

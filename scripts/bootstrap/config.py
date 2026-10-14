@@ -17,6 +17,8 @@ except ModuleNotFoundError:
 from .core import (
     ROOT,
     SUPPORTED_SERVICES,
+    AwsConfig,
+    AwsVmConfig,
     BootstrapConfig,
     BootstrapError,
     ConfigError,
@@ -143,22 +145,32 @@ def load_config(path: Path, root: Path = ROOT) -> BootstrapConfig:  # noqa: PLR0
         raise ConfigError(f"Cannot parse bootstrap configuration{location}") from error
     except OSError as error:
         raise ConfigError(f"Cannot read bootstrap configuration: {error.strerror or 'I/O error'}") from error
+    return parse_document(raw, source)
+
+
+def parse_document(raw: object, source: Path) -> BootstrapConfig:  # noqa: PLR0912
+    """Validate an in-memory document without writing secrets to intermediate files."""
     document = require_mapping(
         raw,
         "bootstrap configuration",
-        {"version", "repository", "deployment", "proxmox", "vm", "network", "host", "tls"},
-        {"version", "deployment", "proxmox", "vm", "network", "host", "tls"},
+        {"version", "repository", "deployment", "target", "proxmox", "aws", "vm", "network", "host", "tls"},
+        {"version", "deployment", "vm", "network", "host", "tls"},
     )
-    if document["version"] != 1:
-        raise ConfigError("version must be 1")
-    deployment = require_mapping(document["deployment"], "deployment", {"admin_model", "services"}, {"admin_model", "services"})
-    if require_string(deployment["admin_model"], "deployment.admin_model") != "separate":
-        raise ConfigError("deployment.admin_model currently supports only 'separate'")
-    if not isinstance(deployment["services"], list) or any(not isinstance(service, str) for service in deployment["services"]):
-        raise ConfigError("deployment.services must be a list of service paths")
-    services = tuple(deployment["services"])
-    if services != SUPPORTED_SERVICES:
-        raise ConfigError(f"deployment.services currently must be: {', '.join(SUPPORTED_SERVICES)}")
+    version = document["version"]
+    if type(version) is not int or version not in (1, 2):
+        raise ConfigError("version must be 1 or 2")
+    target = document.get("target", "proxmox")
+    if version == 1 and ("target" in document or "aws" in document):
+        raise ConfigError("version 1 supports Proxmox only; use version 2 for target selection")
+    if version == 2 and "target" not in document:
+        raise ConfigError("version 2 requires target: proxmox or aws")
+    if target not in ("proxmox", "aws"):
+        raise ConfigError("target must be proxmox or aws")
+    if target == "aws":
+        return load_aws_config(document, source)
+    if "proxmox" not in document or "aws" in document:
+        raise ConfigError("Proxmox requires proxmox configuration and forbids aws configuration")
+    shared = load_shared_config(document)
     proxmox = require_mapping(document["proxmox"], "proxmox", {"ssh_target"}, {"ssh_target"})
     ssh_target = require_shell_token(proxmox["ssh_target"], "proxmox.ssh_target")
     if ssh_target.startswith("-"):
@@ -203,6 +215,30 @@ def load_config(path: Path, root: Path = ROOT) -> BootstrapConfig:  # noqa: PLR0
     )
     if memory_min > memory_max:
         raise ConfigError("vm.memory_min_mib must not exceed vm.memory_max_mib")
+    public_key = load_public_key(vm)
+    return BootstrapConfig(
+        source=source,
+        proxmox=ProxmoxConfig(ssh_target),
+        vm=VmConfig(
+            vm_id,
+            validate_name(vm["name"], "vm.name"),
+            require_shell_token(vm["ubuntu_version"], "vm.ubuntu_version"),
+            validate_name(vm["username"], "vm.username"),
+            require_positive_int(vm["cpu_cores"], "vm.cpu_cores"),
+            memory_max,
+            memory_min,
+            require_shell_token(vm["disk_size"], "vm.disk_size"),
+            require_shell_token(vm["storage"], "vm.storage"),
+            require_shell_token(vm["bridge"], "vm.bridge"),
+            validate_mac(vm["mac"]) if vm.get("mac") else None,
+            public_key,
+        ),
+        **shared,
+    )
+
+
+def load_public_key(vm: dict[str, Any]) -> Path:
+    """Validate the shared administrator public-key field."""
     public_key = Path(require_string(vm["ssh_public_key"], "vm.ssh_public_key")).expanduser().resolve()
     try:
         public_key_content = public_key.read_text().strip()
@@ -210,6 +246,19 @@ def load_config(path: Path, root: Path = ROOT) -> BootstrapConfig:  # noqa: PLR0
         raise ConfigError(f"Cannot read vm.ssh_public_key: {error.strerror or 'I/O error'}") from error
     if not public_key.is_file() or not public_key_content.startswith(("ssh-ed25519 ", "ssh-rsa ", "ecdsa-")):
         raise ConfigError(f"vm.ssh_public_key is not a usable public key: {public_key}")
+    return public_key
+
+
+def load_shared_config(document: dict[str, Any]) -> dict[str, Any]:
+    """Validate the same deployment, network, host and secret rules for all targets."""
+    deployment = require_mapping(document["deployment"], "deployment", {"admin_model", "services"}, {"admin_model", "services"})
+    if require_string(deployment["admin_model"], "deployment.admin_model") != "separate":
+        raise ConfigError("deployment.admin_model currently supports only 'separate'")
+    if not isinstance(deployment["services"], list) or any(not isinstance(service, str) for service in deployment["services"]):
+        raise ConfigError("deployment.services must be a list of service paths")
+    services = tuple(deployment["services"])
+    if services != SUPPORTED_SERVICES:
+        raise ConfigError(f"deployment.services currently must be: {', '.join(SUPPORTED_SERVICES)}")
     network = require_mapping(document["network"], "network", {"expected_ipv4", "domain", "dns"}, {"expected_ipv4", "domain", "dns"})
     expected_value = require_string(network["expected_ipv4"], "network.expected_ipv4")
     try:
@@ -233,28 +282,73 @@ def load_config(path: Path, root: Path = ROOT) -> BootstrapConfig:  # noqa: PLR0
         raise ConfigError("tls.token still contains a placeholder")
     if not re.fullmatch(r"[A-Za-z0-9_-]+", token):
         raise ConfigError("tls.token contains unsupported characters")
+    return {
+        "repository_input": validate_repository_input(document.get("repository")),
+        "deployment": DeploymentConfig("separate", services),
+        "network": NetworkConfig(expected_ipv4, validate_domain(network["domain"]), DnsConfig("external", True)),
+        "host": HostConfig(docker_volumes, require_shell_token(host["timezone"], "host.timezone")),
+        "tls": TlsConfig("cloudflare", email, token),
+    }
+
+
+def load_aws_config(document: dict[str, Any], source: Path) -> BootstrapConfig:
+    """Validate AWS-specific fields and reuse shared version 1 validation."""
+    if "proxmox" in document or "aws" not in document:
+        raise ConfigError("AWS requires aws configuration and forbids proxmox configuration")
+    vm = require_mapping(document["vm"], "vm", {"name", "username", "ssh_public_key"}, {"name", "username", "ssh_public_key"})
+    if vm["username"] != "ubuntu":
+        raise ConfigError("AWS currently requires vm.username: ubuntu")
+    fields = {
+        "account_id",
+        "region",
+        "profile",
+        "ubuntu_version",
+        "architecture",
+        "instance_type",
+        "admin_source_cidr",
+        "os_disk_size_gb",
+        "data_disk_size_gb",
+    }
+    aws = require_mapping(document["aws"], "aws", fields, fields - {"profile"})
+    account = require_string(aws["account_id"], "aws.account_id")
+    if not re.fullmatch(r"[0-9]{12}", account):
+        raise ConfigError("aws.account_id must be a quoted 12-digit account ID")
+    if aws["architecture"] != "x86_64":
+        raise ConfigError("AWS bootstrap currently supports x86_64 only")
+    try:
+        cidr = ipaddress.IPv4Network(require_string(aws["admin_source_cidr"], "aws.admin_source_cidr"), strict=True)
+    except ValueError as error:
+        raise ConfigError("aws.admin_source_cidr must be a valid IPv4 network CIDR") from error
+    if cidr.prefixlen == 0 or not cidr.network_address.is_global or not cidr.broadcast_address.is_global:
+        raise ConfigError("aws.admin_source_cidr must restrict access to public administrator addresses")
+    region = require_string(aws["region"], "aws.region")
+    if not re.fullmatch(r"[a-z]{2}(?:-[a-z]+)+-[0-9]+", region):
+        raise ConfigError("aws.region is invalid")
+    instance = require_string(aws["instance_type"], "aws.instance_type")
+    if not re.fullmatch(r"[a-z0-9]+\.[a-z0-9]+", instance):
+        raise ConfigError("aws.instance_type is invalid")
+    profile = require_shell_token(aws["profile"], "aws.profile") if aws.get("profile") else None
+    shared = load_shared_config(document)
+    volumes = Path(shared["host"].docker_volumes)
+    if not volumes.is_relative_to("/storage") or volumes == Path("/storage") or ".." in volumes.parts:
+        raise ConfigError("AWS host.docker_volumes must be beneath /storage")
     return BootstrapConfig(
-        source,
-        validate_repository_input(document.get("repository")),
-        DeploymentConfig("separate", services),
-        ProxmoxConfig(ssh_target),
-        VmConfig(
-            vm_id,
-            validate_name(vm["name"], "vm.name"),
-            require_shell_token(vm["ubuntu_version"], "vm.ubuntu_version"),
-            validate_name(vm["username"], "vm.username"),
-            require_positive_int(vm["cpu_cores"], "vm.cpu_cores"),
-            memory_max,
-            memory_min,
-            require_shell_token(vm["disk_size"], "vm.disk_size"),
-            require_shell_token(vm["storage"], "vm.storage"),
-            require_shell_token(vm["bridge"], "vm.bridge"),
-            validate_mac(vm["mac"]) if vm.get("mac") else None,
-            public_key,
+        source=source,
+        proxmox=None,
+        vm=AwsVmConfig(validate_name(vm["name"], "vm.name"), "ubuntu", load_public_key(vm)),
+        target="aws",
+        aws=AwsConfig(
+            account,
+            region,
+            profile,
+            require_shell_token(aws["ubuntu_version"], "aws.ubuntu_version"),
+            "x86_64",
+            instance,
+            str(cidr),
+            require_positive_int(aws["os_disk_size_gb"], "aws.os_disk_size_gb"),
+            require_positive_int(aws["data_disk_size_gb"], "aws.data_disk_size_gb"),
         ),
-        NetworkConfig(expected_ipv4, validate_domain(network["domain"]), DnsConfig("external", True)),
-        HostConfig(docker_volumes, require_shell_token(host["timezone"], "host.timezone")),
-        TlsConfig("cloudflare", email, token),
+        **shared,
     )
 
 

@@ -8,6 +8,8 @@ services:
     environment:
       TZ: ${TIMEZONE}
       MYDOMAIN: ${MYDOMAIN}
+      # AWS bootstrap extends the private-network policy by its explicit admin CIDR.
+      LOCAL_ACCESS_ADMIN_CIDR: ${LOCAL_ACCESS_ADMIN_CIDR:-127.0.0.1/32}
       CLOUDFLARE_DNS_API_TOKEN: ${CLOUDFLARE_DNS_API_TOKEN}
       CROWDSEC_ENABLED: ${CROWDSEC_ENABLED:-false}
       # Generate key within the crowdsec container: cscli bouncers add traefik-bouncer
