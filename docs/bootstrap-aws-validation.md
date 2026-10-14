@@ -1,6 +1,6 @@
 # AWS Bootstrap Validation — 2026-10-14
 
-## Scope
+## Initial stage test (before commit approval)
 
 A disposable on-demand `t3.small` Ubuntu 26.04 instance in `eu-central-1`, with
 a 20 GiB root volume, 30 GiB encrypted persistent EBS volume, Elastic IP, and
@@ -55,7 +55,7 @@ the four AWS test names; no public A records were created.
 Regression tests cover the fixes. Mocked Terraform tests cover standalone mode,
 external mode and Unicode comments without contacting AWS.
 
-Final local checks passed: 204 Python tests, 3 mocked Terraform tests, Terraform
+Final local checks passed: 208 Python tests, 3 mocked Terraform tests, Terraform
 validation/formatting, Ruff and YAML lint. Proxmox bootstrap shell tests also passed.
 
 ## Disposal
@@ -75,10 +75,51 @@ The isolated Terraform state has no remaining managed resources; neither test
 volume has remaining snapshots. The tracked production EBS guard remains enabled,
 and the local Git HEAD is unchanged.
 
-## Remaining validation boundary
+## Published-branch CLI validation
 
-This validates the provisioning and shared deployment stages using approved
-uncommitted code. A fresh run through the normal `bootstrap:plan`/`bootstrap:apply`
-entry points still requires a clean checkout on a pushed branch, after commit
-approval. The final cloud-init preparation shape has regression/mocked coverage;
-the live VM used explicit maintenance for fixes discovered during its initial boot.
+After commit/push approval, a second fresh target used the normal public commands
+from a clean checkout on the pushed `aws-bootstrap` branch:
+
+```bash
+task bootstrap:plan CONFIG=config/bootstrap-aws-cli-test.yaml
+task bootstrap:apply CONFIG=config/bootstrap-aws-cli-test.yaml YES=1
+```
+
+The first apply completed fresh cloud-init, one-time EBS formatting and SSH trust,
+then reached the expected operator DNS checkpoint. A named temporary hosts mapping
+was added for the test names and the same apply command resumed the deployment.
+No working-tree overlay, alternate runner or repository-guard bypass was used.
+
+This round found and fixed two additional issues:
+
+- **Ownership on resume:** EC2 tags expose the root volume separately, although
+  Terraform manages it inside the instance's nested root-device state. Include
+  those controlled volume IDs and match the template's actual IAM profile name.
+  Fix: `f41a42d`.
+- **Dashboard widget routing:** Homepage resolved the public Traefik hostname back
+  to the LAN server. Give Traefik its hostname as a private Docker network alias,
+  preserving hostname/SNI and trusted TLS without widening the security group.
+  Acceptance now checks the widget's live API statistics, not only HTML pages.
+  Fix: `869d389`.
+
+Fresh deployment and full repeat applies passed through the production CLI.
+Instance, Elastic IP and data-volume identities remained unchanged; Docker repeat
+deployment did not recreate containers, and the repeat Terraform plan was clean.
+Both HTTPS routes and the Traefik widget passed. A non-admin public-IP HTTPS
+request was blocked and ACME left no temporary challenge records.
+
+The second target was fully disposed of after testing: instance, both volumes,
+Elastic IP, VPC, IAM role/profile and SSH key pair were verified removed. Docker
+was stopped and the data filesystem unmounted before teardown. The original
+inventory was restored byte-for-byte, the hosts-file hash matched its baseline,
+and the Proxmox bootstrap configuration was unchanged. Temporary copies of the
+test service token and bootstrap configuration were deleted.
+
+Gitleaks, AWS-credential/private-key detection and YAML pre-commit checks passed.
+No hosted workflow runs were triggered by these branch pushes; local and live
+checks were used instead.
+
+The initial implementation was committed as `b2b523c`; all implementation and fix
+commits were pushed to `aws-bootstrap`. This validates the full documented CLI
+flow for the supported public, on-demand x86_64 core profile. Other profiles listed
+as unsupported in the AWS guide remain outside the tested scope.
