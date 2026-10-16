@@ -1,5 +1,5 @@
 # kics-scan ignore-line - Missing User Instruction
-FROM python:3.14-slim
+FROM python:3.15-slim
 
 # Package: https://pypi.org/project/autogenstudio/
 RUN pip install --no-cache-dir --upgrade autogenstudio==0.4.2.2
