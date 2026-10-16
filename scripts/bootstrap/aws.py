@@ -11,6 +11,7 @@ import shlex
 import shutil
 import tempfile
 import time
+from collections.abc import Iterator
 from dataclasses import asdict, replace
 from pathlib import Path
 
@@ -23,7 +24,7 @@ from .network import verify_dns
 
 
 @contextlib.contextmanager
-def deployment_lock(config: BootstrapConfig, root: Path = ROOT):
+def deployment_lock(config: BootstrapConfig, root: Path = ROOT) -> Iterator[Path]:
     """Lock the whole workflow, not just individual Terraform operations."""
     directory = root / "config/terraform/bootstrap" / config.vm.name
     directory.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -96,7 +97,7 @@ def terraform(plan: AwsPlan, runner: Runner, arguments: list[str], *, timeout: i
 def verify_identity(config: BootstrapConfig, runner: Runner) -> None:
     """Fail closed on the wrong AWS account."""
     identity = aws_command(config, runner, ["sts", "get-caller-identity"])
-    if not isinstance(identity, dict) or identity.get("Account") != config.aws.account_id:
+    if identity.get("Account") != config.aws.account_id:
         raise BootstrapError("Authenticated AWS account does not match aws.account_id")
 
 
@@ -125,6 +126,7 @@ def template_files(root: Path) -> list[Path]:
 
 
 def source_digest(root: Path) -> str:
+    """Hash the allowlisted provisioning sources in stable path order."""
     digest = hashlib.sha256()
     for path in template_files(root):
         digest.update(str(path.relative_to(root / "terraform/aws-vm")).encode())
@@ -146,6 +148,7 @@ def provision_identity(config: BootstrapConfig, root: Path) -> dict:
 
 
 def read_manifest(directory: Path) -> dict | None:
+    """Read private deployment metadata, failing closed on invalid content."""
     path = directory / "manifest.json"
     if not path.exists():
         return None
@@ -202,7 +205,7 @@ def resolve_plan(config: BootstrapConfig, runner: Runner, root: Path = ROOT) -> 
                 "Name=state,Values=available",
             ],
         )
-        candidates = images.get("Images", []) if isinstance(images, dict) else []
+        candidates = images.get("Images", [])
         if not candidates:
             raise BootstrapError("No available official Canonical AMI matches the requested Ubuntu release")
         ami_id = max(candidates, key=lambda image: image["CreationDate"])["ImageId"]
@@ -218,10 +221,17 @@ def render_provisioning(plan: AwsPlan, root: Path = ROOT) -> None:
     runtime = plan.directory / "runtime"
     runtime.mkdir(mode=0o700, exist_ok=True)
     runtime.chmod(0o700)
-    for path in template_files(root):
-        if path.name == "backend.tf":
+    sources = {path.relative_to(root / "terraform/aws-vm"): path for path in template_files(root)}
+    expected = set(sources) | {Path("backend.tf")}
+    # Synchronize generated sources only; state, plans, and caches stay untouched.
+    for pattern in ("*.tf", "cloud-init/*.tpl"):
+        for path in runtime.glob(pattern):
+            if path.relative_to(runtime) not in expected:
+                path.unlink()
+    for relative, path in sources.items():
+        if relative == Path("backend.tf"):
             continue
-        atomic_write(runtime / path.relative_to(root / "terraform/aws-vm"), path.read_text())
+        atomic_write(runtime / relative, path.read_text())
     atomic_write(runtime / "backend.tf", 'terraform {\n  backend "local" {}\n}\n')
     aws = plan.config.aws
     inputs = {
@@ -249,7 +259,10 @@ def state_resources(document: dict) -> list[dict]:
     """Flatten Terraform state modules without exposing their values."""
 
     def walk(module: dict) -> list[dict]:
-        return [*module.get("resources", []), *(resource for child in module.get("child_modules", []) for resource in walk(child))]
+        resources = list(module.get("resources", []))
+        for child in module.get("child_modules", []):
+            resources.extend(walk(child))
+        return resources
 
     return walk(document.get("values", {}).get("root_module", {}))
 
@@ -261,24 +274,22 @@ def verify_ownership(plan: AwsPlan, runner: Runner) -> None:
     owned_profiles: set[str] = set()
     if (plan.directory / "runtime/terraform.tfstate").exists():
         state = json.loads(terraform(plan, runner, ["show", "-json"]))
-        owned = {
-            str(value)
-            for resource in state_resources(state)
-            if resource.get("mode") != "data"
-            for attribute in ("id", "key_pair_id", "allocation_id")
-            if (value := resource.get("values", {}).get(attribute)) is not None
-        }
-        # Root EBS volumes are managed inside aws_instance rather than as a
-        # separate resource, but EC2 tags report them as independent volumes.
-        owned.update(
-            device["volume_id"]
-            for resource in state_resources(state)
-            if resource.get("mode") == "managed" and resource.get("type") == "aws_instance"
-            for device in (resource.get("values", {}).get("root_block_device") or [])
-            if device.get("volume_id")
-        )
-        owned_roles = {resource["values"]["id"] for resource in state_resources(state) if resource.get("type") == "aws_iam_role"}
-        owned_profiles = {resource["values"]["id"] for resource in state_resources(state) if resource.get("type") == "aws_iam_instance_profile"}
+        for resource in state_resources(state):
+            values = resource.get("values", {})
+            if resource.get("mode") != "data":
+                for attribute in ("id", "key_pair_id", "allocation_id"):
+                    value = values.get(attribute)
+                    if value is not None:
+                        owned.add(str(value))
+            # EC2 tags list root EBS volumes separately from their instance.
+            if resource.get("mode") == "managed" and resource.get("type") == "aws_instance":
+                for device in values.get("root_block_device") or []:
+                    if device.get("volume_id"):
+                        owned.add(device["volume_id"])
+            if resource.get("type") == "aws_iam_role":
+                owned_roles.add(resource["values"]["id"])
+            if resource.get("type") == "aws_iam_instance_profile":
+                owned_profiles.add(resource["values"]["id"])
     manifest = read_manifest(plan.directory) or {}
     if any(manifest.get(field) and manifest[field] not in owned for field in ("instance_id", "data_volume_id")):
         raise BootstrapError("Recorded AWS identities are missing from deployment state; recover state before retrying")
@@ -288,15 +299,15 @@ def verify_ownership(plan: AwsPlan, runner: Runner) -> None:
     )
     collisions = [tag["ResourceId"] for tag in tags.get("Tags", []) if tag.get("ResourceId") not in owned]
     roles = aws_command(plan.config, runner, ["iam", "list-roles"])
-    collisions.extend(
-        role["RoleName"] for role in roles.get("Roles", []) if role.get("RoleName") == f"{name}-ec2-role" and role["RoleName"] not in owned_roles
-    )
+    for role in roles.get("Roles", []):
+        role_name = role.get("RoleName")
+        if role_name == f"{name}-ec2-role" and role_name not in owned_roles:
+            collisions.append(role_name)
     profiles = aws_command(plan.config, runner, ["iam", "list-instance-profiles"])
-    collisions.extend(
-        profile["InstanceProfileName"]
-        for profile in profiles.get("InstanceProfiles", [])
-        if profile.get("InstanceProfileName") in {name, f"{name}-ec2-profile"} and profile["InstanceProfileName"] not in owned_profiles
-    )
+    for profile in profiles.get("InstanceProfiles", []):
+        profile_name = profile.get("InstanceProfileName")
+        if profile_name in {name, f"{name}-ec2-profile"} and profile_name not in owned_profiles:
+            collisions.append(profile_name)
     if collisions:
         raise BootstrapError("Matching-name AWS resources are outside bootstrap state; choose a new name or perform an explicit state migration")
 
@@ -343,7 +354,9 @@ def plan_infrastructure(plan: AwsPlan, runner: Runner) -> list[str]:
 
 def preflight(plan: AwsPlan, runner: Runner, root: Path = ROOT) -> None:
     """Check connectivity and create a read-only cloud plan; no resource apply."""
-    address = runner.run(["curl", "--fail", "--silent", "--show-error", "--max-time", "10", "https://ipinfo.io/ip"], capture=True, timeout=15)
+    address = runner.run(
+        ["curl", "--ipv4", "--fail", "--silent", "--show-error", "--max-time", "10", "https://ipinfo.io/ip"], capture=True, timeout=15
+    )
     try:
         permitted = ipaddress.IPv4Address(address) in ipaddress.IPv4Network(plan.config.aws.admin_source_cidr)
     except ValueError as error:
@@ -384,16 +397,20 @@ def verify_inventory_name(plan: AwsPlan, root: Path) -> None:
         if not isinstance(document, dict):
             raise BootstrapError("Existing Ansible inventory must be a mapping")
         for group in ("debian", "docker_hosts"):
-            if group in document and not isinstance(document[group], dict):
+            if group not in document:
+                continue
+            if not isinstance(document[group], dict):
                 raise BootstrapError("Existing Ansible inventory group must be a mapping")
-            if group in document and not isinstance(document[group].get("hosts", {}), dict):
+            if not isinstance(document[group].get("hosts", {}), dict):
                 raise BootstrapError("Existing Ansible inventory hosts must be a mapping")
 
         def walk(value: object) -> bool:
             if not isinstance(value, dict):
                 return False
             hosts = value.get("hosts")
-            return (isinstance(hosts, dict) and plan.config.vm.name in hosts) or any(walk(child) for child in value.values())
+            if isinstance(hosts, dict) and plan.config.vm.name in hosts:
+                return True
+            return any(walk(child) for child in value.values())
 
         if walk(document) and (relative.startswith("ansible/") or not manifest.get("public_ip")):
             raise BootstrapError("VM name already belongs to an existing Ansible inventory host; choose a new AWS hostname")
@@ -478,13 +495,16 @@ def ssm(plan: AwsPlan, runner: Runner, instance_id: str, commands: list[str], ti
 
 
 def output(plan: AwsPlan, runner: Runner, name: str) -> str:
+    """Read one Terraform output privately with the short command timeout."""
     return terraform(plan, runner, ["output", "-raw", name], timeout=30).strip()
 
 
 def wait_ready(plan: AwsPlan, runner: Runner, instance_id: str) -> None:
     """Require EC2 health and a live SSM agent before any guest SSH connection."""
     result = aws_command(plan.config, runner, ["ec2", "describe-instances", "--instance-ids", instance_id])
-    instances = [instance for reservation in result.get("Reservations", []) for instance in reservation.get("Instances", [])]
+    instances = []
+    for reservation in result.get("Reservations", []):
+        instances.extend(reservation.get("Instances", []))
     if len(instances) != 1 or instances[0].get("InstanceId") != instance_id:
         raise BootstrapError("AWS instance identity does not match deployment state")
     state = instances[0].get("State", {}).get("Name")
@@ -579,7 +599,11 @@ def establish_ssh_trust(plan: AwsPlan, runner: Runner, instance_id: str) -> None
     if len(trusted) < 2 or trusted[0] != "ssh-ed25519" or not re.fullmatch(r"[A-Za-z0-9+/=]+", trusted[1]):
         raise BootstrapError("SSM returned an invalid SSH host public key")
     network = runner.run(["ssh-keyscan", "-T", "10", "-t", "ed25519", plan.config.network.expected_ipv4], capture=True, timeout=15)
-    keys = {tuple(line.split()[1:3]) for line in network.splitlines() if len(line.split()) == 3 and not line.startswith("#")}
+    keys = set()
+    for line in network.splitlines():
+        fields = line.split()
+        if len(fields) == 3 and not line.startswith("#"):
+            keys.add(tuple(fields[1:3]))
     if keys != {tuple(trusted[:2])}:
         raise BootstrapError("SSH network host key does not match the trusted SSM key")
     desired = f"{plan.config.network.expected_ipv4} {' '.join(trusted[:2])}\n"
@@ -591,7 +615,9 @@ def establish_ssh_trust(plan: AwsPlan, runner: Runner, instance_id: str) -> None
 
 def complete_deployment(plan: AwsPlan, runner: Runner, manifest: dict, root: Path) -> None:
     """Resolve the created host and run shared guest deployment and acceptance."""
-    instance_id, address, volume_id = (output(plan, runner, name) for name in ("instance_id", "public_ip", "data_volume_id"))
+    instance_id = output(plan, runner, "instance_id")
+    address = output(plan, runner, "public_ip")
+    volume_id = output(plan, runner, "data_volume_id")
     if not re.fullmatch(r"i-[0-9a-f]+", instance_id) or not re.fullmatch(r"vol-[0-9a-f]+", volume_id):
         raise BootstrapError("Terraform returned invalid AWS resource identities")
     try:

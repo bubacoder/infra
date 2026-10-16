@@ -9,12 +9,13 @@ import os
 import socket
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import yaml
 
-from scripts.bootstrap import config, core, deploy, proxmox
+from scripts.bootstrap import config, core, deploy, network, proxmox
 
 
 class BootstrapTests(unittest.TestCase):
@@ -70,9 +71,9 @@ class BootstrapTests(unittest.TestCase):
     def load(self) -> core.BootstrapConfig:
         return config.load_config(self.config_path, self.root)
 
-    def plan(self, config: core.BootstrapConfig | None = None) -> core.BootstrapPlan:
+    def plan(self, config: core.BootstrapConfig | None = None) -> core.ProxmoxPlan:
         loaded = config or self.load()
-        return core.BootstrapPlan(
+        return core.ProxmoxPlan(
             config=loaded,
             repository=self.repository(),
             vm_id=400,
@@ -157,6 +158,42 @@ class BootstrapTests(unittest.TestCase):
         core.remote(runner, "user@proxmox", "sudo qm list", capture=True)
         runner.run.assert_called_once_with(["ssh", "-o", "BatchMode=yes", "user@proxmox", "LC_ALL=C LANG=C sudo qm list"], capture=True, timeout=None)
 
+    def test_vm_ssh_uses_shared_transport_with_optional_private_key(self) -> None:
+        """Keep Proxmox SSH arguments unchanged with file or agent identities."""
+        plan = self.plan()
+        self.assertIsInstance(plan, core.ProxmoxPlan)
+        transport = ["ssh", "-o", "BatchMode=yes"]
+        self.assertEqual(core.ssh_command(plan), transport)
+        self.assertEqual(core.vm_ssh_command(plan, "true"), [*transport, "admin@192.0.2.10", "true"])
+        private_key = self.public_key.with_suffix("")
+        private_key.write_text("test fixture")
+        transport.extend(["-i", str(private_key)])
+        self.assertEqual(core.ssh_command(plan), transport)
+        self.assertEqual(core.vm_ssh_command(plan, "true"), [*transport, "admin@192.0.2.10", "true"])
+
+    def test_proxmox_vm_rows_ignore_headers_and_malformed_rows(self) -> None:
+        """Parse VM identities without accepting incomplete or nonnumeric rows."""
+        runner = Mock()
+        runner.run.return_value = "VMID NAME STATUS\n400 docker-host running\n\ninvalid other stopped\n401\n402 other stopped\n"
+        self.assertEqual(proxmox.proxmox_vm_rows(self.load(), runner), [(400, "docker-host"), (402, "other")])
+
+    def test_resolve_returns_proxmox_plan_for_new_and_existing_auto_id(self) -> None:
+        """Reuse a named VM or resolve a new ID without changing target types."""
+        loaded = self.load()
+        loaded = replace(loaded, vm=replace(loaded.vm, vm_id="auto"))
+        for rows, exists in (([(400, loaded.vm.name)], True), ([], False)):
+            with (
+                self.subTest(exists=exists),
+                patch.object(proxmox, "detect_repository", return_value=self.repository()),
+                patch.object(proxmox, "proxmox_vm_rows", return_value=rows),
+                patch.object(proxmox, "remote", return_value="400") as remote,
+            ):
+                plan = proxmox.resolve_plan(loaded, Mock(), self.root)
+                self.assertIsInstance(plan, core.ProxmoxPlan)
+                self.assertEqual(plan.vm_id, 400)
+                self.assertEqual(plan.vm_exists, exists)
+                self.assertEqual(remote.call_count, 0 if exists else 1)
+
     def test_plan_redacts_token(self) -> None:
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
@@ -199,10 +236,28 @@ class BootstrapTests(unittest.TestCase):
 
         self.assertFalse((self.root / "config/vm/proxmox/ubuntu-cloud.env").exists())
 
+    def test_inventory_validation_preserves_errors_for_invalid_managed_groups(self) -> None:
+        """Reject invalid inventory shapes before any guest configuration is written."""
+        inventory_path = self.root / "config/ansible/inventory/inventory.yaml"
+        inventory_path.parent.mkdir(parents=True)
+        cases = (
+            (["invalid"], "Ansible inventory must be a mapping"),
+            ({"debian": None}, "debian inventory group must be a mapping"),
+            ({"docker_hosts": []}, "docker_hosts inventory group must be a mapping"),
+            ({"debian": {"hosts": None}}, "debian.hosts must be a mapping"),
+            ({"docker_hosts": {"hosts": []}}, "docker_hosts.hosts must be a mapping"),
+        )
+        for document, message in cases:
+            with self.subTest(document=document):
+                inventory_path.write_text(yaml.safe_dump(document))
+                with self.assertRaisesRegex(core.BootstrapError, message):
+                    deploy.render_config(self.plan(), self.root)
+                self.assertFalse((self.root / "config/vm/proxmox/ubuntu-cloud.env").exists())
+
     def test_dns_checkpoint_accepts_only_expected_address(self) -> None:
         expected = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("192.0.2.10", 0))]
-        with patch.object(proxmox.socket, "getaddrinfo", return_value=expected) as resolver:
-            proxmox.verify_dns(self.plan(), "192.0.2.10")
+        with patch.object(network.socket, "getaddrinfo", return_value=expected) as resolver:
+            network.verify_dns(self.plan(), "192.0.2.10")
         names = {call.args[0] for call in resolver.call_args_list}
         self.assertIn("home.homelab.example.com", names)
         self.assertNotIn("homepage.homelab.example.com", names)
@@ -230,10 +285,10 @@ class BootstrapTests(unittest.TestCase):
 
     def test_dns_checkpoint_reports_failed_names_without_secrets(self) -> None:
         with (
-            patch.object(proxmox.socket, "getaddrinfo", side_effect=socket.gaierror),
+            patch.object(network.socket, "getaddrinfo", side_effect=socket.gaierror),
             self.assertRaisesRegex(core.BootstrapError, "External DHCP/DNS checkpoint") as raised,
         ):
-            proxmox.verify_dns(self.plan(), "192.0.2.10")
+            network.verify_dns(self.plan(), "192.0.2.10")
         self.assertNotIn("test_token-value", str(raised.exception))
 
     def test_preflight_reads_storage_from_proxmox_api(self) -> None:
@@ -306,13 +361,7 @@ class BootstrapTests(unittest.TestCase):
             proxmox.discover_vm_ipv4(plan, StubRunner())
 
     def test_partial_existing_vm_is_not_resumed(self) -> None:
-        plan = core.BootstrapPlan(
-            config=self.load(),
-            repository=self.repository(),
-            vm_id=400,
-            mac="02:00:00:00:00:04",
-            vm_exists=True,
-        )
+        plan = replace(self.plan(), mac="02:00:00:00:00:04", vm_exists=True)
 
         class StubRunner:
             def run(self, command: list[str], **_: object) -> str:
@@ -322,13 +371,7 @@ class BootstrapTests(unittest.TestCase):
             proxmox.verify_existing_vm(plan, StubRunner())
 
     def test_existing_vm_created_by_cloud_provisioner_is_resumed(self) -> None:
-        plan = core.BootstrapPlan(
-            config=self.load(),
-            repository=self.repository(),
-            vm_id=400,
-            mac="02:00:00:00:00:04",
-            vm_exists=True,
-        )
+        plan = replace(self.plan(), mac="02:00:00:00:00:04", vm_exists=True)
 
         class StubRunner:
             def run(self, _: list[str], **__: object) -> str:
@@ -347,13 +390,7 @@ class BootstrapTests(unittest.TestCase):
         proxmox.verify_existing_vm(plan, StubRunner())
 
     def test_existing_vm_with_wrong_bridge_is_not_resumed(self) -> None:
-        plan = core.BootstrapPlan(
-            config=self.load(),
-            repository=self.repository(),
-            vm_id=400,
-            mac="02:00:00:00:00:04",
-            vm_exists=True,
-        )
+        plan = replace(self.plan(), mac="02:00:00:00:00:04", vm_exists=True)
 
         class StubRunner:
             def run(self, _: list[str], **__: object) -> str:
@@ -372,13 +409,7 @@ class BootstrapTests(unittest.TestCase):
             proxmox.verify_existing_vm(plan, StubRunner())
 
     def test_existing_vm_with_wrong_cloud_init_user_is_not_resumed(self) -> None:
-        plan = core.BootstrapPlan(
-            config=self.load(),
-            repository=self.repository(),
-            vm_id=400,
-            mac="02:00:00:00:00:04",
-            vm_exists=True,
-        )
+        plan = replace(self.plan(), mac="02:00:00:00:00:04", vm_exists=True)
 
         class StubRunner:
             def run(self, _: list[str], **__: object) -> str:

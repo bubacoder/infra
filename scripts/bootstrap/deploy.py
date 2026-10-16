@@ -8,8 +8,20 @@ from pathlib import Path
 
 import yaml
 
-from .core import ROOT, SERVICE_CONTAINERS, AwsPlan, BootstrapError, BootstrapPlan, Runner, private_key_for, ssh_trust_options, vm_ssh_command
-from .proxmox import discover_vm_ipv4, establish_ssh_trust, provision_vm, verify_dns, with_expected_ipv4
+from .core import (
+    ROOT,
+    SERVICE_CONTAINERS,
+    AwsPlan,
+    BootstrapError,
+    ProxmoxPlan,
+    Runner,
+    private_key_for,
+    ssh_command,
+    ssh_trust_options,
+    vm_ssh_command,
+)
+from .network import verify_dns
+from .proxmox import discover_vm_ipv4, establish_ssh_trust, provision_vm, with_expected_ipv4
 
 
 def atomic_write(path: Path, content: str, mode: int = 0o600) -> None:
@@ -35,7 +47,7 @@ def render_services(services: tuple[str, ...]) -> str:
     return yaml.safe_dump({"services": [{category: entries} for category, entries in categories.items()]}, sort_keys=False)
 
 
-def render_vm_config(plan: BootstrapPlan, expected_ipv4: str, root: Path = ROOT) -> None:
+def render_vm_config(plan: ProxmoxPlan, expected_ipv4: str, root: Path = ROOT) -> None:
     """Write the VM provisioner environment and authorized public key."""
     vm_dir = root / "config/vm/proxmox"
     atomic_write(vm_dir / "bootstrap-authorized-key.pub", plan.config.vm.ssh_public_key.read_text(), 0o600)
@@ -61,11 +73,8 @@ SSH_PUBLIC_KEY_FILE=/tmp/vm/proxmox/bootstrap-authorized-key.pub
     )
 
 
-def render_config(plan: BootstrapPlan | AwsPlan, root: Path = ROOT, expected_ipv4: str | None = None) -> None:
-    """Write VM, Ansible inventory, and Docker host configuration for the plan."""
-    expected_ipv4 = expected_ipv4 or plan.config.network.expected_ipv4
-    if expected_ipv4 is None:
-        raise BootstrapError("Cannot render host configuration before the VM IPv4 address is known")
+def load_inventory(root: Path) -> dict:
+    """Load the private or example inventory and validate managed host groups."""
     inventory_path = root / "config/ansible/inventory/inventory.yaml"
     source = inventory_path if inventory_path.exists() else root / "config-example/ansible/inventory/inventory.yaml"
     try:
@@ -76,11 +85,23 @@ def render_config(plan: BootstrapPlan | AwsPlan, root: Path = ROOT, expected_ipv
     if not isinstance(inventory, dict):
         raise BootstrapError("Ansible inventory must be a mapping")
     for group in ("debian", "docker_hosts"):
-        if group in inventory and not isinstance(inventory[group], dict):
+        if group not in inventory:
+            continue
+        value = inventory[group]
+        if not isinstance(value, dict):
             raise BootstrapError(f"{group} inventory group must be a mapping")
-        if isinstance(inventory.get(group), dict) and "hosts" in inventory[group] and not isinstance(inventory[group]["hosts"], dict):
+        if "hosts" in value and not isinstance(value["hosts"], dict):
             raise BootstrapError(f"{group}.hosts must be a mapping")
-    if isinstance(plan, BootstrapPlan):
+    return inventory
+
+
+def render_config(plan: ProxmoxPlan | AwsPlan, root: Path = ROOT, expected_ipv4: str | None = None) -> None:
+    """Write VM, Ansible inventory, and Docker host configuration for the plan."""
+    expected_ipv4 = expected_ipv4 or plan.config.network.expected_ipv4
+    if expected_ipv4 is None:
+        raise BootstrapError("Cannot render host configuration before the VM IPv4 address is known")
+    inventory = load_inventory(root)
+    if isinstance(plan, ProxmoxPlan):
         render_vm_config(plan, expected_ipv4, root)
     config, name = plan.config, plan.config.vm.name
     hosts = inventory.setdefault("debian", {}).setdefault("hosts", {})
@@ -102,10 +123,8 @@ def render_config(plan: BootstrapPlan | AwsPlan, root: Path = ROOT, expected_ipv
             raise BootstrapError(f"Inventory host has a conflicting {key}: {name}")
     hosts[name] = {**(existing or {}), **desired}
     docker_hosts = inventory.setdefault("docker_hosts", {}).setdefault("hosts", {})
-    if not isinstance(docker_hosts, dict):
-        raise BootstrapError("docker_hosts.hosts must be a mapping")
     docker_hosts.setdefault(name, None)
-    atomic_write(inventory_path, yaml.safe_dump(inventory, sort_keys=False))
+    atomic_write(root / "config/ansible/inventory/inventory.yaml", yaml.safe_dump(inventory, sort_keys=False))
     docker_dir = root / f"config/docker/{name}"
     admin_cidr = f"LOCAL_ACCESS_ADMIN_CIDR={config.aws.admin_source_cidr}\n" if isinstance(plan, AwsPlan) else ""
     atomic_write(
@@ -124,7 +143,7 @@ CROWDSEC_ENABLED=false
     atomic_write(docker_dir / "services.yaml", render_services(config.deployment.services))
 
 
-def configure_host(plan: BootstrapPlan | AwsPlan, runner: Runner) -> None:
+def configure_host(plan: ProxmoxPlan | AwsPlan, runner: Runner) -> None:
     """Apply Ansible to the VM and verify its Docker host prerequisites."""
     runner.run(["ansible/apply-homelab.sh", "--limit", plan.config.vm.name], timeout=1800)
     name = shlex.quote(plan.config.vm.name)
@@ -136,7 +155,7 @@ def configure_host(plan: BootstrapPlan | AwsPlan, runner: Runner) -> None:
     )
 
 
-def prepare_remote_repository(plan: BootstrapPlan | AwsPlan, runner: Runner, root: Path = ROOT) -> None:
+def prepare_remote_repository(plan: ProxmoxPlan | AwsPlan, runner: Runner, root: Path = ROOT) -> None:
     """Synchronize the pinned remote checkout and generated Docker configuration."""
     checkout, repository = "$HOME/repos/infra", plan.repository
     branch, url = shlex.quote(repository.branch), shlex.quote(repository.url)
@@ -152,7 +171,12 @@ def prepare_remote_repository(plan: BootstrapPlan | AwsPlan, runner: Runner, roo
     if state == "missing":
         runner.run(vm_ssh_command(plan, f"mkdir -p $HOME/repos; git clone --branch {branch} --single-branch {url} {checkout}"), timeout=300)
     elif state == "repository":
-        update = f'test -z "$(git -C {checkout} status --porcelain --untracked-files=no)" && test "$(git -C {checkout} branch --show-current)" = {branch} && git -C {checkout} fetch origin {branch} && git -C {checkout} merge --ff-only {shlex.quote(repository.commit)}'
+        update = (
+            f'test -z "$(git -C {checkout} status --porcelain --untracked-files=no)"'
+            f' && test "$(git -C {checkout} branch --show-current)" = {branch}'
+            f" && git -C {checkout} fetch origin {branch}"
+            f" && git -C {checkout} merge --ff-only {shlex.quote(repository.commit)}"
+        )
         runner.run(vm_ssh_command(plan, update), timeout=300)
     else:
         raise BootstrapError("Could not determine the remote repository state")
@@ -161,20 +185,18 @@ def prepare_remote_repository(plan: BootstrapPlan | AwsPlan, runner: Runner, roo
     if runner.run(vm_ssh_command(plan, f"test -f {services_path} && printf yes || true"), capture=True) != "yes":
         runner.run(vm_ssh_command(plan, f"cd {checkout} && task bootstrap:init-local-config"))
     target = f"{plan.config.vm.username}@{plan.config.network.expected_ipv4}:repos/infra/config/docker/{plan.config.vm.name}/"
-    transport = shlex.join(["ssh", "-o", "BatchMode=yes", *ssh_trust_options(plan)]) + (
-        f" -i {shlex.quote(str(key))}" if (key := private_key_for(plan.config.vm.ssh_public_key)) else ""
-    )
+    transport = shlex.join(ssh_command(plan))
     runner.run(["rsync", "-a", "-e", transport, f"{root}/config/docker/{plan.config.vm.name}/", target], timeout=120)
     runner.run(vm_ssh_command(plan, f"chmod 600 {checkout}/config/docker/{plan.config.vm.name}/.env.traefik"))
     runner.run(vm_ssh_command(plan, f"cd {checkout} && task docker:check-host"))
 
 
-def deploy_services(plan: BootstrapPlan | AwsPlan, runner: Runner) -> None:
+def deploy_services(plan: ProxmoxPlan | AwsPlan, runner: Runner) -> None:
     """Apply the Docker service configuration from the remote checkout."""
     runner.run(vm_ssh_command(plan, "cd $HOME/repos/infra && task docker:apply"), timeout=1800)
 
 
-def verify_traefik_widget(plan: BootstrapPlan | AwsPlan, runner: Runner) -> None:
+def verify_traefik_widget(plan: ProxmoxPlan | AwsPlan, runner: Runner) -> None:
     """Require Homepage to reach Traefik's API, not just serve an HTML page."""
     url = f"https://home.{plan.config.network.domain}/api/services/proxy?group=Infra&service=Traefik&index=0&endpoint=overview"
     output = runner.run(["curl", "--fail", "--silent", "--show-error", "--connect-timeout", "5", "--max-time", "15", url], capture=True, timeout=20)
@@ -186,7 +208,7 @@ def verify_traefik_widget(plan: BootstrapPlan | AwsPlan, runner: Runner) -> None
         raise BootstrapError("Homepage Traefik widget did not return API statistics")
 
 
-def verify_services(plan: BootstrapPlan | AwsPlan, runner: Runner, timeout: int = 180) -> None:
+def verify_services(plan: ProxmoxPlan | AwsPlan, runner: Runner, timeout: int = 180) -> None:
     """Verify core service health, persistence, and idempotent redeployment."""
     containers, checkout = " ".join(SERVICE_CONTAINERS), "$HOME/repos/infra"
     status = f"docker inspect --format '{{{{.State.Running}}}}:{{{{.RestartCount}}}}' {containers}"
@@ -211,7 +233,8 @@ def verify_services(plan: BootstrapPlan | AwsPlan, runner: Runner, timeout: int 
     time.sleep(10)
     if before != runner.run(vm_ssh_command(plan, status), capture=True, timeout=20):
         raise BootstrapError("Core containers did not remain stable during the acceptance interval")
-    persistence = f"test -s {shlex.quote(plan.config.host.docker_volumes)}/traefik/letsencrypt/acme.json && test -d {shlex.quote(plan.config.host.docker_volumes)}/traefik/logs && test -d {shlex.quote(plan.config.host.docker_volumes)}/homepage/logs"
+    volumes = shlex.quote(plan.config.host.docker_volumes)
+    persistence = f"test -s {volumes}/traefik/letsencrypt/acme.json && test -d {volumes}/traefik/logs && test -d {volumes}/homepage/logs"
     runner.run(vm_ssh_command(plan, persistence))
     ids = f"docker inspect --format '{{{{.Id}}}}' {containers}"
     before = runner.run(vm_ssh_command(plan, ids), capture=True, timeout=20)
@@ -220,7 +243,7 @@ def verify_services(plan: BootstrapPlan | AwsPlan, runner: Runner, timeout: int 
         raise BootstrapError("Repeat deployment unexpectedly recreated core containers")
 
 
-def apply(plan: BootstrapPlan, runner: Runner, *, assume_yes: bool = False, root: Path = ROOT) -> None:
+def apply(plan: ProxmoxPlan, runner: Runner, *, assume_yes: bool = False, root: Path = ROOT) -> None:
     """Run the confirmed bootstrap sequence and its acceptance checks."""
     if not assume_yes and input(
         f"Create or resume VM {plan.config.vm.name} (ID {plan.vm_id}) and deploy core services? [y/N] "
