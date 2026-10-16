@@ -6,30 +6,36 @@ import json
 import shlex
 import shutil
 from dataclasses import asdict, replace
+from pathlib import Path
 
 import yaml
 
 from .config import detect_repository
-from .core import ROOT, BootstrapConfig, BootstrapError, BootstrapPlan, Runner, remote, task, vm_ssh_command
-from .network import socket as socket  # noqa: PLC0414
-from .network import verify_dns as verify_dns  # noqa: PLC0414
+from .core import ROOT, BootstrapConfig, BootstrapError, ProxmoxPlan, Runner, remote, task, vm_ssh_command
+from .network import verify_dns
 
 
 def generated_mac(target: str, vm_name: str) -> str:
     """Derive a stable, locally administered unicast MAC address for a VM."""
     digest = hashlib.sha256(f"{target}\0{vm_name}".encode()).digest()
-    return ":".join(f"{octet:02X}" for octet in [0x02, digest[0], digest[1], digest[2], digest[3], digest[4]])
+    return ":".join(f"{octet:02X}" for octet in (0x02, *digest[:5]))
 
 
 def proxmox_vm_rows(config: BootstrapConfig, runner: Runner) -> list[tuple[int, str]]:
     """Return VM ID and name pairs reported by the configured Proxmox host."""
     output = remote(runner, config.proxmox.ssh_target, "sudo qm list", capture=True)
-    return [(int(fields[0]), fields[1]) for line in output.splitlines()[1:] if len(fields := line.split()) >= 2 and fields[0].isdigit()]
+    rows = []
+    for line in output.splitlines()[1:]:
+        fields = line.split()
+        if len(fields) >= 2 and fields[0].isdigit():
+            rows.append((int(fields[0]), fields[1]))
+    return rows
 
 
-def resolve_plan(config: BootstrapConfig, runner: Runner, root=ROOT) -> BootstrapPlan:
+def resolve_plan(config: BootstrapConfig, runner: Runner, root: Path = ROOT) -> ProxmoxPlan:
     """Resolve repository and VM identity into a resumable bootstrap plan."""
-    repository, rows = detect_repository(config, runner, root), proxmox_vm_rows(config, runner)
+    repository = detect_repository(config, runner, root)
+    rows = proxmox_vm_rows(config, runner)
     named = next((vm_id for vm_id, name in rows if name == config.vm.name), None)
     if config.vm.vm_id == "auto":
         vm_id = named
@@ -45,10 +51,11 @@ def resolve_plan(config: BootstrapConfig, runner: Runner, root=ROOT) -> Bootstra
     vm_exists = any(existing_id == vm_id for existing_id, _ in rows)
     if vm_exists and named != vm_id:
         raise BootstrapError(f"VM ID {vm_id} already exists with another name")
-    return BootstrapPlan(config, repository, vm_id, config.vm.mac or generated_mac(config.proxmox.ssh_target, config.vm.name), vm_exists)
+    mac = config.vm.mac or generated_mac(config.proxmox.ssh_target, config.vm.name)
+    return ProxmoxPlan(config, repository, vm_id, mac, vm_exists)
 
 
-def print_plan(plan: BootstrapPlan) -> None:
+def print_plan(plan: ProxmoxPlan) -> None:
     """Print the bootstrap plan as YAML with the TLS token redacted."""
     summary = {
         "repository": asdict(plan.repository),
@@ -68,7 +75,7 @@ def print_plan(plan: BootstrapPlan) -> None:
     print(yaml.safe_dump(summary, sort_keys=False).rstrip())
 
 
-def discover_vm_ipv4(plan: BootstrapPlan, runner: Runner) -> str:
+def discover_vm_ipv4(plan: ProxmoxPlan, runner: Runner) -> str:
     """Return the sole usable IPv4 address reported for the planned VM interface."""
     output = remote(runner, plan.config.proxmox.ssh_target, f"sudo qm guest cmd {plan.vm_id} network-get-interfaces", capture=True)
     try:
@@ -99,12 +106,12 @@ def discover_vm_ipv4(plan: BootstrapPlan, runner: Runner) -> str:
     return addresses.pop()
 
 
-def with_expected_ipv4(plan: BootstrapPlan, expected_ipv4: str) -> BootstrapPlan:
+def with_expected_ipv4(plan: ProxmoxPlan, expected_ipv4: str) -> ProxmoxPlan:
     """Return a copy of the plan bound to the discovered IPv4 address."""
     return replace(plan, config=replace(plan.config, network=replace(plan.config.network, expected_ipv4=expected_ipv4)))
 
 
-def verify_existing_vm(plan: BootstrapPlan, runner: Runner) -> None:
+def verify_existing_vm(plan: ProxmoxPlan, runner: Runner) -> None:
     """Require an existing planned VM to match the resumable configuration."""
     if not plan.vm_exists:
         return
@@ -115,7 +122,9 @@ def verify_existing_vm(plan: BootstrapPlan, runner: Runner) -> None:
         """Parse comma-delimited key-value options."""
         return dict(part.split("=", 1) for part in value.split(",") if "=" in part)
 
-    network, agent, cloud_init = options(fields.get("net0", "")), options(fields.get("agent", "")), options(fields.get("cicustom", ""))
+    network = options(fields.get("net0", ""))
+    agent = options(fields.get("agent", ""))
+    cloud_init = options(fields.get("cicustom", ""))
     disk = fields.get("scsi0", "").split(",", 1)[0]
     cloud_init_drive = fields.get("ide2", "").split(",", 1)[0]
     expected_user_data = f"local:snippets/ubuntu-{plan.config.vm.ubuntu_version}-{plan.vm_id}-cloud-user.yaml"
@@ -137,13 +146,15 @@ def verify_existing_vm(plan: BootstrapPlan, runner: Runner) -> None:
         )
 
 
-def preflight(plan: BootstrapPlan, runner: Runner) -> None:
+def preflight(plan: ProxmoxPlan, runner: Runner) -> None:
     """Validate local tools, existing VM state, Proxmox resources, and DNS."""
     for tool in ("git", "task", "ssh", "ssh-keyscan", "rsync", "ansible-playbook", "curl"):
         if shutil.which(tool) is None:
             raise BootstrapError(f"Required executable is not installed: {tool}")
     verify_existing_vm(plan, runner)
-    target, storage, bridge = plan.config.proxmox.ssh_target, shlex.quote(plan.config.vm.storage), shlex.quote(plan.config.vm.bridge)
+    target = plan.config.proxmox.ssh_target
+    storage = shlex.quote(plan.config.vm.storage)
+    bridge = shlex.quote(plan.config.vm.bridge)
     remote(runner, target, f"sudo pvesm status --storage {storage} >/dev/null")
     remote(runner, target, f"ip link show {bridge} >/dev/null")
     try:
@@ -166,7 +177,7 @@ def preflight(plan: BootstrapPlan, runner: Runner) -> None:
         verify_dns(plan, plan.config.network.expected_ipv4)
 
 
-def provision_vm(plan: BootstrapPlan, runner: Runner) -> None:
+def provision_vm(plan: ProxmoxPlan, runner: Runner) -> None:
     """Resume an existing VM or run the VM preflight and provisioning tasks."""
     if plan.vm_exists:
         if "status: running" not in remote(runner, plan.config.proxmox.ssh_target, f"sudo qm status {plan.vm_id}", capture=True):
@@ -177,7 +188,7 @@ def provision_vm(plan: BootstrapPlan, runner: Runner) -> None:
     task(runner, "bootstrap:vm-provision")
 
 
-def establish_ssh_trust(plan: BootstrapPlan, runner: Runner) -> None:
+def establish_ssh_trust(plan: ProxmoxPlan, runner: Runner) -> None:
     """Verify the VM's network SSH key against its guest-agent key and trust it."""
     guest_result = remote(
         runner, plan.config.proxmox.ssh_target, f"sudo qm guest exec {plan.vm_id} -- cat /etc/ssh/ssh_host_ed25519_key.pub", capture=True
@@ -186,14 +197,13 @@ def establish_ssh_trust(plan: BootstrapPlan, runner: Runner) -> None:
         guest_key = json.loads(guest_result)["out-data"].split()[1]
     except (KeyError, IndexError, json.JSONDecodeError) as error:
         raise BootstrapError("Could not read the VM SSH host key through the Proxmox guest agent") from error
-    network_key = next(
-        (
-            fields[2]
-            for line in runner.run(["ssh-keyscan", "-T", "10", "-t", "ed25519", plan.config.network.expected_ipv4], capture=True).splitlines()
-            if len(fields := line.split()) == 3 and fields[1] == "ssh-ed25519"
-        ),
-        None,
-    )
+    scanned = runner.run(["ssh-keyscan", "-T", "10", "-t", "ed25519", plan.config.network.expected_ipv4], capture=True)
+    network_key = None
+    for line in scanned.splitlines():
+        fields = line.split()
+        if len(fields) == 3 and fields[1] == "ssh-ed25519":
+            network_key = fields[2]
+            break
     if not network_key or network_key != guest_key:
         raise BootstrapError("The VM SSH host key does not match the key presented on the network")
     command = vm_ssh_command(plan, "true")

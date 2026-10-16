@@ -44,7 +44,8 @@ def require_mapping(value: object, field: str, allowed: set[str], required: set[
         raise ConfigError(f"{field} must be a mapping")
     if any(not isinstance(key, str) for key in value):
         raise ConfigError(f"{field} field names must be strings")
-    unknown, missing = set(value) - allowed, required - set(value)
+    keys = set(value)
+    unknown, missing = keys - allowed, required - keys
     if unknown:
         raise ConfigError(f"{field} contains unknown fields: {', '.join(sorted(unknown))}")
     if missing:
@@ -109,7 +110,8 @@ def validate_mac(value: object, field: str = "vm.mac") -> str:
 def validate_domain(value: object) -> str:
     """Return a lowercase domain name without a trailing dot."""
     domain = require_string(value, "network.domain").lower().rstrip(".")
-    if len(domain.split(".")) < 2 or any(not NAME_PATTERN.fullmatch(label) for label in domain.split(".")):
+    labels = domain.split(".")
+    if len(labels) < 2 or any(not NAME_PATTERN.fullmatch(label) for label in labels):
         raise ConfigError("network.domain must be a valid domain name")
     return domain
 
@@ -135,8 +137,8 @@ def validate_repository_input(value: object) -> dict[str, str] | None:
     return {"url": url, "branch": branch}
 
 
-def load_config(path: Path, root: Path = ROOT) -> BootstrapConfig:  # noqa: PLR0912
-    """Load and validate a version 1 bootstrap YAML document."""
+def load_config(path: Path, root: Path = ROOT) -> BootstrapConfig:
+    """Load and validate a bootstrap YAML document."""
     source = validate_file_security(path, root)
     try:
         raw = yaml.safe_load(source.read_text())
@@ -148,7 +150,7 @@ def load_config(path: Path, root: Path = ROOT) -> BootstrapConfig:  # noqa: PLR0
     return parse_document(raw, source)
 
 
-def parse_document(raw: object, source: Path) -> BootstrapConfig:  # noqa: PLR0912
+def parse_document(raw: object, source: Path) -> BootstrapConfig:
     """Validate an in-memory document without writing secrets to intermediate files."""
     document = require_mapping(
         raw,
@@ -168,6 +170,11 @@ def parse_document(raw: object, source: Path) -> BootstrapConfig:  # noqa: PLR09
         raise ConfigError("target must be proxmox or aws")
     if target == "aws":
         return load_aws_config(document, source)
+    return load_proxmox_config(document, source)
+
+
+def load_proxmox_config(document: dict[str, Any], source: Path) -> BootstrapConfig:
+    """Validate Proxmox-specific fields after document version and target checks."""
     if "proxmox" not in document or "aws" in document:
         raise ConfigError("Proxmox requires proxmox configuration and forbids aws configuration")
     shared = load_shared_config(document)
@@ -175,37 +182,20 @@ def parse_document(raw: object, source: Path) -> BootstrapConfig:  # noqa: PLR09
     ssh_target = require_shell_token(proxmox["ssh_target"], "proxmox.ssh_target")
     if ssh_target.startswith("-"):
         raise ConfigError("proxmox.ssh_target is invalid")
-    vm = require_mapping(
-        document["vm"],
-        "vm",
-        {
-            "id",
-            "name",
-            "ubuntu_version",
-            "username",
-            "cpu_cores",
-            "memory_max_mib",
-            "memory_min_mib",
-            "disk_size",
-            "storage",
-            "bridge",
-            "mac",
-            "ssh_public_key",
-        },
-        {
-            "id",
-            "name",
-            "ubuntu_version",
-            "username",
-            "cpu_cores",
-            "memory_max_mib",
-            "memory_min_mib",
-            "disk_size",
-            "storage",
-            "bridge",
-            "ssh_public_key",
-        },
-    )
+    required_vm_fields = {
+        "id",
+        "name",
+        "ubuntu_version",
+        "username",
+        "cpu_cores",
+        "memory_max_mib",
+        "memory_min_mib",
+        "disk_size",
+        "storage",
+        "bridge",
+        "ssh_public_key",
+    }
+    vm = require_mapping(document["vm"], "vm", required_vm_fields | {"mac"}, required_vm_fields)
     vm_id = vm["id"]
     if vm_id != "auto" and (not isinstance(vm_id, int) or isinstance(vm_id, bool) or vm_id <= 0):
         raise ConfigError("vm.id must be a positive integer or 'auto'")
@@ -325,7 +315,7 @@ def load_aws_config(document: dict[str, Any], source: Path) -> BootstrapConfig:
     if not re.fullmatch(r"[a-z]{2}(?:-[a-z]+)+-[0-9]+", region):
         raise ConfigError("aws.region is invalid")
     instance = require_string(aws["instance_type"], "aws.instance_type")
-    if not re.fullmatch(r"[a-z0-9]+\.[a-z0-9]+", instance):
+    if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*\.[a-z0-9]+(?:-[a-z0-9]+)*", instance):
         raise ConfigError("aws.instance_type is invalid")
     profile = require_shell_token(aws["profile"], "aws.profile") if aws.get("profile") else None
     shared = load_shared_config(document)

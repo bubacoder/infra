@@ -2,12 +2,13 @@
 
 import socket
 
-from .core import AwsPlan, BootstrapError, BootstrapPlan
+from .core import AwsPlan, BootstrapError, ProxmoxPlan
 
 
-def verify_dns(plan: BootstrapPlan | AwsPlan, expected: str, *, discovered: bool = False) -> None:
+def verify_dns(plan: ProxmoxPlan | AwsPlan, expected: str, *, discovered: bool = False) -> None:
     """Require the base and bootstrap service names to resolve only to expected."""
-    names = [plan.config.network.domain, *(f"{name}.{plan.config.network.domain}" for name in ("traefik", "home", "bootstrap-check"))]
+    domain = plan.config.network.domain
+    names = [domain, *(f"{name}.{domain}" for name in ("traefik", "home", "bootstrap-check"))]
     failures = []
     for name in names:
         try:
