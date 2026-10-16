@@ -21,6 +21,8 @@ class BootstrapError(RuntimeError):
 
 @dataclass(frozen=True)
 class RepositoryConfig:
+    """Public repository and exact revision to deploy."""
+
     url: str
     branch: str
     commit: str
@@ -28,17 +30,23 @@ class RepositoryConfig:
 
 @dataclass(frozen=True)
 class DeploymentConfig:
+    """Administrative model and enabled bootstrap services."""
+
     admin_model: str
     services: tuple[str, ...]
 
 
 @dataclass(frozen=True)
 class ProxmoxConfig:
+    """SSH endpoint for the Proxmox control plane."""
+
     ssh_target: str
 
 
 @dataclass(frozen=True)
 class AwsConfig:
+    """AWS account, compute, access, and persistent storage settings."""
+
     account_id: str
     region: str
     profile: str | None
@@ -52,6 +60,8 @@ class AwsConfig:
 
 @dataclass(frozen=True)
 class AwsVmConfig:
+    """Guest identity shared with the AWS provisioning template."""
+
     name: str
     username: str
     ssh_public_key: Path
@@ -59,6 +69,8 @@ class AwsVmConfig:
 
 @dataclass(frozen=True)
 class VmConfig:
+    """Proxmox guest identity, hardware, and cloud-init settings."""
+
     vm_id: int | str
     name: str
     ubuntu_version: str
@@ -75,12 +87,16 @@ class VmConfig:
 
 @dataclass(frozen=True)
 class DnsConfig:
+    """External DNS management and verification requirements."""
+
     mode: str
     verify: bool
 
 
 @dataclass(frozen=True)
 class NetworkConfig:
+    """Expected guest address and service domain."""
+
     expected_ipv4: str | None
     domain: str
     dns: DnsConfig
@@ -88,12 +104,16 @@ class NetworkConfig:
 
 @dataclass(frozen=True)
 class HostConfig:
+    """Guest storage path and timezone."""
+
     docker_volumes: str
     timezone: str
 
 
 @dataclass(frozen=True)
 class TlsConfig:
+    """Certificate provider and private DNS challenge credentials."""
+
     provider: str
     acme_email: str
     token: str
@@ -101,6 +121,8 @@ class TlsConfig:
 
 @dataclass(frozen=True)
 class BootstrapConfig:
+    """Validated shared settings and selected target configuration."""
+
     source: Path
     repository_input: dict[str, str] | None
     deployment: DeploymentConfig
@@ -114,7 +136,9 @@ class BootstrapConfig:
 
 
 @dataclass(frozen=True)
-class BootstrapPlan:
+class ProxmoxPlan:
+    """Resolved Proxmox VM identity and reproducible repository revision."""
+
     config: BootstrapConfig
     repository: RepositoryConfig
     vm_id: int
@@ -124,6 +148,8 @@ class BootstrapPlan:
 
 @dataclass(frozen=True)
 class AwsPlan:
+    """Resolved AWS image, private deployment directory, and revision."""
+
     config: BootstrapConfig
     repository: RepositoryConfig
     directory: Path
@@ -194,17 +220,21 @@ def private_key_for(public_key: Path) -> Path | None:
     return private_key if private_key.is_file() else None
 
 
-def vm_ssh_command(plan: BootstrapPlan | AwsPlan, remote_command: str) -> list[str]:
-    """Build a batch SSH command for the planned VM and available private key."""
-    command = ["ssh", "-o", "BatchMode=yes"]
-    command.extend(ssh_trust_options(plan))
+def ssh_command(plan: ProxmoxPlan | AwsPlan) -> list[str]:
+    """Build the shared SSH transport with target-specific trust and identity."""
+    command = ["ssh", "-o", "BatchMode=yes", *ssh_trust_options(plan)]
     if private_key := private_key_for(plan.config.vm.ssh_public_key):
         command.extend(["-i", str(private_key)])
-    command.extend([f"{plan.config.vm.username}@{plan.config.network.expected_ipv4}", remote_command])
     return command
 
 
-def ssh_trust_options(plan: BootstrapPlan | AwsPlan) -> list[str]:
+def vm_ssh_command(plan: ProxmoxPlan | AwsPlan, remote_command: str) -> list[str]:
+    """Build a batch SSH command for the planned VM and available private key."""
+    target = f"{plan.config.vm.username}@{plan.config.network.expected_ipv4}"
+    return [*ssh_command(plan), target, remote_command]
+
+
+def ssh_trust_options(plan: ProxmoxPlan | AwsPlan) -> list[str]:
     """Return strict, deployment-scoped SSH options for AWS."""
     if isinstance(plan, AwsPlan):
         return ["-o", "StrictHostKeyChecking=yes", "-o", f"UserKnownHostsFile={plan.known_hosts}"]

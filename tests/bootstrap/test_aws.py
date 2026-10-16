@@ -6,6 +6,7 @@ import contextlib
 import io
 import json
 import os
+import shlex
 import shutil
 import socket
 import tempfile
@@ -106,6 +107,20 @@ class AwsBootstrapTests(unittest.TestCase):
                 with self.assertRaises(core.ConfigError):
                     self.load()
                 self.document[section][field] = previous
+
+    def test_instance_types_allow_internal_hyphens_but_reject_malformed_names(self) -> None:
+        """Accept EC2 family variants without allowing unsafe or malformed tokens."""
+        for instance in ("t3.small", "m7i-flex.large", "u-6tb1.112xlarge", "x2iedn.metal"):
+            with self.subTest(instance=instance):
+                self.document["aws"]["instance_type"] = instance
+                self.write()
+                self.assertEqual(self.load().aws.instance_type, instance)
+        for instance in ("-m7i.large", "m7i-.large", "m7i--flex.large", "m7i.-large", "m7i.large-", "m7i.large.extra", "m7i.large;id"):
+            with self.subTest(instance=instance):
+                self.document["aws"]["instance_type"] = instance
+                self.write()
+                with self.assertRaisesRegex(core.ConfigError, "aws.instance_type is invalid"):
+                    self.load()
 
     def test_rejects_aws_version_one(self) -> None:
         self.document["version"] = 1
@@ -225,6 +240,42 @@ class AwsBootstrapTests(unittest.TestCase):
         self.assertNotIn("test-cloudflare-secret", json.dumps(inputs))
         self.assertEqual((runtime / "bootstrap.tfvars.json").stat().st_mode & 0o777, 0o600)
 
+    def test_runtime_removes_stale_templates_without_touching_deployment_artifacts(self) -> None:
+        """Synchronize renamed sources while retaining state, cache, and receipts."""
+        source = self.root / "terraform/aws-vm"
+        obsolete_sources = (source / "obsolete.tf", source / "cloud-init/obsolete.sh.tpl")
+        for path in obsolete_sources:
+            path.write_text("# obsolete generated source\n")
+        plan = self.plan()
+        aws.render_provisioning(plan, self.root)
+        runtime = plan.directory / "runtime"
+        protected = (
+            runtime / "terraform.tfstate",
+            runtime / "terraform.tfstate.backup",
+            runtime / "bootstrap.tfplan",
+            runtime / ".terraform.lock.hcl",
+            runtime / ".terraform/providers/cache.tf",
+            runtime / "notes.txt",
+            runtime / "cloud-init/notes.txt",
+            plan.directory / "manifest.json",
+            plan.known_hosts,
+        )
+        for path in protected:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("preserve this deployment artifact\n")
+        for path in obsolete_sources:
+            path.rename(path.with_name(path.name.replace("obsolete", "replacement")))
+        aws.render_provisioning(plan, self.root)
+        for path in obsolete_sources:
+            relative = path.relative_to(source)
+            self.assertFalse((runtime / relative).exists())
+            replacement = relative.with_name(relative.name.replace("obsolete", "replacement"))
+            self.assertEqual((runtime / replacement).read_text(), (source / replacement).read_text())
+        for path in protected:
+            self.assertEqual(path.read_text(), "preserve this deployment artifact\n")
+        self.assertEqual((runtime / "main.tf").read_text(), (source / "main.tf").read_text())
+        self.assertEqual((runtime / "backend.tf").read_text(), 'terraform {\n  backend "local" {}\n}\n')
+
     def test_cloud_init_preparation_propagates_command_failures(self) -> None:
         template = yaml.safe_load((core.ROOT / "terraform/aws-vm/cloud-init/external.yaml.tpl").read_text())
         commands = template["runcmd"]
@@ -249,6 +300,34 @@ class AwsBootstrapTests(unittest.TestCase):
         deploy.render_config(plan, self.root)
         env = (self.root / "config/docker/docker-aws/.env").read_text()
         self.assertIn("LOCAL_ACCESS_ADMIN_CIDR=8.8.8.8/32", env)
+
+    def test_remote_commands_and_rsync_share_strict_ssh_transport(self) -> None:
+        """Preserve AWS host pinning and quoted identity paths across transports."""
+        plan = self.plan()
+        public_key = self.root / "identity with spaces.pub"
+        public_key.write_text(self.key.read_text())
+        private_key = public_key.with_suffix("")
+        private_key.write_text("test fixture")
+        guest = replace(plan.config.vm, ssh_public_key=public_key)
+        plan = replace(plan, config=replace(plan.config, vm=guest))
+        transport = [
+            "ssh",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "StrictHostKeyChecking=yes",
+            "-o",
+            f"UserKnownHostsFile={plan.known_hosts}",
+            "-i",
+            str(private_key),
+        ]
+        self.assertEqual(core.ssh_command(plan), transport)
+        self.assertEqual(core.vm_ssh_command(plan, "true")[:-2], transport)
+        self.runner.run.side_effect = ["missing", "", "", "yes", "", "", ""]
+        deploy.prepare_remote_repository(plan, self.runner, self.root)
+        transfers = [call.args[0] for call in self.runner.run.call_args_list if call.args[0][0] == "rsync"]
+        self.assertEqual(len(transfers), 1)
+        self.assertEqual(shlex.split(transfers[0][3]), transport)
 
     def test_plan_inspection_rejects_destruction_and_detach(self) -> None:
         for resource_type, actions in (
@@ -309,6 +388,28 @@ class AwsBootstrapTests(unittest.TestCase):
         path = self.root / "config/ansible/inventory/inventory.yaml"
         path.parent.mkdir(parents=True)
         path.write_text("debian:\n  hosts:\n    docker-aws:\n      ansible_host: 192.0.2.10\n")
+        with self.assertRaisesRegex(core.BootstrapError, "existing Ansible"):
+            aws.verify_inventory_name(self.plan(), self.root)
+
+    def test_inventory_validation_rejects_invalid_group_and_host_shapes(self) -> None:
+        """Explicit null groups and host lists cannot bypass name validation."""
+        path = self.root / "config/ansible/inventory/inventory.yaml"
+        path.parent.mkdir(parents=True)
+        cases = (
+            ({"debian": None}, "group must be a mapping"),
+            ({"docker_hosts": {"hosts": []}}, "hosts must be a mapping"),
+        )
+        for document, message in cases:
+            with self.subTest(document=document):
+                path.write_text(yaml.safe_dump(document))
+                with self.assertRaisesRegex(core.BootstrapError, message):
+                    aws.verify_inventory_name(self.plan(), self.root)
+
+    def test_nested_inventory_hostname_is_not_overwritten(self) -> None:
+        """Search nested inventory groups even when standard groups are absent."""
+        path = self.root / "config/ansible/inventory/inventory.yaml"
+        path.parent.mkdir(parents=True)
+        path.write_text("all:\n  children:\n    custom:\n      hosts:\n        docker-aws: {}\n")
         with self.assertRaisesRegex(core.BootstrapError, "existing Ansible"):
             aws.verify_inventory_name(self.plan(), self.root)
 
@@ -378,6 +479,53 @@ class AwsBootstrapTests(unittest.TestCase):
             ),
         ):
             aws.verify_ownership(plan, self.runner)
+
+    def test_state_resources_preserves_depth_first_module_order(self) -> None:
+        """Visit parent resources before descendants, including empty modules."""
+        root_resource = {"address": "root"}
+        child_resource = {"address": "child"}
+        grandchild_resource = {"address": "grandchild"}
+        sibling_resource = {"address": "sibling"}
+        document = {
+            "values": {
+                "root_module": {
+                    "resources": [root_resource],
+                    "child_modules": [
+                        {},
+                        {"resources": [child_resource], "child_modules": [{"resources": [grandchild_resource]}]},
+                        {"resources": [sibling_resource]},
+                    ],
+                }
+            }
+        }
+        self.assertEqual(aws.state_resources(document), [root_resource, child_resource, grandchild_resource, sibling_resource])
+        self.assertEqual(aws.state_resources({}), [])
+
+    def test_data_source_ids_do_not_grant_resource_ownership(self) -> None:
+        """Reading a cloud object through Terraform must not authorize adopting it."""
+        plan = self.plan()
+        runtime = plan.directory / "runtime"
+        runtime.mkdir()
+        (runtime / "terraform.tfstate").write_text("{}")
+        resource = {
+            "mode": "data",
+            "type": "aws_instance",
+            "values": {
+                "id": "i-other",
+                "key_pair_id": "key-other",
+                "allocation_id": "eipalloc-other",
+                "root_block_device": [{"volume_id": "vol-other"}],
+            },
+        }
+        state = {"values": {"root_module": {"child_modules": [{"resources": [resource]}]}}}
+        for identity in ("i-other", "key-other", "eipalloc-other", "vol-other"):
+            with (
+                self.subTest(identity=identity),
+                patch.object(aws, "terraform", return_value=json.dumps(state)),
+                patch.object(aws, "aws_command", side_effect=[{"Tags": [{"ResourceId": identity}]}, {"Roles": []}, {"InstanceProfiles": []}]),
+                self.assertRaisesRegex(core.BootstrapError, "outside bootstrap state"),
+            ):
+                aws.verify_ownership(plan, self.runner)
 
     def test_resolve_pins_ami_and_checks_manifest_inputs(self) -> None:
         """Freeze the AMI and provisioning identity whenever deployment state exists."""
@@ -492,6 +640,19 @@ class AwsBootstrapTests(unittest.TestCase):
         with patch.object(aws, "ssm", return_value="ssh-ed25519 AAAAhost"), self.assertRaisesRegex(core.BootstrapError, "does not match"):
             aws.establish_ssh_trust(plan, self.runner, "i-123")
         self.assertFalse(plan.known_hosts.exists())
+
+    def test_ssh_keyscan_ignores_comments_and_malformed_lines(self) -> None:
+        """Only complete keyscan records participate in exact SSM key matching."""
+        plan = self.plan()
+        plan = replace(plan, config=replace(plan.config, network=replace(plan.config.network, expected_ipv4="8.8.4.4")))
+        self.runner.run.side_effect = [
+            "# ssh-ed25519 AAAAuntrusted\ninvalid\n8.8.4.4 ssh-ed25519 AAAAextra comment\n"
+            "8.8.4.4 ssh-ed25519 AAAAhost\n8.8.4.4 ssh-ed25519 AAAAhost\n",
+            "",
+        ]
+        with patch.object(aws, "ssm", return_value="ssh-ed25519 AAAAhost"):
+            aws.establish_ssh_trust(plan, self.runner, "i-123")
+        self.assertEqual(plan.known_hosts.read_text(), "8.8.4.4 ssh-ed25519 AAAAhost\n")
 
     def test_stored_host_trust_is_never_overwritten(self) -> None:
         plan = self.plan()
@@ -618,6 +779,23 @@ class AwsBootstrapTests(unittest.TestCase):
             ):
                 aws.preflight(plan, self.runner, self.root)
             self.assertEqual(terraform.call_args.args[2], ["init", "-input=false"])
+            self.assertIn("--ipv4", self.runner.run.call_args.args[0])
+
+    def test_preflight_still_rejects_invalid_or_unpermitted_admin_addresses(self) -> None:
+        """Forcing IPv4 must not bypass address parsing or the administrator CIDR."""
+        for address, message in (
+            ("2001:4860:4860::8888", "Could not determine administrator public IPv4 address"),
+            ("not-an-address", "Could not determine administrator public IPv4 address"),
+            ("8.8.4.4", "outside aws.admin_source_cidr"),
+        ):
+            self.runner.run.return_value = address
+            with (
+                self.subTest(address=address),
+                patch.object(aws, "terraform") as terraform,
+                self.assertRaisesRegex(core.BootstrapError, message),
+            ):
+                aws.preflight(self.plan(), self.runner, self.root)
+            terraform.assert_not_called()
 
     def test_preflight_rejects_missing_or_unsupported_ebs_nvme(self) -> None:
         """Fail before Terraform initialization when EBS NVMe cannot be verified."""

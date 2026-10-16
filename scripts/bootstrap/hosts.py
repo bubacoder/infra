@@ -62,8 +62,8 @@ def add_temporary_dns_block(name: str, address: str, domain: str, hosts_path: Pa
     validate_domain(domain)
     content = hosts_path.read_bytes()
     begin, end = marker(name, "BEGIN"), marker(name, "END")
-    lines = content.splitlines(keepends=True)
-    if any(line.rstrip(b"\r\n") in {begin, end} for line in lines):
+    boundaries = {begin, end}
+    if any(line.rstrip(b"\r\n") in boundaries for line in content.splitlines(keepends=True)):
         raise BootstrapError(f"Temporary DNS block for {name} already exists or is malformed")
     if content and not content.endswith(b"\n"):
         content += b"\n"
@@ -77,10 +77,11 @@ def remove_temporary_dns_block(name: str, hosts_path: Path = Path("/etc/hosts"))
     validate_name(name)
     content = hosts_path.read_bytes()
     lines = content.splitlines(keepends=True)
+    stripped_lines = [line.rstrip(b"\r\n") for line in lines]
     begin = marker(name, "BEGIN")
     end = marker(name, "END")
-    starts = [index for index, line in enumerate(lines) if line.rstrip(b"\r\n") == begin]
-    ends = [index for index, line in enumerate(lines) if line.rstrip(b"\r\n") == end]
+    starts = [index for index, line in enumerate(stripped_lines) if line == begin]
+    ends = [index for index, line in enumerate(stripped_lines) if line == end]
 
     if len(starts) != 1 or len(ends) != 1:
         raise BootstrapError(f"Expected exactly one complete temporary DNS block for {name}")
@@ -89,12 +90,10 @@ def remove_temporary_dns_block(name: str, hosts_path: Path = Path("/etc/hosts"))
     if finish <= start:
         raise BootstrapError(f"Malformed temporary DNS block for {name}")
 
-    for line in lines[start + 1 : finish]:
-        stripped = line.rstrip(b"\r\n")
-        if stripped.startswith(b"# BEGIN infra ") or stripped.startswith(b"# END infra "):
-            raise BootstrapError(f"Malformed temporary DNS block for {name}")
+    if any(line.startswith((b"# BEGIN infra ", b"# END infra ")) for line in stripped_lines[start + 1 : finish]):
+        raise BootstrapError(f"Malformed temporary DNS block for {name}")
 
-    replacement = b"".join([*lines[:start], *lines[finish + 1 :]])
+    replacement = b"".join(lines[:start] + lines[finish + 1 :])
     replace_hosts_content(hosts_path, replacement)
 
 

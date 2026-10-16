@@ -124,6 +124,54 @@ class HostsCleanupTests(unittest.TestCase):
 
         self.assertEqual(self.hosts_path.read_bytes(), original)
 
+    def test_adds_newline_only_when_needed(self) -> None:
+        for original in (b"", b"127.0.0.1 localhost", b"127.0.0.1 localhost\r\n"):
+            with self.subTest(original=original):
+                self.hosts_path.write_bytes(original)
+                add_temporary_dns_block("docker-host", "192.0.2.10", "example.com", self.hosts_path)
+                prefix = original + b"\n" if original and not original.endswith(b"\n") else original
+                self.assertEqual(
+                    self.hosts_path.read_bytes(),
+                    prefix + b"# BEGIN infra docker-host temporary DNS\n"
+                    b"192.0.2.10 example.com home.example.com traefik.example.com bootstrap-check.example.com\n"
+                    b"# END infra docker-host temporary DNS\n",
+                )
+
+    def test_removes_crlf_block_preserving_unrelated_bytes(self) -> None:
+        original = b"127.0.0.1 localhost\r\n\xff unrelated host without final newline"
+        self.hosts_path.write_bytes(
+            b"127.0.0.1 localhost\r\n"
+            b"# BEGIN infra docker-host temporary DNS\r\n"
+            b"192.0.2.10 home.example\r\n"
+            b"# END infra docker-host temporary DNS\r\n"
+            b"\xff unrelated host without final newline"
+        )
+
+        remove_temporary_dns_block("docker-host", self.hosts_path)
+
+        self.assertEqual(self.hosts_path.read_bytes(), original)
+
+    def test_refuses_reversed_or_nested_markers_without_changing_file(self) -> None:
+        for content in (
+            "# END infra docker-host temporary DNS\n# BEGIN infra docker-host temporary DNS\n",
+            "# BEGIN infra docker-host temporary DNS\n# BEGIN infra other temporary DNS\n# END infra docker-host temporary DNS\n",
+            "# BEGIN infra docker-host temporary DNS\n# END infra other temporary DNS\n# END infra docker-host temporary DNS\n",
+        ):
+            with self.subTest(content=content):
+                self.write_hosts(content)
+                with self.assertRaisesRegex(BootstrapError, "Malformed temporary DNS block"):
+                    remove_temporary_dns_block("docker-host", self.hosts_path)
+                self.assertEqual(self.hosts_path.read_bytes(), content.encode())
+
+    def test_add_refuses_end_only_crlf_marker_without_changing_file(self) -> None:
+        original = b"# END infra docker-host temporary DNS\r\n"
+        self.hosts_path.write_bytes(original)
+
+        with self.assertRaisesRegex(BootstrapError, "already exists or is malformed"):
+            add_temporary_dns_block("docker-host", "192.0.2.10", "example.com", self.hosts_path)
+
+        self.assertEqual(self.hosts_path.read_bytes(), original)
+
 
 if __name__ == "__main__":
     unittest.main()
