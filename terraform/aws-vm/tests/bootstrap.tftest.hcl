@@ -4,7 +4,10 @@ mock_provider "aws" {
     defaults = { names = ["eu-central-1a"] }
   }
   mock_data "aws_ami" {
-    defaults = { id = "ami-0123456789abcdef0" }
+    defaults = { id = "ami-0123456789abcdef0", architecture = "x86_64" }
+  }
+  mock_data "aws_ec2_instance_type" {
+    defaults = { supported_architectures = ["x86_64"], ebs_nvme_support = "required" }
   }
   mock_data "aws_partition" {
     defaults = { partition = "aws", dns_suffix = "amazonaws.com" }
@@ -61,12 +64,57 @@ run "external_bootstrap" {
 run "unicode_ssh_key_comment" {
   command = plan
   variables {
-    bootstrap_mode = "external"
-    ssh_public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITest opérateur@example"
-    ami_id         = "ami-0123456789abcdef0"
+    bootstrap_mode      = "external"
+    expected_account_id = "123456789012"
+    allocate_elastic_ip = true
+    ssh_public_key      = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITest opérateur@example"
+    ami_id              = "ami-0123456789abcdef0"
   }
   assert {
     condition     = output.ssh_public_key == "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITest"
     error_message = "EC2 key material must omit optional Unicode comments."
   }
+}
+
+run "reject_unrestricted_ingress" {
+  command = plan
+  variables { admin_source_address = "0.0.0.0/0" }
+  expect_failures = [var.admin_source_address]
+}
+
+run "reject_fractional_data_disk" {
+  command = plan
+  variables { data_disk_size_gb = 1.5 }
+  expect_failures = [var.data_disk_size_gb]
+}
+
+run "reject_bad_hostname" {
+  command = plan
+  variables { vm_name = "not/a/hostname" }
+  expect_failures = [var.vm_name]
+}
+
+run "reject_missing_external_account_guard" {
+  command = plan
+  variables {
+    bootstrap_mode      = "external"
+    ssh_public_key      = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITest bootstrap@test"
+    allocate_elastic_ip = true
+  }
+  expect_failures = [aws_ebs_volume.data]
+}
+
+run "reject_non_nvme_external_instance" {
+  command = plan
+  variables {
+    bootstrap_mode      = "external"
+    expected_account_id = "123456789012"
+    ssh_public_key      = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITest bootstrap@test"
+    allocate_elastic_ip = true
+  }
+  override_data {
+    target = data.aws_ec2_instance_type.bootstrap[0]
+    values = { supported_architectures = ["x86_64"], ebs_nvme_support = "unsupported" }
+  }
+  expect_failures = [data.aws_ec2_instance_type.bootstrap[0]]
 }

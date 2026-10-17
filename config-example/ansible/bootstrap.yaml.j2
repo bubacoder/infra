@@ -1,0 +1,30 @@
+# Public host/service settings; secrets go in secrets.yaml, never Terraform.
+target: {{ bootstrap_init_target }}
+name: docker-{{ bootstrap_init_target }}
+domain: {{ bootstrap_init_target }}-test.example.com
+acme_email: admin@example.com
+timezone: Etc/UTC
+docker_volumes: {{ '/storage/docker-volumes' if bootstrap_init_target == 'aws' else '/srv/docker-volumes' }}
+ssh_public_key: {{ bootstrap_init_public_key_file | to_json }}
+ssh_private_key: {{ bootstrap_init_private_key_file | to_json }}
+repository_url: https://github.com/bubacoder/infra.git
+repository_ref: REPLACE_WITH_BRANCH_TAG_OR_COMMIT # SHA stays fixed; a branch follows its current tip.
+{% if bootstrap_init_target == 'proxmox' %}
+# For Proxmox, edit config/vm/proxmox/ubuntu-cloud.env using task bootstrap:vm-init.
+# Supply the same VM ID/name/user, and an address or "auto" for guest-agent discovery.
+proxmox_host: proxmox # Existing trusted SSH alias, never a discovered credential.
+proxmox_vmid: 999
+proxmox_username: admin
+proxmox_address: auto
+{% endif %}
+dns:
+  enabled: true
+{% if bootstrap_init_target == 'aws' %}
+  cloudflare_zone: example.com
+{% endif %}
+  # Optional existing AdGuard, with trusted HTTPS and credentials in secrets.yaml.
+  # adguard_url: https://adguardhome.example.com
+{% if bootstrap_init_target == 'aws' %}
+# AWS configuration automatically initializes only the verified blank owned data volume.
+# Existing ext4 is preserved; ambiguous storage or previous format attempts stop configuration.
+{% endif %}

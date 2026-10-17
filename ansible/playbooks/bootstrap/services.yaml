@@ -1,0 +1,38 @@
+---
+- name: Check out the requested repository revision without discarding changes
+  ansible.builtin.git:
+    repo: "{{ bootstrap.repository_url }}"
+    dest: "{{ bootstrap_checkout }}"
+    version: "{{ bootstrap.repository_ref }}"
+    force: false
+- name: Create this host's private service-configuration directory
+  ansible.builtin.file:
+    path: "{{ bootstrap_host_dir }}"
+    state: directory
+    mode: '0700'
+- name: Reuse the existing Docker bridge DNS and outbound HTTPS check before deployment
+  ansible.builtin.command:
+    argv: [task, docker:check-host]
+    chdir: "{{ bootstrap_checkout }}"
+  changed_when: false
+  become: true
+- name: Render non-secret Compose inputs using native templates
+  ansible.builtin.template:
+    src: "{{ hostvars.localhost.bootstrap_root }}/ansible/templates/bootstrap/host.env.j2"
+    dest: "{{ bootstrap_host_dir }}/.env"
+    mode: '0600'
+- name: Render credentials directly on the host (no arguments, output or Terraform state)
+  ansible.builtin.template:
+    src: "{{ hostvars.localhost.bootstrap_root }}/ansible/templates/bootstrap/traefik.env.j2"
+    dest: "{{ bootstrap_host_dir }}/.env.traefik"
+    mode: '0600'
+  no_log: true
+- name: Keep the existing service-management tool usable for this core profile
+  ansible.builtin.copy:
+    src: "{{ hostvars.localhost.bootstrap_root }}/config-example/docker/profiles/local-core.yaml"
+    dest: "{{ bootstrap_host_dir }}/services.yaml"
+    mode: '0600'
+- name: Deploy each existing Compose project with native Compose health waiting
+  ansible.builtin.include_tasks: compose.yaml
+  loop: "{{ bootstrap_services }}"
+  loop_control: {loop_var: bootstrap_service}

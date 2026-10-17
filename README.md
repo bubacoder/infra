@@ -16,6 +16,7 @@ This repository contains the Infrastructure as Code (IaC) configuration and docu
   - [Local Infrastructure Components](#local-infrastructure-components)
   - [Cloud Services (External Dependencies)](#cloud-services-external-dependencies)
 - [Getting Started](#getting-started)
+- [Repository Layout](#repository-layout)
 - [Development](#development)
   - [GitHub automations](#github-automations)
 - [EOL](#eol)
@@ -60,29 +61,67 @@ The long-term goal is to reduce these dependencies and provide offline alternati
 | [Backblaze B2](https://www.backblaze.com/cloud-storage)                  | Backup storage                           | Optional, local backup also configured                                  |
 | [CrowdSec](https://app.crowdsec.net/)                                    | Crowd-sourced IP blocklist               | Optional, security service, can be disabled                             |
 | [Azure](https://azure.microsoft.com/)                                    | Temporary VM, storage                    | Optional, not used by any lab components                                |
-| [AWS](https://aws.amazon.com/)                                           | EC2 VM, persistent EBS storage            | Optional, alternative cloud deployment                                  |
+| [AWS](https://aws.amazon.com/)                                           | EC2 VM, persistent EBS storage            | Optional, cloud deployment target                                       |
 | [Homepage Icons](https://github.com/walkxcode/dashboard-icons/tree/main) | Icon set for the services                | Optional, hosted on a CDN. TODO: host locally                           |
 
 ## Getting Started
 
-The recommended path uses `config/bootstrap.yaml` to provision an Ubuntu VM on
-Proxmox, configure the host, and deploy the core Docker services end to end.
+Choose either bootstrap target explicitly; neither is the default:
 
--> See [Getting Started](docs/setup.md)
+| Target | Start | Installation guide |
+| --- | --- | --- |
+| AWS | `task bootstrap:init TARGET=aws` | [AWS installation](docs/bootstrap-aws.md) |
+| Proxmox | `task bootstrap:init TARGET=proxmox` | [Proxmox installation](docs/setup.md) |
 
-For an alternative cloud deployment, see [Bootstrap on AWS](docs/bootstrap-aws.md). The underlying
-[AWS EC2 Terraform configuration](terraform/aws-vm/README.md) also supports standalone use.
+Both use native provisioning, Ansible host configuration and Docker Compose, with
+separate infrastructure inputs and service secrets. Pass the same `TARGET` on
+subsequent bootstrap commands; each target has its own default input/state directory.
+See [configuration and safety](docs/bootstrap-configuration.md).
+The underlying [AWS EC2 Terraform configuration](terraform/aws-vm/README.md) also
+supports standalone use.
+
+## Repository Layout
+
+| Path | Purpose |
+| --- | --- |
+| [`ansible/`](ansible/README.md) | Host playbooks, roles and public inventory defaults |
+| [`docker/`](docker/README.md) | Service Compose files, organized by category |
+| [`docs/`](docs/) | Installation, configuration and operations guides |
+| [`terraform/`](terraform/) | Standalone AWS and Azure provisioning templates |
+| [`vm/`](vm/) | VM provisioning scripts and hypervisor documentation |
+| [`scripts/`](scripts/) | Service-management and maintenance utilities |
+| [`tests/`](tests/) | Offline regression tests |
+| `config/` | Ignored, host-specific inputs and private configuration |
+| [`config-example/`](config-example/) | Configuration templates with placeholder values |
 
 ## Development
 
 All development dependencies are available in the devcontainer or can be set up with an Ansible role.
 
-Some development workflows:
+Run commands from the repository root:
 
-Code quality scanning tools are set up via [pre-commit](https://pre-commit.com).
-Perform the checks by running `task lint` (or `pre-commit run --all-files`).
+| Command | Purpose |
+| --- | --- |
+| `task --list-all` | Discover the available tasks |
+| `task ui` | Open the TaskUI task selector |
+| `task test` | Run the Python unit tests |
+| `task bootstrap:test` | Run Python and Proxmox shell tests |
+| `task lint` | Run all pre-commit checks |
+| `task build` | Run tests/lint, regenerate Docker examples and build the documentation image |
+| `task clean` | Remove generated documentation, Terraform caches/plans and Python virtual environments |
 
-Create/update example `.env` files: `task docker:update-example-env`.
+Inspect [Taskfile.yaml](Taskfile.yaml) and its included task files before running
+build, cleanup or operational tasks: they can modify files and require Docker or
+host-specific inputs. For focused changes, run the relevant tests and
+`pre-commit run --files <changed-files>` instead of the full build.
+
+[Pre-commit](https://pre-commit.com) checks shell scripts, YAML, Python, Ansible,
+Terraform and Dockerfiles, plus secrets and infrastructure security. The exact
+hooks are defined in [`.pre-commit-config.yaml`](.pre-commit-config.yaml).
+
+Docker configuration, image updates and example `.env` generation are documented
+in [Docker services](docker/README.md). For operational utilities, see
+[Usage](docs/usage.md).
 
 ### GitHub automations
 

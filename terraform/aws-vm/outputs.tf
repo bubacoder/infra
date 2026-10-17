@@ -3,6 +3,27 @@ output "instance_id" {
   value       = module.ec2.id
 }
 
+output "bootstrap_host" {
+  description = "Non-secret Ansible handoff; never dump all outputs (standalone can contain a private key)."
+  value = var.bootstrap_mode != "external" ? null : {
+    name           = var.vm_name
+    address        = try(aws_eip.main[0].public_ip, null)
+    username       = var.admin_user
+    instance_id    = module.ec2.id
+    data_volume_id = aws_ebs_volume.data.id
+    root_volume_id = try(one(module.ec2.root_block_device).volume_id, null)
+    allocation_id  = try(aws_eip.main[0].id, null)
+    vpc_id         = module.vpc.vpc_id
+    role_name      = aws_iam_role.ec2.name
+    profile_name   = aws_iam_instance_profile.ec2.name
+    key_name       = module.key_pair.key_pair_name
+    region         = var.aws_region
+    account_id     = var.expected_account_id
+    admin_cidr     = var.admin_source_address
+    public_key     = local.ssh_public_key
+  }
+}
+
 output "public_ip" {
   description = "Public IP address of the instance"
   value       = var.allocate_elastic_ip ? aws_eip.main[0].public_ip : module.ec2.public_ip

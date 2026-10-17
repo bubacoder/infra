@@ -1,7 +1,8 @@
 # Manual Installation<!-- omit in toc -->
 
-This is the advanced, step-by-step installation path. Prefer the automated
-[Getting Started](setup.md) workflow for a supported first-time deployment.
+This is the advanced, step-by-step installation path. For an automated first-time
+deployment, choose either the [AWS](bootstrap-aws.md) or [Proxmox](setup.md) workflow;
+neither target is selected by default.
 
 - [Before You Start](#before-you-start)
 - [Online Prerequisites](#online-prerequisites)
@@ -136,12 +137,11 @@ bootstrap authentication, and troubleshooting options.
 
 Install Proxmox VE first. See [Proxmox VE](../vm/proxmox/README.md).
 
-From the infrastructure checkout on the admin environment, use the automated
-cloud-image workflow:
+Prepare the cloud-image VM environment and selected SSH public key as described in
+the [Proxmox input setup](setup.md#configure-and-provision). From the infrastructure
+checkout on the admin environment, provision only the VM:
 
 ```bash
-task bootstrap:vm-init
-# Edit config/vm/proxmox/ubuntu-cloud.env
 task bootstrap:vm-preflight
 task bootstrap:vm-provision
 ```
@@ -210,7 +210,7 @@ configuration repository, use the local initializer on that host instead:
 
 ```bash
 cd ~/repos/infra
-task bootstrap:init-local-config
+task docker:init-local-config
 task docker:check-host
 ```
 

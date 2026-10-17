@@ -1,0 +1,72 @@
+---
+- name: Add the explicitly configured trusted hypervisor
+  ansible.builtin.add_host:
+    name: bootstrap_hypervisor
+    ansible_host: "{{ bootstrap.proxmox_host }}"
+    ansible_connection: ssh
+    ansible_ssh_common_args: -o StrictHostKeyChecking=yes
+- name: Get the native Proxmox node name
+  ansible.builtin.command: hostname
+  delegate_to: bootstrap_hypervisor
+  register: bootstrap_pve_node
+  changed_when: false
+- name: Read VM configuration through Proxmox's JSON API
+  ansible.builtin.command:
+    argv: [pvesh, get, "/nodes/{{ bootstrap_pve_node.stdout }}/qemu/{{ bootstrap.proxmox_vmid }}/config", --output-format, json]
+  become: true
+  delegate_to: bootstrap_hypervisor
+  register: bootstrap_pve_config
+  changed_when: false
+- name: Check guest identity before accepting it
+  ansible.builtin.assert:
+    that:
+      - (bootstrap_pve_config.stdout | from_json).name == bootstrap.name
+      - (bootstrap_pve_config.stdout | from_json).ciuser == bootstrap.proxmox_username
+      - "'vm-' + bootstrap.proxmox_vmid | string + '-disk-' in (bootstrap_pve_config.stdout | from_json).scsi0"
+      - "'-' + bootstrap.proxmox_vmid | string + '-cloud-user.yaml' in (bootstrap_pve_config.stdout | from_json).cicustom"
+- name: Wait for the guest agent and read its NIC addresses
+  ansible.builtin.command:
+    argv: [qm, guest, cmd, "{{ bootstrap.proxmox_vmid }}", network-get-interfaces]
+  become: true
+  delegate_to: bootstrap_hypervisor
+  register: bootstrap_pve_interfaces
+  changed_when: false
+  until: bootstrap_pve_interfaces.rc == 0
+  retries: 120
+  delay: 5
+- name: Bind discovery to the VM's primary NIC MAC
+  ansible.builtin.set_fact:
+    bootstrap_pve_mac: "{{ (bootstrap_pve_config.stdout | from_json).net0 | regex_search('virtio=([0-9A-Fa-f:]+)', '\\1') | first }}"
+    bootstrap_pve_nics: "{{ (bootstrap_pve_interfaces.stdout | from_json).result | default(bootstrap_pve_interfaces.stdout | from_json) }}"
+- name: Select usable IPv4 addresses only on that NIC
+  ansible.builtin.set_fact:
+    bootstrap_pve_addresses: "{{ bootstrap_pve_nics | selectattr('hardware-address', 'match', '(?i)^' + bootstrap_pve_mac + '$') | map(attribute='ip-addresses') | flatten | selectattr('ip-address-type', 'equalto', 'ipv4') | rejectattr('ip-address', 'match', '^(127\\.|0\\.)') | map(attribute='ip-address') | unique | list }}"
+- name: Refuse ambiguous addressing or a different reserved address
+  ansible.builtin.assert:
+    that:
+      - bootstrap_pve_addresses | length == 1
+      - bootstrap.proxmox_address == 'auto' or bootstrap.proxmox_address == bootstrap_pve_addresses[0]
+- name: Wait for successful cloud-init through the authenticated guest agent
+  ansible.builtin.command:
+    argv: [qm, guest, exec, "{{ bootstrap.proxmox_vmid }}", --timeout, '900', --, cloud-init, status, --wait]
+  become: true
+  delegate_to: bootstrap_hypervisor
+  register: bootstrap_pve_ready
+  changed_when: false
+- name: Require cloud-init success
+  ansible.builtin.assert:
+    that: (bootstrap_pve_ready.stdout | from_json).exitcode == 0
+- name: Retrieve SSH host public key through the authenticated guest agent
+  ansible.builtin.command:
+    argv: [qm, guest, exec, "{{ bootstrap.proxmox_vmid }}", --, cat, /etc/ssh/ssh_host_ed25519_key.pub]
+  become: true
+  delegate_to: bootstrap_hypervisor
+  register: bootstrap_pve_key
+  changed_when: false
+- name: Bind the trusted guest identity
+  ansible.builtin.set_fact:
+    bootstrap_address: "{{ bootstrap_pve_addresses[0] }}"
+    bootstrap_username: "{{ bootstrap.proxmox_username }}"
+    bootstrap_trusted_key: "{{ (bootstrap_pve_key.stdout | from_json)['out-data'].split()[:2] | join(' ') }}"
+- name: Pin authenticated SSH host key
+  ansible.builtin.import_tasks: trust.yaml

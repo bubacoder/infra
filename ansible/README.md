@@ -31,7 +31,21 @@
    - The playbook will set up passwordless `sudo`, so next time the `--ask-become-pass` parameter will not be required
 6. When the administrative user is already created, use that user in the inventory instead of `root` (`ansible_user: <adminuser>`). This is more secure and also required by Homebrew.
 
-For the complete infrastructure setup walkthrough using these playbooks, see [Getting Started](../docs/setup.md).
+Task wrappers are available from the repository root:
+
+```bash
+task ansible:apply-localhost
+task ansible:apply-homelab
+task ansible:apply-cloud
+```
+
+These apply host configuration. Inspect the inventory and obtain authorization
+before running them. To limit a run to one host or supply Ansible options, use the
+`apply-*.sh` scripts directly, for example `ansible/apply-homelab.sh --limit <host>`.
+
+For complete automated installation, choose the [AWS](../docs/bootstrap-aws.md) or
+[Proxmox](../docs/setup.md) guide. For manual inventory-based installation, see
+[Manual installation](../docs/manual-setup.md).
 
 ## Bootstrapping hosts with authentication
 

@@ -6,7 +6,7 @@ version: '3'
 
 includes:
   ansible: ./ansible/Taskfile.ansible.yaml
-  bootstrap: ./scripts/bootstrap/Taskfile.bootstrap.yaml
+  bootstrap: ./ansible/Taskfile.bootstrap.yaml
   docker: ./docker/Taskfile.docker.yaml
   app: ./docker/Taskfile.apps.yaml
   crowdsec: ./docker/Taskfile.crowdsec.yaml

@@ -1,215 +1,169 @@
 # Bootstrap on AWS
 
-The AWS target reuses `terraform/aws-vm` to create an Ubuntu EC2 Docker host,
-then uses the same separate-admin-host Ansible and core Docker deployment as
-Proxmox. The core profile has prior disposable live validation. Managed DNS and
-automated teardown have mocked test coverage but have not yet been validated
-together in a fresh live installation; other profiles below remain unsupported.
+Terraform provisions an on-demand x86_64 Ubuntu EC2 host, encrypted persistent EBS
+at `/storage`, an Elastic IP, and SSH/HTTPS restricted to an explicit administrator
+CIDR. Ansible configures Traefik/Homepage and optional managed DNS. No automatic
+adoption, private subnet, Spot or ARM bootstrap is supported.
 
-## Supported profile
+**EC2, EBS and public IPv4 charges apply. Failures leave resources/state intact;
+stopping EC2 does not eliminate all charges. Teardown is separately approved.**
 
-- Fresh, on-demand x86_64 Ubuntu instance with EBS NVMe support in a public subnet
-  (for example, `t3.small`). Legacy non-NVMe instance types are rejected during preflight.
-- Stable Elastic IP and persistent encrypted EBS volume mounted at `/storage`.
-- SSH and HTTPS restricted to your administrator public IPv4 CIDR.
-- Traefik and Homepage, using Cloudflare DNS-01 certificates.
-- Managed DNS by default: [Cloudflare public records and optional AdGuard local
-  rewrites](bootstrap-dns.md), without changing existing parent records.
-  No automatic adoption of existing AWS deployments,
-  Spot instances, ARM instances, or private subnets.
+## Prerequisites and inputs
 
-AWS charges apply to EC2, EBS and public IPv4/Elastic IP. Stopping EC2 does not
-stop all charges. Failed deployments and DNS checkpoints leave resources intact.
+Use a Linux controller with [Task](https://taskfile.dev/docs/installation),
+Terraform >= 1.5, AWS CLI, Ansible, Git, SSH,
+`ssh-keygen`, curl, controller Python's `netaddr>=0.10.1`, and the collections from
+`ansible/requirements.yml`. Install netaddr in the same environment as Ansible.
+Supply AWS credentials through the standard chain in the
+approved account/profile, never through YAML or CLI access-key arguments.
 
-## Prerequisites
-
-Use a Linux administrative host with the shared tools listed in [setup](setup.md),
-plus Terraform >= 1.5, AWS CLI, and `ssh-keygen`. The offline Terraform tests need
-Terraform >= 1.7 because they use mock providers.
-
-Configure AWS credentials through the standard credential chain, preferably an
-AWS profile/SSO. Bootstrap never asks for or stores AWS access keys in YAML.
-The authenticated account must match `aws.account_id`.
-
-The provisioning identity needs permissions for the template's EC2/VPC/EBS/EIP,
-security groups, key pair and IAM instance-role/profile resources, including
-passing the instance role. Preflight also needs STS identity, EC2 image/type/tag
-reads and IAM role/instance-profile listing. Guest readiness and SSH trust use Systems Manager
-Run Command: allow SendCommand for `AWS-RunShellScript` on the owned instance,
-GetCommandInvocation and DescribeInstanceInformation. The guest receives SSM
-managed-instance permissions, not the administrator's AWS credentials.
-
-Provide an existing public SSH key with a usable matching private key or agent
-identity. Keep the private key mode 0600 or stricter. The initial profile requires
-the `ubuntu` account. Ensure the admin host's public IP is inside the configured
-CIDR; VPN/NAT changes can otherwise block access.
-
-Bootstrap also supplies this same administrator CIDR to Traefik's application
-allowlist. Other deployments keep the existing private-network policy; the extra
-allowlist entry defaults to loopback when no cloud administrator CIDR is supplied.
-
-Use a public domain in Cloudflare and the same `Zone:Read`/`DNS:Edit` token and
-ACME email as the Proxmox profile. Keep the repository clean and pushed at the
-selected branch tip, so the guest can check out the exact same revision. A public,
-guest-accessible HTTPS repository is required and is checked without local Git
-credentials. GitHub SSH origins are normalized to HTTPS; private repository
-authentication is not added by this AWS bootstrap profile.
-
-## Configure and plan
+The identity needs the template's EC2/network/EBS/EIP/IAM permissions, STS identity
+and SSM Run Command/read permissions for the owned instance. The guest receives
+only its SSM role. No administrator AWS credentials are transferred. The private
+SSH key must match the public key supplied to Terraform; AWS bootstrap requires
+the `ubuntu` user. Use a Cloudflare domain and scoped DNS token, ACME email, and
+an optional existing trusted-HTTPS AdGuard endpoint.
 
 ```bash
+ansible-galaxy collection install -r ansible/requirements.yml
 task bootstrap:init TARGET=aws
 ```
 
-This creates `config/bootstrap.yaml` with mode 0600 from
-`config-example/bootstrap-aws.yaml`. It never overwrites an existing file.
-If a Proxmox bootstrap configuration already exists, preserve it and create a
-separate mode-0600 AWS configuration under `config/`; use `CONFIG=<path>` on plan
-and apply to select it.
-
-Edit the account ID, region/profile, host name, SSH key, administrator CIDR,
-domain and TLS settings. The documentation IP/CIDR is deliberately not usable.
-Docker volumes must be beneath `/storage`, for example `/storage/docker-volumes`.
-
-For AI-assisted inspection without exposing the private file, use
-`task bootstrap:show-config CONFIG=config/bootstrap-aws.yaml` (adjust the path
-to your selected configuration). This offline command works with incomplete
-settings and does not contact AWS. See
-[safe inspection](bootstrap-configuration.md#safe-inspection-for-ai-agents).
+Initialization fills `expected_account_id` from `aws sts get-caller-identity`,
+`admin_source_address` from this controller's public IPv4 plus `/32`, and
+`ssh_public_key` from `~/.ssh/id_ed25519.pub`. It reads no private key and creates
+no AWS resources. For a different existing public key:
 
 ```bash
-task bootstrap:plan
+task bootstrap:init TARGET=aws BOOTSTRAP_SSH_PUBLIC_KEY=~/.ssh/my-aws-key.pub
 ```
 
-Planning checks account and SSH identity, public IP access, official AMI,
-instance architecture and EBS NVMe support, resource ownership and Terraform actions. It initializes
-providers and writes private local artifacts, but does not apply cloud changes.
-Before apply starts and while no Terraform state exists, each plan refreshes the
-AMI and provisioning inputs in the deployment manifest. You can edit the configuration
-or update templates and replan without deleting local artifacts. Once apply starts
-or state exists, the manifest is frozen so retries cannot silently select a newer
-image or change cloud-init.
+The selected public-key path and corresponding private-key path are written to new
+host settings. For existing host settings, the selected public key must match
+`ssh_public_key` there. Initialization fills only the three exact template
+placeholders, including in an existing copied template. Configured values and all
+other edits remain untouched. Subsequent runs with no placeholders need neither
+AWS credentials nor IP detection. Detection failures stop with placeholders intact;
+fix credentials, networking or the key path and rerun initialization.
 
-Bootstrap's AWS state is separate from standalone `task aws-vm:*` state:
+No target is selected by default. Pass `TARGET=aws` on each target-selecting
+bootstrap command; Proxmox uses the same interface with `TARGET=proxmox`. To use an
+existing custom directory, also pass its `BOOTSTRAP_CONFIG_DIR` on every command.
+Never create a fresh backend to resume resources recorded in a different directory.
 
-```text
-config/terraform/bootstrap/<hostname>/
-├── manifest.json
-├── known_hosts                 # Written only after trusted SSM verification
-└── runtime/
-    ├── bootstrap.tfvars.json
-    ├── bootstrap.tfplan
-    ├── terraform.tfstate
-    ├── .terraform.lock.hcl
-    └── ...canonical template files and provider/module cache
-```
+Privately edit `config/bootstrap-aws/host.yaml`, `aws.tfvars`, and `secrets.yaml`.
+See [inputs and safety](bootstrap-configuration.md). Review the detected account,
+administrator CIDR and public key, then replace the remaining placeholders. Select a
+published repository branch, tag or commit. Use a dedicated deployment subdomain,
+not the homelab's existing base/wildcard. Docker bind mounts must be below `/storage/`.
 
-Do not run standalone AWS tasks against this deployment. Keep state and its
-backups private and backed up. Never discard state to resolve a deployment error.
-The runtime template copy is generated from tracked code; do not edit it manually.
-
-## Apply and automated DNS
+## Plan, apply and initialize storage
 
 ```bash
-task bootstrap:apply
+task bootstrap:plan TARGET=aws
+task bootstrap:apply TARGET=aws
 ```
 
-Apply refreshes the plan, displays account/region and cost-bearing changes, asks
-for confirmation, and applies that exact saved plan. `YES=1` only skips the
-confirmation; it does not bypass safety checks.
+Plan uses the canonical Terraform root with a dedicated backend, native variable
+validation, the AWS provider account guard and provider-data preconditions. It
+checks configured DNS credentials/conflicts before provisioning. Review the normal
+Terraform plan, especially any replacement, deletion or newly selected AMI. Pin
+`ami_id` if future plans must retain the same image. Apply prompts for approval and
+applies the **saved plan**, never silently generates another one.
 
-Bootstrap waits for EC2 health, SSM registration and successful cloud-init,
-initializes a newly created EBS volume once, verifies its mount, and retrieves SSH host public keys through authenticated
-SSM before trusting the network SSH key. It does not fall back to trust-on-first-use.
-A matching owned instance that was stopped is started after apply approval;
-terminated or otherwise conflicting resources are never automatically replaced.
+For `repository_ref`, a SHA stays fixed and a branch follows its remote tip during
+configuration. See [repository revisions and configuration updates](bootstrap-configuration.md#repository-revisions-and-configuration-updates)
+for updating code on an already provisioned host.
 
-First-time formatting requires an approved Terraform volume-create action and a
-private initialization receipt. The controller verifies the exact volume ID,
-snapshot-free origin, ownership tag, attachment and absent filesystem/signatures.
-It records the attempt before formatting. A retry can mount an existing ext4
-filesystem, but cannot automatically reformat a corrupted or previously initialized
-volume. Raw encrypted EBS bytes are not assumed to be all zeroes.
+After EC2 health and SSM registration, Ansible waits for cloud-init, obtains the
+SSH host key through authenticated SSM and configures strict OpenSSH trust. No
+TOFU or disabled-host-key fallback is used. SSM Agent, instance-role permissions
+and outbound AWS reachability are prerequisites; a failure stops with resources
+intact.
 
-Normal plan previews missing Cloudflare and AdGuard entries and rejects
-conflicts without DNS writes. Apply creates Cloudflare **DNS-only** A records
-for the deployment base domain and wildcard pointing to the Elastic IP, and
-exact AdGuard rewrites for the base, `home`, `traefik` and `bootstrap-check`
-names. It reads the providers back and waits up to 60 seconds for the admin
-host's resolver to return only the Elastic IP before continuing automatically.
+**Automatic first-format policy:** approving apply/configure also authorizes initial
+formatting of the exact Terraform-owned data volume, but only after Ansible verifies
+its NVMe serial, snapshot-free origin, owned attachment and deployment tag, absent
+partitions/signatures, and absence of a previous format-attempt marker. An empty
+`blkid` result alone never authorizes formatting. No manual volume-ID entry is needed.
 
-Configure Cloudflare and, if available, AdGuard in the private bootstrap file; see
-[Bootstrap DNS](bootstrap-dns.md). This handles local split DNS without changing
-your existing homelab base/wildcard records. Public records alone cannot override
-AdGuard's local answers. Omit AdGuard for a first deployment without a local DNS
-server. Configured providers require valid credentials before provisioning; failed
-writes or stale resolver answers stop with resources and partial DNS intact.
-No hosts-file fallback is supported.
+To resume a provisioned guest after correcting a reported cause, explicitly approve:
 
-Set `network.dns.enabled: false` for manual DNS management; automation defaults
-to `true`. With automation disabled, set the public and local records yourself,
-then explicitly resume the same apply command. Legacy `mode: external` remains
-a disabled alias; replace it with `enabled: true` and add provider settings to
-migrate. Remove the old `mode` field to avoid contradictory configuration.
+```bash
+task bootstrap:configure TARGET=aws
+```
 
-There is no DHCP reservation or `/etc/hosts` requirement for AWS. Only clients
-permitted by the security group can access HTTPS. DNS-01 does not require inbound
-port 80.
+Existing whole-disk ext4 is mounted without formatting. Other filesystems,
+partitioned disks and unrecognized signatures stop configuration for review.
+A one-time controller marker is written before the native filesystem module runs;
+an interrupted attempt cannot silently authorize another format. Never delete that
+marker to retry formatting. Verification never formats storage.
+The mount must match the EBS identity before Docker runs;
+cloud-init also installs Docker's `/storage` mount prerequisite.
 
-After DNS verification, bootstrap renders shared inventory and Docker configuration,
-limits Ansible to the new host, clones the pinned repository, transfers the
-Cloudflare token over trusted SSH, and deploys the core services. Acceptance checks
-cover HTTPS, container stability, EBS persistence, repeat Docker apply, and a
-repeat Terraform plan without changes.
+## Acceptance and recovery
 
-## Recovery and safety
+Native Ansible modules configure DNS, the existing host roles, the selected Git
+checkout and private Compose files. Compose waits for running/healthy services.
+Acceptance additionally checks the controller's DNS resolution, trusted HTTPS for
+both routes, the live Homepage-to-Traefik widget, persistent ACME/log paths, stable
+containers and no recreation on repeat Compose deployment.
 
-Correct the reported issue and rerun the same apply. Resources and state remain
-intact at checkpoints. Missing state after apply began, different provisioning
-inputs/template, conflicting names, SSH key changes, deletion/replacement plans,
-or EBS attachment changes stop for manual inspection.
+```bash
+task bootstrap:verify TARGET=aws
+```
 
-Changing cloud-init on an existing instance does not rerun it. Provisioning-input
-changes require an explicitly reviewed maintenance workflow outside bootstrap.
-Cloudflare tokens never enter Terraform state, EC2 user data or SSM commands.
+Verification repeats Compose but never provisions, formats or rewrites DNS. A
+repeat `bootstrap:plan` should show no infrastructure changes; run it only within
+the approved scope. An unexpected create/replace in Terraform's plan must be
+reviewed, not applied.
 
-If SSM does not register, inspect EC2 cloud-init through the AWS console and check
-SSM Agent installation, instance role permissions and outbound HTTPS reachability.
-If the data mount failed, do not start Docker on root storage; the external
-cloud-init profile also installs a Docker systemd mount prerequisite.
+Correct reported causes before explicitly resuming `configure` or reviewing a new
+plan. Do not discard state, replace host trust, force formatting or run standalone
+`aws-vm:*` tasks against this backend. Cloud-init changes do not rerun on an existing
+guest. A stopped instance is not automatically restarted by configure; inspect and
+approve its lifecycle separately using AWS tools.
 
 ## Teardown
 
-Teardown is separately approved and **deletes both disks and their data**. Back up
-anything needed first; stop applications and unmount `/storage` before disposal.
-Use the original bootstrap configuration, AWS credentials and deployment state,
-not standalone `aws-vm:*` tasks. No clean/published checkout or SSH access is needed
-by the teardown command.
+Back up any data you need. Full destruction deletes both disks. Use the original
+configuration and backend:
 
 ```bash
-# Preview Terraform destruction, owned DNS and local cleanup:
-task bootstrap:destroy CONFIG=config/bootstrap-aws.yaml DELETE_DATA=1 DRY_RUN=1
-# Review the plan and confirm interactively:
-task bootstrap:destroy CONFIG=config/bootstrap-aws.yaml DELETE_DATA=1
+task bootstrap:destroy-plan TARGET=aws DELETE_DATA=1
+task bootstrap:destroy TARGET=aws
 ```
 
-The command verifies account/region/hostname, creates a Terraform destroy plan in
-the original runtime, and applies that exact saved plan after confirmation. It
-temporarily overrides the data-volume guard only in the generated runtime; the
-tracked template stays protected. `YES=1` skips confirmation for an already
-reviewed run; `DELETE_DATA=1` is still required.
+The first command temporarily uses Terraform's native lifecycle override solely
+to plan approved data-volume destruction; it removes that override even on failure
+and displays the saved destroy plan. It never weakens the tracked template. Review
+the plan before the second command's confirmation. Task's native `--yes` should
+only be used for a previously reviewed unattended run.
 
-After Terraform succeeds and reports no managed resources, teardown removes only
-[journal-owned DNS](bootstrap-dns.md#failures-ownership-and-cleanup), this host's
-inventory entries and generated Docker files, then the DNS journal and Terraform
-runtime/state/backups/manifest/trust. Bootstrap YAML, SSH keys, shared configuration
-and extra operator files outside the generated runtime are preserved. Manually
-managed DNS, snapshots and operator backups are not managed by this command and
-may require separate cleanup or continue to incur charges.
+Before Terraform applies destruction, Ansible stops running containers, the Docker
+socket and daemon, and cleanly unmounts `/storage` on the dedicated guest. It uses
+the deployment's strict SSH trust. A stopped, terminated or absent instance is not
+restarted; transitional states, SSH failures and failed unmounts stop teardown
+before Terraform runs. This also handles guests where Docker was never installed.
 
-Failures retain state and recovery evidence. Diagnose the failure before approving
-a retry of the same command. It can also finish an earlier Terraform destroy with
-empty state; no state backup is required. Missing state or an uncertain DNS write
-requires manual recovery, not a guard bypass. An override left by an interrupted
-process must be reviewed and removed before retrying. Never delete state merely
-to unblock a deployment.
+Terraform owns deletion order and state locking. After its state listing is empty,
+Ansible checks the original AWS account and independently verifies instance
+termination, both disks, Elastic IP, VPC, SSH key pair and dedicated IAM resources.
+It also checks for owned snapshots linked to either disk. These checks use bounded
+read-only AWS CLI calls; the operator needs the corresponding EC2 describe and IAM
+get permissions, including `ec2:DescribeSnapshots`. Permission errors are not
+treated as proof of deletion. Snapshots are reported, never automatically deleted.
+
+Only after those checks pass are exact deployment-owned DNS records and generated
+controller artifacts removed. Public inputs and secrets are retained for reuse.
+If post-destroy verification or DNS cleanup fails, recovery files remain. Correct
+the cause and retry cleanup without replaying the saved destroy plan:
+
+```bash
+task bootstrap:destroy-cleanup TARGET=aws
+```
+
+Use the same `BOOTSTRAP_CONFIG_DIR` if you selected a custom directory. Never use
+fresh state as a cleanup shortcut. Operator backups, snapshots and manual DNS are
+outside Terraform's ownership and may need separately approved cleanup or remain
+billable.

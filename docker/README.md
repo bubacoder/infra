@@ -31,18 +31,30 @@ loading order and back them up separately.
 The applications/services are defined in the `docker` folder, ordered by category.  
 If possible, avoid any hardcoded configuration values in these files. Use environment variables and init containers for customization.
 
-## Start the services
+For file naming, adding or registering a service, environment-variable precedence,
+Traefik labels and network/volume conventions, follow the
+[Compose architecture and patterns](guidelines.md).
 
-After configuration, execute on a Docker host to apply the local configuration (based on the hostname):
-`task docker:apply`
+## Service operations
 
-## Updates
+Run these tasks from the repository root on the intended Docker host. Host-wide
+commands use `config/docker/<hostname>/services.yaml`:
+
+| Command | Purpose |
+| --- | --- |
+| `task docker:apply` | Apply the registered service states |
+| `task docker:update` | Pull images before applying configured service states |
+| `task docker:pull-all` | Pull images for all registered services, including disabled ones |
+| `task docker:stop` | Bring down registered services |
+| `task docker:apply-update` | Update services, prune old unused images and show restart events |
+| `task docker:update-example-env` | Regenerate example environment/configuration files from the local host configuration |
 
 Updating the container image tags is automated with [Renovate](https://docs.renovatebot.com/).
+Check mutable image tags with `task docker:check-updates`.
 
-Check for updates (only useful for containers not having a fixed version tag): `task docker:check-updates`
-
-Update containers having non-fixed version tags: `task docker:update`
+For a single service, use [`labctl.py`](guidelines.md#managing-individual-services-labctlpy)
+rather than applying every configured service. Rendered Compose configuration may
+contain credentials; do not print or share it without redaction.
 
 ## Tips
 
