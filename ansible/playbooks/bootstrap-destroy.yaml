@@ -1,0 +1,110 @@
+---
+- name: Preserve teardown handoff and finalize only after Terraform succeeds
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Validate selected native inputs
+      ansible.builtin.import_tasks: bootstrap/inputs.yaml
+      tags: [always]
+    - name: Load private DNS credentials without exposing them
+      ansible.builtin.import_tasks: bootstrap/secrets.yaml
+      tags: [always]
+    - name: Require an AWS deployment
+      ansible.builtin.assert:
+        that: bootstrap.target == 'aws'
+      tags: [always]
+    - name: Locate the recoverable teardown handoff
+      ansible.builtin.stat:
+        path: "{{ bootstrap_dir }}/teardown-host.yaml"
+      register: bootstrap_teardown_stat
+      tags: [always]
+    - name: Recover handoff after an interrupted teardown
+      ansible.builtin.include_vars:
+        file: "{{ bootstrap_dir }}/teardown-host.yaml"
+        name: bootstrap_aws
+      when: bootstrap_teardown_stat.stat.exists
+      tags: [always]
+    - name: Read the native handoff before destroying Terraform outputs
+      ansible.builtin.command:
+        argv: [terraform, "-chdir={{ bootstrap_root }}/terraform/aws-vm", output, -json, bootstrap_host]
+      register: bootstrap_destroy_output
+      changed_when: false
+      failed_when: bootstrap_destroy_output.rc != 0 and not bootstrap_teardown_stat.stat.exists
+      tags: [prepare]
+    - name: Refuse mismatched or reused teardown state
+      ansible.builtin.assert:
+        that:
+          - (bootstrap_destroy_output.stdout | from_json).name == bootstrap.name
+          - not bootstrap_teardown_stat.stat.exists or bootstrap_aws.instance_id == (bootstrap_destroy_output.stdout | from_json).instance_id
+      when: bootstrap_destroy_output.rc == 0
+      tags: [prepare]
+    - name: Save only non-secret identities needed after destruction
+      ansible.builtin.copy:
+        dest: "{{ bootstrap_dir }}/teardown-host.yaml"
+        content: "{{ bootstrap_destroy_output.stdout | from_json | to_nice_yaml }}"
+        force: false
+        mode: '0600'
+      when: not bootstrap_teardown_stat.stat.exists
+      tags: [prepare]
+    - name: Use the saved handoff for DNS ownership verification
+      ansible.builtin.include_vars:
+        file: "{{ bootstrap_dir }}/teardown-host.yaml"
+        name: bootstrap_aws
+      tags: [always]
+    - name: Bind DNS teardown to the original address
+      ansible.builtin.assert:
+        that: bootstrap_aws.name == bootstrap.name
+      tags: [always]
+    - name: Require complete public identities before destruction or cleanup
+      ansible.builtin.assert:
+        that: item is string and item | length > 0
+        fail_msg: Preserve the state and teardown handoff; all resource identities are required for verification.
+      loop: "{{ [bootstrap_aws.account_id, bootstrap_aws.instance_id, bootstrap_aws.root_volume_id, bootstrap_aws.data_volume_id, bootstrap_aws.allocation_id, bootstrap_aws.vpc_id, bootstrap_aws.role_name, bootstrap_aws.profile_name, bootstrap_aws.key_name] }}"
+      tags: [always]
+    - name: Check the authenticated AWS account before interpreting resource absence
+      ansible.builtin.command:
+        argv: [aws, sts, get-caller-identity, --query, Account, --output, text]
+      register: bootstrap_cleanup_account
+      changed_when: false
+      tags: [always]
+    - name: Require the deployment's original AWS account
+      ansible.builtin.assert:
+        that: bootstrap_cleanup_account.stdout | trim == bootstrap_aws.account_id
+      tags: [always]
+    - name: Select DNS teardown without requiring deleted names to resolve
+      ansible.builtin.set_fact:
+        bootstrap_address: "{{ bootstrap_aws.address }}"
+        bootstrap_dns_action: "{{ 'preview' if 'prepare' in ansible_run_tags else 'absent' }}"
+        bootstrap_dns_preflight_only: true
+      tags: [always]
+    - name: Require Terraform's own state listing to be empty before local deletion
+      ansible.builtin.command:
+        argv: [terraform, "-chdir={{ bootstrap_root }}/terraform/aws-vm", state, list]
+      register: bootstrap_remaining_state
+      changed_when: false
+      tags: [cleanup]
+    - name: Preserve recovery data if anything remains in state
+      ansible.builtin.assert:
+        that: bootstrap_remaining_state.stdout | trim == ''
+      tags: [cleanup]
+    - name: Independently verify AWS deletion before removing DNS or recovery evidence
+      ansible.builtin.import_tasks: bootstrap/verify-destroyed.yaml
+      tags: [cleanup]
+    - name: Preview or remove only deployment-owned DNS through native modules
+      ansible.builtin.import_tasks: bootstrap/dns.yaml
+      tags: [prepare, cleanup]
+    - name: Remove generated state, plan, trust and formatting artifacts only
+      ansible.builtin.file:
+        path: "{{ bootstrap_dir }}/{{ item }}"
+        state: absent
+      loop:
+        - .terraform
+        - aws.tfstate
+        - aws.tfstate.backup
+        - aws.tfplan
+        - destroy.tfplan
+        - known_hosts
+        - dns-state.yaml
+        - "format-{{ bootstrap_aws.data_volume_id }}"
+        - teardown-host.yaml
+      tags: [cleanup]

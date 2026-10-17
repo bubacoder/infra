@@ -1,6 +1,23 @@
 version: '3'
 
 tasks:
+  init-local-config:
+    desc: Create the minimal local Compose configuration without overwriting operator files
+    vars:
+      HOSTNAME:
+        sh: hostname --short
+    preconditions:
+      - sh: test ! -e "config/docker/{{.HOSTNAME}}/services.yaml"
+        msg: Host configuration already exists; edit it rather than reinitialize it.
+    cmds:
+      - mkdir -p "config/docker/{{.HOSTNAME}}"
+      - cp -n config-example/docker/minimal-common.env config/docker/.env
+      - cp -n config-example/docker/minimal-host.env "config/docker/{{.HOSTNAME}}/.env"
+      - cp -n config-example/docker/minimal-traefik.env "config/docker/{{.HOSTNAME}}/.env.traefik"
+      - chmod 600 "config/docker/{{.HOSTNAME}}/.env.traefik"
+      - cp -n config-example/docker/profiles/local-core.yaml "config/docker/{{.HOSTNAME}}/services.yaml"
+      - cp -n config-example/docker/services-schema.yaml config/docker/services-schema.yaml
+
   check-host:
     desc: Verify Docker bridge networking and required host prerequisites
     preconditions:

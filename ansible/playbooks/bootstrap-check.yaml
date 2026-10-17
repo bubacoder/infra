@@ -1,0 +1,7 @@
+---
+- name: Validate the public installation contract without contacting a provider
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Validate public inputs and explicit target
+      ansible.builtin.import_tasks: bootstrap/inputs.yaml

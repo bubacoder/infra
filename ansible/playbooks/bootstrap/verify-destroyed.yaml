@@ -1,0 +1,41 @@
+---
+- name: Independently verify EC2 resources and snapshots are absent with bounded retries
+  ansible.builtin.command:
+    argv: "{{ ['aws', '--region', bootstrap_aws.region, '--cli-connect-timeout', '10', '--cli-read-timeout', '20', 'ec2'] + item.args + ['--output', 'text'] }}"
+  loop:
+    - label: instance terminated or absent
+      args: [describe-instances, --filters, "Name=instance-id,Values={{ bootstrap_aws.instance_id }}", --query, 'length(Reservations[].Instances[] | [?State.Name != `terminated`])']
+    - label: both disks deleted
+      args: [describe-volumes, --filters, "Name=volume-id,Values={{ bootstrap_aws.root_volume_id }},{{ bootstrap_aws.data_volume_id }}", --query, 'length(Volumes)']
+    - label: Elastic IP released
+      args: [describe-addresses, --filters, "Name=allocation-id,Values={{ bootstrap_aws.allocation_id }}", --query, 'length(Addresses)']
+    - label: VPC deleted
+      args: [describe-vpcs, --filters, "Name=vpc-id,Values={{ bootstrap_aws.vpc_id }}", --query, 'length(Vpcs)']
+    - label: SSH key pair deleted
+      args: [describe-key-pairs, --filters, "Name=key-name,Values={{ bootstrap_aws.key_name }}", --query, 'length(KeyPairs)']
+    - label: no snapshots left for either disk
+      args: [describe-snapshots, --owner-ids, self, --filters, "Name=volume-id,Values={{ bootstrap_aws.root_volume_id }},{{ bootstrap_aws.data_volume_id }}", --query, 'length(Snapshots)']
+  loop_control:
+    label: "{{ item.label }}"
+  register: bootstrap_cleanup_ec2
+  changed_when: false
+  until: bootstrap_cleanup_ec2.rc != 0 or bootstrap_cleanup_ec2.stdout | trim == '0'
+  failed_when: bootstrap_cleanup_ec2.rc != 0 or bootstrap_cleanup_ec2.stdout | trim != '0'
+  retries: 12
+  delay: 5
+- name: Verify dedicated IAM resources are absent rather than treating access errors as deletion
+  ansible.builtin.command:
+    argv: "{{ ['aws', '--region', bootstrap_aws.region, '--cli-connect-timeout', '10', '--cli-read-timeout', '20', 'iam'] + item.args + ['--output', 'text'] }}"
+  loop:
+    - label: instance profile deleted
+      args: [get-instance-profile, --instance-profile-name, "{{ bootstrap_aws.profile_name }}", --query, InstanceProfile.InstanceProfileName]
+    - label: instance role deleted
+      args: [get-role, --role-name, "{{ bootstrap_aws.role_name }}", --query, Role.RoleName]
+  loop_control:
+    label: "{{ item.label }}"
+  register: bootstrap_cleanup_iam
+  changed_when: false
+  until: bootstrap_cleanup_iam.rc != 0
+  failed_when: bootstrap_cleanup_iam.rc == 0 or '(NoSuchEntity)' not in bootstrap_cleanup_iam.stderr
+  retries: 12
+  delay: 5

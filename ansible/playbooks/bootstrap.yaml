@@ -1,0 +1,70 @@
+---
+- name: Discover only the selected host through its trusted provider
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Validate public installation inputs
+      ansible.builtin.import_tasks: bootstrap/inputs.yaml
+    - name: Load private service credentials
+      ansible.builtin.import_tasks: bootstrap/secrets.yaml
+    - name: Discover AWS host through Terraform and SSM
+      ansible.builtin.include_tasks: bootstrap/aws.yaml
+      when: bootstrap.target == 'aws'
+    - name: Discover Proxmox host through its trusted SSH alias and guest agent
+      ansible.builtin.include_tasks: bootstrap/proxmox.yaml
+      when: bootstrap.target == 'proxmox'
+    - name: Reconcile deployment-only DNS with native Ansible modules
+      ansible.builtin.import_tasks: bootstrap/dns.yaml
+    - name: Add only this deployment to the in-memory inventory
+      ansible.builtin.add_host:
+        name: "{{ bootstrap.name }}"
+        groups: bootstrap_guest
+        ansible_host: "{{ bootstrap_address }}"
+        ansible_connection: ssh
+        ansible_user: "{{ bootstrap_username }}"
+        ansible_ssh_private_key_file: "{{ bootstrap.ssh_private_key | expanduser }}"
+        ansible_ssh_common_args: "-o StrictHostKeyChecking=yes -o {{ ('UserKnownHostsFile=' + bootstrap_dir + '/known_hosts') | quote }}"
+        ansible_python_interpreter: /usr/bin/python3
+        bootstrap: "{{ bootstrap }}"
+        bootstrap_dir: "{{ bootstrap_dir }}"
+        bootstrap_verify_only: "{{ bootstrap_verify_only }}"
+
+- name: Configure and verify only the bootstrap guest
+  hosts: bootstrap_guest
+  gather_facts: false
+  vars_files:
+    - ../inventory/group_vars/debian/vars.yaml
+  vars:
+    bootstrap_checkout: "/home/{{ ansible_user }}/repos/infra"
+    bootstrap_host_dir: "{{ bootstrap_checkout }}/config/docker/{{ bootstrap.name }}"
+    bootstrap_services:
+      - {directory: security/traefik, file: traefik.yaml}
+      - {directory: dashboard/homepage, file: homepage.yaml}
+    debian_docker_host_volumes_path: "{{ bootstrap.docker_volumes }}"
+    debian_base_ssh_key_file: "{{ bootstrap.ssh_public_key | expanduser }}"
+  pre_tasks:
+    - name: Wait for authenticated SSH (bounded, no TOFU fallback)
+      ansible.builtin.wait_for_connection:
+        timeout: 600
+    - name: Initialize and verify the exact AWS data volume before any Docker installation
+      ansible.builtin.include_tasks: bootstrap/storage.yaml
+      when: bootstrap.target == 'aws'
+    - name: Gather host facts
+      ansible.builtin.setup:
+  tasks:
+    - name: Configure Debian using the existing role # noqa: var-naming[no-role-prefix] -- existing role's public interface
+      ansible.builtin.include_role:
+        name: debian_base
+      vars:
+        admin_name: "{{ bootstrap.name }}"
+        admin_email: "{{ bootstrap.acme_email }}"
+      when: not bootstrap_verify_only
+    - name: Configure Docker using the existing role
+      ansible.builtin.include_role:
+        name: debian_docker_host
+      when: not bootstrap_verify_only
+    - name: Render and deploy core applications with native modules
+      ansible.builtin.include_tasks: bootstrap/services.yaml
+      when: not bootstrap_verify_only
+    - name: Verify observable application functionality and repeatability
+      ansible.builtin.import_tasks: bootstrap/verify.yaml

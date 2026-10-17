@@ -1,0 +1,29 @@
+---
+- name: Read only this exact Cloudflare name (refuse unexpectedly paginated results)
+  ansible.builtin.uri:
+    url: "https://api.cloudflare.com/client/v4/zones/{{ bootstrap_cf_zone.json.result[0].id }}/dns_records?name={{ bootstrap_dns_name | urlencode }}&per_page=100"
+    headers: {Authorization: "Bearer {{ bootstrap_secrets.cloudflare_token }}"}
+    follow_redirects: none
+    use_proxy: false
+    timeout: 20
+  register: bootstrap_cf_records
+  no_log: true
+  when: bootstrap_dns_provider == 'cloudflare'
+- name: Require a complete, successful Cloudflare response
+  ansible.builtin.assert:
+    that:
+      - bootstrap_cf_records.json.success
+      - bootstrap_cf_records.json.result_info.total_pages | default(1) | int <= 1
+  when: bootstrap_dns_provider == 'cloudflare'
+- name: Read AdGuard rewrites using its maintained collection module
+  community.dns.adguardhome_rewrite_info:
+    host: "{{ bootstrap.dns.adguard_url }}"
+    username: "{{ bootstrap_secrets.adguard_username }}"
+    password: "{{ bootstrap_secrets.adguard_password }}"
+    validate_certs: true
+  register: bootstrap_ag_records
+  no_log: true
+  when: bootstrap_dns_provider == 'adguard'
+- name: Select only relevant address/alias/delegation records
+  ansible.builtin.set_fact:
+    bootstrap_dns_rows: "{{ (bootstrap_cf_records.json.result | selectattr('type', 'in', ['A', 'AAAA', 'CNAME', 'NS']) | list) if bootstrap_dns_provider == 'cloudflare' else (bootstrap_ag_records.rules | selectattr('domain', 'equalto', bootstrap_dns_name) | list) }}"

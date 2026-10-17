@@ -18,21 +18,10 @@ This is the recommended method for fully automated VM creation with zero manual 
 - VM starts in ~30-60 seconds; first boot can take several additional minutes while
   cloud-init installs packages and applies updates
 
-**Quickstart:**
-
-- Set up SSH access to the PVE host
-- Initialize and edit the VM configuration:
-```bash
-task bootstrap:vm-init
-```
-- Provision the VM:
-```bash
-task bootstrap:vm-provision
-```
-
-The task syncs the provisioning files to `PROXMOX_HOST`, creates and starts the VM,
-then waits up to 10 minutes for the guest agent, DHCP, and cloud-init. The Proxmox
-user's `~/.ssh/authorized_keys` must contain the public key used to access the VM.
+For VM inputs, SSH public-key selection, preflight and deployment, follow the
+[Proxmox bootstrap guide](../../docs/setup.md#configure-and-provision). It is the
+reference for the cloud-image workflow. The tasks sync provisioning files to
+`PROXMOX_HOST`, create and start the VM, and wait for the guest agent and cloud-init.
 
 **Limitations:**
 - Uses default disk layout (cannot customize partitions/LVM like autoinstall)

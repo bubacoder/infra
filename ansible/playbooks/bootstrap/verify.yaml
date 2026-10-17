@@ -1,0 +1,63 @@
+---
+- name: Verify trusted HTTPS routes from the administrative host
+  ansible.builtin.uri:
+    url: "https://{{ item }}.{{ bootstrap.domain }}/{{ 'dashboard/' if item == 'traefik' else '' }}"
+    validate_certs: true
+    use_proxy: false
+    timeout: 15
+    status_code: 200
+  delegate_to: localhost
+  loop: [home, traefik]
+  register: bootstrap_https
+  until: bootstrap_https.status | default(0) == 200
+  retries: 36
+  delay: 5
+- name: Require a functioning Homepage-to-Traefik widget, not only HTML
+  ansible.builtin.uri:
+    url: "https://home.{{ bootstrap.domain }}/api/services/proxy?group=Infra&service=Traefik&index=0&endpoint=overview"
+    validate_certs: true
+    use_proxy: false
+    timeout: 15
+    return_content: true
+  delegate_to: localhost
+  register: bootstrap_widget
+  until: bootstrap_widget.json.http | default(none) is mapping and bootstrap_widget.json.error is not defined
+  retries: 12
+  delay: 5
+- name: Check persistent certificate and log locations without reading their contents
+  ansible.builtin.stat:
+    path: "{{ bootstrap.docker_volumes }}/{{ item }}"
+  loop: [traefik/letsencrypt/acme.json, traefik/logs, homepage/logs]
+  register: bootstrap_persistence
+  become: true
+- name: Require persisted service data
+  ansible.builtin.assert:
+    that:
+      - bootstrap_persistence.results[0].stat.size | default(0) > 0
+      - bootstrap_persistence.results[1].stat.isdir | default(false)
+      - bootstrap_persistence.results[2].stat.isdir | default(false)
+- name: Capture native container identities and restart counters
+  ansible.builtin.command:
+    argv: [docker, inspect, --format, "{{ '{{.Id}}:{{.RestartCount}}:{{.State.Running}}' }}", traefik, logrotate, homepage, dockerproxy]
+  register: bootstrap_container_before
+  changed_when: false
+  become: true
+- name: Exercise native Compose idempotence
+  ansible.builtin.include_tasks: compose.yaml
+  loop: "{{ bootstrap_services }}"
+  loop_control: {loop_var: bootstrap_service}
+- name: Observe a stable acceptance interval
+  ansible.builtin.pause:
+    seconds: 10
+- name: Read identities and counters again without exposing container environments
+  ansible.builtin.command:
+    argv: [docker, inspect, --format, "{{ '{{.Id}}:{{.RestartCount}}:{{.State.Running}}' }}", traefik, logrotate, homepage, dockerproxy]
+  register: bootstrap_container_after
+  changed_when: false
+  become: true
+- name: Require stable running containers and no recreation on repeat deployment
+  ansible.builtin.assert:
+    that:
+      - bootstrap_container_before.stdout_lines | length == 4
+      - bootstrap_container_after.stdout_lines == bootstrap_container_before.stdout_lines
+      - bootstrap_container_after.stdout_lines | select('search', ':true$') | list | length == 4

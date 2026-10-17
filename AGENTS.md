@@ -165,28 +165,14 @@ This project uses:
 
 **Important**: Do not create git branches or commit changes to git unless it is explicitly requested by the user.
 
-## Private Bootstrap Configuration
+## Bootstrap
 
-Bootstrap YAML files under `config/` contain secrets. **Do not read them directly**
-with file tools, `cat`, `grep`, or ad-hoc scripts that expose raw content. For AI
-inspection, use only the allowlisted, redacted command:
-
-```bash
-task bootstrap:show-config CONFIG=config/bootstrap-aws.yaml
-# For the default Proxmox file:
-task bootstrap:show-config
-```
-
-The trusted command reads the private file locally; the agent receives only
-redacted settings. It is offline, read-only, works with incomplete configuration,
-and does not require credentials, SSH keys, a clean checkout, or a published
-revision. Unknown fields are omitted; this is not deployment validation.
-Use `bootstrap:plan` separately for live preflight when authorized. If inspection
-fails, report the safe error and ask the operator to correct the private file;
-do not fall back to raw reads. Have the operator enter secrets privately, never
-in chat or command arguments. Output still contains infrastructure identifiers;
-anonymize those before sharing externally. See
-[Bootstrap Configuration](docs/bootstrap-configuration.md#safe-inspection-for-ai-agents).
+[Bootstrap inputs and safety](docs/bootstrap-configuration.md) is the source of
+truth for humans and agents, with links to the AWS, Proxmox and DNS guides. Read it
+before bootstrap work. Follow its safe inspection workflow; never read or expose
+secret inputs, and obtain authorization for live infrastructure actions.
+Keep workflow details in those guides, not here, and document the current solution
+rather than session history or implementation-status notes.
 
 ## Docker Service Management
 

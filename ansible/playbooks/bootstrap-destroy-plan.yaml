@@ -1,0 +1,41 @@
+---
+- name: Plan native Terraform destruction with explicit data-deletion consent
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Validate public inputs and explicit target
+      ansible.builtin.import_tasks: bootstrap/inputs.yaml
+    - name: Require explicit consent for deleting both disks
+      ansible.builtin.assert:
+        that:
+          - bootstrap.target == 'aws'
+          - lookup('env', 'BOOTSTRAP_DELETE_DATA') == '1'
+        fail_msg: Full destruction deletes both disks. Supply DELETE_DATA=1 only with operator approval.
+    - name: Check for an interrupted or operator-owned override
+      ansible.builtin.stat:
+        path: "{{ bootstrap_root }}/terraform/aws-vm/bootstrap_destroy_override.tf"
+      register: bootstrap_override
+    - name: Never overwrite an existing override
+      ansible.builtin.assert:
+        that: not bootstrap_override.stat.exists
+    - name: Temporarily override only the lifecycle guard through Terraform's native mechanism
+      block:
+        - name: Write the explicitly approved destruction override
+          ansible.builtin.copy:
+            dest: "{{ bootstrap_root }}/terraform/aws-vm/bootstrap_destroy_override.tf"
+            content: |
+              resource "aws_ebs_volume" "data" {
+                lifecycle {
+                  prevent_destroy = false
+                }
+              }
+            mode: '0600'
+        - name: Save the native destroy plan in the original backend
+          ansible.builtin.command:
+            argv: [terraform, "-chdir={{ bootstrap_root }}/terraform/aws-vm", plan, -destroy, -lock-timeout=30s, "-var-file={{ bootstrap_dir }}/aws.tfvars", "-out={{ bootstrap_dir }}/destroy.tfplan"]
+          changed_when: false
+      always:
+        - name: Restore protection without modifying the tracked template
+          ansible.builtin.file:
+            path: "{{ bootstrap_root }}/terraform/aws-vm/bootstrap_destroy_override.tf"
+            state: absent

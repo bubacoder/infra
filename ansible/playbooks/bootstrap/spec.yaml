@@ -1,0 +1,22 @@
+target: {type: str, required: true, choices: [aws, proxmox]}
+name: {type: str, required: true}
+domain: {type: str, required: true}
+acme_email: {type: str, required: true}
+timezone: {type: str, required: true}
+docker_volumes: {type: str, required: true}
+ssh_public_key: {type: path, required: true}
+ssh_private_key: {type: path, required: true}
+repository_url: {type: str, required: true}
+repository_ref: {type: str, required: true}
+proxmox_host: {type: str}
+proxmox_vmid: {type: int}
+proxmox_username: {type: str}
+proxmox_address: {type: str}
+format_volume_id: {type: str}
+dns:
+  type: dict
+  required: true
+  options:
+    enabled: {type: bool, required: true}
+    cloudflare_zone: {type: str}
+    adguard_url: {type: str}

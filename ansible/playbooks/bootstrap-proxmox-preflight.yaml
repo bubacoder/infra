@@ -1,0 +1,16 @@
+---
+- name: Check configured DNS before creating an on-premises VM
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Validate public target inputs
+      ansible.builtin.import_tasks: bootstrap/inputs.yaml
+    - name: Validate credentials without displaying them
+      ansible.builtin.import_tasks: bootstrap/secrets.yaml
+    - name: Preview DNS without writing or guessing a future DHCP address
+      ansible.builtin.set_fact:
+        bootstrap_address: "{{ '' if bootstrap.proxmox_address == 'auto' else bootstrap.proxmox_address }}"
+        bootstrap_dns_action: preview
+        bootstrap_dns_preflight_only: true
+    - name: Check selected providers and deployment-name conflicts read-only
+      ansible.builtin.import_tasks: bootstrap/dns.yaml

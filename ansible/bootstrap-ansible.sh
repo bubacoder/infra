@@ -34,7 +34,7 @@ install_ansible_on_ubuntu() {
   esac
 
   # "--ignore-installed" is added to fix error "Cannot uninstall PyYAML 6.0.1 ... The package was installed by debian."
-  pip install passlib ansible-lint --ignore-installed --break-system-packages
+  pip install passlib ansible-lint 'netaddr>=0.10.1' --ignore-installed --break-system-packages
   ansible-galaxy install -r "${ANSIBLE_DIR}/requirements.yml"
 }
 
@@ -84,7 +84,7 @@ install_ansible_on_debian() {
   esac
 
   # "--ignore-installed" is added to fix error "Cannot uninstall PyYAML 6.0.2 ... The package was installed by debian."
-  pip install passlib ansible-lint --ignore-installed --break-system-packages
+  pip install passlib ansible-lint 'netaddr>=0.10.1' --ignore-installed --break-system-packages
   ansible-galaxy install -r "${ANSIBLE_DIR}/requirements.yml"
 }
 
