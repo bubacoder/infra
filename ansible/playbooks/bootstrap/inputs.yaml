@@ -1,0 +1,48 @@
+---
+- name: Locate explicitly selected native inputs
+  ansible.builtin.set_fact:
+    bootstrap_dir: "{{ lookup('env', 'BOOTSTRAP_DIR') }}"
+    bootstrap_root: "{{ (playbook_dir + '/../..') | realpath }}"
+    bootstrap_verify_only: "{{ lookup('env', 'BOOTSTRAP_VERIFY_ONLY') == '1' }}"
+- name: Require an explicit supported target before loading inputs
+  ansible.builtin.assert:
+    that: lookup('env', 'BOOTSTRAP_TARGET') in ['aws', 'proxmox']
+    fail_msg: Select TARGET=aws or TARGET=proxmox explicitly; neither is the default.
+- name: Restrict bootstrap artifacts to the ignored config directory
+  ansible.builtin.assert:
+    that:
+      - (bootstrap_dir | realpath).startswith(bootstrap_root + '/config/')
+      - bootstrap_dir | length > 0
+    fail_msg: Choose a directory under config/ with BOOTSTRAP_CONFIG_DIR.
+- name: Load public host settings
+  ansible.builtin.include_vars:
+    file: "{{ bootstrap_dir }}/host.yaml"
+    name: bootstrap
+- name: Validate host settings with Ansible's native argument specification
+  ansible.builtin.validate_argument_spec:
+    argument_spec: "{{ lookup('file', playbook_dir + '/bootstrap/spec.yaml') | from_yaml }}"
+    provided_arguments: "{{ bootstrap }}"
+- name: Bind public host settings to the explicit target
+  ansible.builtin.assert:
+    that: bootstrap.target == lookup('env', 'BOOTSTRAP_TARGET')
+    fail_msg: TARGET does not match host.yaml. Select the correct target and its original configuration directory.
+- name: Validate application constraints outside Terraform's responsibility
+  ansible.builtin.assert:
+    that:
+      - bootstrap.target == bootstrap_required_target | default(bootstrap.target)
+      - bootstrap.name is match('^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$')
+      - bootstrap.domain is match('^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z][a-z0-9-]+$')
+      - "'@' in bootstrap.acme_email"
+      - bootstrap.repository_url is match('^https://[^@?# ]+$')
+      - bootstrap.repository_ref | length > 0
+      - not bootstrap.repository_ref.startswith('-')
+      - bootstrap.repository_ref is not search('\s')
+      - not bootstrap.repository_ref.startswith('REPLACE_WITH_')
+      - bootstrap.docker_volumes.startswith('/') and '..' not in bootstrap.docker_volumes.split('/')
+      - bootstrap.target != 'aws' or bootstrap.docker_volumes.startswith('/storage/')
+      - bootstrap.target != 'proxmox' or bootstrap.dns.cloudflare_zone | default('') == ''
+      - bootstrap.target != 'aws' or not bootstrap.dns.enabled or bootstrap.dns.cloudflare_zone | default('') | length > 0
+      - bootstrap.target != 'proxmox' or bootstrap.proxmox_vmid | default(0) | int > 0
+      - bootstrap.target != 'proxmox' or (bootstrap.proxmox_host is defined and bootstrap.proxmox_username is defined and bootstrap.proxmox_address is defined)
+      - bootstrap.dns.adguard_url | default('https://unused') is match('^https://[^/@?#]+(:[0-9]+)?$')
+    fail_msg: Correct the public host settings; use a published branch, tag or commit, deployment subdomain and trusted HTTPS endpoints.

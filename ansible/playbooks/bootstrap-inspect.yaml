@@ -1,0 +1,36 @@
+---
+- name: Inspect only explicitly non-secret host settings
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Require an explicit target even for offline inspection
+      ansible.builtin.assert:
+        that: lookup('env', 'BOOTSTRAP_TARGET') in ['aws', 'proxmox']
+        fail_msg: Select TARGET=aws or TARGET=proxmox explicitly; neither is the default.
+    - name: Refuse symlinked or non-regular public input before inspection
+      ansible.builtin.stat:
+        path: "{{ lookup('env', 'BOOTSTRAP_DIR') }}/host.yaml"
+        follow: false
+      register: bootstrap_public_stat
+    - name: Require an explicitly separated public file
+      ansible.builtin.assert:
+        that:
+          - bootstrap_public_stat.stat.isreg | default(false)
+          - not bootstrap_public_stat.stat.islnk | default(false)
+    - name: Load public host settings only
+      ansible.builtin.include_vars:
+        file: "{{ lookup('env', 'BOOTSTRAP_DIR') }}/host.yaml"
+        name: bootstrap
+    - name: Refuse inspection under a different target
+      ansible.builtin.assert:
+        that: bootstrap.target | default('') == lookup('env', 'BOOTSTRAP_TARGET')
+        fail_msg: TARGET does not match host.yaml; select its original target and directory.
+    - name: Display allowlisted public settings without opening private files
+      ansible.builtin.debug:
+        msg:
+          target: "{{ bootstrap.target | default('not configured') }}"
+          name: "{{ bootstrap.name | default('not configured') }}"
+          domain: "{{ bootstrap.domain | default('not configured') }}"
+          docker_volumes: "{{ bootstrap.docker_volumes | default('not configured') }}"
+          adguard_host: "{{ bootstrap.dns.adguard_url | default('') | urlsplit('hostname') | default('not configured', true) }}"
+          secrets: 'Not loaded. Edit secrets.yaml privately; never share it with an agent.'

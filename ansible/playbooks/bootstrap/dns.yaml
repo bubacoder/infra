@@ -1,0 +1,88 @@
+---
+- name: Select DNS operation and required resolution names
+  ansible.builtin.set_fact:
+    bootstrap_dns_action: "{{ bootstrap_dns_action | default('preview' if bootstrap_verify_only | default(false) else 'present') }}"
+    bootstrap_dns_names: "{{ [bootstrap.domain, 'home.' + bootstrap.domain, 'traefik.' + bootstrap.domain, 'bootstrap-check.' + bootstrap.domain] }}"
+    bootstrap_dns_records: []
+- name: Locate native DNS ownership receipt
+  ansible.builtin.stat:
+    path: "{{ bootstrap_dir }}/dns-state.yaml"
+  register: bootstrap_dns_stat
+- name: Load the non-secret ownership receipt
+  ansible.builtin.include_vars:
+    file: "{{ bootstrap_dir }}/dns-state.yaml"
+    name: bootstrap_dns_receipt
+  when: bootstrap_dns_stat.stat.exists
+- name: Set the deployment DNS identity
+  ansible.builtin.set_fact:
+    bootstrap_dns_identity:
+      target: "{{ bootstrap.target }}"
+      name: "{{ bootstrap.name }}"
+      domain: "{{ bootstrap.domain }}"
+      cloudflare_zone: "{{ bootstrap.dns.cloudflare_zone | default('') }}"
+      adguard_url: "{{ bootstrap.dns.adguard_url | default('') }}"
+- name: Preserve evidence of ambiguous writes or a changed DNS target
+  ansible.builtin.assert:
+    that:
+      - not bootstrap_dns_stat.stat.exists or bootstrap_dns_receipt.records is defined
+      - not bootstrap_dns_stat.stat.exists or (bootstrap_dns_receipt.records is sequence and bootstrap_dns_receipt.records is not string and bootstrap_dns_receipt.records is not mapping)
+      - not bootstrap_dns_stat.stat.exists or bootstrap_dns_receipt.pending is defined
+      - bootstrap_dns_receipt.pending | default(none) == none
+      - >-
+        not bootstrap_dns_stat.stat.exists or
+        (bootstrap_dns_receipt.identity | combine({'adguard_url': bootstrap_dns_identity.adguard_url})) == bootstrap_dns_identity
+      - not bootstrap_dns_stat.stat.exists or bootstrap_dns_receipt.identity.adguard_url == bootstrap_dns_identity.adguard_url or (bootstrap_dns_receipt.records | selectattr('provider', 'equalto', 'adguard') | list | length == 0)
+    fail_msg: DNS target changed or a write is uncertain. Inspect the providers and receipt privately; do not discard it or blindly retry.
+- name: Restore created-record ownership without adopting pre-existing records
+  ansible.builtin.set_fact:
+    bootstrap_dns_records: "{{ bootstrap_dns_receipt.records | default([]) }}"
+- name: Resolve the explicitly selected Cloudflare zone using Ansible's HTTP module
+  ansible.builtin.uri:
+    url: "https://api.cloudflare.com/client/v4/zones?name={{ bootstrap.dns.cloudflare_zone | urlencode }}&status=active"
+    headers: {Authorization: "Bearer {{ bootstrap_secrets.cloudflare_token }}"}
+    follow_redirects: none
+    use_proxy: false
+    timeout: 20
+  register: bootstrap_cf_zone
+  no_log: true
+  when: bootstrap.target == 'aws' and bootstrap.dns.cloudflare_zone is defined and (bootstrap.dns.enabled or bootstrap_dns_action == 'absent')
+- name: Require one active zone and a dedicated deployment subdomain
+  ansible.builtin.assert:
+    that:
+      - bootstrap_cf_zone.json.success
+      - bootstrap_cf_zone.json.result | length == 1
+      - bootstrap.domain.endswith('.' + bootstrap.dns.cloudflare_zone)
+  when: bootstrap.target == 'aws' and bootstrap.dns.cloudflare_zone is defined and (bootstrap.dns.enabled or bootstrap_dns_action == 'absent')
+- name: Check explicit service records cannot defeat the wildcard (never create or adopt them)
+  ansible.builtin.include_tasks: dns-record.yaml
+  loop: "{{ bootstrap_dns_names[1:] }}"
+  loop_control: {loop_var: bootstrap_dns_name}
+  vars:
+    bootstrap_dns_provider: cloudflare
+    bootstrap_dns_action: preview
+  when: bootstrap.target == 'aws' and bootstrap.dns.enabled
+- name: Manage AWS address records with the native Cloudflare module
+  ansible.builtin.include_tasks: dns-record.yaml
+  loop: "{{ [bootstrap.domain, '*.' + bootstrap.domain] }}"
+  loop_control: {loop_var: bootstrap_dns_name}
+  vars:
+    bootstrap_dns_provider: cloudflare
+  when: bootstrap.target == 'aws' and bootstrap.dns.cloudflare_zone is defined and (bootstrap.dns.enabled or bootstrap_dns_action == 'absent')
+- name: Manage optional local rewrites with native AdGuard modules
+  ansible.builtin.include_tasks: dns-record.yaml
+  loop: "{{ bootstrap_dns_names }}"
+  loop_control: {loop_var: bootstrap_dns_name}
+  vars:
+    bootstrap_dns_provider: adguard
+  when: bootstrap.dns.adguard_url is defined and (bootstrap.dns.enabled or bootstrap_dns_action == 'absent')
+- name: Verify the administrative host's real resolver, not only provider API results
+  ansible.builtin.command:
+    argv: [getent, ahostsv4, "{{ item }}"]
+  loop: "{{ bootstrap_dns_names }}"
+  register: bootstrap_dns_answer
+  changed_when: false
+  until: bootstrap_dns_answer.rc == 0 and (bootstrap_dns_answer.stdout | regex_findall('(?m)^([0-9.]+)\s') | unique | list) == [bootstrap_address]
+  retries: 12
+  delay: 5
+  timeout: 15
+  when: bootstrap_dns_action != 'absent' and not bootstrap_dns_preflight_only | default(false)

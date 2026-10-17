@@ -1,5 +1,10 @@
 # Runbooks
 
+## Dispose of an AWS bootstrap deployment
+
+Follow [AWS teardown](bootstrap-aws.md#teardown) for the destroy-plan, shutdown,
+resource verification and cleanup procedure, including how to retry final cleanup.
+
 ## Backup and recovery
 
 See [Backup and recovery](backup.md) for backup operations and snapshot selection,

@@ -1,0 +1,60 @@
+---
+- name: Initialize separate native bootstrap inputs
+  hosts: localhost
+  gather_facts: false
+  vars:
+    bootstrap_dir: "{{ lookup('env', 'BOOTSTRAP_DIR') }}"
+    bootstrap_init_target: "{{ lookup('env', 'BOOTSTRAP_TARGET') }}"
+    bootstrap_init_public_key_file: "{{ lookup('env', 'BOOTSTRAP_SSH_PUBLIC_KEY') | default(bootstrap_existing.ssh_public_key | default('~/.ssh/id_ed25519.pub'), true) }}"
+    bootstrap_init_private_key_file: "{{ bootstrap_existing.ssh_private_key | default(bootstrap_init_public_key_file | regex_replace('\\.pub$', '')) }}"
+  tasks:
+    - name: Validate initialization target and private destination
+      ansible.builtin.assert:
+        that:
+          - bootstrap_init_target in ['aws', 'proxmox']
+          - (bootstrap_dir | realpath).startswith(((playbook_dir + '/../..') | realpath) + '/config/')
+        fail_msg: Select TARGET=aws or TARGET=proxmox explicitly and a directory under config/.
+    - name: Check existing public host settings before initializing anything
+      ansible.builtin.stat:
+        path: "{{ bootstrap_dir }}/host.yaml"
+        follow: false
+      register: bootstrap_init_host
+    - name: Refuse symlinked public settings
+      ansible.builtin.assert:
+        that: not bootstrap_init_host.stat.exists or bootstrap_init_host.stat.isreg | default(false)
+    - name: Load existing public settings without opening secrets
+      ansible.builtin.include_vars:
+        file: "{{ bootstrap_dir }}/host.yaml"
+        name: bootstrap_existing
+      when: bootstrap_init_host.stat.exists
+    - name: Reject reuse of another target's configuration directory
+      ansible.builtin.assert:
+        that: not bootstrap_init_host.stat.exists or bootstrap_existing.target | default('') == bootstrap_init_target
+        fail_msg: Existing host.yaml must match the explicit target. Select its original target or a separate BOOTSTRAP_CONFIG_DIR; nothing was overwritten.
+    - name: Create private input directory
+      ansible.builtin.file:
+        path: "{{ bootstrap_dir }}"
+        state: directory
+        mode: '0700'
+    - name: Initialize public host settings without overwriting operator input
+      ansible.builtin.template:
+        src: ../../config-example/ansible/bootstrap.yaml.j2
+        dest: "{{ bootstrap_dir }}/host.yaml"
+        mode: '0600'
+        force: false
+    - name: Initialize private secrets without overwriting operator input
+      ansible.builtin.copy:
+        src: ../../config-example/ansible/bootstrap-secrets.yaml
+        dest: "{{ bootstrap_dir }}/secrets.yaml"
+        mode: '0600'
+        force: false
+    - name: Initialize public Terraform inputs for AWS
+      ansible.builtin.copy:
+        src: ../../config-example/terraform/aws-vm/bootstrap.tfvars
+        dest: "{{ bootstrap_dir }}/aws.tfvars"
+        mode: '0600'
+        force: false
+      when: bootstrap_init_target == 'aws'
+    - name: Fill public AWS template placeholders from the controller
+      ansible.builtin.include_tasks: bootstrap/init-aws.yaml
+      when: bootstrap_init_target == 'aws'

@@ -1,178 +1,96 @@
-# Getting Started
+# Getting started on Proxmox
 
-The recommended installation path uses one mode-`0600` YAML file and the
-bootstrap orchestrator. The current automated scope is intentionally narrow:
-
-- Ubuntu cloud-image VM on Proxmox
-- Separate administrative host
-- DHCP with an externally managed reservation and local DNS, or a test-only
-  operator-managed `/etc/hosts` checkpoint after address discovery
-- Local ignored configuration on the Docker host
-- Cloudflare DNS-01 certificates
-- Traefik and Homepage
-
-Use the [manual installation](manual-setup.md) for unsupported layouts or to
-run and debug individual stages.
+For AWS use [Bootstrap on AWS](bootstrap-aws.md). Both paths deploy an Ubuntu Docker
+host with Traefik and Homepage, using a separate administrative host. Provisioning
+uses the existing Proxmox CLI scripts; Ansible owns configuration and verification.
 
 ## Prerequisites
 
-Before starting, prepare:
+- A trusted Proxmox SSH alias with noninteractive sudo, `local` snippet storage,
+  an available VM ID/name, storage and bridge.
+- A matching local SSH key pair. DHCP and working local DNS; an existing AdGuard
+  may optionally manage the deployment's exact local names.
+- A Cloudflare-administered public domain, DNS token with `Zone:Read`/`DNS:Edit`,
+  and ACME email. Proxmox public address records remain externally/DDNS managed.
+- On the Linux controller: Git, SSH, rsync, curl,
+  [Task](https://taskfile.dev/docs/installation) and Ansible. Install the
+  repository collections with `ansible-galaxy collection install -r ansible/requirements.yml`.
 
-- A Proxmox SSH account with noninteractive `sudo` access to `qm`, storage, and
-  VM configuration.
-- Proxmox storage named `local` with snippet content enabled.
-- An unused VM name and either a preferred VM ID or automatic allocation.
-- A public SSH key and its corresponding private key or SSH-agent identity.
-- Control of the DHCP server and local DNS resolver for the fully preflighted
-  path. For a test-only `network.expected_ipv4: auto` deployment, administrator
-  access to the admin host's `/etc/hosts` is sufficient after the VM address is
-  discovered.
-- A public domain administered through Cloudflare.
-- A Cloudflare token with `Zone:Read` and `DNS:Edit` for that domain.
-- Git, Python 3, PyYAML, SSH, rsync, Ansible, curl, and
-  [Task](https://taskfile.dev/docs/installation) on the administrative host.
+Clone and enter the repository; `sudo ansible/bootstrap-ansible.sh` installs
+Ansible if needed. See [manual installation](manual-setup.md) for other layouts.
 
-Clone and enter the infrastructure repository. The selected branch must be
-pushed: bootstrap verifies that the local commit is exactly the remote branch
-tip so the Docker host can clone the same code.
+## Configure and provision
 
 ```bash
-git clone <infrastructure-repository-url> ~/repos/infra
-cd ~/repos/infra
-sudo ansible/bootstrap-ansible.sh
+task bootstrap:init TARGET=proxmox
+task bootstrap:vm-init
 ```
 
-## Configure
+No target is selected by default. Pass `TARGET=proxmox` on each target-selecting
+bootstrap command; AWS uses the same interface with `TARGET=aws`. To use an existing
+custom directory, also pass its `BOOTSTRAP_CONFIG_DIR` on every command. Never
+create a fresh backend to resume resources recorded in a different directory.
 
-Create the ignored bootstrap configuration and restrict its permissions before
-adding the Cloudflare token:
+Edit `config/bootstrap-proxmox/host.yaml`, `secrets.yaml` and
+`config/vm/proxmox/ubuntu-cloud.env`. Keep VM name, ID, user and expected address
+consistent between the two public tool inputs. Set the published repository branch,
+tag or commit and deployment subdomain. Public DNS stays with DDNS; configure AdGuard
+only if it already exists. See [inputs and secrets](bootstrap-configuration.md).
+
+Supply the exact public key instead of assuming the hypervisor's authorized keys
+are the same as the controller's:
 
 ```bash
-task bootstrap:init
+cp ~/.ssh/id_ed25519.pub config/vm/proxmox/bootstrap-authorized-key.pub
 ```
 
-Edit `config/bootstrap.yaml`. If `repository` is omitted, bootstrap uses the
-current checkout's `origin` URL and branch. See
-[Bootstrap Configuration](bootstrap-configuration.md) for every field and its
-generated destination.
-
-The real file may contain secrets. Never commit it, paste it into command-line
-arguments, or relax its permissions. Bootstrap redacts the token from plans and
-errors and writes the generated Traefik file with mode `0600`.
-
-## Plan
-
-Run the non-destructive plan:
+Set `SSH_PUBLIC_KEY_FILE=/tmp/vm/proxmox/bootstrap-authorized-key.pub` in the VM
+environment file. Use the corresponding key paths in `host.yaml`.
 
 ```bash
-task bootstrap:plan
+task bootstrap:plan TARGET=proxmox
+task bootstrap:apply TARGET=proxmox
 ```
 
-The plan validates the schema, repository revision, local tools, Proxmox SSH
-and sudo, VM ID/name/MAC availability, storage, bridge, SSH public key, expected
-address, and DNS. It prints the resolved VM ID and supplied or deterministic
-generated MAC while redacting the Cloudflare token.
+Repository configuration accepts a fixed SHA or a branch that follows its remote
+tip. See [repository revisions and configuration updates](bootstrap-configuration.md#repository-revisions-and-configuration-updates)
+to update code on an existing VM without reprovisioning it.
 
-The first plan is expected to stop at the external networking checkpoint when
-the reservation and DNS records do not exist yet. Use the printed MAC and
-`network.expected_ipv4` to:
+The VM tasks check conflicts, sync the existing scripts/public VM inputs, create
+and start the guest, and wait for cloud-init. They do not delete or replace an
+existing VM. Reserve its DHCP lease externally, or set `proxmox_address: auto` for
+guest-agent discovery. Ansible requires exactly one IPv4 address on the VM's
+primary NIC and pins the SSH host key obtained through the trusted guest agent.
 
-1. Create the DHCP reservation.
-2. Resolve `network.domain` and `*.network.domain` to the reserved address in
-   local DNS.
-3. Ensure clients use that local DNS resolver.
-4. Run `task bootstrap:plan` again until preflight passes.
+## Configure, verify and recover
 
-Bootstrap verifies observable DNS results but does not change the router, DHCP
-server, or DNS service.
+Ansible optionally creates exact AdGuard rewrites, checks the controller's actual
+DNS answers, applies the existing Debian/Docker roles to only this guest, checks
+out the selected repository revision, templates private service settings and runs
+Compose.
+It verifies trusted HTTPS for Homepage and Traefik, the live Homepage widget,
+persistent certificate/log paths, stable containers and repeat Compose deployment
+without recreation. `up --wait` alone is not the application acceptance check.
 
-### Unknown DHCP address (test-only)
-
-Set `network.expected_ipv4: auto` only when a reservation cannot be created
-before provisioning. The initial plan validates everything except address and
-DNS checks. The first apply creates or resumes the VM, obtains exactly one
-non-loopback IPv4 address from the Proxmox guest agent interface matching the
-planned MAC, and stops at a networking checkpoint.
-
-Add the reported address to the administrative host's `/etc/hosts` for all of
-the names reported by bootstrap, then rerun the same apply command. For the
-core profile, these are the base domain, `home`, `traefik`, and
-`bootstrap-check` names. Host files have no wildcard support. Bootstrap does
-not add mappings automatically or edit `/etc/hosts`, and fails rather than
-choosing between multiple guest IPv4 addresses.
-
-Use this explicit, privileged helper instead of editing the file manually:
+For a provisioned guest, correct the reported cause, then explicitly approve:
 
 ```bash
-task bootstrap:add-hosts NAME=docker-host ADDRESS=192.0.2.10 DOMAIN=example.com
+task bootstrap:configure TARGET=proxmox
+task bootstrap:verify TARGET=proxmox
 ```
 
-For this test-only checkpoint, optionally put your manual entries in this exact
-named block, replacing `docker-host` with the VM name:
+`configure` never provisions a VM. `verify` does not format storage or rewrite DNS,
+but deliberately repeats Compose as an acceptance test. After a partial VM-create
+failure inspect Proxmox first; do not blindly rerun creation or bypass conflicts.
+No automated Proxmox teardown is provided. Disposal of VMs, disks or owned DNS
+requires separate approval and provider-side verification.
 
-```text
-# BEGIN infra docker-host temporary DNS
-192.0.2.10 example.com home.example.com traefik.example.com bootstrap-check.example.com
-# END infra docker-host temporary DNS
-```
+## Operational limits
 
-After testing, remove only that block explicitly with `task
-bootstrap:cleanup-hosts NAME=docker-host`. Both commands use `sudo`; the add
-helper validates its hostname, IPv4 address, and domain and refuses an existing
-or malformed block. Cleanup refuses to change `/etc/hosts` if the block is
-missing, duplicated, incomplete, or malformed.
-
-## Apply
-
-Start the deployment and approve the displayed target:
-
-```bash
-task bootstrap:apply
-```
-
-For an already reviewed unattended run, use `task bootstrap:apply YES=1`.
-
-The orchestrator performs these stages:
-
-1. Renders ignored Proxmox, Ansible, and Docker configuration.
-2. Creates the VM with the planned MAC, or validates and resumes a matching VM.
-3. Waits for the expected DHCP address and successful cloud-init completion.
-4. Compares the network SSH host key with the key obtained through the trusted
-   Proxmox guest agent before accepting it.
-5. Runs Ansible with a strict limit for only the new host.
-6. Clones the same repository branch and commit on the Docker host.
-7. Initializes local Docker configuration and transfers generated mode-`0600`
-   service secrets without placing them in command arguments.
-8. Checks Docker networking, deploys the configured services, and waits for
-   stable containers and trusted HTTPS routes.
-9. Repeats the Docker deployment and verifies that it does not recreate the
-   running core containers.
-
-With `network.expected_ipv4: auto`, stage 3 waits for cloud-init without an
-address filter, then stops after guest-agent discovery until the operator has
-completed the networking checkpoint described above.
-
-The process never deletes an existing VM, disk, or persistent service data.
-
-## Resume And Troubleshoot
-
-After correcting a reported problem, rerun the same apply command. Rendering
-and service deployment are idempotent; an existing VM is resumed only when its
-ID, name, MAC, disks, guest agent, and VM-specific cloud-init snippets match the
-plan. A conflicting or partially created resource stops the process for manual
-inspection.
-
-The commands below are advanced/manual recovery and debugging commands. Normal
-users should use `task bootstrap:init`, then `task bootstrap:plan`, then `task
-bootstrap:apply`.
-
-```bash
-task bootstrap:vm-preflight
-task bootstrap:vm-wait
-task docker:check-host
-task docker:apply
-```
-
-For individual commands, alternate installation methods, and detailed recovery,
-use the [manual installation](manual-setup.md), [Ubuntu VM guide](../vm/proxmox/ubuntu.md),
-and [runbooks](runbooks.md).
+- The `vm-*` helpers use the single file `config/vm/proxmox/ubuntu-cloud.env`.
+  Review its VM identity and settings before provisioning; `BOOTSTRAP_CONFIG_DIR`
+  selects host/service inputs, not a different VM environment file.
+- DHCP reservations and public DDNS are managed outside bootstrap.
+- VM preflight checks that storage and the bridge exist, not thin-pool capacity or
+  overcommit policy. Check physical free space and thin-pool health before creating
+  a disk.

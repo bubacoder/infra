@@ -20,8 +20,9 @@ resource "aws_iam_role" "ec2" {
 
 # Allow the EC2 instance to read the git credentials secret
 resource "aws_iam_role_policy" "secrets_access" {
-  name = "${var.vm_name}-secrets-access"
-  role = aws_iam_role.ec2.id
+  count = var.bootstrap_mode == "standalone" ? 1 : 0
+  name  = "${var.vm_name}-secrets-access"
+  role  = aws_iam_role.ec2.id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -32,10 +33,21 @@ resource "aws_iam_role_policy" "secrets_access" {
           "secretsmanager:GetSecretValue",
           "secretsmanager:DescribeSecret"
         ]
-        Resource = aws_secretsmanager_secret.git_credentials.arn
+        Resource = aws_secretsmanager_secret.git_credentials[0].arn
       }
     ]
   })
+}
+
+resource "aws_iam_role_policy_attachment" "ssm" {
+  count      = var.bootstrap_mode == "external" ? 1 : 0
+  role       = aws_iam_role.ec2.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+moved {
+  from = aws_iam_role_policy.secrets_access
+  to   = aws_iam_role_policy.secrets_access[0]
 }
 
 resource "aws_iam_instance_profile" "ec2" {
