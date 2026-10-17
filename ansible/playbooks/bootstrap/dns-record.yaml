@@ -1,0 +1,79 @@
+---
+- name: Read this record with native provider modules
+  ansible.builtin.include_tasks: dns-read.yaml
+- name: Select ownership recorded by this deployment only
+  ansible.builtin.set_fact:
+    bootstrap_dns_owned: "{{ bootstrap_dns_records | selectattr('provider', 'equalto', bootstrap_dns_provider) | selectattr('name', 'equalto', bootstrap_dns_name) | list }}"
+- name: Refuse conflicting, duplicate or changed records instead of updating them
+  ansible.builtin.assert:
+    that:
+      - bootstrap_dns_rows | length <= 1
+      - bootstrap_dns_rows | length == 0 or (bootstrap_dns_rows[0].content | default(bootstrap_dns_rows[0].answer | default(''))) == bootstrap_address
+      - bootstrap_dns_provider != 'cloudflare' or bootstrap_dns_rows | length == 0 or (bootstrap_dns_rows[0].type == 'A' and not bootstrap_dns_rows[0].proxied)
+      - bootstrap_dns_provider != 'cloudflare' or bootstrap_dns_rows | length == 0 or bootstrap_dns_owned | length == 0 or bootstrap_dns_rows[0].id == bootstrap_dns_owned[0].id
+    fail_msg: DNS conflict. Existing records are never overwritten or silently adopted.
+- name: Record uncertain ownership before a create request
+  ansible.builtin.copy:
+    dest: "{{ bootstrap_dir }}/dns-state.yaml"
+    content: "{{ {'identity': bootstrap_dns_identity, 'records': bootstrap_dns_records, 'pending': {'provider': bootstrap_dns_provider, 'name': bootstrap_dns_name, 'answer': bootstrap_address}} | to_nice_yaml }}"
+    mode: '0600'
+  when: bootstrap_dns_action == 'present' and bootstrap_dns_rows | length == 0
+- name: Create or remove only the selected Cloudflare A record using its maintained module
+  community.general.cloudflare_dns:
+    zone: "{{ bootstrap.dns.cloudflare_zone }}"
+    record: "{{ bootstrap_dns_name }}"
+    type: A
+    value: "{{ bootstrap_address }}"
+    proxied: false
+    solo: false
+    api_token: "{{ bootstrap_secrets.cloudflare_token }}"
+    state: "{{ 'absent' if bootstrap_dns_action == 'absent' else 'present' }}"
+  register: bootstrap_cf_write
+  no_log: true
+  when:
+    - bootstrap_dns_provider == 'cloudflare'
+    - (bootstrap_dns_action == 'present' and bootstrap_dns_rows | length == 0) or (bootstrap_dns_action == 'absent' and bootstrap_dns_owned | length == 1 and bootstrap_dns_rows | length == 1)
+- name: Create or remove only the selected AdGuard rewrite using its maintained module
+  community.dns.adguardhome_rewrite:
+    host: "{{ bootstrap.dns.adguard_url }}"
+    username: "{{ bootstrap_secrets.adguard_username }}"
+    password: "{{ bootstrap_secrets.adguard_password }}"
+    validate_certs: true
+    domain: "{{ bootstrap_dns_name }}"
+    answer: "{{ bootstrap_address }}"
+    state: "{{ 'absent' if bootstrap_dns_action == 'absent' else 'present' }}"
+  register: bootstrap_ag_write
+  no_log: true
+  when:
+    - bootstrap_dns_provider == 'adguard'
+    - (bootstrap_dns_action == 'present' and bootstrap_dns_rows | length == 0) or (bootstrap_dns_action == 'absent' and bootstrap_dns_owned | length == 1 and bootstrap_dns_rows | length == 1)
+- name: Do not claim ownership when a concurrent writer supplied a matching record
+  ansible.builtin.assert:
+    that: (bootstrap_cf_write.changed if bootstrap_dns_provider == 'cloudflare' else bootstrap_ag_write.changed)
+    fail_msg: The provider did not confirm a create. Preserve the pending receipt and inspect ownership before retrying.
+  when: bootstrap_dns_action == 'present' and bootstrap_dns_rows | length == 0
+- name: Track only records that were absent before this deployment created them
+  ansible.builtin.set_fact:
+    bootstrap_dns_records: "{{ (bootstrap_dns_records | difference(bootstrap_dns_owned)) + [{'provider': bootstrap_dns_provider, 'name': bootstrap_dns_name, 'answer': bootstrap_address, 'id': bootstrap_cf_write.result.record.id if bootstrap_dns_provider == 'cloudflare' else none}] }}"
+  when: bootstrap_dns_action == 'present' and bootstrap_dns_rows | length == 0
+- name: Forget deleted ownership without claiming pre-existing records
+  ansible.builtin.set_fact:
+    bootstrap_dns_records: "{{ bootstrap_dns_records | difference(bootstrap_dns_owned) }}"
+  when: bootstrap_dns_action == 'absent'
+- name: Verify provider readback after changes
+  ansible.builtin.include_tasks: dns-read.yaml
+  when: bootstrap_dns_action != 'preview'
+- name: Require confirmed provider state before clearing pending evidence
+  ansible.builtin.assert:
+    that:
+      - bootstrap_dns_action != 'present' or bootstrap_dns_rows | length == 1
+      - bootstrap_dns_action != 'present' or (bootstrap_dns_rows[0].content | default(bootstrap_dns_rows[0].answer | default(''))) == bootstrap_address
+      - bootstrap_dns_action != 'present' or bootstrap_dns_provider != 'cloudflare' or (bootstrap_dns_rows[0].type == 'A' and not bootstrap_dns_rows[0].proxied)
+      - bootstrap_dns_action != 'absent' or bootstrap_dns_owned | length == 0 or bootstrap_dns_rows | length == 0
+  when: bootstrap_dns_action != 'preview'
+- name: Persist the small ownership receipt (credentials are never stored here)
+  ansible.builtin.copy:
+    dest: "{{ bootstrap_dir }}/dns-state.yaml"
+    content: "{{ {'identity': bootstrap_dns_identity, 'records': bootstrap_dns_records, 'pending': none} | to_nice_yaml }}"
+    mode: '0600'
+  when: bootstrap_dns_action != 'preview'

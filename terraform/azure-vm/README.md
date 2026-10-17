@@ -171,6 +171,16 @@ This will backup your local state and migrate it to Azure Blob Storage.
 2. See the file `terraform/azure-vm/Taskfile.yaml` for available `task` commands for deploying/connection/deleting the VM.
 3. Execute commands like `task plan` (in this folder) or `task azure-vm:plan` (anywhere within the repo).
 
+From the repository root, the lifecycle commands are:
+
+```bash
+task azure-vm:plan
+task azure-vm:apply
+task azure-vm:destroy
+```
+
+Review the target, state and plan before authorizing apply or destruction.
+
 Note: for the previous `Makefile` (which was replaced by `Taskfile`) see [MR #168](https://github.com/bubacoder/infra/pull/168).
 
 > **Cloud-init caveat:** `custom_data` is a `ForceNew` attribute in the azurerm provider, meaning Terraform will **destroy and recreate** the VM if cloud-init templates change. The data disk is preserved thanks to `lifecycle { prevent_destroy = true }` in the storage module. To apply updated cloud-init content, run `task azure-vm:destroy-vm` followed by `task azure-vm:apply`.

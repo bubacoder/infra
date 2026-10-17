@@ -1,230 +1,39 @@
-# CLAUDE.md
+# Agent guide
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This repository manages self-hosted infrastructure with Terraform, Ansible and
+Docker Compose. Shared documentation is the source of truth for humans and agents.
 
-## Repository Overview
+## Essential rules
 
-This repository contains Infrastructure as Code (IaC) configuration for a home infrastructure setup. The main goals are:
-- Creating a local, self-hosted environment for various services, minimizing reliance on cloud providers
-- Learning and organizing knowledge, best practices, and tool documentation
+- Do not create branches, commit or push unless explicitly requested. Preserve
+  existing changes and staging.
+- Never expose secrets or directly read secret-bearing private inputs. Follow the
+  documented safe inspection workflow before working on bootstrap configuration.
+- Obtain authorization for live infrastructure actions. Confirm the target and
+  original state; never discard recovery data or bypass a safety check to proceed.
+- Prefer existing tools and repository patterns; keep changes focused. Inspect
+  task definitions before running build, cleanup or operational commands.
+- Run relevant offline tests and pre-commit checks; report what was not verified.
+- Keep workflow details in the guides below, not here. Document the current
+  solution, not session history or implementation-status notes.
 
-## Key Commands
+## Documentation index
 
-### Development and Building
+| Topic | Source of truth |
+| --- | --- |
+| Overview, architecture and repository layout | [README](README.md) |
+| Development commands and checks | [Development](README.md#development), [pre-commit configuration](.pre-commit-config.yaml) |
+| Bootstrap inputs, secret handling and safe inspection — read before bootstrap work | [Bootstrap inputs and safety](docs/bootstrap-configuration.md) |
+| Installation and teardown | [AWS](docs/bootstrap-aws.md), [Proxmox](docs/setup.md), [manual installation](docs/manual-setup.md) |
+| Bootstrap DNS and ownership | [Bootstrap DNS](docs/bootstrap-dns.md) |
+| Docker service operations and configuration | [Docker services](docker/README.md) |
+| Adding services, Compose patterns and environment precedence | [Docker guidelines](docker/guidelines.md) |
+| Host configuration and inventories | [Ansible](ansible/README.md) |
+| VM provisioning | [Proxmox](vm/proxmox/README.md), [Ubuntu VM methods](vm/proxmox/ubuntu.md) |
+| Standalone cloud provisioning | [AWS Terraform](terraform/aws-vm/README.md), [Azure Terraform](terraform/azure-vm/README.md) |
+| Access, utilities and maintenance | [Usage](docs/usage.md), [Runbooks](docs/runbooks.md) |
+| Backups and restoration | [Backup and recovery](docs/backup.md) |
+| Identity and SSO | [Authentik](docs/authentik.md) |
 
-```bash
-# List all available tasks
-task --list-all
-
-# Run all linting and build tasks
-task build
-
-# Run linting tools on all files (via pre-commit)
-task lint
-
-# Open TaskUI (terminal UI for executing tasks)
-task ui
-
-# Clear generated content and cache data
-task clean
-```
-
-### Docker Management
-
-```bash
-# Deploy locally configured containers
-task docker:apply
-
-# Update and restart containers
-task docker:update
-
-# Pull container images
-task docker:pull
-
-# Pull, update, restart containers, then show restarts
-task docker:pull-update
-
-# Stop configured containers
-task docker:stop
-
-# Create/update Docker example environment configuration files
-task docker:update-example-env
-```
-
-### Service Management
-
-```bash
-# Manage individual Docker service (pull, up, down, restart, recreate, config)
-scripts/labctl.py service [operation] [category/service-name]
-
-# Examples:
-scripts/labctl.py service up security/traefik
-scripts/labctl.py service restart ai/ollama
-scripts/labctl.py service pull media/video/jellyfin
-```
-
-### Ansible Commands
-
-```bash
-# Run Ansible for homelab setup
-task ansible:apply-homelab
-
-# Run Ansible for cloud setup
-task ansible:apply-cloud
-```
-
-### Terraform Management
-
-```bash
-# Plan AWS EC2 VM Terraform changes
-task aws-vm:plan
-
-# Apply AWS EC2 VM Terraform configuration
-task aws-vm:apply
-
-# Destroy AWS resources (persistent EBS data volume is protected)
-task aws-vm:destroy
-
-# Apply Azure VM Terraform configuration
-task azure-vm:apply
-
-# Plan Azure VM Terraform changes
-task azure-vm:plan
-
-# Destroy Azure VM Terraform resources
-task azure-vm:destroy
-```
-
-### Utility Commands
-
-```bash
-# Show public IP of the server
-task get-public-ip
-
-# Show version numbers of installed software
-task versions
-
-# Create a compressed backup of the configuration directory
-task backup-config
-
-# Download data files for offline use
-task get-offline-data
-```
-
-## Architecture Overview
-
-The infrastructure is designed around the following components:
-
-1. **Core Infrastructure**:
-   - Proxmox Virtual Environment as a Type 1 hypervisor
-   - Ubuntu Server as the host OS for Docker containers
-   - Ansible for configuration management
-   - Docker Compose for container definitions
-
-2. **Key Services**:
-    - **Security**: Traefik (reverse proxy), Authentik (primary identity/SSO), Cloudflared (tunnel)
-   - **Monitoring**: Grafana, Prometheus, Node-exporter, Uptime-kuma
-   - **Media**: Jellyfin, Metube, Navidrome, Calibre
-   - **Storage**: Syncthing, FileSharing
-   - **AI Tools**: Ollama, Open-WebUI, LiteLLM, AutogenStudio
-   - **Tools**: Guacamole, Homepage (dashboard), Vaultwarden
-
-3. **Configuration Structure**:
-   - `ansible/`: Contains playbooks and roles for infrastructure setup
-   - `docker/`: Contains Docker Compose definitions for all services
-   - `docs/`: Documentation and usage instructions
-   - `terraform/`: IaC for cloud provisioning
-     - `azure-vm/`: Azure Virtual Machine deployment with CloudInit
-     - `aws-vm/`: AWS EC2 Ubuntu VM deployment with cloud-init and persistent EBS storage
-   - `vm/`: Scripts for VM creation and management
-   - `scripts/`: Utility scripts for various tasks
-   - `config/`: Host-specific configuration (not in repository)
-   - `config-example/`: Example configuration files
-
-## Development Workflow
-
-This project uses:
-- **Task** (taskfile.dev) as a task runner/build tool
-- **Pre-commit** for code quality and security checks:
-  - Shell script validation with ShellCheck
-  - YAML linting and validation
-  - Terraform validation and formatting
-  - Ansible linting
-  - Python linting with Ruff
-  - Dockerfile linting with Hadolint
-  - Security scanning with Gitleaks and KICS
-- **Docker** and Docker Compose for containerized services
-- **Python** for service management via the `scripts/labctl.py` tool
-- **GitHub Actions** for CI/CD workflows:
-  - Pre-commit checks
-  - Building devcontainer
-  - Building and deploying documentation site
-- **Renovate** for automated dependency updates
-
-## Git Guidelines
-
-**Important**: Do not create git branches or commit changes to git unless it is explicitly requested by the user.
-
-## Private Bootstrap Configuration
-
-Bootstrap YAML files under `config/` contain secrets. **Do not read them directly**
-with file tools, `cat`, `grep`, or ad-hoc scripts that expose raw content. For AI
-inspection, use only the allowlisted, redacted command:
-
-```bash
-task bootstrap:show-config CONFIG=config/bootstrap-aws.yaml
-# For the default Proxmox file:
-task bootstrap:show-config
-```
-
-The trusted command reads the private file locally; the agent receives only
-redacted settings. It is offline, read-only, works with incomplete configuration,
-and does not require credentials, SSH keys, a clean checkout, or a published
-revision. Unknown fields are omitted; this is not deployment validation.
-Use `bootstrap:plan` separately for live preflight when authorized. If inspection
-fails, report the safe error and ask the operator to correct the private file;
-do not fall back to raw reads. Have the operator enter secrets privately, never
-in chat or command arguments. Output still contains infrastructure identifiers;
-anonymize those before sharing externally. See
-[Bootstrap Configuration](docs/bootstrap-configuration.md#safe-inspection-for-ai-agents).
-
-## Docker Service Management
-
-The repository uses a custom Python script (`scripts/labctl.py`) to manage Docker services defined in YAML files:
-
-1. Services are organized by category (security, media, tools, etc.)
-2. Each service has a YAML definition file with container specifications
-3. Host-specific configuration is defined in `config/docker/<hostname>/services.yaml`
-4. Environment variables are loaded from `.env` files in the config directory
-5. The `labctl.py` script supports operations: up, down, restart, recreate, update, pull, config.
-
-When adding or modifying services:
-1. Create or edit the YAML file in the appropriate category directory
-2. Add the service to the host configuration in `config/docker/<hostname>/services.yaml`
-3. Provide any required environment variables in the appropriate `.env` files
-4. Deploy using `task docker:apply` or using the specific service command
-
-## File Structure
-
-Key directories and their purposes:
-
-```text
-/
-├── ansible/         # Ansible configuration for server setup
-│   ├── playbooks/   # Main playbooks for different environments
-│   └── roles/       # Individual roles for specific configurations
-├── docker/          # Docker Compose files for services
-│   ├── security/    # Auth and security services
-│   ├── media/       # Media services
-│   ├── storage/     # Storage services
-│   ├── monitoring/  # Monitoring services
-│   ├── ai/          # AI-related services
-│   └── tools/       # Various utility services
-├── docs/            # Documentation
-├── terraform/       # Terraform configurations
-│   ├── aws-vm/      # AWS EC2 VM deployment with cloud-init
-│   └── azure-vm/    # Azure VM deployment with CloudInit
-└── scripts/         # Utility scripts
-```
-
-When contributing to this repository, follow the pre-commit rules defined in `.pre-commit-config.yaml` which includes linting for shell scripts, Dockerfiles, YAML files, Ansible playbooks, and Terraform configurations.
+Discover available commands with `task --list-all`; their definitions live in
+[Taskfile.yaml](Taskfile.yaml) and its included task files.

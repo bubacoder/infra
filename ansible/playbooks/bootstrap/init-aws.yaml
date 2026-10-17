@@ -1,0 +1,65 @@
+---
+- name: Check for exact public AWS template placeholders without changing the file
+  ansible.builtin.replace:
+    path: "{{ bootstrap_dir }}/aws.tfvars"
+    regexp: '^({{ item.key }}[ \t]*=[ \t]*)"{{ item.placeholder | regex_escape }}"(?=[ \t]*(?:#.*)?$)'
+    replace: '\g<1>"__AUTODETECT__"'
+  loop:
+    - {key: expected_account_id, placeholder: '123456789012'}
+    - {key: admin_source_address, placeholder: '203.0.113.10/32'}
+    - {key: ssh_public_key, placeholder: 'ssh-ed25519 REPLACE_WITH_YOUR_PUBLIC_KEY'}
+  check_mode: true
+  diff: false
+  register: bootstrap_init_placeholders
+- name: Detect reviewed defaults only while template placeholders remain
+  when: bootstrap_init_placeholders.results | selectattr('changed') | list | length > 0
+  block:
+    - name: Require an explicitly public key path consistent with host settings
+      ansible.builtin.assert:
+        that:
+          - bootstrap_init_public_key_file.endswith('.pub')
+          - bootstrap_existing.ssh_public_key is not defined or (bootstrap_existing.ssh_public_key | expanduser) == (bootstrap_init_public_key_file | expanduser)
+        fail_msg: Select an existing .pub file with BOOTSTRAP_SSH_PUBLIC_KEY; it must match host.yaml if that file already exists. No private key is read.
+    - name: Validate the selected public key with OpenSSH
+      ansible.builtin.command:
+        argv: [ssh-keygen, -l, -f, "{{ bootstrap_init_public_key_file | expanduser }}"]
+      changed_when: false
+    - name: Detect active AWS account using the normal credential chain
+      ansible.builtin.command:
+        argv: [aws, sts, get-caller-identity, --query, Account, --output, text]
+      register: bootstrap_init_account
+      changed_when: false
+    - name: Detect controller public IPv4 for the administrator CIDR
+      ansible.builtin.uri:
+        url: https://api4.ipify.org
+        return_content: true
+        use_proxy: false
+        follow_redirects: none
+        timeout: 15
+      register: bootstrap_init_ip
+    - name: Validate detected public values before editing Terraform inputs
+      ansible.builtin.assert:
+        that:
+          - bootstrap_init_account.stdout | trim is match('^[0-9]{12}$')
+          - (bootstrap_init_ip.content | trim | ansible.utils.ipaddr('public')) != false
+          - bootstrap_init_ip.content | trim is match('^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$')
+        fail_msg: Could not detect a valid AWS account and public IPv4. Correct controller credentials/networking and rerun init; configured values will not be overwritten.
+    - name: Read only the selected OpenSSH public key material
+      ansible.builtin.set_fact:
+        bootstrap_init_public_key: "{{ lookup('file', bootstrap_init_public_key_file | expanduser).split()[:2] | join(' ') }}"
+    - name: Require OpenSSH public key material
+      ansible.builtin.assert:
+        that: bootstrap_init_public_key is match('^(ssh-ed25519|ssh-rsa|ecdsa-sha2-[^ ]+) [A-Za-z0-9+/=]+$')
+    - name: Fill exact placeholders without overwriting configured values or comments
+      ansible.builtin.replace:
+        path: "{{ bootstrap_dir }}/aws.tfvars"
+        regexp: '^({{ item.key }}[ \t]*=[ \t]*)"{{ item.placeholder | regex_escape }}"(?=[ \t]*(?:#.*)?$)'
+        replace: '\g<1>{{ item.value | to_json }}'
+        mode: '0600'
+      loop:
+        - {key: expected_account_id, placeholder: '123456789012', value: "{{ bootstrap_init_account.stdout | trim }}"}
+        - {key: admin_source_address, placeholder: '203.0.113.10/32', value: "{{ bootstrap_init_ip.content | trim }}/32"}
+        - {key: ssh_public_key, placeholder: 'ssh-ed25519 REPLACE_WITH_YOUR_PUBLIC_KEY', value: "{{ bootstrap_init_public_key }}"}
+    - name: Explain the review checkpoint
+      ansible.builtin.debug:
+        msg: Public AWS placeholders were filled from this controller. Review aws.tfvars, region, administrator CIDR and SSH key before planning. Future init runs preserve configured values.

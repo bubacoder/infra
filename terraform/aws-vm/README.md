@@ -10,13 +10,14 @@ Uses the [terraform-aws-modules](https://github.com/terraform-aws-modules/) comm
 
 For the separate-admin-host bootstrap workflow, see [Bootstrap on AWS](../../docs/bootstrap-aws.md).
 It reuses this template with `bootstrap_mode = "external"`, a supplied public SSH
-key, pinned AMI, Elastic IP and SSM-based host trust. External mode mounts storage
+key, an optional AMI pin, Elastic IP and SSM-based host trust. External mode mounts storage
 and prepares SSM but does not create Git credentials, clone the repository or run
 Ansible inside cloud-init. Standalone mode remains the default. Bootstrap owns
 separate state; do not use `task aws-vm:*` to manage bootstrap-created resources.
 
 External mode mounts existing ext4 storage and defers new-volume formatting to
-the administrative controller's one-time state receipt. Supplied SSH keys are
+Ansible's automatic blank-owned-volume checks and one-time attempt marker (see the
+[bootstrap storage policy](../../docs/bootstrap-aws.md#plan-apply-and-initialize-storage)). Supplied SSH keys are
 registered without optional comments, because EC2 rejects non-ASCII comments.
 
 Offline checks (Terraform >= 1.7; AWS is mocked):
@@ -173,7 +174,8 @@ aws dynamodb create-table --table-name terraform-locks \
     --region eu-central-1
 ```
 
-Then update `backend.tf`, uncomment the backend block with your bucket name, and run:
+Then replace the local backend in `backend.tf` with the S3 block and your bucket
+name (never declare both backends), and run:
 ```bash
 task aws-vm:migrate-state
 terraform init -migrate-state
@@ -258,8 +260,10 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 | [aws_secretsmanager_secret.git_credentials](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/secretsmanager_secret) | resource |
 | [aws_volume_attachment.data](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/volume_attachment) | resource |
 | [tls_private_key.main](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) | resource |
+| [aws_ami.pinned](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source |
 | [aws_ami.ubuntu](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ami) | data source |
 | [aws_availability_zones.available](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/availability_zones) | data source |
+| [aws_ec2_instance_type.bootstrap](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/ec2_instance_type) | data source |
 | [cloudinit_config.main](https://registry.terraform.io/providers/hashicorp/cloudinit/latest/docs/data-sources/config) | data source |
 
 ## Inputs
@@ -291,6 +295,7 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 | ---- | ----------- |
 | ami\_id | AMI ID used for the instance |
 | aws\_region | AWS region where resources are deployed |
+| bootstrap\_host | Non-secret Ansible handoff; never dump all outputs (standalone can contain a private key). |
 | data\_volume\_id | Persistent EBS data volume ID |
 | instance\_id | EC2 instance ID |
 | public\_ip | Public IP address of the instance |

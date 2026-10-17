@@ -1,0 +1,21 @@
+---
+- name: Read the project's existing Compose network declarations
+  ansible.builtin.slurp:
+    src: "{{ bootstrap_checkout }}/docker/{{ bootstrap_service.directory }}/{{ bootstrap_service.file }}"
+  register: bootstrap_compose_definition
+- name: Create only the external networks declared by Compose
+  community.docker.docker_network:
+    name: "{{ item.value.name | default(item.key) }}"
+  loop: "{{ (bootstrap_compose_definition.content | b64decode | from_yaml).networks | dict2items | selectattr('value.external', 'defined') | selectattr('value.external', 'equalto', true) | list }}"
+  become: true
+- name: Apply the native Compose project and wait within a fixed timeout
+  community.docker.docker_compose_v2:
+    project_src: "{{ bootstrap_checkout }}/docker/{{ bootstrap_service.directory }}"
+    files: ["{{ bootstrap_service.file }}"]
+    env_files: "{{ [bootstrap_host_dir + '/.env'] + ([bootstrap_host_dir + '/.env.traefik'] if bootstrap_service.directory == 'security/traefik' else []) }}"
+    state: present
+    build: policy
+    wait: true
+    wait_timeout: 180
+  become: true
+  no_log: true

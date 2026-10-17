@@ -236,14 +236,8 @@ For data-heavy applications, like database servers, use named volumes instead of
 
 ## Deployment Workflow
 
-Services are deployed using the Taskfile system:
-
-```
-task docker:apply       # Deploy all containers
-task docker:update      # Update and restart containers
-task docker:pull-all    # Pull latest container images
-task docker:stop        # Stop configured containers
-```
+For host-wide deploy, update, pull and stop commands, see
+[Service operations](README.md#service-operations).
 
 Under the hood, `labctl.py` passes each existing file in the documented order to
 `docker compose`; later files override earlier values:
@@ -260,6 +254,15 @@ docker compose -f "$yaml_file" \
 
 A compose file is not deployed until the service is registered in the host's `config/docker/<hostname>/services.yaml`, listed under its `<category>` with `state: up` (or `down`). `task docker:apply` / `labctl.py` only act on registered services.
 
+When adding or modifying a service:
+
+1. Create or edit its Compose file and README in the appropriate category directory.
+2. Register it in the intended host's `services.yaml`.
+3. Document required variables and put operator-supplied values in the appropriate
+   ignored `.env` files, following [environment-variable precedence](#environment-variables-management).
+4. After authorization, deploy that service with `labctl.py service up`, or apply
+   the full host configuration with `task docker:apply`.
+
 ### Managing Individual Services (`labctl.py`)
 
 Services are addressed as `<category>/<service-name>` (e.g. `ai/ollama`, `media/video/jellyfin`). Manage a single service with:
@@ -269,6 +272,12 @@ scripts/labctl.py service <operation> <category>/<service-name>
 ```
 
 Operations: `up`, `down`, `restart`, `recreate`, `pull`, `config` (render the resolved compose config), `logs`.
+
+```bash
+scripts/labctl.py service up security/traefik
+scripts/labctl.py service restart ai/ollama
+scripts/labctl.py service pull media/video/jellyfin
+```
 
 ## GPU Acceleration Overrides
 

@@ -80,8 +80,8 @@ module "ec2" {
   version = "~> 6.0"
 
   name          = var.vm_name
-  ami           = var.ami_id != null ? var.ami_id : data.aws_ami.ubuntu[0].id
-  instance_type = local.instance_type
+  ami           = var.ami_id != null ? data.aws_ami.pinned[0].id : data.aws_ami.ubuntu[0].id
+  instance_type = var.bootstrap_mode == "external" ? data.aws_ec2_instance_type.bootstrap[0].instance_type : local.instance_type
   key_name      = module.key_pair.key_pair_name
 
   subnet_id                   = module.vpc.public_subnets[0]
@@ -105,11 +105,17 @@ module "ec2" {
     http_put_response_hop_limit = 1
   }
 
+  # Tag disks independently; instance-wide volume_tags also touches attached data EBS.
+  enable_volume_tags = false
   root_block_device = {
     size                  = var.os_disk_size_gb
     type                  = "gp3"
     encrypted             = true
     delete_on_termination = true
+    tags = {
+      Name         = var.vm_name
+      Architecture = var.architecture
+    }
   }
 
   tags = {
@@ -131,8 +137,8 @@ resource "aws_ebs_volume" "data" {
   lifecycle {
     prevent_destroy = true
     precondition {
-      condition     = var.bootstrap_mode != "external" || var.ssh_public_key != null
-      error_message = "External bootstrap requires an existing SSH public key."
+      condition     = var.bootstrap_mode != "external" || (var.ssh_public_key != null && var.expected_account_id != null && var.architecture == "x86_64" && var.admin_user == "ubuntu" && !var.spot_instance && var.allocate_elastic_ip)
+      error_message = "External bootstrap requires an existing SSH public key, expected account, x86_64, ubuntu user, on-demand instance and Elastic IP."
     }
   }
 

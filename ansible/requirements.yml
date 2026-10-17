@@ -12,3 +12,9 @@ collections:
   # Source: https://github.com/ansible-collections/ansible.posix
   - name: ansible.posix
     version: 2.2.2
+  # Native AdGuard Home read/write modules; no custom HTTP transport.
+  - name: community.dns
+    version: 4.2.0
+  # Native CIDR membership filter for controller reachability preflight.
+  - name: ansible.utils
+    version: 6.1.1

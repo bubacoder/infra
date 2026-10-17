@@ -1,0 +1,28 @@
+---
+- name: Validate the authenticated host public key
+  ansible.builtin.assert:
+    that: bootstrap_trusted_key is match('^ssh-ed25519 [A-Za-z0-9+/=]+$')
+- name: Check for previously pinned trust
+  ansible.builtin.stat:
+    path: "{{ bootstrap_dir }}/known_hosts"
+  register: bootstrap_trust_file
+- name: Read only the selected host's existing public key
+  ansible.builtin.command:
+    argv: [ssh-keygen, -F, "{{ bootstrap_address }}", -f, "{{ bootstrap_dir }}/known_hosts"]
+  register: bootstrap_previous_key
+  changed_when: false
+  failed_when: bootstrap_previous_key.rc not in [0, 1]
+  when: bootstrap_trust_file.stat.exists
+- name: Reject host-key changes rather than replacing trust automatically
+  ansible.builtin.assert:
+    that: bootstrap_previous_key.rc == 1 or (bootstrap_address + ' ' + bootstrap_trusted_key) in bootstrap_previous_key.stdout_lines
+  when: bootstrap_trust_file.stat.exists
+- name: Pin the provider-authenticated key for OpenSSH's handshake verification
+  ansible.builtin.known_hosts:
+    path: "{{ bootstrap_dir }}/known_hosts"
+    name: "{{ bootstrap_address }}"
+    key: "{{ bootstrap_address }} {{ bootstrap_trusted_key }}"
+- name: Protect deployment-specific trust
+  ansible.builtin.file:
+    path: "{{ bootstrap_dir }}/known_hosts"
+    mode: '0600'

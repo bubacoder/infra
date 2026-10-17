@@ -1,0 +1,138 @@
+---
+- name: Resolve only Terraform's exact EBS device
+  ansible.builtin.command:
+    argv: [readlink, -f, "/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_{{ hostvars.localhost.bootstrap_aws.data_volume_id | replace('-', '') }}"]
+  register: bootstrap_device
+  changed_when: false
+  become: true
+- name: Read the actual device serial
+  ansible.builtin.command:
+    argv: [lsblk, -dn, -o, SERIAL, "{{ bootstrap_device.stdout }}"]
+  register: bootstrap_serial
+  changed_when: false
+  become: true
+- name: Require the exact EBS identity rather than a guessed Linux device name
+  ansible.builtin.assert:
+    that: bootstrap_serial.stdout | trim | replace('-', '') == hostvars.localhost.bootstrap_aws.data_volume_id | replace('-', '')
+- name: Probe filesystem without modifying it
+  ansible.builtin.command:
+    argv: [blkid, -s, TYPE, -o, value, "{{ bootstrap_device.stdout }}"]
+  register: bootstrap_filesystem
+  changed_when: false
+  failed_when: bootstrap_filesystem.rc not in [0, 2]
+  become: true
+- name: Probe partitions without writing
+  ansible.builtin.command:
+    argv: [lsblk, -nr, -o, NAME, "{{ bootstrap_device.stdout }}"]
+  register: bootstrap_partitions
+  changed_when: false
+  become: true
+- name: Refuse partitioned data volumes even when a filesystem is recognizable
+  ansible.builtin.assert:
+    that: bootstrap_partitions.stdout_lines | length == 1
+- name: Automatically initialize only a verified blank owned volume
+  when: bootstrap_filesystem.stdout | trim == ''
+  become: true
+  block:
+    - name: Never initialize storage during verification
+      ansible.builtin.assert:
+        that:
+          - not bootstrap_verify_only
+        fail_msg: >-
+          Verification requires an existing ext4 filesystem. Run an approved bootstrap:configure TARGET=aws
+          with the original configuration directory to initialize a verified blank data volume. Resources remain billable.
+    - name: Inspect the volume's AWS ownership and origin
+      ansible.builtin.command:
+        argv: [aws, --region, "{{ hostvars.localhost.bootstrap_aws.region }}", ec2, describe-volumes, --volume-ids, "{{ hostvars.localhost.bootstrap_aws.data_volume_id }}", --output, json]
+      delegate_to: localhost
+      become: false
+      register: bootstrap_volume
+      changed_when: false
+    - name: Require snapshot-free origin and the exact owned attachment
+      ansible.builtin.assert:
+        that:
+          - (bootstrap_volume.stdout | from_json).Volumes | length == 1
+          - (bootstrap_volume.stdout | from_json).Volumes[0].SnapshotId | default('') == ''
+          - (bootstrap_volume.stdout | from_json).Volumes[0].Attachments | length == 1
+          - (bootstrap_volume.stdout | from_json).Volumes[0].Attachments[0].InstanceId == hostvars.localhost.bootstrap_aws.instance_id
+          - (bootstrap_volume.stdout | from_json).Volumes[0].Attachments[0].State == 'attached'
+          - (bootstrap_volume.stdout | from_json).Volumes[0].Tags | selectattr('Key', 'equalto', 'Name') | map(attribute='Value') | list == [bootstrap.name + '-data']
+    - name: Probe signatures
+      ansible.builtin.command:
+        argv: [wipefs, --no-act, --json, "{{ bootstrap_device.stdout }}"]
+      register: bootstrap_signatures
+      changed_when: false
+    - name: Check for a previous format attempt
+      ansible.builtin.stat:
+        path: "{{ bootstrap_dir }}/format-{{ hostvars.localhost.bootstrap_aws.data_volume_id }}"
+      delegate_to: localhost
+      become: false
+      register: bootstrap_format_receipt
+    - name: Refuse partitioned, unknown or previously attempted storage
+      ansible.builtin.assert:
+        that:
+          - (bootstrap_signatures.stdout | from_json).signatures | length == 0
+          - not bootstrap_format_receipt.stat.exists
+    - name: Record the attempt before mkfs so interrupted runs cannot reformat
+      ansible.builtin.copy:
+        dest: "{{ bootstrap_dir }}/format-{{ hostvars.localhost.bootstrap_aws.data_volume_id }}"
+        content: "Automatic initialization attempted for the exact verified blank owned volume; retain after interruption.\n"
+        mode: '0600'
+        force: false
+      delegate_to: localhost
+      become: false
+    - name: Create ext4 using the native filesystem module
+      community.general.filesystem:
+        dev: "{{ bootstrap_device.stdout }}"
+        fstype: ext4
+        force: false
+- name: Read the filesystem UUID and type before mounting
+  ansible.builtin.command:
+    argv: [blkid, -o, export, "{{ bootstrap_device.stdout }}"]
+  register: bootstrap_volume_facts
+  changed_when: false
+  become: true
+- name: Reject any filesystem other than ext4
+  ansible.builtin.assert:
+    that: "'TYPE=ext4' in bootstrap_volume_facts.stdout_lines"
+- name: Preserve existing ext4 against future accidental reformatting too
+  ansible.builtin.copy:
+    dest: "{{ bootstrap_dir }}/format-{{ hostvars.localhost.bootstrap_aws.data_volume_id }}"
+    content: "An ext4 filesystem was observed on this exact volume; never authorize a second format automatically.\n"
+    mode: '0600'
+    force: false
+  delegate_to: localhost
+  when: not bootstrap_verify_only
+- name: Resolve the stable UUID
+  ansible.builtin.set_fact:
+    bootstrap_storage_uuid: "{{ bootstrap_volume_facts.stdout_lines | select('match', '^UUID=') | first | regex_replace('^UUID=', '') }}"
+- name: Inspect existing fstab mapping without changing it
+  ansible.builtin.command:
+    argv: [findmnt, --fstab, --mountpoint, /storage, --noheadings, --output, SOURCE]
+  register: bootstrap_fstab
+  changed_when: false
+  failed_when: bootstrap_fstab.rc not in [0, 1]
+- name: Inspect the mounted storage UUID without changing it
+  ansible.builtin.command:
+    argv: [findmnt, --mountpoint, /storage, --noheadings, --output, UUID]
+  register: bootstrap_mounted
+  changed_when: false
+  failed_when: bootstrap_mounted.rc not in [0, 1]
+- name: Refuse conflicting persistent or active mounts
+  ansible.builtin.assert:
+    that:
+      - bootstrap_fstab.rc == 1 or bootstrap_fstab.stdout | trim == 'UUID=' + bootstrap_storage_uuid
+      - bootstrap_mounted.rc == 1 or bootstrap_mounted.stdout | trim == bootstrap_storage_uuid
+- name: Mount the verified data volume persistently using the native mount module
+  ansible.posix.mount:
+    path: /storage
+    src: "UUID={{ bootstrap_storage_uuid }}"
+    fstype: ext4
+    opts: defaults,nofail
+    state: mounted
+  become: true
+  when: not bootstrap_verify_only
+- name: Verification must observe an already mounted data volume
+  ansible.builtin.assert:
+    that: bootstrap_mounted.rc == 0
+  when: bootstrap_verify_only

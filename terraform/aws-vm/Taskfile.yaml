@@ -10,8 +10,6 @@ vars:
 
 env:
   TF_IN_AUTOMATION: 1
-  AWS_DEFAULT_REGION:
-    sh: '{{.TFBIN}} output -raw aws_region 2>/dev/null || true'
 
 tasks:
   clean:
@@ -160,14 +158,14 @@ tasks:
     cmds:
       - |
         INSTANCE_ID=$({{.TFBIN}} output -raw instance_id)
-        aws ec2 start-instances --instance-ids "$INSTANCE_ID"
+        aws ec2 start-instances --region "$({{.TFBIN}} output -raw aws_region)" --instance-ids "$INSTANCE_ID"
 
   stop-vm:
     desc: Stop the AWS EC2 instance (billing continues for EBS; compute billing stops)
     cmds:
       - |
         INSTANCE_ID=$({{.TFBIN}} output -raw instance_id)
-        aws ec2 stop-instances --instance-ids "$INSTANCE_ID"
+        aws ec2 stop-instances --region "$({{.TFBIN}} output -raw aws_region)" --instance-ids "$INSTANCE_ID"
 
   secrets-info:
     desc: Display Secrets Manager information and credential retrieval instructions

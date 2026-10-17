@@ -1,0 +1,80 @@
+---
+- name: Check DNS credentials and conflicts before billable provisioning
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Validate public native inputs
+      ansible.builtin.import_tasks: bootstrap/inputs.yaml
+    - name: Require the selected public target to be AWS
+      ansible.builtin.assert:
+        that: bootstrap.target == 'aws'
+    - name: Validate private credentials without displaying them
+      ansible.builtin.import_tasks: bootstrap/secrets.yaml
+    - name: Read the exact saved plan's public variables through Terraform
+      ansible.builtin.command:
+        argv: [terraform, "-chdir={{ bootstrap_root }}/terraform/aws-vm", show, -json, "{{ bootstrap_dir }}/aws.tfplan"]
+      changed_when: false
+      register: bootstrap_native_plan
+      no_log: true
+    - name: Bind Ansible to the reviewed native infrastructure contract
+      ansible.builtin.assert:
+        that:
+          - (bootstrap_native_plan.stdout | from_json).variables.bootstrap_mode.value == 'external'
+          - (bootstrap_native_plan.stdout | from_json).variables.vm_name.value == bootstrap.name
+      no_log: true
+    - name: Check the explicitly configured SSH private key without exposing its contents
+      ansible.builtin.stat:
+        path: "{{ bootstrap.ssh_private_key | expanduser }}"
+      register: bootstrap_private_key
+    - name: Require a private local key file
+      ansible.builtin.assert:
+        that:
+          - bootstrap_private_key.stat.isreg | default(false)
+          - bootstrap_private_key.stat.mode in ['0600', '0400']
+    - name: Derive the public identity through OpenSSH (never read or print private material)
+      ansible.builtin.command:
+        argv: [ssh-keygen, -y, -P, '', -f, "{{ bootstrap.ssh_private_key | expanduser }}"]
+      register: bootstrap_derived_key
+      changed_when: false
+      failed_when: false
+      no_log: true
+    - name: Use the SSH agent for encrypted keys when needed
+      ansible.builtin.command:
+        argv: [ssh-add, -L]
+      register: bootstrap_agent_keys
+      changed_when: false
+      no_log: true
+      when: bootstrap_derived_key.rc != 0
+    - name: Require a usable matching key before provisioning
+      ansible.builtin.assert:
+        that: ((bootstrap_native_plan.stdout | from_json).variables.ssh_public_key.value.split()[:2] | join(' ')) in ((bootstrap_derived_key.stdout if bootstrap_derived_key.rc == 0 else bootstrap_agent_keys.stdout) | regex_findall('(?m)^(\S+ \S+)'))
+        fail_msg: The saved plan's SSH public key must match a usable private key or agent identity.
+      no_log: true
+    - name: Read the controller's actual public IPv4 without sending credentials
+      ansible.builtin.uri:
+        url: https://api4.ipify.org
+        return_content: true
+        use_proxy: false
+        timeout: 15
+      register: bootstrap_controller_ip
+    - name: Require controller access inside the reviewed administrator CIDR
+      ansible.builtin.assert:
+        that: (bootstrap_controller_ip.content | trim | ansible.utils.ipaddr((bootstrap_native_plan.stdout | from_json).variables.admin_source_address.value)) != false
+        fail_msg: The controller's public IPv4 is outside the saved plan's administrator CIDR. Correct and replan before provisioning.
+    - name: Check whether native state already exists
+      ansible.builtin.stat:
+        path: "{{ bootstrap_dir }}/aws.tfstate"
+      register: bootstrap_preflight_state
+    - name: Read an existing deployment's public handoff when available
+      ansible.builtin.command:
+        argv: [terraform, "-chdir={{ bootstrap_root }}/terraform/aws-vm", output, -json, bootstrap_host]
+      changed_when: false
+      register: bootstrap_preflight_host
+      when: bootstrap_preflight_state.stat.exists
+    - name: Preview without knowing a future Elastic IP and without provider writes
+      ansible.builtin.set_fact:
+        bootstrap_address: "{{ (bootstrap_preflight_host.stdout | from_json).address if bootstrap_preflight_state.stat.exists else '' }}"
+        bootstrap_dns_action: preview
+        bootstrap_dns_preflight_only: true
+    - name: Check all selected DNS providers read-only before provisioning
+      ansible.builtin.import_tasks: bootstrap/dns.yaml

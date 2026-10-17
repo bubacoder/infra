@@ -1,0 +1,81 @@
+---
+- name: Select the Terraform-owned guest before destruction
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Validate public inputs and explicit target
+      ansible.builtin.import_tasks: bootstrap/inputs.yaml
+    - name: Load the preserved public teardown handoff
+      ansible.builtin.include_vars:
+        file: "{{ bootstrap_dir }}/teardown-host.yaml"
+        name: bootstrap_aws
+    - name: Require the selected AWS deployment
+      ansible.builtin.assert:
+        that: bootstrap.target == 'aws' and bootstrap_aws.name == bootstrap.name
+    - name: Check the authenticated AWS account before selecting a guest
+      ansible.builtin.command:
+        argv: [aws, sts, get-caller-identity, --query, Account, --output, text]
+      register: bootstrap_shutdown_account
+      changed_when: false
+    - name: Require the deployment's original account
+      ansible.builtin.assert:
+        that: bootstrap_shutdown_account.stdout | trim == bootstrap_aws.account_id
+    - name: Read the exact instance's lifecycle state without restarting it
+      ansible.builtin.command:
+        argv: [aws, --region, "{{ bootstrap_aws.region }}", ec2, describe-instances, --filters, "Name=instance-id,Values={{ bootstrap_aws.instance_id }}", --query, 'Reservations[].Instances[].State.Name', --output, json]
+      register: bootstrap_shutdown_state
+      changed_when: false
+    - name: Refuse transitional states instead of guessing whether shutdown is safe
+      ansible.builtin.assert:
+        that:
+          - bootstrap_shutdown_state.stdout | from_json | length <= 1
+          - bootstrap_shutdown_state.stdout | from_json | difference(['running', 'stopped', 'terminated']) | length == 0
+        fail_msg: Wait for a stable instance state and retry. Teardown never restarts a guest or bypasses a failed shutdown.
+    - name: Select only this guest with strict deployment-specific SSH trust
+      ansible.builtin.add_host:
+        name: bootstrap_teardown_guest
+        ansible_connection: ssh
+        ansible_host: "{{ bootstrap_aws.address }}"
+        ansible_user: "{{ bootstrap_aws.username }}"
+        ansible_ssh_private_key_file: "{{ bootstrap.ssh_private_key | expanduser }}"
+        ansible_ssh_common_args: "-o StrictHostKeyChecking=yes -o {{ ('UserKnownHostsFile=' + bootstrap_dir + '/known_hosts') | quote }}"
+        ansible_python_interpreter: /usr/bin/python3
+        bootstrap_shutdown_running: "{{ bootstrap_shutdown_state.stdout | from_json == ['running'] }}"
+
+- name: Quiesce the running dedicated guest without forcing storage detachment
+  hosts: bootstrap_teardown_guest
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Stop applications and unmount storage only when the instance is running
+      when: bootstrap_shutdown_running
+      block:
+        - name: Discover whether Docker was installed and started
+          ansible.builtin.service_facts:
+        - name: List running containers on this dedicated guest
+          ansible.builtin.command:
+            argv: [docker, ps, -q]
+          register: bootstrap_shutdown_containers
+          changed_when: false
+          when: ansible_facts.services.get('docker.service', {}).get('state') == 'running'
+        - name: Stop running containers before stopping their daemon
+          ansible.builtin.command:
+            argv: "{{ ['docker', 'stop', '-t', '30'] + bootstrap_shutdown_containers.stdout_lines }}"
+          changed_when: true
+          when: bootstrap_shutdown_containers.stdout_lines | default([]) | length > 0
+        - name: Stop Docker and its activation socket if installed
+          ansible.builtin.systemd_service:
+            name: "{{ item }}"
+            state: stopped
+          loop: [docker.socket, docker.service]
+          when: item in ansible_facts.services
+        - name: Cleanly unmount storage without removing fstab or formatting anything
+          ansible.posix.mount:
+            path: /storage
+            state: unmounted
+        - name: Require storage to be unmounted before Terraform can proceed
+          ansible.builtin.command:
+            argv: [findmnt, --mountpoint, /storage]
+          register: bootstrap_shutdown_mount
+          changed_when: false
+          failed_when: bootstrap_shutdown_mount.rc != 1

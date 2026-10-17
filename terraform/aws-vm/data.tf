@@ -1,4 +1,4 @@
-# Ubuntu 24.04 LTS (Noble) AMI — official Canonical images
+# Official Canonical image for the selected Ubuntu release and architecture.
 data "aws_ami" "ubuntu" {
   count       = var.ami_id == null ? 1 : 0
   most_recent = true
@@ -17,6 +17,32 @@ data "aws_ami" "ubuntu" {
   filter {
     name   = "architecture"
     values = [var.architecture]
+  }
+}
+
+data "aws_ami" "pinned" {
+  count  = var.ami_id != null ? 1 : 0
+  owners = ["099720109477"]
+  filter {
+    name   = "image-id"
+    values = [var.ami_id]
+  }
+  lifecycle {
+    postcondition {
+      condition     = self.architecture == var.architecture
+      error_message = "The pinned official Ubuntu AMI must match architecture."
+    }
+  }
+}
+
+data "aws_ec2_instance_type" "bootstrap" {
+  count         = var.bootstrap_mode == "external" ? 1 : 0
+  instance_type = local.instance_type
+  lifecycle {
+    postcondition {
+      condition     = contains(self.supported_architectures, "x86_64") && contains(["supported", "required"], self.ebs_nvme_support)
+      error_message = "External bootstrap requires an x86_64 instance with EBS NVMe support."
+    }
   }
 }
 

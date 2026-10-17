@@ -1,0 +1,46 @@
+---
+- name: Read only Terraform's non-secret bootstrap handoff
+  ansible.builtin.command:
+    argv: [terraform, "-chdir={{ bootstrap_root }}/terraform/aws-vm", output, -json, bootstrap_host]
+  register: bootstrap_tf_output
+  changed_when: false
+- name: Use Terraform's state identity rather than a second deployment manifest
+  ansible.builtin.set_fact:
+    bootstrap_aws: "{{ bootstrap_tf_output.stdout | from_json }}"
+- name: Require the selected host to match native state
+  ansible.builtin.assert:
+    that:
+      - bootstrap_aws is mapping
+      - bootstrap_aws.name == bootstrap.name
+      - bootstrap_aws.public_key == lookup('file', bootstrap.ssh_public_key).split()[:2] | join(' ')
+- name: Check the authenticated AWS account before SSM access
+  ansible.builtin.command:
+    argv: [aws, sts, get-caller-identity, --output, json]
+  register: bootstrap_aws_identity
+  changed_when: false
+- name: Refuse the wrong AWS account
+  ansible.builtin.assert:
+    that: (bootstrap_aws_identity.stdout | from_json).Account == bootstrap_aws.account_id
+- name: Wait for EC2 health using AWS's native waiter
+  ansible.builtin.command:
+    argv: [aws, --region, "{{ bootstrap_aws.region }}", ec2, wait, instance-status-ok, --instance-ids, "{{ bootstrap_aws.instance_id }}"]
+  changed_when: false
+- name: Wait for SSM registration
+  ansible.builtin.command:
+    argv: [aws, --region, "{{ bootstrap_aws.region }}", ssm, describe-instance-information, --filters, "Key=InstanceIds,Values={{ bootstrap_aws.instance_id }}", --output, json]
+  register: bootstrap_ssm_online
+  changed_when: false
+  until: (bootstrap_ssm_online.stdout | from_json).InstanceInformationList | selectattr('PingStatus', 'equalto', 'Online') | list | length == 1
+  retries: 90
+  delay: 10
+- name: Wait for successful cloud-init and retrieve SSH key over authenticated SSM
+  ansible.builtin.include_tasks: ssm.yaml
+  vars:
+    bootstrap_ssm_script: "set -eu; cloud-init status --wait >/dev/null; cat /etc/ssh/ssh_host_ed25519_key.pub"
+- name: Bind guest identity to native Terraform outputs
+  ansible.builtin.set_fact:
+    bootstrap_address: "{{ bootstrap_aws.address }}"
+    bootstrap_username: "{{ bootstrap_aws.username }}"
+    bootstrap_trusted_key: "{{ ((bootstrap_ssm_result.stdout | from_json).StandardOutputContent).split()[:2] | join(' ') }}"
+- name: Pin authenticated SSH host key
+  ansible.builtin.import_tasks: trust.yaml
