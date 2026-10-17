@@ -110,7 +110,7 @@ task aws-vm:connect-vm
 | --------------------------- | ------------------------------------------- |
 | `task aws-vm:plan`          | Create Terraform plan                       |
 | `task aws-vm:apply`         | Apply plan + save SSH key                   |
-| `task aws-vm:destroy`       | Destroy all resources                       |
+| `task aws-vm:destroy`       | Request full destroy (blocked by EBS guard) |
 | `task aws-vm:destroy-vm`    | Destroy EC2 instance only (keeps EBS)       |
 | `task aws-vm:connect-vm`    | SSH into VM                                 |
 | `task aws-vm:config-vm`     | Run Ansible on VM                           |
@@ -137,16 +137,18 @@ architecture = "arm64"
 
 ## Persistent Data Volume
 
-The data EBS volume at `/storage` has `prevent_destroy = true`. It **survives** both `destroy-vm` and `destroy` tasks. To fully delete it:
+The data EBS volume at `/storage` has `prevent_destroy = true`. `destroy-vm` keeps
+it; a full `destroy` is **blocked**, not a partial destroy that automatically keeps
+the volume. For bootstrap deployments use the separately approved
+[bootstrap teardown](../../docs/bootstrap-aws.md#teardown), not these standalone tasks.
+For an approved full deletion of a standalone deployment:
 
-1. Remove the `lifecycle { prevent_destroy = true }` block from `main.tf`
-2. Run `task aws-vm:plan` and `task aws-vm:apply` (no instance changes, just removes the guard)
-3. Run `task aws-vm:destroy`
-
-Alternatively, delete manually:
-```bash
-aws ec2 delete-volume --volume-id <vol-id>
-```
+Temporarily remove only the `prevent_destroy = true` argument from the local
+configuration, leaving its other lifecycle checks intact. With the original state
+and variable file, create and review a saved `terraform plan -destroy` before
+applying it. Restore the guard afterwards. No intermediate apply is needed merely
+to change this guard. The standalone destroy task auto-approves destruction and is
+not a preview command; do not use it against bootstrap state.
 
 ## Remote State Backend (optional)
 

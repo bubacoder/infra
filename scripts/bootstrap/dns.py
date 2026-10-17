@@ -1,4 +1,4 @@
-"""Integrated, create-only Cloudflare and AdGuard bootstrap DNS automation."""
+"""Create-only installation DNS and journal-owned teardown using the same APIs."""
 
 import base64
 import contextlib
@@ -10,6 +10,7 @@ import re
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Iterator
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -201,6 +202,83 @@ def preview(config: BootstrapConfig, address: str | None, root: Path = ROOT) -> 
     print(f"DNS plan: {len(changes)} creates; no updates or deletions. No DNS records changed.")
 
 
+@contextlib.contextmanager
+def journal_lock(config: BootstrapConfig, root: Path = ROOT) -> Iterator[Path]:
+    """Serialize installation and teardown against the same private journal."""
+    directory = root / "config/bootstrap-dns" / config.vm.name
+    if directory.is_symlink() or (directory / ".lock").is_symlink():
+        raise BootstrapError("DNS journal directory and lock must not be symlinks")
+    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
+    directory.chmod(0o700)
+    descriptor = os.open(directory / ".lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
+    try:
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise BootstrapError("Another DNS operation holds this deployment lock") from None
+        yield directory
+    finally:
+        os.close(descriptor)
+
+
+def owned_records(client: Api, record: dict) -> list[dict]:
+    """Read only the journaled Cloudflare ID or exact AdGuard name."""
+    body = record["body"]
+    if record["provider"] == "cloudflare":
+        if not re.fullmatch(r"/zones/[a-f0-9]{32}/dns_records", record["path"]) or not re.fullmatch(r"[a-f0-9]{32}", record["record_id"]):
+            raise BootstrapError("Invalid journaled Cloudflare identity")
+        records = [r for r in cf_list(client, record["path"], {"name": body["name"]}) if r.get("id") == record["record_id"]]
+    else:
+        records = client.request("GET", "/control/rewrite/list")
+        if not isinstance(records, list) or any(not isinstance(r, dict) for r in records):
+            raise BootstrapError("Invalid AdGuard rewrite list")
+        records = [r for r in records if r.get("domain") == body["domain"]]
+    if any(any(row.get(key) != value for key, value in body.items()) for row in records):
+        raise BootstrapError("Journaled DNS record changed; review it before teardown")
+    return records
+
+
+def cleanup(config: BootstrapConfig, *, execute: bool = False, root: Path = ROOT) -> None:
+    """Preview/delete only journal-owned DNS; caller holds the journal lock."""
+    path = root / "config/bootstrap-dns" / config.vm.name / "journal.json"
+    journal = read_journal(path)
+    if not journal["created"]:
+        print("DNS teardown: no owned records. Manually managed DNS is the operator's responsibility.")
+        return
+    identity = journal.get("identity", {})
+    settings = config.network.dns
+    expected = {
+        "target": config.target,
+        "domain": config.network.domain,
+        "cloudflare_zone": settings.cloudflare.zone if settings.cloudflare else None,
+        "adguard_url": settings.adguard.url if settings.adguard else None,
+    }
+    if any(identity.get(key) != value for key, value in expected.items()):
+        raise BootstrapError("DNS providers/target differ from the journal; restore their configuration before teardown")
+    _, clients = plan_changes(config, identity.get("address"))
+    # Validate every record before the first deletion. These are the same clients
+    # and provider readers used by installation, not a second DNS implementation.
+    for record in journal["created"]:
+        if record.get("provider") not in clients:
+            raise BootstrapError("Journaled DNS provider is not configured")
+        owned_records(clients[record["provider"]], record)
+    print(f"DNS teardown: {len(journal['created'])} journal-owned records; pre-existing records are preserved.")
+    if execute:
+        for record in list(journal["created"]):
+            client = clients[record["provider"]]
+            if owned_records(client, record):
+                if record["provider"] == "cloudflare":
+                    result = client.request("DELETE", f"{record['path']}/{record['record_id']}")
+                    if not isinstance(result, dict) or result.get("success") is not True:
+                        raise BootstrapError("DNS deletion was not confirmed; journal retained for recovery")
+                else:
+                    client.request("POST", "/control/rewrite/delete", record["body"])
+                if owned_records(client, record):
+                    raise BootstrapError("DNS deletion readback failed; journal retained for recovery")
+            journal["created"].remove(record)
+            atomic_write(path, json.dumps(journal))
+
+
 def reconcile(config: BootstrapConfig, address: str, *, root: Path = ROOT) -> None:
     """Reconcile DNS inside the already approved deployment apply."""
     if not config.network.dns.enabled:
@@ -210,15 +288,7 @@ def reconcile(config: BootstrapConfig, address: str, *, root: Path = ROOT) -> No
     except (ValueError, TypeError):
         raise BootstrapError("DNS reconciliation requires the verified deployment IPv4 address") from None
     directory = root / "config/bootstrap-dns" / config.vm.name
-    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-    directory.chmod(0o700)
-    with contextlib.ExitStack() as stack:
-        descriptor = os.open(directory / ".lock", os.O_CREAT | os.O_RDWR, 0o600)
-        stack.callback(os.close, descriptor)
-        try:
-            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        except BlockingIOError:
-            raise BootstrapError("Another DNS operation holds this deployment lock") from None
+    with journal_lock(config, root):
         path = directory / "journal.json"
         journal = read_journal(path)
         identity = {

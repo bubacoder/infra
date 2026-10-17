@@ -2,9 +2,9 @@
 
 The AWS target reuses `terraform/aws-vm` to create an Ubuntu EC2 Docker host,
 then uses the same separate-admin-host Ansible and core Docker deployment as
-Proxmox. The full CLI workflow has unit, mocked Terraform and disposable live AWS validation.
-See [validation results and remaining boundaries](bootstrap-aws-validation.md)
-before treating the complete workflow as production-ready.
+Proxmox. The core profile has prior disposable live validation. Managed DNS and
+automated teardown have mocked test coverage but have not yet been validated
+together in a fresh live installation; other profiles below remain unsupported.
 
 ## Supported profile
 
@@ -16,7 +16,7 @@ before treating the complete workflow as production-ready.
 - Managed DNS by default: [Cloudflare public records and optional AdGuard local
   rewrites](bootstrap-dns.md), without changing existing parent records.
   No automatic adoption of existing AWS deployments,
-  Spot instances, ARM instances, private subnets, or teardown.
+  Spot instances, ARM instances, or private subnets.
 
 AWS charges apply to EC2, EBS and public IPv4/Elastic IP. Stopping EC2 does not
 stop all charges. Failed deployments and DNS checkpoints leave resources intact.
@@ -178,6 +178,38 @@ SSM Agent installation, instance role permissions and outbound HTTPS reachabilit
 If the data mount failed, do not start Docker on root storage; the external
 cloud-init profile also installs a Docker systemd mount prerequisite.
 
-Teardown is separate and must be explicitly approved. The data volume has
-`prevent_destroy`, so a blanket Terraform destroy is refused rather than deleting
-data. Bootstrap never deletes an existing VM, volume, or persistent service data.
+## Teardown
+
+Teardown is separately approved and **deletes both disks and their data**. Back up
+anything needed first; stop applications and unmount `/storage` before disposal.
+Use the original bootstrap configuration, AWS credentials and deployment state,
+not standalone `aws-vm:*` tasks. No clean/published checkout or SSH access is needed
+by the teardown command.
+
+```bash
+# Preview Terraform destruction, owned DNS and local cleanup:
+task bootstrap:destroy CONFIG=config/bootstrap-aws.yaml DELETE_DATA=1 DRY_RUN=1
+# Review the plan and confirm interactively:
+task bootstrap:destroy CONFIG=config/bootstrap-aws.yaml DELETE_DATA=1
+```
+
+The command verifies account/region/hostname, creates a Terraform destroy plan in
+the original runtime, and applies that exact saved plan after confirmation. It
+temporarily overrides the data-volume guard only in the generated runtime; the
+tracked template stays protected. `YES=1` skips confirmation for an already
+reviewed run; `DELETE_DATA=1` is still required.
+
+After Terraform succeeds and reports no managed resources, teardown removes only
+[journal-owned DNS](bootstrap-dns.md#failures-ownership-and-cleanup), this host's
+inventory entries and generated Docker files, then the DNS journal and Terraform
+runtime/state/backups/manifest/trust. Bootstrap YAML, SSH keys, shared configuration
+and extra operator files outside the generated runtime are preserved. Manually
+managed DNS, snapshots and operator backups are not managed by this command and
+may require separate cleanup or continue to incur charges.
+
+Failures retain state and recovery evidence. Diagnose the failure before approving
+a retry of the same command. It can also finish an earlier Terraform destroy with
+empty state; no state backup is required. Missing state or an uncertain DNS write
+requires manual recovery, not a guard bypass. An override left by an interrupted
+process must be reviewed and removed before retrying. Never delete state merely
+to unblock a deployment.
