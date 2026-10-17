@@ -146,7 +146,7 @@ into chat or command arguments. Output is credential-redacted, **not anonymized*
 it may include account IDs, IPs, domains, usernames and paths. Redact those as
 needed before sharing evidence outside the trusted session.
 
-## Address Discovery
+## Proxmox Address Discovery
 
 The recommended value for `network.expected_ipv4` is the reserved DHCP address.
 It lets `bootstrap:plan` check proposed DNS records against the known address.
@@ -158,7 +158,7 @@ and verifies actual resolution. Ambiguous guest addresses stop deployment.
 There is no hosts-file fallback. See [Bootstrap DNS](bootstrap-dns.md) for
 provider configuration, external opt-out, safety and cleanup.
 
-## Implementation Map
+## Proxmox Implementation Map
 
 | Configuration | Generated target or check | Existing consumer |
 | --- | --- | --- |
@@ -194,7 +194,7 @@ config/
     └── services.yaml
 ```
 
-## Process And Entry Points
+## Proxmox Process And Entry Points
 
 The Python module keeps orchestration phases explicit and delegates existing
 operations rather than reimplementing them:

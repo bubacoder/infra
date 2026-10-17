@@ -70,8 +70,7 @@ Proxmox, configure the host, and deploy the core Docker services end to end.
 
 -> See [Getting Started](docs/setup.md)
 
-For an alternative cloud deployment, see [Bootstrap on AWS](docs/bootstrap-aws.md)
-(initial implementation; see [validation results](docs/bootstrap-aws-validation.md)). The underlying
+For an alternative cloud deployment, see [Bootstrap on AWS](docs/bootstrap-aws.md). The underlying
 [AWS EC2 Terraform configuration](terraform/aws-vm/README.md) also supports standalone use.
 
 ## Development

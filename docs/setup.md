@@ -29,8 +29,8 @@ Before starting, prepare:
 - Control of the DHCP server when using a reservation, plus working local DNS.
   If AdGuard already exists, optionally supply its API endpoint and web credentials
   to automate local DNS. Otherwise arrange DNS externally; AdGuard is not a prerequisite.
-  With `network.expected_ipv4: auto`,
-  bootstrap discovers the guest address and creates DNS rewrites during apply.
+   With `network.expected_ipv4: auto`, bootstrap discovers the guest address;
+   if AdGuard is configured, it creates DNS rewrites during apply.
 - A public domain administered through Cloudflare.
 - A Cloudflare token with `Zone:Read` and `DNS:Edit` for that domain.
 - Git, Python 3, PyYAML, SSH, rsync, Ansible, curl, and
@@ -82,7 +82,7 @@ address, and proposed AdGuard DNS changes. It prints the resolved VM ID and supp
 generated MAC while redacting the Cloudflare token.
 
 Use the printed MAC and `network.expected_ipv4` to create a DHCP reservation,
-unless using `auto`. Ensure clients use your AdGuard resolver. Bootstrap does
+unless using `auto`. If using AdGuard, ensure clients use that resolver. Bootstrap does
 not change router or DHCP settings.
 
 DNS automation defaults to `network.dns.enabled: true`. Set it to `false` for
@@ -103,9 +103,9 @@ bootstrap stops if they do not. DDNS public answers alone may not meet that chec
 Set `network.expected_ipv4: auto` to discover exactly one non-loopback IPv4
 address through the Proxmox guest agent interface matching the planned MAC.
 Plan checks provider access and name conflicts without knowing the future IP.
-Apply discovers the address, creates AdGuard entries, and verifies resolution
-before proceeding. Ambiguous addresses stop deployment. Hosts-file helpers and
-fallbacks are no longer supported; existing hosts files are never modified.
+Apply discovers the address, creates AdGuard entries if configured, and verifies
+resolution before proceeding. Ambiguous addresses stop deployment. Existing
+hosts files are never modified; no hosts-file fallback is provided.
 
 ## Apply
 

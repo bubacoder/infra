@@ -68,9 +68,7 @@ credentials remain on the administrative host and are never rendered on the VM.
 - Legacy `mode: external` and `mode: managed` remain aliases for `enabled: false`
   and `enabled: true`. Prefer `enabled` in new files; remove `mode` when migrating.
   If both fields are supplied they must agree. Verification cannot be disabled.
-  There is no hosts-file fallback;
-  the former hosts-file helper commands have been removed. Existing host-file
-  entries are left alone and may need separately approved operator cleanup.
+  There is no hosts-file fallback; existing hosts-file entries are never modified.
 
 ## Normal installation
 
@@ -115,7 +113,7 @@ servers may still override the effective answer.
 Missing records are created. Exactly matching records are left unchanged and are
 not claimed as owned. Conflicting addresses, aliases, delegations, disabled
 rewrites, duplicate address records, or Cloudflare proxy settings stop the entire
-preview before writes. The tool never updates or deletes existing records and
+preview before writes. Installation never updates or deletes existing records and
 does not edit AdGuard filtering rules or enable globally disabled DNS rewrites.
 Do not concurrently edit these names through another operator or tool.
 
@@ -150,7 +148,15 @@ scope.
 
 Provider changes are not transactional across Cloudflare and AdGuard. A later
 failure may leave some records created and AWS resources running and billable.
-No automatic rollback or teardown occurs. Cleanup requires separate approval:
-review the journal, verify each recorded entry is still exactly the test-created
-record, and remove only those entries through the respective provider. Never
-delete pre-existing matching records, parent wildcards, or unrelated rewrites.
+No automatic rollback occurs. [AWS teardown](bootstrap-aws.md#teardown) requires
+separate approval and removes journal-owned DNS after Terraform destruction. It
+checks the current payload and Cloudflare record ID before deleting, verifies
+provider readback, and updates the journal after each confirmed removal. Changed
+records or pending writes stop teardown with recovery evidence intact. Records
+already absent are skipped; pre-existing matching records, parent wildcards and
+unrelated rewrites are preserved. Provider settings/credentials must still match
+the journal even if DNS automation was subsequently disabled.
+
+For Proxmox or manual DNS, review and remove only the deployment's owned entries
+through the respective provider with separate approval. There is no automated
+Proxmox teardown. Resolver caches can outlive provider deletion.
