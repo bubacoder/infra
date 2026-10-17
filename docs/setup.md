@@ -8,8 +8,8 @@ bootstrap orchestrator. The current automated scope is intentionally narrow:
 
 - Ubuntu cloud-image VM on Proxmox
 - Separate administrative host
-- DHCP with an externally managed reservation and local DNS, or a test-only
-  operator-managed `/etc/hosts` checkpoint after address discovery
+- DHCP with an externally managed reservation, or guest-agent address discovery
+- Optional automated local DNS through AdGuard Home; public address records stay with DDNS
 - Local ignored configuration on the Docker host
 - Cloudflare DNS-01 certificates
 - Traefik and Homepage
@@ -26,10 +26,11 @@ Before starting, prepare:
 - Proxmox storage named `local` with snippet content enabled.
 - An unused VM name and either a preferred VM ID or automatic allocation.
 - A public SSH key and its corresponding private key or SSH-agent identity.
-- Control of the DHCP server and local DNS resolver for the fully preflighted
-  path. For a test-only `network.expected_ipv4: auto` deployment, administrator
-  access to the admin host's `/etc/hosts` is sufficient after the VM address is
-  discovered.
+- Control of the DHCP server when using a reservation, plus working local DNS.
+  If AdGuard already exists, optionally supply its API endpoint and web credentials
+  to automate local DNS. Otherwise arrange DNS externally; AdGuard is not a prerequisite.
+  With `network.expected_ipv4: auto`,
+  bootstrap discovers the guest address and creates DNS rewrites during apply.
 - A public domain administered through Cloudflare.
 - A Cloudflare token with `Zone:Read` and `DNS:Edit` for that domain.
 - Git, Python 3, PyYAML, SSH, rsync, Ansible, curl, and
@@ -73,57 +74,34 @@ task bootstrap:plan
 
 The plan validates the schema, repository revision, local tools, Proxmox SSH
 and sudo, VM ID/name/MAC availability, storage, bridge, SSH public key, expected
-address, and DNS. It prints the resolved VM ID and supplied or deterministic
+address, and proposed AdGuard DNS changes. It prints the resolved VM ID and supplied or deterministic
 generated MAC while redacting the Cloudflare token.
 
-The first plan is expected to stop at the external networking checkpoint when
-the reservation and DNS records do not exist yet. Use the printed MAC and
-`network.expected_ipv4` to:
+Use the printed MAC and `network.expected_ipv4` to create a DHCP reservation,
+unless using `auto`. Ensure clients use your AdGuard resolver. Bootstrap does
+not change router or DHCP settings.
 
-1. Create the DHCP reservation.
-2. Resolve `network.domain` and `*.network.domain` to the reserved address in
-   local DNS.
-3. Ensure clients use that local DNS resolver.
-4. Run `task bootstrap:plan` again until preflight passes.
+DNS automation defaults to `network.dns.enabled: true`. Set it to `false` for
+external DNS management while retaining resolution checks. Optionally configure
+`network.dns.adguard` as described in
+[Bootstrap DNS](bootstrap-dns.md). Plan reads the API and refuses conflicting
+entries without changing DNS; apply creates exact deployment-name rewrites and
+verifies the administrative host's DNS answers. Proxmox never creates Cloudflare
+address records: existing DDNS continues to manage public DNS. The Cloudflare
+token is still required for certificate challenges.
 
-Bootstrap verifies observable DNS results but does not change the router, DHCP
-server, or DNS service.
+Without AdGuard configured, no Proxmox DNS writes are made. Required names must
+still resolve to the VM's LAN IP through an externally supplied resolver;
+bootstrap stops if they do not. DDNS public answers alone may not meet that check.
 
-### Unknown DHCP address (test-only)
+### Unknown DHCP address
 
-Set `network.expected_ipv4: auto` only when a reservation cannot be created
-before provisioning. The initial plan validates everything except address and
-DNS checks. The first apply creates or resumes the VM, obtains exactly one
-non-loopback IPv4 address from the Proxmox guest agent interface matching the
-planned MAC, and stops at a networking checkpoint.
-
-Add the reported address to the administrative host's `/etc/hosts` for all of
-the names reported by bootstrap, then rerun the same apply command. For the
-core profile, these are the base domain, `home`, `traefik`, and
-`bootstrap-check` names. Host files have no wildcard support. Bootstrap does
-not add mappings automatically or edit `/etc/hosts`, and fails rather than
-choosing between multiple guest IPv4 addresses.
-
-Use this explicit, privileged helper instead of editing the file manually:
-
-```bash
-task bootstrap:add-hosts NAME=docker-host ADDRESS=192.0.2.10 DOMAIN=example.com
-```
-
-For this test-only checkpoint, optionally put your manual entries in this exact
-named block, replacing `docker-host` with the VM name:
-
-```text
-# BEGIN infra docker-host temporary DNS
-192.0.2.10 example.com home.example.com traefik.example.com bootstrap-check.example.com
-# END infra docker-host temporary DNS
-```
-
-After testing, remove only that block explicitly with `task
-bootstrap:cleanup-hosts NAME=docker-host`. Both commands use `sudo`; the add
-helper validates its hostname, IPv4 address, and domain and refuses an existing
-or malformed block. Cleanup refuses to change `/etc/hosts` if the block is
-missing, duplicated, incomplete, or malformed.
+Set `network.expected_ipv4: auto` to discover exactly one non-loopback IPv4
+address through the Proxmox guest agent interface matching the planned MAC.
+Plan checks provider access and name conflicts without knowing the future IP.
+Apply discovers the address, creates AdGuard entries, and verifies resolution
+before proceeding. Ambiguous addresses stop deployment. Hosts-file helpers and
+fallbacks are no longer supported; existing hosts files are never modified.
 
 ## Apply
 
@@ -139,7 +117,8 @@ The orchestrator performs these stages:
 
 1. Renders ignored Proxmox, Ansible, and Docker configuration.
 2. Creates the VM with the planned MAC, or validates and resumes a matching VM.
-3. Waits for the expected DHCP address and successful cloud-init completion.
+3. Waits for the DHCP address and successful cloud-init completion, reconciles
+   AdGuard DNS, and waits up to 60 seconds for correct local resolution.
 4. Compares the network SSH host key with the key obtained through the trusted
    Proxmox guest agent before accepting it.
 5. Runs Ansible with a strict limit for only the new host.
@@ -152,8 +131,7 @@ The orchestrator performs these stages:
    running core containers.
 
 With `network.expected_ipv4: auto`, stage 3 waits for cloud-init without an
-address filter, then stops after guest-agent discovery until the operator has
-completed the networking checkpoint described above.
+address filter before guest-agent discovery and DNS reconciliation.
 
 The process never deletes an existing VM, disk, or persistent service data.
 

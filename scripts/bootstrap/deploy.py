@@ -246,7 +246,7 @@ def verify_services(plan: ProxmoxPlan | AwsPlan, runner: Runner, timeout: int = 
 def apply(plan: ProxmoxPlan, runner: Runner, *, assume_yes: bool = False, root: Path = ROOT) -> None:
     """Run the confirmed bootstrap sequence and its acceptance checks."""
     if not assume_yes and input(
-        f"Create or resume VM {plan.config.vm.name} (ID {plan.vm_id}) and deploy core services? [y/N] "
+        f"Create or resume VM {plan.config.vm.name} (ID {plan.vm_id}), apply the displayed DNS plan and deploy core services? [y/N] "
     ).strip().lower() not in {"y", "yes"}:
         raise BootstrapError("Bootstrap cancelled")
     print("[1/7] Rendering VM configuration")
@@ -257,8 +257,12 @@ def apply(plan: ProxmoxPlan, runner: Runner, *, assume_yes: bool = False, root: 
     if expected_ipv4 is None:
         expected_ipv4 = discover_vm_ipv4(plan, runner)
         print(f"Discovered VM {plan.vm_id} IPv4 address: {expected_ipv4}")
-        verify_dns(plan, expected_ipv4, discovered=True)
         plan = with_expected_ipv4(plan, expected_ipv4)
+    if plan.config.network.dns.enabled:
+        from .dns import reconcile as reconcile_dns  # noqa: PLC0415 - DNS transport uses atomic_write from this module
+
+        reconcile_dns(plan.config, expected_ipv4, root=root)
+    verify_dns(plan, expected_ipv4, discovered=True, wait_seconds=60 if plan.config.network.dns.enabled else 0)
     print("[3/7] Rendering host configuration")
     render_config(plan, root, expected_ipv4)
     print("[4/7] Verifying and trusting the VM SSH host key")

@@ -56,7 +56,11 @@ def resolve_plan(config: BootstrapConfig, runner: Runner, root: Path = ROOT) -> 
 
 
 def print_plan(plan: ProxmoxPlan) -> None:
-    """Print the bootstrap plan as YAML with the TLS token redacted."""
+    """Print the bootstrap plan as YAML with provider credentials redacted."""
+    network = asdict(plan.config.network)
+    network["dns"]["enabled"] = plan.config.network.dns.enabled
+    if network["dns"]["adguard"]:
+        network["dns"]["adguard"]["password"] = "<redacted>"  # noqa: S105 - redaction marker, not a credential
     summary = {
         "repository": asdict(plan.repository),
         "deployment": asdict(plan.config.deployment),
@@ -68,7 +72,7 @@ def print_plan(plan: ProxmoxPlan) -> None:
             "ssh_public_key": str(plan.config.vm.ssh_public_key),
             "exists": plan.vm_exists,
         },
-        "network": {**asdict(plan.config.network), "expected_ipv4": plan.config.network.expected_ipv4 or "auto"},
+        "network": {**network, "expected_ipv4": plan.config.network.expected_ipv4 or "auto"},
         "host": asdict(plan.config.host),
         "tls": {"provider": plan.config.tls.provider, "acme_email": plan.config.tls.acme_email, "token": "<redacted>"},
     }
@@ -173,7 +177,11 @@ def preflight(plan: ProxmoxPlan, runner: Runner) -> None:
         )
         if status != "available":
             raise BootstrapError(f"MAC address is already used: {plan.mac}")
-    if plan.config.network.expected_ipv4:
+    if plan.config.network.dns.enabled:
+        from .dns import preview  # noqa: PLC0415 - shared deployment helpers import this module
+
+        preview(plan.config, plan.config.network.expected_ipv4)
+    elif plan.config.network.expected_ipv4:
         verify_dns(plan, plan.config.network.expected_ipv4)
 
 
