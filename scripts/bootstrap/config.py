@@ -139,16 +139,25 @@ def validate_repository_input(value: object) -> dict[str, str] | None:
     return {"url": url, "branch": branch}
 
 
-def load_config(path: Path, root: Path = ROOT) -> BootstrapConfig:
-    """Load and validate a bootstrap YAML document."""
+def read_document(path: Path, root: Path = ROOT) -> tuple[Path, object]:
+    """Read private YAML without including its contents in parse errors."""
     source = validate_file_security(path, root)
     try:
         raw = yaml.safe_load(source.read_text())
     except yaml.YAMLError as error:
-        location = f" at line {error.problem_mark.line + 1}, column {error.problem_mark.column + 1}" if error.problem_mark else ""
-        raise ConfigError(f"Cannot parse bootstrap configuration{location}") from error
+        mark = getattr(error, "problem_mark", None)
+        location = f" at line {mark.line + 1}, column {mark.column + 1}" if mark else ""
+        raise ConfigError(f"Cannot parse bootstrap configuration{location}") from None
     except OSError as error:
         raise ConfigError(f"Cannot read bootstrap configuration: {error.strerror or 'I/O error'}") from error
+    except (UnicodeError, ValueError, RecursionError):
+        raise ConfigError("Cannot parse bootstrap configuration; check its encoding and YAML structure") from None
+    return source, raw
+
+
+def load_config(path: Path, root: Path = ROOT) -> BootstrapConfig:
+    """Load and validate a bootstrap YAML document."""
+    source, raw = read_document(path, root)
     return parse_document(raw, source)
 
 

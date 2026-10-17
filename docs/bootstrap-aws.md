@@ -71,6 +71,12 @@ Edit the account ID, region/profile, host name, SSH key, administrator CIDR,
 domain and TLS settings. The documentation IP/CIDR is deliberately not usable.
 Docker volumes must be beneath `/storage`, for example `/storage/docker-volumes`.
 
+For AI-assisted inspection without exposing the private file, use
+`task bootstrap:show-config CONFIG=config/bootstrap-aws.yaml` (adjust the path
+to your selected configuration). This offline command works with incomplete
+settings and does not contact AWS. See
+[safe inspection](bootstrap-configuration.md#safe-inspection-for-ai-agents).
+
 ```bash
 task bootstrap:plan
 ```

@@ -64,6 +64,10 @@ The real file may contain secrets. Never commit it, paste it into command-line
 arguments, or relax its permissions. Bootstrap redacts the token from plans and
 errors and writes the generated Traefik file with mode `0600`.
 
+For AI-assisted inspection, do not share or read the raw private file. Run
+`task bootstrap:show-config` for an offline, allowlisted redacted view. It works
+before full deployment validation; see [safe inspection](bootstrap-configuration.md#safe-inspection-for-ai-agents).
+
 ## Plan
 
 Run the non-destructive plan:

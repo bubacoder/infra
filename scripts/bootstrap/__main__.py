@@ -5,7 +5,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from . import aws, config, deploy, proxmox
+from . import aws, config, deploy, inspect_config, proxmox
 from .core import DEFAULT_CONFIG, BootstrapError, ConfigError, Runner
 
 
@@ -14,6 +14,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG, help="Bootstrap YAML path")
     operation = parser.add_mutually_exclusive_group(required=True)
+    operation.add_argument("--show-config", action="store_true", help="Print allowlisted, redacted settings offline without deployment validation")
     operation.add_argument("--plan", action="store_true", help="Validate and print a redacted plan")
     operation.add_argument("--apply", action="store_true", help="Apply or resume the deployment")
     parser.add_argument("--yes", action="store_true", help="Skip the apply confirmation prompt")
@@ -25,6 +26,9 @@ def main() -> None:
     args = parse_args()
     if args.yes and not args.apply:
         raise ConfigError("--yes requires --apply")
+    if args.show_config:
+        inspect_config.show(args.config)
+        return
     runner = Runner()
     bootstrap_config = config.load_config(args.config)
     if bootstrap_config.target == "aws":
