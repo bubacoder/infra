@@ -30,6 +30,13 @@ tasks:
       - bash vm/test-lib-common.sh
       - bash vm/test-wait-for-cloud-init.sh
 
+  show-config:
+    desc: Show allowlisted bootstrap settings offline with credentials redacted (safe AI inspection)
+    env:
+      BOOTSTRAP_CONFIG: '{{default "config/bootstrap.yaml" .CONFIG}}'
+    cmds:
+      - python3 -m scripts.bootstrap --config "$BOOTSTRAP_CONFIG" --show-config
+
   plan:
     desc: Validate and show the bootstrap deployment plan
     env:

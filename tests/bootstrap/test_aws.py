@@ -206,7 +206,7 @@ class AwsBootstrapTests(unittest.TestCase):
             aws.verify_public_repository(self.plan(), self.runner)
 
     def test_cli_selects_aws_without_proxmox_calls(self) -> None:
-        args = Mock(config=self.path, yes=True, apply=True)
+        args = Mock(config=self.path, yes=True, apply=True, show_config=False)
         plan = self.plan()
         with (
             patch.object(cli, "parse_args", return_value=args),

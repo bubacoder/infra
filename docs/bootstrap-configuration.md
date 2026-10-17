@@ -108,6 +108,44 @@ Bootstrap refuses a group- or world-accessible configuration. Generated secret
 files are written atomically with mode `0600`; plans display `<redacted>` rather
 than the token.
 
+## Safe inspection for AI agents
+
+Do not give an AI agent the raw private bootstrap YAML. Use:
+
+```bash
+# Default config/bootstrap.yaml (typically Proxmox):
+task bootstrap:show-config
+
+# A separate AWS configuration:
+task bootstrap:show-config CONFIG=config/bootstrap-aws.yaml
+
+# Equivalent without Task:
+python3 -m scripts.bootstrap --config config/bootstrap-aws.yaml --show-config
+```
+
+The local script reads the file but prints only allowlisted configured settings.
+`tls.token` and `network.dns.adguard.password` appear as `<redacted>`. Unknown
+fields are omitted, unexpected nested values are hidden, and URLs containing
+embedded credentials or query/fragment parameters are redacted. Known secret
+values repeated in displayed metadata are also masked. Do not place secrets in
+ordinary metadata fields; redaction cannot identify arbitrary mislabeled secrets.
+
+This command is **offline and read-only**: no cloud, DNS, SSH or Git calls, no
+rendered files/state, no credential environment inspection, and no provisioning.
+It works with placeholders or incomplete settings, without checking SSH-key files,
+repository cleanliness, published commits, or provider credentials. Omitted values
+are not resolved to defaults. It is an inspection view, **not** proof of a valid
+or deployable configuration; use `bootstrap:plan` for authorized live preflight.
+
+The file must still be private (mode `0600` or stricter) under the repository's
+ignored `config/` directory and contain parseable YAML with a mapping at its root.
+Parse errors show only a safe message and location, never source snippets. If the
+command fails, have the operator fix the file privately; an agent must not fall
+back to raw file tools or custom content-dumping scripts. Never paste secrets
+into chat or command arguments. Output is credential-redacted, **not anonymized**:
+it may include account IDs, IPs, domains, usernames and paths. Redact those as
+needed before sharing evidence outside the trusted session.
+
 ## Address Discovery
 
 The recommended value for `network.expected_ipv4` is the reserved DHCP address.

@@ -130,7 +130,8 @@ task bootstrap:apply CONFIG=config/bootstrap-aws.yaml
 
 Bootstrap's existing resolver check must still pass; DNS automation does not
 bypass it or any repository revision checks. Normal plan/apply require a clean,
-published revision.
+published revision. For offline AI inspection use `bootstrap:show-config`, not
+a live plan or a raw private-file read.
 
 ## Failures, ownership and cleanup
 
