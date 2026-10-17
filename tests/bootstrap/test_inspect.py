@@ -155,7 +155,7 @@ class InspectConfigTests(unittest.TestCase):
             cli.parse_args()
 
     def test_cli_does_not_validate_deploy_contact_services_or_write(self) -> None:
-        args = SimpleNamespace(config=self.path, show_config=True, yes=False, apply=False)
+        args = SimpleNamespace(config=self.path, show_config=True, yes=False, apply=False, destroy=False, delete_data=False, dry_run=False)
         with (
             patch.object(cli, "parse_args", return_value=args),
             patch.object(cli.inspect_config, "show") as show,

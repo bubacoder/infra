@@ -1,5 +1,12 @@
 # Runbooks
 
+## Dispose of an AWS bootstrap deployment
+
+Use [AWS teardown](bootstrap-aws.md#teardown): `task bootstrap:destroy CONFIG=<path>
+DELETE_DATA=1` plans and confirms Terraform destruction, then removes owned DNS
+and generated local files. Add `DRY_RUN=1` for a preview. Standalone `aws-vm:*`
+tasks must not be used against bootstrap state.
+
 ## Backup and recovery
 
 See [Backup and recovery](backup.md) for backup operations and snapshot selection,

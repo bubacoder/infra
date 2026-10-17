@@ -27,16 +27,17 @@ from .network import verify_dns
 
 @contextlib.contextmanager
 def deployment_lock(config: BootstrapConfig, root: Path = ROOT) -> Iterator[Path]:
-    """Lock the whole workflow, not just individual Terraform operations."""
+    """Serialize shared inventory edits and keep locks stable during cleanup."""
     directory = root / "config/terraform/bootstrap" / config.vm.name
-    directory.mkdir(parents=True, exist_ok=True, mode=0o700)
-    directory.chmod(0o700)
-    descriptor = os.open(directory / ".bootstrap.lock", os.O_CREAT | os.O_RDWR, 0o600)
+    directory.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    descriptor = os.open(directory.parent / ".bootstrap.lock", os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
     try:
         try:
             fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as error:
             raise BootstrapError("Another bootstrap operation holds this deployment lock") from error
+        directory.mkdir(exist_ok=True, mode=0o700)
+        directory.chmod(0o700)
         yield directory
     finally:
         os.close(descriptor)
@@ -87,7 +88,7 @@ def terraform(plan: AwsPlan, runner: Runner, arguments: list[str], *, timeout: i
         )
     except BootstrapError as error:
         raise BootstrapError(
-            f"Terraform {arguments[0]} failed; resources may remain. Inspect private state in {plan.directory} and rerun bootstrap"
+            f"Terraform {arguments[0]} failed; resources may remain. Inspect private state in {plan.directory} before retrying"
         ) from error
     finally:
         for pattern in ("terraform.tfstate*", "*.tfplan"):
