@@ -20,6 +20,8 @@ import yaml
 from .config import detect_repository
 from .core import ROOT, AwsPlan, BootstrapConfig, BootstrapError, Runner, private_key_for, vm_ssh_command
 from .deploy import atomic_write, configure_host, deploy_services, prepare_remote_repository, render_config, verify_services
+from .dns import preview as preview_dns
+from .dns import reconcile as reconcile_dns
 from .network import verify_dns
 
 
@@ -381,6 +383,9 @@ def preflight(plan: AwsPlan, runner: Runner, root: Path = ROOT) -> None:
     verify_ownership(plan, runner)
     changes = plan_infrastructure(plan, runner)
     print_plan(plan, changes)
+    if plan.config.network.dns.enabled:
+        manifest = read_manifest(plan.directory) or {}
+        preview_dns(plan.config, manifest.get("public_ip") or plan.config.network.expected_ipv4, root)
 
 
 def verify_inventory_name(plan: AwsPlan, root: Path) -> None:
@@ -635,7 +640,9 @@ def complete_deployment(plan: AwsPlan, runner: Runner, manifest: dict, root: Pat
     initialize_storage(plan, runner, instance_id, volume_id)
     verify_storage(plan, runner, instance_id, volume_id)
     establish_ssh_trust(plan, runner, instance_id)
-    verify_dns(plan, address, discovered=True)
+    if plan.config.network.dns.enabled:
+        reconcile_dns(plan.config, address, root=root)
+    verify_dns(plan, address, discovered=True, wait_seconds=60 if plan.config.network.dns.enabled else 0)
     print("Configuring the host and deploying core Docker services")
     render_config(plan, root)
     configure_host(plan, runner)
@@ -650,7 +657,7 @@ def complete_deployment(plan: AwsPlan, runner: Runner, manifest: dict, root: Pat
 def apply(plan: AwsPlan, runner: Runner, *, assume_yes: bool = False, root: Path = ROOT) -> None:
     """Apply the inspected saved plan, then converge on shared host deployment."""
     verify_identity(plan.config, runner)
-    if not assume_yes and input("Apply the displayed AWS plan and deploy core services? AWS charges apply. [y/N] ").strip().lower() not in {
+    if not assume_yes and input("Apply the displayed AWS/DNS plan and deploy core services? AWS charges apply. [y/N] ").strip().lower() not in {
         "y",
         "yes",
     }:

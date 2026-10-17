@@ -31,8 +31,15 @@ network:
   expected_ipv4: auto
   domain: homelab.example.com
   dns:
-    mode: external
+    enabled: true
     verify: true
+    cloudflare:
+      zone: example.com
+    # Optional: configure only if an existing AdGuard overrides this domain.
+    # adguard:
+    #   url: https://dns-admin.example.com
+    #   username: <adguard-web-username>
+    #   password: <adguard-web-password>
 
 host:
   docker_volumes: /storage/docker-volumes

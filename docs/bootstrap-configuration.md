@@ -5,6 +5,15 @@ Version 1 remains the Proxmox configuration described below. Version 2 requires
 version 1; AWS uses the separate [AWS example](../config-example/bootstrap-aws.yaml)
 and [AWS bootstrap guide](bootstrap-aws.md). Target-specific fields cannot be mixed.
 
+DNS is managed by default during normal bootstrap: optional AdGuard for Proxmox,
+Cloudflare address records plus optional AdGuard for AWS. See [Bootstrap DNS](bootstrap-dns.md).
+Keep all credentials in the private mode-`0600` configuration.
+`network.dns.enabled` defaults to `true`; set it to `false` for manual DNS
+management. Resolver verification is still required. Legacy `mode: external`
+and `mode: managed` remain supported aliases for disabled/enabled automation;
+prefer the boolean and remove `mode` when migrating. Both fields must agree if
+supplied together.
+
 `python3 -m scripts.bootstrap` reads `config/bootstrap.yaml` and orchestrates the
 supported first-time deployment. The tracked
 `config-example/bootstrap.yaml` is the canonical starting point.
@@ -56,17 +65,22 @@ vm:
 network:
   # DHCP is the only supported guest-addressing mode. Create a reservation for
   # the planned MAC at this address before applying. For a test-only deployment
-  # without a reservation, use "auto" and complete the later operator checkpoint.
+  # without a reservation, use "auto" for discovery followed by automated DNS.
   expected_ipv4: <reserved-address-or-auto>
 
   # Base domain for the wildcard certificate and service routes.
   domain: <public-base-domain>
 
   dns:
-    # DNS remains user-managed. Bootstrap verifies the base name, selected
-    # service names, and a wildcard probe against expected_ipv4.
-    mode: external
+    # Proxmox: local AdGuard only; public address records stay with DDNS.
+    # AWS also requires cloudflare.zone (see the AWS example).
+    enabled: true
     verify: true
+    # Optional; omit if AdGuard does not exist yet. Working DNS is still required.
+    # adguard:
+    #   url: https://dns-admin.example.com
+    #   username: <adguard-web-username>
+    #   password: <adguard-web-password>
 
 host:
   docker_volumes: /srv/docker-volumes
@@ -97,40 +111,14 @@ than the token.
 ## Address Discovery
 
 The recommended value for `network.expected_ipv4` is the reserved DHCP address.
-It lets `bootstrap:plan` verify address and DNS before the VM is created.
+It lets `bootstrap:plan` check proposed DNS records against the known address.
 
-`auto` is a test-only alternative when the address cannot be reserved first.
+`auto` is an alternative when the address cannot be reserved first.
 Bootstrap creates or resumes the VM, finds the single usable IPv4 address on the
-guest-agent interface matching the planned MAC, and stops for the operator to
-map the required names. Add the reported base domain, service names, and
-`bootstrap-check` name to the administrative host's `/etc/hosts`, then rerun
-the same apply command. Bootstrap does not add mappings automatically or modify
-resolver configuration, and refuses ambiguous guest addresses. To add the
-documented temporary block explicitly, run:
-
-```bash
-task bootstrap:add-hosts NAME=docker-host ADDRESS=192.0.2.10 DOMAIN=example.com
-```
-
-For test-only manual mappings, use one exact named block so it can be removed
-later without touching unrelated entries:
-
-```text
-# BEGIN infra docker-host temporary DNS
-192.0.2.10 example.com home.example.com traefik.example.com bootstrap-check.example.com
-# END infra docker-host temporary DNS
-```
-
-Replace `docker-host` with the lowercase VM hostname label. Cleanup is always
-explicit and runs with `sudo`; bootstrap never invokes it automatically:
-
-```bash
-task bootstrap:cleanup-hosts NAME=docker-host
-```
-
-The add helper validates the hostname, IPv4 address, and domain and refuses an
-existing or malformed named block. Cleanup refuses to modify `/etc/hosts` when
-the named block is absent, duplicated, incomplete, or malformed.
+guest-agent interface matching the planned MAC, reconciles local AdGuard entries,
+and verifies actual resolution. Ambiguous guest addresses stop deployment.
+There is no hosts-file fallback. See [Bootstrap DNS](bootstrap-dns.md) for
+provider configuration, external opt-out, safety and cleanup.
 
 ## Implementation Map
 

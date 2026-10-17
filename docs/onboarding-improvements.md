@@ -10,17 +10,23 @@
 - Decision or dependency: choose the naming convention and whether VM ID or hostname is the
   primary key.
 
-## DHCP and local DNS integration
+## DHCP reservation integration
 
-- Observed friction: provisioning reports a DHCP address, but lease reservation and wildcard DNS
-  remain manual external steps; during this test DNS resolved the service names to another host,
-  requiring temporary concrete `/etc/hosts` entries on the admin environment.
-- Proposed improvement: optionally support selected router/DNS providers in addition to the
-  bootstrap preflight that verifies user-managed reservations and wildcard resolution.
-- Expected benefit: removes the remaining manual external step without silently routing users to
-  the wrong host.
-- Decision or dependency: select supported DHCP/DNS systems and require explicit approval before
-  replacing an existing record or reservation.
+- Observed friction: DHCP reservations remain externally managed even though DNS
+  can now be reconciled automatically after guest address discovery.
+- Proposed improvement: support selected router DHCP APIs for reservation previews.
+- Expected benefit: stable addresses without an extra router-side manual step.
+- Decision or dependency: select supported routers and require explicit approval
+  before replacing any existing reservation.
+
+## Resolved in code: target-aware DNS integration
+
+- [Managed DNS](bootstrap-dns.md) now supports optional AdGuard for both targets
+  and defaults to Cloudflare address records for AWS. Parent records and DDNS remain
+  untouched. The obsolete hosts-file helpers were removed.
+- Offline regression coverage exists; live provider writes and deployment resume
+  still require configuration, approval and revalidation. This is not a claim of
+  completed live installation.
 
 ## Proxmox thin-pool guardrails
 

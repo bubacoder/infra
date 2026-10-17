@@ -13,7 +13,9 @@ before treating the complete workflow as production-ready.
 - Stable Elastic IP and persistent encrypted EBS volume mounted at `/storage`.
 - SSH and HTTPS restricted to your administrator public IPv4 CIDR.
 - Traefik and Homepage, using Cloudflare DNS-01 certificates.
-- External DNS management. No automatic adoption of existing AWS deployments,
+- Managed DNS by default: [Cloudflare public records and optional AdGuard local
+  rewrites](bootstrap-dns.md), without changing existing parent records.
+  No automatic adoption of existing AWS deployments,
   Spot instances, ARM instances, private subnets, or teardown.
 
 AWS charges apply to EC2, EBS and public IPv4/Elastic IP. Stopping EC2 does not
@@ -100,7 +102,7 @@ Do not run standalone AWS tasks against this deployment. Keep state and its
 backups private and backed up. Never discard state to resolve a deployment error.
 The runtime template copy is generated from tracked code; do not edit it manually.
 
-## Apply and DNS checkpoint
+## Apply and automated DNS
 
 ```bash
 task bootstrap:apply
@@ -123,11 +125,26 @@ It records the attempt before formatting. A retry can mount an existing ext4
 filesystem, but cannot automatically reformat a corrupted or previously initialized
 volume. Raw encrypted EBS bytes are not assumed to be all zeroes.
 
-The first apply normally stops at an AWS DNS checkpoint and reports the Elastic
-IP. Point the base domain and wildcard to that IP using **DNS-only** records,
-not Cloudflare-proxied records. Confirm the admin host resolves the base domain,
-`home`, `traefik` and `bootstrap-check` names to that single IPv4 address.
-Then rerun the same apply command.
+Normal plan previews missing Cloudflare and AdGuard entries and rejects
+conflicts without DNS writes. Apply creates Cloudflare **DNS-only** A records
+for the deployment base domain and wildcard pointing to the Elastic IP, and
+exact AdGuard rewrites for the base, `home`, `traefik` and `bootstrap-check`
+names. It reads the providers back and waits up to 60 seconds for the admin
+host's resolver to return only the Elastic IP before continuing automatically.
+
+Configure Cloudflare and, if available, AdGuard in the private bootstrap file; see
+[Bootstrap DNS](bootstrap-dns.md). This handles local split DNS without changing
+your existing homelab base/wildcard records. Public records alone cannot override
+AdGuard's local answers. Omit AdGuard for a first deployment without a local DNS
+server. Configured providers require valid credentials before provisioning; failed
+writes or stale resolver answers stop with resources and partial DNS intact.
+No hosts-file fallback is supported.
+
+Set `network.dns.enabled: false` for manual DNS management; automation defaults
+to `true`. With automation disabled, set the public and local records yourself,
+then explicitly resume the same apply command. Legacy `mode: external` remains
+a disabled alias; replace it with `enabled: true` and add provider settings to
+migrate. Remove the old `mode` field to avoid contradictory configuration.
 
 There is no DHCP reservation or `/etc/hosts` requirement for AWS. Only clients
 permitted by the security group can access HTTPS. DNS-01 does not require inbound

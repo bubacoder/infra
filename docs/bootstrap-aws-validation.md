@@ -1,5 +1,10 @@
 # AWS Bootstrap Validation — 2026-10-14
 
+Historical validation of the external-DNS workflow. The hosts-file helpers used
+in these tests have since been removed. The current managed-DNS workflow is
+documented in [Bootstrap DNS](bootstrap-dns.md); its provider writes still need
+separate live validation.
+
 ## Initial stage test (before commit approval)
 
 A disposable on-demand `t3.small` Ubuntu 26.04 instance in `eu-central-1`, with
