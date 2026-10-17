@@ -71,6 +71,48 @@ class BootstrapTests(unittest.TestCase):
     def load(self) -> core.BootstrapConfig:
         return config.load_config(self.config_path, self.root)
 
+    def test_plan_redacts_adguard_credentials(self) -> None:
+        document = self.document()
+        document["network"]["dns"]["adguard"] = {
+            "url": "https://dns.example.com",
+            "username": "dns-operator",
+            "password": "private-adguard-password",
+        }
+        self.write_config(document)
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            proxmox.print_plan(self.plan())
+        self.assertNotIn("private-adguard-password", output.getvalue())
+        self.assertIn("<redacted>", output.getvalue())
+
+    def test_managed_dns_apply_handles_known_and_discovered_proxmox_address(self) -> None:
+        from scripts.bootstrap import dns  # noqa: PLC0415
+
+        for address in ("192.0.2.10", None):
+            loaded = self.load()
+            settings = core.DnsConfig("managed", True, adguard=core.AdguardDnsConfig("https://dns.example.com", "operator", "test-password"))
+            plan = self.plan(replace(loaded, network=replace(loaded.network, dns=settings, expected_ipv4=address)))
+            names = [
+                "render_vm_config",
+                "provision_vm",
+                "render_config",
+                "establish_ssh_trust",
+                "configure_host",
+                "prepare_remote_repository",
+                "deploy_services",
+                "verify_services",
+                "verify_dns",
+            ]
+            with self.subTest(address=address), contextlib.ExitStack() as stack:
+                stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
+                mocks = {name: stack.enter_context(patch.object(deploy, name)) for name in names}
+                stack.enter_context(patch.object(deploy, "discover_vm_ipv4", return_value="192.0.2.10"))
+                reconcile = stack.enter_context(patch.object(dns, "reconcile"))
+                deploy.apply(plan, Mock(), assume_yes=True, root=self.root)
+                self.assertEqual(reconcile.call_args.args[1], "192.0.2.10")
+                self.assertIsNone(reconcile.call_args.args[0].network.dns.cloudflare)
+                self.assertEqual(mocks["verify_dns"].call_args.kwargs["wait_seconds"], 60)
+
     def plan(self, config: core.BootstrapConfig | None = None) -> core.ProxmoxPlan:
         loaded = config or self.load()
         return core.ProxmoxPlan(

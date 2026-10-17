@@ -38,8 +38,14 @@ network:
   expected_ipv4: 192.0.2.10
   domain: homelab.example.com
   dns:
-    mode: external
+    enabled: true
     verify: true
+    # Proxmox manages local DNS only. Public address records remain owned by DDNS.
+    # Optional: omit when AdGuard is not yet installed; provide DNS externally.
+    # adguard:
+    #   url: https://dns-admin.example.com
+    #   username: <adguard-web-username>
+    #   password: <adguard-web-password>
 
 host:
   docker_volumes: /srv/docker-volumes

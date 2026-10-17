@@ -2,7 +2,7 @@
 
 import shutil
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
@@ -86,11 +86,34 @@ class VmConfig:
 
 
 @dataclass(frozen=True)
+class CloudflareDnsConfig:
+    """Explicit public zone permitted for optional DNS reconciliation."""
+
+    zone: str
+
+
+@dataclass(frozen=True)
+class AdguardDnsConfig:
+    """Private AdGuard Home API connection; never rendered on the guest."""
+
+    url: str
+    username: str
+    password: str = field(repr=False)
+
+
+@dataclass(frozen=True)
 class DnsConfig:
-    """External DNS management and verification requirements."""
+    """Target-aware DNS management and mandatory resolver verification."""
 
     mode: str
     verify: bool
+    cloudflare: CloudflareDnsConfig | None = None
+    adguard: AdguardDnsConfig | None = None
+
+    @property
+    def enabled(self) -> bool:
+        """Whether normal plan/apply should manage deployment DNS."""
+        return self.mode == "managed"
 
 
 @dataclass(frozen=True)

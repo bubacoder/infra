@@ -5,6 +5,11 @@ stage validation. See [validation boundaries](bootstrap-aws-validation.md) and
 [Bootstrap on AWS](bootstrap-aws.md) for usage.
 Proxmox remains the default target.
 
+This document records the initial external-DNS design. Current bootstrap now
+manages target-aware DNS by default; [Bootstrap DNS](bootstrap-dns.md) supersedes
+the DNS checkpoints and external-DNS scope described below. Historical live
+validation does not establish live coverage of the new managed-DNS behavior.
+
 ## Goal and scope
 
 Keep `task bootstrap:init`, `bootstrap:plan`, and `bootstrap:apply` as the public

@@ -30,6 +30,7 @@ class AwsBootstrapTests(unittest.TestCase):
         self.key.write_text("ssh-ed25519 AAAAtest operator@test\n")
         self.path = self.root / "config/bootstrap.yaml"
         self.document = yaml.safe_load((core.ROOT / "config-example/bootstrap-aws.yaml").read_text())
+        self.document["network"]["dns"] = {"mode": "external", "verify": True}
         self.document["vm"]["ssh_public_key"] = str(self.key)
         self.document["aws"]["admin_source_cidr"] = "8.8.8.8/32"
         self.document["tls"]["token"] = "test-cloudflare-secret"  # noqa: S105
@@ -867,3 +868,38 @@ class AwsBootstrapTests(unittest.TestCase):
                 aws.apply(plan, self.runner, assume_yes=True, root=self.root)
         render.assert_not_called()
         ansible.assert_not_called()
+
+    def test_managed_dns_reconciles_after_trust_before_resolver_and_services(self) -> None:
+        plan = self.plan()
+        settings = core.DnsConfig(
+            "managed", True, core.CloudflareDnsConfig("example.com"), core.AdguardDnsConfig("https://dns.example.com", "operator", "test-password")
+        )
+        plan = replace(plan, config=replace(plan.config, network=replace(plan.config.network, dns=settings)))
+        names = [
+            "wait_ready",
+            "initialize_storage",
+            "verify_storage",
+            "establish_ssh_trust",
+            "reconcile_dns",
+            "verify_dns",
+            "render_config",
+            "configure_host",
+            "prepare_remote_repository",
+            "deploy_services",
+            "verify_services",
+        ]
+        order = Mock()
+        with contextlib.ExitStack() as stack:
+            stack.enter_context(contextlib.redirect_stdout(io.StringIO()))
+            stack.enter_context(patch.object(aws, "output", side_effect=["i-123abc", "8.8.4.4", "vol-123abc"]))
+            stack.enter_context(patch.object(aws, "plan_infrastructure", return_value=[]))
+            mocks = {name: stack.enter_context(patch.object(aws, name)) for name in names}
+            for name, mock in mocks.items():
+                order.attach_mock(mock, name)
+            aws.complete_deployment(plan, self.runner, {}, self.root)
+        calls = [call[0] for call in order.mock_calls]
+        self.assertLess(calls.index("establish_ssh_trust"), calls.index("reconcile_dns"))
+        self.assertLess(calls.index("reconcile_dns"), calls.index("verify_dns"))
+        self.assertLess(calls.index("verify_dns"), calls.index("render_config"))
+        self.assertEqual(mocks["reconcile_dns"].call_args.args[1], "8.8.4.4")
+        self.assertEqual(mocks["verify_dns"].call_args.kwargs["wait_seconds"], 60)

@@ -17,10 +17,12 @@ except ModuleNotFoundError:
 from .core import (
     ROOT,
     SUPPORTED_SERVICES,
+    AdguardDnsConfig,
     AwsConfig,
     AwsVmConfig,
     BootstrapConfig,
     BootstrapError,
+    CloudflareDnsConfig,
     ConfigError,
     DeploymentConfig,
     DnsConfig,
@@ -255,9 +257,7 @@ def load_shared_config(document: dict[str, Any]) -> dict[str, Any]:
         expected_ipv4 = None if expected_value == "auto" else str(ipaddress.IPv4Address(expected_value))
     except ipaddress.AddressValueError as error:
         raise ConfigError("network.expected_ipv4 must be an IPv4 address or 'auto'") from error
-    dns = require_mapping(network["dns"], "network.dns", {"mode", "verify"}, {"mode", "verify"})
-    if dns["mode"] != "external" or dns["verify"] is not True:
-        raise ConfigError("network.dns currently requires mode: external and verify: true")
+    dns = load_dns_config(network["dns"], validate_domain(network["domain"]), document.get("target", "proxmox"))
     host = require_mapping(document["host"], "host", {"docker_volumes", "timezone"}, {"docker_volumes", "timezone"})
     docker_volumes = require_shell_token(host["docker_volumes"], "host.docker_volumes")
     if not Path(docker_volumes).is_absolute():
@@ -275,10 +275,62 @@ def load_shared_config(document: dict[str, Any]) -> dict[str, Any]:
     return {
         "repository_input": validate_repository_input(document.get("repository")),
         "deployment": DeploymentConfig("separate", services),
-        "network": NetworkConfig(expected_ipv4, validate_domain(network["domain"]), DnsConfig("external", True)),
+        "network": NetworkConfig(expected_ipv4, validate_domain(network["domain"]), dns),
         "host": HostConfig(docker_volumes, require_shell_token(host["timezone"], "host.timezone")),
         "tls": TlsConfig("cloudflare", email, token),
     }
+
+
+def load_dns_config(value: object, domain: str, target: str = "proxmox") -> DnsConfig:
+    """Default to enabled target-aware DNS; retain legacy mode aliases."""
+    dns = require_mapping(value, "network.dns", {"enabled", "mode", "verify", "cloudflare", "adguard"}, set())
+    mode = dns.get("mode", "managed")
+    if mode not in ("managed", "external") or dns.get("verify", True) is not True:
+        raise ConfigError("network.dns requires mode: managed or external and verify: true")
+    enabled = dns.get("enabled", mode == "managed")
+    if type(enabled) is not bool:
+        raise ConfigError("network.dns.enabled must be true or false")
+    if "enabled" in dns and "mode" in dns and enabled != (mode == "managed"):
+        raise ConfigError("network.dns.enabled conflicts with legacy network.dns.mode; remove mode or make them agree")
+    mode = "managed" if enabled else "external"
+    cloudflare, adguard = None, None
+    if "cloudflare" in dns:
+        if target != "aws":
+            raise ConfigError("Proxmox public DNS is handled by DDNS; omit network.dns.cloudflare")
+        cf = require_mapping(dns["cloudflare"], "network.dns.cloudflare", {"zone"}, {"zone"})
+        zone = validate_domain(cf["zone"])
+        if domain != zone and not domain.endswith(f".{zone}"):
+            raise ConfigError("network.domain must belong to network.dns.cloudflare.zone")
+        cloudflare = CloudflareDnsConfig(zone)
+    if "adguard" in dns:
+        ag = require_mapping(dns["adguard"], "network.dns.adguard", {"url", "username", "password"}, {"url", "username", "password"})
+        url = require_string(ag["url"], "network.dns.adguard.url").rstrip("/")
+        try:
+            parsed = urlparse(url)
+            port = parsed.port
+        except ValueError:
+            raise ConfigError("network.dns.adguard.url is invalid") from None
+        if (
+            not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.query
+            or parsed.fragment
+            or parsed.path
+            or (port is not None and port <= 0)
+            or (parsed.scheme != "https" and not (parsed.scheme == "http" and parsed.hostname in {"127.0.0.1", "::1"}))
+        ):
+            raise ConfigError("network.dns.adguard.url must be an HTTPS origin, or HTTP on a numeric loopback address; no embedded credentials")
+        username = require_string(ag["username"], "network.dns.adguard.username")
+        if ":" in username:
+            raise ConfigError("network.dns.adguard.username must not contain a colon")
+        password = ag["password"]
+        if not isinstance(password, str) or not password or any(char in password for char in "\r\n"):
+            raise ConfigError("network.dns.adguard.password must be a nonempty single-line string")
+        adguard = AdguardDnsConfig(url, username, password)
+    if mode == "managed" and target == "aws" and cloudflare is None:
+        raise ConfigError("Managed AWS DNS requires network.dns.cloudflare.zone; AdGuard is optional")
+    return DnsConfig(mode, True, cloudflare, adguard)
 
 
 def load_aws_config(document: dict[str, Any], source: Path) -> BootstrapConfig:
