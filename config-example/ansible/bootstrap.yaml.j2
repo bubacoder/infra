@@ -10,7 +10,7 @@ ssh_private_key: {{ bootstrap_init_private_key_file | to_json }}
 repository_url: https://github.com/bubacoder/infra.git
 repository_ref: REPLACE_WITH_BRANCH_TAG_OR_COMMIT # SHA stays fixed; a branch follows its current tip.
 {% if bootstrap_init_target == 'proxmox' %}
-# For Proxmox, edit config/vm/proxmox/ubuntu-cloud.env using task bootstrap:vm-init.
+# Also edit ubuntu-cloud.env in this directory, created by bootstrap:init.
 # Supply the same VM ID/name/user, and an address or "auto" for guest-agent discovery.
 proxmox_host: proxmox # Existing trusted SSH alias, never a discovered credential.
 proxmox_vmid: 999
@@ -23,7 +23,9 @@ dns:
   cloudflare_zone: example.com
 {% endif %}
   # Optional existing AdGuard, with trusted HTTPS and credentials in secrets.yaml.
-  # adguard_url: https://adguardhome.example.com
+  # adguard_urls:
+  #   - https://adguard-primary.example.com
+  #   - https://adguard-secondary.example.com
 {% if bootstrap_init_target == 'aws' %}
 # AWS configuration automatically initializes only the verified blank owned data volume.
 # Existing ext4 is preserved; ambiguous storage or previous format attempts stop configuration.

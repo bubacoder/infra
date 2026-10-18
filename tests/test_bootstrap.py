@@ -278,6 +278,7 @@ class NativeBootstrapTests(unittest.TestCase):
 
     def test_init_separates_inputs_and_never_overwrites(self) -> None:
         self.initialize()
+        self.assertFalse((self.directory / "ubuntu-cloud.env").exists())
         self.assertEqual((self.directory / "secrets.yaml").stat().st_mode & 0o777, 0o600)
         self.assertTrue((self.directory / "aws.tfvars").exists())
         (self.directory / "host.yaml").write_text("target: aws\noperator: keep\n")
@@ -353,6 +354,67 @@ class NativeBootstrapTests(unittest.TestCase):
         self.assertEqual(value["target"], "proxmox")
         self.assertNotIn("cloudflare_zone", value["dns"])
         self.run_play("bootstrap-check.yaml")
+
+    def test_proxmox_init_creates_deployment_vm_inputs_without_overwriting(self) -> None:
+        self.env["BOOTSTRAP_TARGET"] = "proxmox"
+        self.initialize()
+        vm_input = self.directory / "ubuntu-cloud.env"
+        example = self.root / "config-example/vm/proxmox/ubuntu-cloud.env"
+        self.assertEqual(vm_input.read_bytes(), example.read_bytes())
+        self.assertEqual(vm_input.stat().st_mode & 0o777, 0o600)
+        vm_input.write_text("VMID=456\n# Preserve operator settings\n")
+        before = vm_input.read_bytes()
+        self.initialize()
+        self.assertEqual(vm_input.read_bytes(), before)
+
+    def test_proxmox_init_isolates_vm_inputs_and_leaves_legacy_inputs_untouched(self) -> None:
+        self.env["BOOTSTRAP_TARGET"] = "proxmox"
+        legacy = self.root / "config/vm/proxmox/ubuntu-cloud.env"
+        legacy.parent.mkdir(parents=True)
+        legacy.write_text("VMID=123\n")
+        self.initialize()
+        first = self.directory / "ubuntu-cloud.env"
+        first.write_text("VMID=456\n")
+        self.directory = self.root / "config/another-deployment"
+        self.env["BOOTSTRAP_DIR"] = str(self.directory)
+        self.initialize()
+        example = self.root / "config-example/vm/proxmox/ubuntu-cloud.env"
+        self.assertEqual((self.directory / "ubuntu-cloud.env").read_bytes(), example.read_bytes())
+        self.assertEqual(first.read_text(), "VMID=456\n")
+        self.assertEqual(legacy.read_text(), "VMID=123\n")
+
+    def test_proxmox_public_key_uses_original_path_without_a_local_copy(self) -> None:
+        self.env["BOOTSTRAP_TARGET"] = "proxmox"
+        self.env["BOOTSTRAP_PROXMOX_HOST"] = "proxmox"
+        self.initialize()
+        self.valid_host()
+        transfer_log = self.root / "public-key-transfer.log"
+        rsync = self.root / "bin/rsync"
+        rsync.write_text(f'#!/bin/sh\nprintf "%s\\n" "$@" > "{transfer_log}"\n')
+        rsync.chmod(0o700)
+        self.run_play("bootstrap-proxmox-key.yaml")
+        self.assertFalse(transfer_log.exists())
+        self.env["BOOTSTRAP_SYNC_PUBLIC_KEY"] = "1"
+        self.run_play("bootstrap-proxmox-key.yaml")
+        self.assertIn(str(self.public_key_file), transfer_log.read_text())
+        self.assertIn("proxmox:/tmp/vm/proxmox/bootstrap-authorized-key.pub", transfer_log.read_text())
+        self.assertFalse((self.directory / "bootstrap-authorized-key.pub").exists())
+        self.assertFalse(self.public_key_file.with_suffix("").exists())
+
+    def test_proxmox_public_key_rejects_private_path_missing_key_and_host_mismatch(self) -> None:
+        self.env["BOOTSTRAP_TARGET"] = "proxmox"
+        self.env["BOOTSTRAP_PROXMOX_HOST"] = "proxmox"
+        self.initialize()
+        host = self.valid_host()
+        original = host["ssh_public_key"]
+        for path in (str(self.public_key_file.with_suffix("")), str(self.root / "missing.pub")):
+            host["ssh_public_key"] = path
+            (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
+            self.assertNotEqual(self.run_play("bootstrap-proxmox-key.yaml", check=False).returncode, 0)
+        host["ssh_public_key"] = original
+        (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
+        self.env["BOOTSTRAP_PROXMOX_HOST"] = "another-host"
+        self.assertNotEqual(self.run_play("bootstrap-proxmox-key.yaml", check=False).returncode, 0)
 
     def test_generated_host_settings_only_include_the_selected_platform(self) -> None:
         proxmox_fields = {"proxmox_host", "proxmox_vmid", "proxmox_username", "proxmox_address"}
@@ -479,11 +541,42 @@ class NativeBootstrapTests(unittest.TestCase):
         value = self.valid_host()
         value["unknown_private_field"] = "SENTINEL_DO_NOT_DISPLAY"
         value["dns"]["adguard_url"] = "https://ignored:SENTINEL_PASSWORD@adguard.example.com/path?token=SENTINEL_TOKEN"
+        value["dns"]["adguard_urls"] = ["https://ignored:SENTINEL_PASSWORD@dns2.example.com/path?token=SENTINEL_TOKEN"]
         (self.directory / "host.yaml").write_text(yaml.safe_dump(value))
         (self.directory / "secrets.yaml").write_text("broken: [SENTINEL_PRIVATE_SECRET")
         result = self.run_play("bootstrap-inspect.yaml")
         self.assertNotIn("SENTINEL", result.stdout + result.stderr)
         self.assertIn("adguard.example.com", result.stdout)
+        self.assertIn("dns2.example.com", result.stdout)
+        self.assertIn('"has_credentials": true', result.stdout)
+        self.assertIn('"has_path": true', result.stdout)
+        self.assertIn('"has_query": true', result.stdout)
+        self.assertIn('"scheme": "https"', result.stdout)
+
+    def test_adguard_endpoint_list_requires_shared_private_credentials(self) -> None:
+        self.initialize()
+        host = self.valid_host()
+        host["dns"]["adguard_urls"] = ["https://dns1.example.com", "https://dns2.example.com"]
+        (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
+        play = [
+            {
+                "name": "Require shared credentials for all endpoints",
+                "hosts": "localhost",
+                "gather_facts": False,
+                "tasks": [
+                    {"name": "Public inputs", "ansible.builtin.import_tasks": "bootstrap/inputs.yaml"},
+                    {"name": "Private inputs", "ansible.builtin.import_tasks": "bootstrap/secrets.yaml"},
+                ],
+            }
+        ]
+        (self.root / "ansible/playbooks/test-adguard-secrets.yaml").write_text(yaml.safe_dump(play))
+        (self.directory / "secrets.yaml").write_text("cloudflare_token: fixture-token\n")
+        self.assertNotEqual(self.run_play("test-adguard-secrets.yaml", check=False).returncode, 0)
+        (self.directory / "secrets.yaml").write_text(
+            "cloudflare_token: fixture-token\nadguard_username: fixture-user\nadguard_password: SENTINEL_PASSWORD\n"
+        )
+        result = self.run_play("test-adguard-secrets.yaml")
+        self.assertNotIn("SENTINEL_PASSWORD", result.stdout + result.stderr)
 
     def test_private_parse_failures_are_censored_by_ansible(self) -> None:
         self.initialize()
@@ -638,6 +731,140 @@ class NativeBootstrapTests(unittest.TestCase):
         path.write_text(yaml.safe_dump(play))
         self.assertNotEqual(self.run_play("test-dns.yaml", check=False).returncode, 0)
 
+    def test_adguard_endpoint_list_validation(self) -> None:
+        self.env["BOOTSTRAP_TARGET"] = "proxmox"
+        self.initialize()
+        host = self.valid_host()
+        for dns, valid in (
+            ({"enabled": True, "adguard_urls": ["https://dns1.example.com", "https://dns2.example.com"]}, True),
+            ({"enabled": True, "adguard_urls": []}, True),
+            ({"enabled": True, "adguard_urls": ["http://dns1.example.com"]}, True),
+            ({"enabled": True, "adguard_urls": ["https://dns1.example.com", "http://192.0.2.10:3000"]}, True),
+            ({"enabled": True, "adguard_urls": ["ftp://dns1.example.com"]}, False),
+            ({"enabled": True, "adguard_urls": ["http://user:password@dns1.example.com"]}, False),
+            ({"enabled": True, "adguard_urls": ["http://dns1.example.com/path"]}, False),
+            ({"enabled": True, "adguard_urls": ["http://dns1.example.com?token=secret"]}, False),
+            ({"enabled": True, "adguard_urls": ["http://dns1.example.com#fragment"]}, False),
+            ({"enabled": True, "adguard_urls": ["http://dns1.example.com bad"]}, False),
+            ({"enabled": True, "adguard_urls": ["https://user:password@dns1.example.com"]}, False),
+            ({"enabled": True, "adguard_urls": ["https://dns1.example.com/path"]}, False),
+            ({"enabled": True, "adguard_urls": ["https://dns1.example.com", "https://dns1.example.com"]}, False),
+            ({"enabled": True, "adguard_url": "https://dns1.example.com", "adguard_urls": ["https://dns2.example.com"]}, False),
+            ({"enabled": True, "adguard_url": "https://dns1.example.com"}, True),
+            ({"enabled": True, "adguard_url": "http://192.0.2.10:3000"}, True),
+            ({"enabled": True, "adguard_url": "ftp://dns1.example.com"}, False),
+            ({"enabled": True, "adguard_url": "http://user:password@dns1.example.com"}, False),
+            ({"enabled": True, "adguard_url": "http://dns1.example.com/path"}, False),
+            ({"enabled": True, "adguard_url": "http://dns1.example.com?token=secret"}, False),
+            ({"enabled": True, "adguard_url": "http://dns1.example.com#fragment"}, False),
+            ({"enabled": True, "adguard_url": "http://dns1.example.com bad"}, False),
+        ):
+            with self.subTest(dns=dns):
+                host["dns"] = dns
+                (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
+                result = self.run_play("bootstrap-check.yaml", check=False)
+                self.assertEqual(result.returncode == 0, valid, result.stdout + result.stderr)
+
+    def prepare_adguard_dns_fixture(self, *, action="present", endpoints=None, receipt=None, existing=None, fail_endpoint="") -> Path:
+        self.directory.mkdir(parents=True, exist_ok=True)
+        endpoints = endpoints if endpoints is not None else ["https://dns1.example.com", "https://dns2.example.com"]
+        dns_dir = self.root / "ansible/playbooks/bootstrap"
+        (dns_dir / "dns-read.yaml").write_text(
+            yaml.safe_dump(
+                [
+                    {
+                        "name": "Read offline endpoint records",
+                        "ansible.builtin.set_fact": {
+                            "bootstrap_dns_rows": "{{ test_existing.get(bootstrap_adguard_url + '|' + bootstrap_dns_name, []) if bootstrap_adguard_url + '|' + bootstrap_dns_name not in test_written | default([]) else ([] if bootstrap_dns_action == 'absent' else [{'answer': bootstrap_address}]) }}",
+                        },
+                    }
+                ]
+            )
+        )
+        tasks = yaml.safe_load((dns_dir / "dns-record.yaml").read_text())
+        for task in tasks:
+            if "community.dns.adguardhome_rewrite" in task:
+                del task["community.dns.adguardhome_rewrite"]
+                task["ansible.builtin.set_fact"] = {
+                    "test_written": "{{ test_written | default([]) + [bootstrap_adguard_url + '|' + bootstrap_dns_name] }}",
+                }
+                task["failed_when"] = "bootstrap_adguard_url == test_fail_endpoint"
+                task["changed_when"] = True
+        (dns_dir / "dns-record.yaml").write_text(yaml.safe_dump(tasks))
+        if receipt:
+            (self.directory / "dns-state.yaml").write_text(yaml.safe_dump(receipt))
+        play = [
+            {
+                "name": "Exercise endpoint-scoped DNS ownership offline",
+                "hosts": "localhost",
+                "gather_facts": False,
+                "vars": {
+                    "bootstrap": {
+                        "target": "proxmox",
+                        "name": "guest",
+                        "domain": "test.example.com",
+                        "dns": {"enabled": True, "adguard_urls": endpoints},
+                    },
+                    "bootstrap_dir": str(self.directory),
+                    "bootstrap_address": "192.0.2.10",
+                    "bootstrap_dns_action": "preview" if action == "verify" else action,
+                    "bootstrap_dns_preflight_only": True,
+                    "bootstrap_verify_only": action == "verify",
+                    "test_existing": existing or {},
+                    "test_fail_endpoint": fail_endpoint,
+                },
+                "tasks": [{"name": "Run DNS tasks", "ansible.builtin.import_tasks": "bootstrap/dns.yaml", "tags": ["cleanup"]}],
+            }
+        ]
+        (self.root / "ansible/playbooks/test-adguard-dns.yaml").write_text(yaml.safe_dump(play))
+        return self.directory / "dns-state.yaml"
+
+    def test_adguard_multiple_endpoints_have_separate_ownership_and_repeat_safely(self) -> None:
+        receipt_path = self.prepare_adguard_dns_fixture()
+        self.run_play("test-adguard-dns.yaml")
+        receipt = yaml.safe_load(receipt_path.read_text())
+        self.assertEqual(receipt["identity"]["adguard_urls"], ["https://dns1.example.com", "https://dns2.example.com"])
+        self.assertEqual(len(receipt["records"]), 8)
+        self.assertEqual({record["endpoint"] for record in receipt["records"]}, set(receipt["identity"]["adguard_urls"]))
+        existing = {record["endpoint"] + "|" + record["name"]: [{"answer": record["answer"]}] for record in receipt["records"]}
+        self.prepare_adguard_dns_fixture(receipt=receipt, existing=existing)
+        self.run_play("test-adguard-dns.yaml")
+        self.assertEqual(yaml.safe_load(receipt_path.read_text()), receipt)
+        self.prepare_adguard_dns_fixture(action="absent", receipt=receipt, existing=existing)
+        self.run_play("test-adguard-dns.yaml", tags="cleanup")
+        self.assertEqual(yaml.safe_load(receipt_path.read_text())["records"], [])
+
+    def test_adguard_matching_records_are_not_claimed_and_conflicts_are_not_overwritten(self) -> None:
+        key = "https://dns2.example.com|home.test.example.com"
+        receipt_path = self.prepare_adguard_dns_fixture(existing={key: [{"answer": "192.0.2.10"}]})
+        self.run_play("test-adguard-dns.yaml")
+        receipt = yaml.safe_load(receipt_path.read_text())
+        self.assertEqual(len(receipt["records"]), 7)
+        self.assertFalse(any(record["endpoint"] + "|" + record["name"] == key for record in receipt["records"]))
+        self.prepare_adguard_dns_fixture(existing={key: [{"answer": "192.0.2.11"}]}, receipt=receipt)
+        result = self.run_play("test-adguard-dns.yaml", check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("DNS conflict", result.stdout)
+
+    def test_adguard_failed_write_preserves_endpoint_specific_pending_evidence(self) -> None:
+        receipt_path = self.prepare_adguard_dns_fixture(fail_endpoint="https://dns2.example.com")
+        self.assertNotEqual(self.run_play("test-adguard-dns.yaml", check=False).returncode, 0)
+        receipt = yaml.safe_load(receipt_path.read_text())
+        self.assertEqual(len(receipt["records"]), 4)
+        self.assertEqual(receipt["pending"]["endpoint"], "https://dns2.example.com")
+        self.assertNotEqual(self.run_play("test-adguard-dns.yaml", check=False).returncode, 0)
+
+    def test_adguard_verification_requires_records_on_each_endpoint(self) -> None:
+        endpoints = ["https://dns1.example.com", "https://dns2.example.com"]
+        names = ["test.example.com", "home.test.example.com", "traefik.test.example.com", "bootstrap-check.test.example.com"]
+        existing = {endpoint + "|" + name: [{"answer": "192.0.2.10"}] for endpoint in endpoints for name in names}
+        receipt_path = self.prepare_adguard_dns_fixture(action="verify", existing=existing)
+        self.run_play("test-adguard-dns.yaml")
+        del existing[endpoints[1] + "|home.test.example.com"]
+        self.prepare_adguard_dns_fixture(action="verify", existing=existing)
+        self.assertNotEqual(self.run_play("test-adguard-dns.yaml", check=False).returncode, 0)
+        self.assertFalse(receipt_path.exists())
+
     def test_dns_ownership_uses_the_native_cloudflare_result_shape(self) -> None:
         source = yaml.safe_load((ROOT / "ansible/playbooks/bootstrap/dns-record.yaml").read_text())
         track = next(task for task in source if task["name"].startswith("Track only records"))
@@ -653,6 +880,7 @@ class NativeBootstrapTests(unittest.TestCase):
                         "bootstrap_dns_owned": [],
                         "bootstrap_dns_records": [],
                         "bootstrap_dns_provider": provider,
+                        "bootstrap_adguard_url": "https://dns1.example.com",
                         "bootstrap_dns_name": "test.example.com",
                         "bootstrap_address": "192.0.2.10",
                         "bootstrap_cf_write": {"changed": True, "result": {"record": {"id": "created-record-id"}}},
@@ -663,7 +891,15 @@ class NativeBootstrapTests(unittest.TestCase):
                             "name": "Require the created record identity",
                             "ansible.builtin.assert": {"that": "bootstrap_dns_records == expected_records"},
                             "vars": {
-                                "expected_records": [{"provider": provider, "name": "test.example.com", "answer": "192.0.2.10", "id": expected_id}]
+                                "expected_records": [
+                                    {
+                                        "provider": provider,
+                                        "name": "test.example.com",
+                                        "answer": "192.0.2.10",
+                                        "id": expected_id,
+                                        **({"endpoint": "https://dns1.example.com"} if provider == "adguard" else {}),
+                                    }
+                                ]
                             },
                         },
                     ],
@@ -673,37 +909,66 @@ class NativeBootstrapTests(unittest.TestCase):
             self.run_play("test-dns-result.yaml")
 
     def test_dns_provider_can_be_added_but_owned_records_and_pending_writes_stay_protected(self) -> None:
-        source = yaml.safe_load((ROOT / "ansible/playbooks/bootstrap/dns.yaml").read_text())
-        guard = next(task for task in source if task["name"].startswith("Preserve evidence"))
         identity = {
-            "target": "aws",
+            "target": "proxmox",
             "name": "guest",
             "domain": "test.example.com",
-            "cloudflare_zone": "example.com",
-            "adguard_url": "https://adguard.example.com",
+            "cloudflare_zone": "",
+            "adguard_url": "",
         }
-        receipt = {"identity": {**identity, "adguard_url": ""}, "records": [], "pending": None}
-        play = [
-            {
-                "name": "Test adding a DNS provider",
-                "hosts": "localhost",
-                "gather_facts": False,
-                "vars": {"bootstrap_dns_stat": {"stat": {"exists": True}}, "bootstrap_dns_identity": identity, "bootstrap_dns_receipt": receipt},
-                "tasks": [guard],
-            }
-        ]
-        path = self.root / "ansible/playbooks/test-dns-provider.yaml"
-        path.write_text(yaml.safe_dump(play))
-        self.run_play("test-dns-provider.yaml")
-        receipt["identity"]["adguard_url"] = "https://original-adguard.example.com"
+        receipt = {"identity": identity, "records": [], "pending": None}
+        self.prepare_adguard_dns_fixture(action="preview", receipt=receipt)
+        self.run_play("test-adguard-dns.yaml")
+        receipt["identity"]["adguard_url"] = "https://dns1.example.com"
         receipt["records"] = [{"provider": "adguard", "name": "test.example.com", "answer": "192.0.2.10", "id": None}]
-        path.write_text(yaml.safe_dump(play))
-        self.assertNotEqual(self.run_play("test-dns-provider.yaml", check=False).returncode, 0)
-        receipt["records"] = []
-        receipt["identity"] = identity.copy()
+        self.prepare_adguard_dns_fixture(action="preview", receipt=receipt)
+        self.run_play("test-adguard-dns.yaml")
+        self.prepare_adguard_dns_fixture(action="preview", endpoints=["https://dns2.example.com"], receipt=receipt)
+        self.assertNotEqual(self.run_play("test-adguard-dns.yaml", check=False).returncode, 0)
         receipt["pending"] = {"provider": "adguard", "name": "test.example.com", "answer": "192.0.2.10"}
-        path.write_text(yaml.safe_dump(play))
-        self.assertNotEqual(self.run_play("test-dns-provider.yaml", check=False).returncode, 0)
+        receipt_path = self.prepare_adguard_dns_fixture(action="preview", receipt=receipt)
+        before = receipt_path.read_bytes()
+        self.assertNotEqual(self.run_play("test-adguard-dns.yaml", check=False).returncode, 0)
+        self.assertEqual(receipt_path.read_bytes(), before)
+
+    def test_adguard_single_endpoint_receipt_expands_without_losing_ownership(self) -> None:
+        receipt = {
+            "identity": {
+                "target": "proxmox",
+                "name": "guest",
+                "domain": "test.example.com",
+                "cloudflare_zone": "",
+                "adguard_url": "https://dns1.example.com",
+            },
+            "records": [{"provider": "adguard", "name": "test.example.com", "answer": "192.0.2.10", "id": None}],
+            "pending": None,
+        }
+        receipt_path = self.prepare_adguard_dns_fixture(
+            receipt=receipt, existing={"https://dns1.example.com|test.example.com": [{"answer": "192.0.2.10"}]}
+        )
+        self.run_play("test-adguard-dns.yaml")
+        expanded = yaml.safe_load(receipt_path.read_text())
+        self.assertEqual(len(expanded["records"]), 8)
+        self.assertIn({**receipt["records"][0], "endpoint": "https://dns1.example.com"}, expanded["records"])
+        self.prepare_adguard_dns_fixture(action="preview", endpoints=list(reversed(expanded["identity"]["adguard_urls"])), receipt=expanded)
+        self.run_play("test-adguard-dns.yaml")
+
+    def test_adguard_ambiguous_receipt_endpoint_is_rejected_without_writes(self) -> None:
+        receipt = {
+            "identity": {
+                "target": "proxmox",
+                "name": "guest",
+                "domain": "test.example.com",
+                "cloudflare_zone": "",
+                "adguard_urls": ["https://dns1.example.com", "https://dns2.example.com"],
+            },
+            "records": [{"provider": "adguard", "name": "test.example.com", "answer": "192.0.2.10", "id": None}],
+            "pending": None,
+        }
+        receipt_path = self.prepare_adguard_dns_fixture(receipt=receipt)
+        before = receipt_path.read_bytes()
+        self.assertNotEqual(self.run_play("test-adguard-dns.yaml", check=False).returncode, 0)
+        self.assertEqual(receipt_path.read_bytes(), before)
 
     def test_tagged_teardown_executes_nested_dns_deletes_and_readback(self) -> None:
         self.directory.mkdir(parents=True)
@@ -928,6 +1193,168 @@ else: sys.exit(91)
 
 
 class BootstrapStructureTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("task"), "Task is not installed")
+    def test_vm_preflight_preserves_arguments_with_optional_mac(self) -> None:
+        with tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT if TEST_TEMP_ROOT.is_dir() else None) as temporary:
+            root = Path(temporary)
+            (root / "ansible").mkdir()
+            shutil.copy(ROOT / "ansible/Taskfile.bootstrap.yaml", root / "ansible/Taskfile.bootstrap.yaml")
+            (root / "Taskfile.yaml").write_text("version: '3'\nincludes:\n  bootstrap: ./ansible/Taskfile.bootstrap.yaml\n")
+            binaries = root / "bin"
+            binaries.mkdir()
+            wrappers = {
+                # OpenSSH joins command arguments before passing them to the remote shell.
+                "ssh": '#!/bin/sh\nshift\nexec /bin/sh -c "$*"\n',
+                "ansible-playbook": "#!/bin/sh\nexit 0\n",
+                "rsync": "#!/bin/sh\nexit 0\n",
+                "sudo": '#!/bin/sh\ncase "$1" in\n'
+                "test|grep) exit 1;;\n"
+                'qm) printf "VMID NAME\\n";;\n'
+                'pvesm) test "$*" = "pvesm status --storage fixture-storage";;\n'
+                'pvesh) printf \'{"content":"snippets"}\\n\';;\n'
+                "*) exit 42;;\nesac\n",
+                "ip": '#!/bin/sh\ntest "$*" = "link show fixture-bridge"\n',
+            }
+            for name, content in wrappers.items():
+                wrapper = binaries / name
+                wrapper.write_text(content)
+                wrapper.chmod(0o700)
+            selected = root / "config/bootstrap-proxmox"
+            selected.mkdir(parents=True)
+            env = {key: value for key, value in os.environ.items() if key not in ("TARGET", "BOOTSTRAP_CONFIG_DIR", "VM_MAC")}
+            env["PATH"] = str(binaries) + os.pathsep + os.environ["PATH"]
+            for mac in ("", "02:00:00:00:00:01"):
+                with self.subTest(mac=mac):
+                    (selected / "ubuntu-cloud.env").write_text(
+                        f"PROXMOX_HOST=fixture\nVMID=456\nVMNAME=fixture-name\nVM_STORAGE=fixture-storage\nVM_BRIDGE=fixture-bridge\nVM_MAC={mac}\n"
+                    )
+                    result = subprocess.run(  # noqa: S603
+                        [shutil.which("task"), "bootstrap:vm-preflight"],
+                        cwd=root,
+                        env=env,
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                        check=False,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    self.assertIn(f"MAC {mac} are available", result.stdout)
+
+    @unittest.skipUnless(shutil.which("task"), "Task is not installed")
+    def test_bootstrap_test_task_is_focused_and_build_keeps_full_coverage(self) -> None:
+        taskfile = yaml.safe_load((ROOT / "Taskfile.yaml").read_text())
+        self.assertEqual(taskfile["tasks"]["build"]["cmds"][:2], [{"task": "test"}, {"task": "bootstrap:test-shell"}])
+        with tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT if TEST_TEMP_ROOT.is_dir() else None) as temporary:
+            root = Path(temporary)
+            (root / "ansible").mkdir()
+            shutil.copy(ROOT / "ansible/Taskfile.bootstrap.yaml", root / "ansible/Taskfile.bootstrap.yaml")
+            (root / "Taskfile.yaml").write_text(
+                yaml.safe_dump(
+                    {
+                        "version": "3",
+                        "includes": {"bootstrap": "./ansible/Taskfile.bootstrap.yaml"},
+                        "tasks": {"test": taskfile["tasks"]["test"]},
+                    }
+                )
+            )
+            binaries = root / "bin"
+            binaries.mkdir()
+            for command in ("uv", "bash"):
+                wrapper = binaries / command
+                wrapper.write_text(f'#!/bin/sh\nprintf "{command}: %s\\n" "$*"\n')
+                wrapper.chmod(0o700)
+            env = {**os.environ, "PATH": str(binaries) + os.pathsep + os.environ["PATH"]}
+            for task in ("bootstrap:test", "test"):
+                with self.subTest(task=task):
+                    result = subprocess.run(  # noqa: S603
+                        [shutil.which("task"), task],
+                        cwd=root,
+                        env=env,
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                        check=False,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    if task == "bootstrap:test":
+                        self.assertIn("python3 -m unittest tests.test_bootstrap", result.stdout)
+                        self.assertNotIn("unittest discover", result.stdout)
+                        self.assertIn("bash: vm/test-lib-common.sh", result.stdout)
+                        self.assertIn("bash: vm/test-wait-for-cloud-init.sh", result.stdout)
+                    else:
+                        self.assertIn("unittest discover --start-directory tests", result.stdout)
+
+    @unittest.skipUnless(shutil.which("task"), "Task is not installed")
+    def test_vm_helpers_use_selected_deployment_inputs(self) -> None:
+        with tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT if TEST_TEMP_ROOT.is_dir() else None) as temporary:
+            root = Path(temporary)
+            (root / "ansible").mkdir()
+            shutil.copy(ROOT / "ansible/Taskfile.bootstrap.yaml", root / "ansible/Taskfile.bootstrap.yaml")
+            (root / "Taskfile.yaml").write_text("version: '3'\nincludes:\n  bootstrap: ./ansible/Taskfile.bootstrap.yaml\n")
+            binaries = root / "bin"
+            binaries.mkdir()
+            for command in ("ssh", "rsync", "ansible-playbook"):
+                wrapper = binaries / command
+                wrapper.write_text(f'#!/bin/sh\nprintf "{command}: %s\\n" "$*"\n')
+                wrapper.chmod(0o700)
+            env = {key: value for key, value in os.environ.items() if key not in ("TARGET", "BOOTSTRAP_CONFIG_DIR")}
+            env["PATH"] = str(binaries) + os.pathsep + env["PATH"]
+            for directory, vmid, arguments in (
+                ("config/bootstrap-proxmox", "456", []),
+                ("config/custom-test", "789", ["BOOTSTRAP_CONFIG_DIR=config/custom-test"]),
+            ):
+                selected = root / directory
+                selected.mkdir(parents=True)
+                (selected / "ubuntu-cloud.env").write_text(
+                    f"PROXMOX_HOST=fixture-{vmid}\nVMID={vmid}\nVMNAME=fixture-{vmid}\nVM_STORAGE=fixture-storage\nVM_BRIDGE=fixture-bridge\n"
+                )
+                for task in ("vm-preflight", "vm-provision", "vm-wait"):
+                    with self.subTest(directory=directory, task=task):
+                        result = subprocess.run(  # noqa: S603
+                            [shutil.which("task"), f"bootstrap:{task}", *arguments],
+                            cwd=root,
+                            env=env,
+                            capture_output=True,
+                            text=True,
+                            timeout=30,
+                            check=False,
+                        )
+                        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                        self.assertIn(f"ssh: fixture-{vmid} ", result.stdout)
+                        self.assertIn(vmid, result.stdout)
+                        if task == "vm-provision":
+                            self.assertIn(str(selected / "ubuntu-cloud.env"), result.stdout)
+                            self.assertIn("bootstrap-proxmox-key.yaml", result.stdout)
+                            self.assertIn("sudo env VM_SSH_PUBLIC_KEY_FILE=/tmp/vm/proxmox/bootstrap-authorized-key.pub bash", result.stdout)
+
+    def test_cloud_provisioner_explicit_key_overrides_configuration(self) -> None:
+        with tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT if TEST_TEMP_ROOT.is_dir() else None) as temporary:
+            root = Path(temporary)
+            scripts = root / "proxmox"
+            scripts.mkdir()
+            shutil.copy(ROOT / "vm/proxmox/create-ubuntu-cloud-vm.sh", scripts)
+            (root / "lib-common.sh").write_text(
+                "validate_vm_config() { :; }\n"
+                "parse_download_only_arg() { DOWNLOAD_ONLY=false; }\n"
+                'require_authorized_keys() { printf "%s\\n" "$SSH_PUBLIC_KEY_FILE"; exit 0; }\n'
+            )
+            (scripts / "ubuntu-cloud.env").write_text("UBUNTU_VERSION=26.04\nVMID=456\nSSH_PUBLIC_KEY_FILE=/configured/key.pub\n")
+            for override, expected in ((None, "/configured/key.pub"), ("/bootstrap/key.pub", "/bootstrap/key.pub")):
+                with self.subTest(override=override):
+                    env = {key: value for key, value in os.environ.items() if key not in ("VM_CONFIG_FILE", "VM_SSH_PUBLIC_KEY_FILE")}
+                    if override:
+                        env["VM_SSH_PUBLIC_KEY_FILE"] = override
+                    result = subprocess.run(  # noqa: S603
+                        [shutil.which("bash"), str(scripts / "create-ubuntu-cloud-vm.sh")],
+                        env=env,
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
+                        check=False,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(result.stdout.strip(), expected)
+
     @unittest.skipUnless(shutil.which("task"), "Task is not installed")
     def test_root_task_passes_bootstrap_directory_without_include_collisions(self) -> None:
         with tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT if TEST_TEMP_ROOT.is_dir() else None) as temporary:

@@ -1,0 +1,38 @@
+---
+- name: Validate or transfer the selected controller public key
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Validate public target inputs
+      ansible.builtin.import_tasks: bootstrap/inputs.yaml
+      vars:
+        bootstrap_required_target: proxmox
+    - name: Locate the selected controller public key
+      ansible.builtin.set_fact:
+        bootstrap_public_key_path: "{{ bootstrap.ssh_public_key | expanduser }}"
+    - name: Require a public-key file and consistent Proxmox destination
+      ansible.builtin.assert:
+        that:
+          - bootstrap_public_key_path.endswith('.pub')
+          - bootstrap_public_key_path.startswith('/')
+          - bootstrap.proxmox_host == lookup('env', 'BOOTSTRAP_PROXMOX_HOST')
+        fail_msg: Set ssh_public_key to the original .pub file and use the same Proxmox host in both inputs.
+    - name: Validate the public key without displaying its contents
+      ansible.builtin.command:
+        argv:
+          - ssh-keygen
+          - -l
+          - -f
+          - "{{ bootstrap_public_key_path }}"
+      changed_when: false
+      no_log: true
+    - name: Transfer only the public key directly from its original location
+      ansible.builtin.command:
+        argv:
+          - rsync
+          - -a
+          - --
+          - "{{ bootstrap_public_key_path }}"
+          - "{{ bootstrap.proxmox_host }}:/tmp/vm/proxmox/bootstrap-authorized-key.pub"
+      changed_when: true
+      when: lookup('env', 'BOOTSTRAP_SYNC_PUBLIC_KEY') == '1'

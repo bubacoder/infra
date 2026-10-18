@@ -4,10 +4,15 @@
 - name: Select ownership recorded by this deployment only
   ansible.builtin.set_fact:
     bootstrap_dns_owned: "{{ bootstrap_dns_records | selectattr('provider', 'equalto', bootstrap_dns_provider) | selectattr('name', 'equalto', bootstrap_dns_name) | list }}"
+- name: Scope AdGuard ownership to this endpoint only
+  ansible.builtin.set_fact:
+    bootstrap_dns_owned: "{{ bootstrap_dns_owned | selectattr('endpoint', 'equalto', bootstrap_adguard_url) | list }}"
+  when: bootstrap_dns_provider == 'adguard'
 - name: Refuse conflicting, duplicate or changed records instead of updating them
   ansible.builtin.assert:
     that:
       - bootstrap_dns_rows | length <= 1
+      - bootstrap_dns_provider != 'adguard' or not bootstrap_verify_only | default(false) or bootstrap_dns_rows | length == 1
       - bootstrap_dns_rows | length == 0 or (bootstrap_dns_rows[0].content | default(bootstrap_dns_rows[0].answer | default(''))) == bootstrap_address
       - bootstrap_dns_provider != 'cloudflare' or bootstrap_dns_rows | length == 0 or (bootstrap_dns_rows[0].type == 'A' and not bootstrap_dns_rows[0].proxied)
       - bootstrap_dns_provider != 'cloudflare' or bootstrap_dns_rows | length == 0 or bootstrap_dns_owned | length == 0 or bootstrap_dns_rows[0].id == bootstrap_dns_owned[0].id
@@ -15,7 +20,7 @@
 - name: Record uncertain ownership before a create request
   ansible.builtin.copy:
     dest: "{{ bootstrap_dir }}/dns-state.yaml"
-    content: "{{ {'identity': bootstrap_dns_identity, 'records': bootstrap_dns_records, 'pending': {'provider': bootstrap_dns_provider, 'name': bootstrap_dns_name, 'answer': bootstrap_address}} | to_nice_yaml }}"
+    content: "{{ {'identity': bootstrap_dns_identity, 'records': bootstrap_dns_records, 'pending': {'provider': bootstrap_dns_provider, 'name': bootstrap_dns_name, 'answer': bootstrap_address} | combine({'endpoint': bootstrap_adguard_url} if bootstrap_dns_provider == 'adguard' else {})} | to_nice_yaml }}"
     mode: '0600'
   when: bootstrap_dns_action == 'present' and bootstrap_dns_rows | length == 0
 - name: Create or remove only the selected Cloudflare A record using its maintained module
@@ -35,7 +40,7 @@
     - (bootstrap_dns_action == 'present' and bootstrap_dns_rows | length == 0) or (bootstrap_dns_action == 'absent' and bootstrap_dns_owned | length == 1 and bootstrap_dns_rows | length == 1)
 - name: Create or remove only the selected AdGuard rewrite using its maintained module
   community.dns.adguardhome_rewrite:
-    host: "{{ bootstrap.dns.adguard_url }}"
+    host: "{{ bootstrap_adguard_url }}"
     username: "{{ bootstrap_secrets.adguard_username }}"
     password: "{{ bootstrap_secrets.adguard_password }}"
     validate_certs: true
@@ -54,7 +59,7 @@
   when: bootstrap_dns_action == 'present' and bootstrap_dns_rows | length == 0
 - name: Track only records that were absent before this deployment created them
   ansible.builtin.set_fact:
-    bootstrap_dns_records: "{{ (bootstrap_dns_records | difference(bootstrap_dns_owned)) + [{'provider': bootstrap_dns_provider, 'name': bootstrap_dns_name, 'answer': bootstrap_address, 'id': bootstrap_cf_write.result.record.id if bootstrap_dns_provider == 'cloudflare' else none}] }}"
+    bootstrap_dns_records: "{{ (bootstrap_dns_records | difference(bootstrap_dns_owned)) + [({'provider': bootstrap_dns_provider, 'name': bootstrap_dns_name, 'answer': bootstrap_address, 'id': bootstrap_cf_write.result.record.id if bootstrap_dns_provider == 'cloudflare' else none} | combine({'endpoint': bootstrap_adguard_url} if bootstrap_dns_provider == 'adguard' else {}))] }}"
   when: bootstrap_dns_action == 'present' and bootstrap_dns_rows | length == 0
 - name: Forget deleted ownership without claiming pre-existing records
   ansible.builtin.set_fact:

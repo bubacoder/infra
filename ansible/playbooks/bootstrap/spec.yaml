@@ -19,3 +19,4 @@ dns:
     enabled: {type: bool, required: true}
     cloudflare_zone: {type: str}
     adguard_url: {type: str}
+    adguard_urls: {type: list, elements: str}

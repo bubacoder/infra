@@ -25,6 +25,14 @@
       ansible.builtin.assert:
         that: bootstrap.target | default('') == lookup('env', 'BOOTSTRAP_TARGET')
         fail_msg: TARGET does not match host.yaml; select its original target and directory.
+    - name: Initialize sanitized endpoint details
+      ansible.builtin.set_fact:
+        bootstrap_inspected_adguard_endpoints: []
+    - name: Extract endpoint routing details without displaying raw URLs
+      ansible.builtin.set_fact:
+        bootstrap_inspected_adguard_endpoints: "{{ bootstrap_inspected_adguard_endpoints + [{'scheme': item | urlsplit('scheme'), 'host': item | urlsplit('hostname'), 'port': item | urlsplit('port'), 'has_credentials': (item | urlsplit('username')) != none or (item | urlsplit('password')) != none, 'has_path': (item | urlsplit('path')) | length > 0, 'has_query': (item | urlsplit('query')) | length > 0, 'has_fragment': (item | urlsplit('fragment')) | length > 0}] }}"
+      loop: "{{ bootstrap.dns.adguard_urls | default([bootstrap.dns.adguard_url] if bootstrap.dns.adguard_url is defined else []) }}"
+      no_log: true
     - name: Display allowlisted public settings without opening private files
       ansible.builtin.debug:
         msg:
@@ -32,5 +40,10 @@
           name: "{{ bootstrap.name | default('not configured') }}"
           domain: "{{ bootstrap.domain | default('not configured') }}"
           docker_volumes: "{{ bootstrap.docker_volumes | default('not configured') }}"
+          repository_ref: "{{ bootstrap.repository_ref | default('not configured') }}"
+          proxmox_host: "{{ bootstrap.proxmox_host | default('not configured') }}"
+          proxmox_vmid: "{{ bootstrap.proxmox_vmid | default('not configured') }}"
           adguard_host: "{{ bootstrap.dns.adguard_url | default('') | urlsplit('hostname') | default('not configured', true) }}"
+          adguard_hosts: "{{ bootstrap.dns.adguard_urls | default([]) | map('urlsplit', 'hostname') | list }}"
+          adguard_endpoints: "{{ bootstrap_inspected_adguard_endpoints }}"
           secrets: 'Not loaded. Edit secrets.yaml privately; never share it with an agent.'

@@ -65,7 +65,8 @@ tasks:
   build:
     desc: Run all linting and build tasks
     cmds:
-      - task: bootstrap:test
+      - task: test
+      - task: bootstrap:test-shell
       - task: lint
       - task: docker:update-example-env
       - task: docs:build

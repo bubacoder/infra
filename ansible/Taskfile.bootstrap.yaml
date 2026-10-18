@@ -2,7 +2,8 @@ version: '3'
 
 vars:
   TARGET: '{{default "" .TARGET}}'
-  BOOTSTRAP_CONFIG_DIR: '{{default (printf "config/bootstrap-%s" .TARGET) .BOOTSTRAP_CONFIG_DIR}}'
+  # Proxmox-only vm-* helpers also work without TARGET; generic commands require it.
+  BOOTSTRAP_CONFIG_DIR: '{{default (printf "config/bootstrap-%s" (default "proxmox" .TARGET)) .BOOTSTRAP_CONFIG_DIR}}'
 
 tasks:
   init:
@@ -15,14 +16,19 @@ tasks:
       vars:
         - name: TARGET
           enum: [aws, proxmox]
-    desc: Initialize target inputs; detect public AWS defaults without overwriting configured values
+    desc: Initialize target inputs (including Proxmox VM inputs) without overwriting configured values
     cmds:
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-init.yaml
 
   test:
-    desc: Run Python unit tests and bootstrap shell tests
+    desc: Run only bootstrap Python and Proxmox shell tests
     cmds:
-      - task test
+      - uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.test_bootstrap
+      - task: test-shell
+
+  test-shell:
+    desc: Run Proxmox bootstrap shell tests
+    cmds:
       - bash vm/test-lib-common.sh
       - bash vm/test-wait-for-cloud-init.sh
 
@@ -205,29 +211,18 @@ tasks:
     cmds:
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-destroy.yaml --tags cleanup
 
-  vm-init:
-    desc: Create public Proxmox VM inputs without overwriting them
-    silent: true
-    cmds:
-      - |
-        if [ -e config/vm/proxmox/ubuntu-cloud.env ]; then
-          echo "Configuration already exists: config/vm/proxmox/ubuntu-cloud.env"
-          exit 0
-        fi
-        mkdir -p config/vm/proxmox
-        cp config-example/vm/proxmox/ubuntu-cloud.env config/vm/proxmox/
-        echo "Created config/vm/proxmox/ubuntu-cloud.env; edit it before provisioning."
-
   vm-provision:
     desc: Create/start a fresh Proxmox VM using the existing provisioner (never replaces an existing VM)
     silent: true
+    env:
+      BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
+      BOOTSTRAP_TARGET: proxmox
+      ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
     dotenv:
-      - config/vm/proxmox/ubuntu-cloud.env
+      - '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/ubuntu-cloud.env'
     preconditions:
-      - sh: test -r config/vm/proxmox/ubuntu-cloud.env
-        msg: Run 'task bootstrap:vm-init' and edit the configuration first.
-      - sh: test -s config/vm/proxmox/bootstrap-authorized-key.pub
-        msg: Copy the selected public key to config/vm/proxmox/bootstrap-authorized-key.pub first.
+      - sh: test -r "$BOOTSTRAP_DIR/ubuntu-cloud.env"
+        msg: Run 'task bootstrap:init TARGET=proxmox' and edit the configuration first.
       - sh: test -n "${VMID:-}"
         msg: VMID must be set in the VM configuration.
       - sh: case "${VMID:-}" in *[!0-9]*|'') exit 1;; esac
@@ -235,19 +230,22 @@ tasks:
     cmds:
       - echo "Provisioning VM ${VMID} on ${PROXMOX_HOST:-proxmox}"
       - rsync -a vm/ "${PROXMOX_HOST:-proxmox}:/tmp/vm/"
-      - rsync -a config/vm/proxmox/ubuntu-cloud.env config/vm/proxmox/bootstrap-authorized-key.pub "${PROXMOX_HOST:-proxmox}:/tmp/vm/proxmox/"
-      - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/create-ubuntu-cloud-vm.sh
+      - rsync -a "$BOOTSTRAP_DIR/ubuntu-cloud.env" "${PROXMOX_HOST:-proxmox}:/tmp/vm/proxmox/"
+      - BOOTSTRAP_PROXMOX_HOST="${PROXMOX_HOST:-proxmox}" BOOTSTRAP_SYNC_PUBLIC_KEY=1 ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-proxmox-key.yaml
+      - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo env VM_SSH_PUBLIC_KEY_FILE=/tmp/vm/proxmox/bootstrap-authorized-key.pub bash /tmp/vm/proxmox/create-ubuntu-cloud-vm.sh
       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo qm start "${VMID}"
       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
 
   vm-wait:
     desc: Wait for an existing Proxmox VM through its guest agent
     silent: true
+    env:
+      BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
     dotenv:
-      - config/vm/proxmox/ubuntu-cloud.env
+      - '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/ubuntu-cloud.env'
     preconditions:
-      - sh: test -r config/vm/proxmox/ubuntu-cloud.env
-        msg: Run 'task bootstrap:vm-init' and edit the configuration first.
+      - sh: test -r "$BOOTSTRAP_DIR/ubuntu-cloud.env"
+        msg: Run 'task bootstrap:init TARGET=proxmox' and edit the configuration first.
       - sh: case "${VMID:-}" in *[!0-9]*|'') exit 1;; esac
         msg: VMID must be a positive integer.
     cmds:
@@ -257,11 +255,15 @@ tasks:
   vm-preflight:
     desc: Validate fresh Proxmox VM identity, storage, bridge and public key
     silent: true
+    env:
+      BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
+      BOOTSTRAP_TARGET: proxmox
+      ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
     dotenv:
-      - config/vm/proxmox/ubuntu-cloud.env
+      - '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/ubuntu-cloud.env'
     preconditions:
-      - sh: test -r config/vm/proxmox/ubuntu-cloud.env
-        msg: Run 'task bootstrap:vm-init' and edit the configuration first.
+      - sh: test -r "$BOOTSTRAP_DIR/ubuntu-cloud.env"
+        msg: Run 'task bootstrap:init TARGET=proxmox' and edit the configuration first.
       - sh: test -n "${VMID:-}" && test -n "${VM_STORAGE:-}" && test -n "${VM_BRIDGE:-}"
         msg: VMID, VM_STORAGE, and VM_BRIDGE must be set in the VM configuration.
       - sh: case "${VMID:-}" in *[!0-9]*|'') exit 1;; esac
@@ -269,15 +271,16 @@ tasks:
       - sh: command -v ssh >/dev/null && command -v rsync >/dev/null
         msg: ssh and rsync must be installed on the administrative host.
     cmds:
+      - BOOTSTRAP_PROXMOX_HOST="${PROXMOX_HOST:-proxmox}" BOOTSTRAP_SYNC_PUBLIC_KEY=0 ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-proxmox-key.yaml
       - |
         set -eu
-        ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C bash -s -- "${VMID}" "${VMNAME}" "${VM_MAC:-}" "${VM_STORAGE}" "${VM_BRIDGE}" <<'REMOTE'
+        ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C bash -s -- "${VMID}" "${VMNAME}" "${VM_STORAGE}" "${VM_BRIDGE}" "${VM_MAC:-}" <<'REMOTE'
         set -eu
         vmid="$1"
         name="$2"
-        mac="$3"
-        storage="$4"
-        bridge="$5"
+        storage="$3"
+        bridge="$4"
+        mac="${5:-}"
         if sudo test -e "/etc/pve/qemu-server/${vmid}.conf"; then
           echo "Error: VM ${vmid} already exists." >&2
           exit 1
@@ -294,9 +297,4 @@ tasks:
         ip link show "${bridge}" >/dev/null
         sudo pvesh get /storage/local --output-format json | perl -MJSON::PP -e '$content = decode_json(<STDIN>)->{"content"} // q{}; exit !(grep { $_ eq "snippets" } split /,/, $content)'
         REMOTE
-        if [ -n "${SSH_PUBLIC_KEY_FILE:-}" ]; then
-          test -s config/vm/proxmox/bootstrap-authorized-key.pub
-        else
-          ssh "${PROXMOX_HOST:-proxmox}" "LC_ALL=C LANG=C sudo test -s \"\$HOME/.ssh/authorized_keys\""
-        fi
         echo "Preflight passed: VM ID ${VMID}, name ${VMNAME}, and MAC ${VM_MAC:-} are available."

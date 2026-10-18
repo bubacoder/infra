@@ -22,7 +22,9 @@ and SSM Run Command/read permissions for the owned instance. The guest receives
 only its SSM role. No administrator AWS credentials are transferred. The private
 SSH key must match the public key supplied to Terraform; AWS bootstrap requires
 the `ubuntu` user. Use a Cloudflare domain and scoped DNS token, ACME email, and
-an optional existing trusted-HTTPS AdGuard endpoint.
+an optional existing AdGuard endpoint. HTTPS is recommended; HTTP is supported on
+operator-approved trusted networks with unencrypted credentials and API traffic.
+See [Bootstrap DNS](bootstrap-dns.md).
 
 ```bash
 ansible-galaxy collection install -r ansible/requirements.yml

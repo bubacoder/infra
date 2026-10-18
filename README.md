@@ -105,7 +105,7 @@ Run commands from the repository root:
 | `task --list-all` | Discover the available tasks |
 | `task ui` | Open the TaskUI task selector |
 | `task test` | Run the Python unit tests |
-| `task bootstrap:test` | Run Python and Proxmox shell tests |
+| `task bootstrap:test` | Run only bootstrap Python and Proxmox shell tests |
 | `task lint` | Run all pre-commit checks |
 | `task build` | Run tests/lint, regenerate Docker examples and build the documentation image |
 | `task clean` | Remove generated documentation, Terraform caches/plans and Python virtual environments |
@@ -114,6 +114,11 @@ Inspect [Taskfile.yaml](Taskfile.yaml) and its included task files before runnin
 build, cleanup or operational tasks: they can modify files and require Docker or
 host-specific inputs. For focused changes, run the relevant tests and
 `pre-commit run --files <changed-files>` instead of the full build.
+
+For a single bootstrap check, use
+`uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.test_bootstrap.<Class>.<test_method>`.
+`task test` runs all Python tests; `task build` runs those plus the Proxmox shell
+tests before linting and build steps.
 
 [Pre-commit](https://pre-commit.com) checks shell scripts, YAML, Python, Ansible,
 Terraform and Dockerfiles, plus secrets and infrastructure security. The exact
