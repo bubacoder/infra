@@ -58,3 +58,10 @@
     - name: Fill public AWS template placeholders from the controller
       ansible.builtin.include_tasks: bootstrap/init-aws.yaml
       when: bootstrap_init_target == 'aws'
+    - name: Initialize public Proxmox VM inputs
+      when: bootstrap_init_target == 'proxmox'
+      ansible.builtin.copy:
+        src: ../../config-example/vm/proxmox/ubuntu-cloud.env
+        dest: "{{ bootstrap_dir }}/ubuntu-cloud.env"
+        mode: '0600'
+        force: false

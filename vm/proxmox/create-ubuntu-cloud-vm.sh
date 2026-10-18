@@ -16,6 +16,9 @@ fi
 # shellcheck source=/dev/null
 source "${CONFIG_FILE}"
 
+# Bootstrap supplies its transferred controller key; standalone configuration still works.
+SSH_PUBLIC_KEY_FILE="${VM_SSH_PUBLIC_KEY_FILE:-${SSH_PUBLIC_KEY_FILE:-}}"
+
 # shellcheck source=../lib-common.sh
 source "${SCRIPT_DIR}/../lib-common.sh"
 

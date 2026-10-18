@@ -4,6 +4,7 @@
     bootstrap_dns_action: "{{ bootstrap_dns_action | default('preview' if bootstrap_verify_only | default(false) else 'present') }}"
     bootstrap_dns_names: "{{ [bootstrap.domain, 'home.' + bootstrap.domain, 'traefik.' + bootstrap.domain, 'bootstrap-check.' + bootstrap.domain] }}"
     bootstrap_dns_records: []
+    bootstrap_adguard_urls: "{{ bootstrap.dns.adguard_urls | default([bootstrap.dns.adguard_url] if bootstrap.dns.adguard_url is defined else []) }}"
 - name: Locate native DNS ownership receipt
   ansible.builtin.stat:
     path: "{{ bootstrap_dir }}/dns-state.yaml"
@@ -20,7 +21,11 @@
       name: "{{ bootstrap.name }}"
       domain: "{{ bootstrap.domain }}"
       cloudflare_zone: "{{ bootstrap.dns.cloudflare_zone | default('') }}"
-      adguard_url: "{{ bootstrap.dns.adguard_url | default('') }}"
+      adguard_urls: "{{ bootstrap_adguard_urls | sort }}"
+- name: Normalize the receipt's endpoint identity without changing its ownership
+  ansible.builtin.set_fact:
+    bootstrap_dns_previous_urls: "{{ bootstrap_dns_receipt.identity.adguard_urls | default([bootstrap_dns_receipt.identity.adguard_url] if bootstrap_dns_receipt.identity.adguard_url | default('') | length > 0 else []) }}"
+    bootstrap_dns_previous_identity: "{{ bootstrap_dns_receipt.identity | default({}) | dict2items | rejectattr('key', 'in', ['adguard_url', 'adguard_urls']) | items2dict }}"
 - name: Preserve evidence of ambiguous writes or a changed DNS target
   ansible.builtin.assert:
     that:
@@ -30,12 +35,20 @@
       - bootstrap_dns_receipt.pending | default(none) == none
       - >-
         not bootstrap_dns_stat.stat.exists or
-        (bootstrap_dns_receipt.identity | combine({'adguard_url': bootstrap_dns_identity.adguard_url})) == bootstrap_dns_identity
-      - not bootstrap_dns_stat.stat.exists or bootstrap_dns_receipt.identity.adguard_url == bootstrap_dns_identity.adguard_url or (bootstrap_dns_receipt.records | selectattr('provider', 'equalto', 'adguard') | list | length == 0)
+        (bootstrap_dns_previous_identity | combine({'adguard_urls': bootstrap_dns_identity.adguard_urls})) == bootstrap_dns_identity
     fail_msg: DNS target changed or a write is uncertain. Inspect the providers and receipt privately; do not discard it or blindly retry.
+- name: Require an unambiguous endpoint for every owned AdGuard record
+  ansible.builtin.assert:
+    that:
+      - item.endpoint is defined or bootstrap_dns_previous_urls | length == 1
+      - item.endpoint | default(bootstrap_dns_previous_urls | first | default('')) in bootstrap_dns_previous_urls
+      - item.endpoint | default(bootstrap_dns_previous_urls | first | default('')) in bootstrap_adguard_urls
+    fail_msg: Keep every endpoint with owned records configured until its approved cleanup completes.
+  loop: "{{ bootstrap_dns_receipt.records | default([]) | selectattr('provider', 'equalto', 'adguard') | list }}"
 - name: Restore created-record ownership without adopting pre-existing records
   ansible.builtin.set_fact:
-    bootstrap_dns_records: "{{ bootstrap_dns_receipt.records | default([]) }}"
+    bootstrap_dns_records: "{{ bootstrap_dns_records + [item | combine({'endpoint': item.endpoint | default(bootstrap_dns_previous_urls | first | default(''))}) if item.provider == 'adguard' else item] }}"
+  loop: "{{ bootstrap_dns_receipt.records | default([]) }}"
 - name: Resolve the explicitly selected Cloudflare zone using Ansible's HTTP module
   ansible.builtin.uri:
     url: "https://api.cloudflare.com/client/v4/zones?name={{ bootstrap.dns.cloudflare_zone | urlencode }}&status=active"
@@ -68,13 +81,13 @@
   vars:
     bootstrap_dns_provider: cloudflare
   when: bootstrap.target == 'aws' and bootstrap.dns.cloudflare_zone is defined and (bootstrap.dns.enabled or bootstrap_dns_action == 'absent')
-- name: Manage optional local rewrites with native AdGuard modules
-  ansible.builtin.include_tasks: dns-record.yaml
-  loop: "{{ bootstrap_dns_names }}"
-  loop_control: {loop_var: bootstrap_dns_name}
+- name: Manage optional local rewrites on every selected AdGuard endpoint
+  ansible.builtin.include_tasks: dns-adguard.yaml
+  loop: "{{ bootstrap_adguard_urls }}"
+  loop_control: {loop_var: bootstrap_adguard_url}
   vars:
     bootstrap_dns_provider: adguard
-  when: bootstrap.dns.adguard_url is defined and (bootstrap.dns.enabled or bootstrap_dns_action == 'absent')
+  when: bootstrap.dns.enabled or bootstrap_dns_action == 'absent'
 - name: Verify the administrative host's real resolver, not only provider API results
   ansible.builtin.command:
     argv: [getent, ahostsv4, "{{ item }}"]

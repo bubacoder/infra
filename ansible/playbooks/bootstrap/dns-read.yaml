@@ -17,7 +17,7 @@
   when: bootstrap_dns_provider == 'cloudflare'
 - name: Read AdGuard rewrites using its maintained collection module
   community.dns.adguardhome_rewrite_info:
-    host: "{{ bootstrap.dns.adguard_url }}"
+    host: "{{ bootstrap_adguard_url }}"
     username: "{{ bootstrap_secrets.adguard_username }}"
     password: "{{ bootstrap_secrets.adguard_password }}"
     validate_certs: true

@@ -1,0 +1,5 @@
+---
+- name: Manage deployment names on this AdGuard endpoint
+  ansible.builtin.include_tasks: dns-record.yaml
+  loop: "{{ bootstrap_dns_names }}"
+  loop_control: {loop_var: bootstrap_dns_name}

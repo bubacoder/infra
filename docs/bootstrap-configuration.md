@@ -30,6 +30,12 @@ directory, without overwriting configured values:
 | `aws.tfvars` | Terraform, AWS only | Public infrastructure inputs; native template validation applies |
 | `secrets.yaml` | Ansible only | Cloudflare token and optional AdGuard credentials |
 
+Proxmox initialization also creates `ubuntu-cloud.env` in the selected directory
+without overwriting an existing file. Keep SSH keys in their original controller
+location and reference their paths in `host.yaml`; provisioning transfers only the
+public key directly to Proxmox. `BOOTSTRAP_CONFIG_DIR` selects deployment inputs, including those used
+by the Proxmox `vm-*` helpers. Initialization does not connect to Proxmox or create a VM.
+
 AWS initialization fills the account ID, administrator public IPv4 `/32`, and SSH
 public key in `aws.tfvars` using the active AWS identity, `https://api4.ipify.org`,
 and the selected `.pub` file. Only exact template placeholders are replaced;
@@ -133,7 +139,8 @@ guide.
 
 ## Tests
 
-`task bootstrap:test` runs the offline Python and Proxmox shell tests. Python
-bootstrap coverage is in [`tests/test_bootstrap.py`](../tests/test_bootstrap.py).
+`task bootstrap:test` runs only the offline bootstrap Python and Proxmox shell tests,
+not unrelated service or backup tests. Use `task test` for the full Python suite.
+Python bootstrap coverage is in [`tests/test_bootstrap.py`](../tests/test_bootstrap.py).
 For mocked Terraform tests and their prerequisites, see the
 [AWS Terraform module](../terraform/aws-vm/README.md).

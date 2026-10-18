@@ -9,7 +9,7 @@ uses the existing Proxmox CLI scripts; Ansible owns configuration and verificati
 - A trusted Proxmox SSH alias with noninteractive sudo, `local` snippet storage,
   an available VM ID/name, storage and bridge.
 - A matching local SSH key pair. DHCP and working local DNS; an existing AdGuard
-  may optionally manage the deployment's exact local names.
+   may optionally manage the deployment's exact local names on all configured instances.
 - A Cloudflare-administered public domain, DNS token with `Zone:Read`/`DNS:Edit`,
   and ACME email. Proxmox public address records remain externally/DDNS managed.
 - On the Linux controller: Git, SSH, rsync, curl,
@@ -23,7 +23,6 @@ Ansible if needed. See [manual installation](manual-setup.md) for other layouts.
 
 ```bash
 task bootstrap:init TARGET=proxmox
-task bootstrap:vm-init
 ```
 
 No target is selected by default. Pass `TARGET=proxmox` on each target-selecting
@@ -31,21 +30,18 @@ bootstrap command; AWS uses the same interface with `TARGET=aws`. To use an exis
 custom directory, also pass its `BOOTSTRAP_CONFIG_DIR` on every command. Never
 create a fresh backend to resume resources recorded in a different directory.
 
+Initialization creates host/service inputs and `config/bootstrap-proxmox/ubuntu-cloud.env`
+without overwriting existing settings. It does not connect to Proxmox or create a VM.
 Edit `config/bootstrap-proxmox/host.yaml`, `secrets.yaml` and
-`config/vm/proxmox/ubuntu-cloud.env`. Keep VM name, ID, user and expected address
+`config/bootstrap-proxmox/ubuntu-cloud.env`. Keep VM name, ID, user and expected address
 consistent between the two public tool inputs. Set the published repository branch,
 tag or commit and deployment subdomain. Public DNS stays with DDNS; configure AdGuard
 only if it already exists. See [inputs and secrets](bootstrap-configuration.md).
 
-Supply the exact public key instead of assuming the hypervisor's authorized keys
-are the same as the controller's:
-
-```bash
-cp ~/.ssh/id_ed25519.pub config/vm/proxmox/bootstrap-authorized-key.pub
-```
-
-Set `SSH_PUBLIC_KEY_FILE=/tmp/vm/proxmox/bootstrap-authorized-key.pub` in the VM
-environment file. Use the corresponding key paths in `host.yaml`.
+Set `ssh_public_key` in `host.yaml` to the original controller `.pub` file (for
+example `~/.ssh/id_ed25519.pub`), with its matching `ssh_private_key` path. Do not
+copy either key into `config/`. Preflight validates the selected public key;
+provisioning transfers it directly to Proxmox. The private key stays on the controller.
 
 ```bash
 task bootstrap:plan TARGET=proxmox
@@ -87,9 +83,11 @@ requires separate approval and provider-side verification.
 
 ## Operational limits
 
-- The `vm-*` helpers use the single file `config/vm/proxmox/ubuntu-cloud.env`.
-  Review its VM identity and settings before provisioning; `BOOTSTRAP_CONFIG_DIR`
-  selects host/service inputs, not a different VM environment file.
+- The `vm-*` helpers use `ubuntu-cloud.env` in
+  the selected `BOOTSTRAP_CONFIG_DIR` (default `config/bootstrap-proxmox/`). Pass
+  the same custom directory to every command and review VM identity before provisioning.
+  Provisioning automatically transfers the original `host.yaml` public key to its
+  remote staging path.
 - DHCP reservations and public DDNS are managed outside bootstrap.
 - VM preflight checks that storage and the bridge exist, not thin-pool capacity or
   overcommit policy. Check physical free space and thin-pool health before creating
