@@ -1175,8 +1175,9 @@ else: sys.exit(91)
         shutil.copy(ROOT / "ansible/Taskfile.bootstrap.yaml", self.root / "ansible/Taskfile.bootstrap.yaml")
         (self.root / "Taskfile.yaml").write_text("version: '3'\nincludes:\n  bootstrap: ./ansible/Taskfile.bootstrap.yaml\n")
         self.env["TEARDOWN_TEST_UNMOUNT_FAIL"] = "1"
+        self.env["BOOTSTRAP_PREPARED"] = "1"
         result = subprocess.run(  # noqa: S603
-            [shutil.which("task"), "--yes", "bootstrap:destroy", "TARGET=aws", "BOOTSTRAP_CONFIG_DIR=config/bootstrap"],
+            [shutil.which("task"), "--yes", "bootstrap:native", "ACTION=destroy", "TARGET=aws", "BOOTSTRAP_CONFIG_DIR=config/bootstrap"],
             cwd=self.root,
             env=self.env,
             capture_output=True,
@@ -1220,16 +1221,17 @@ class BootstrapStructureTests(unittest.TestCase):
                 wrapper.write_text(content)
                 wrapper.chmod(0o700)
             selected = root / "config/bootstrap-proxmox"
-            selected.mkdir(parents=True)
+            (selected / "generated").mkdir(parents=True)
             env = {key: value for key, value in os.environ.items() if key not in ("TARGET", "BOOTSTRAP_CONFIG_DIR", "VM_MAC")}
             env["PATH"] = str(binaries) + os.pathsep + os.environ["PATH"]
+            env.update(BOOTSTRAP_PREPARED="1", BOOTSTRAP_INPUT_DIR=str(selected / "generated"))
             for mac in ("", "02:00:00:00:00:01"):
                 with self.subTest(mac=mac):
-                    (selected / "ubuntu-cloud.env").write_text(
+                    (selected / "generated/ubuntu-cloud.env").write_text(
                         f"PROXMOX_HOST=fixture\nVMID=456\nVMNAME=fixture-name\nVM_STORAGE=fixture-storage\nVM_BRIDGE=fixture-bridge\nVM_MAC={mac}\n"
                     )
                     result = subprocess.run(  # noqa: S603
-                        [shutil.which("task"), "bootstrap:vm-preflight"],
+                        [shutil.which("task"), "bootstrap:native", "ACTION=vm-preflight", "TARGET=proxmox"],
                         cwd=root,
                         env=env,
                         capture_output=True,
@@ -1304,14 +1306,15 @@ class BootstrapStructureTests(unittest.TestCase):
                 ("config/custom-test", "789", ["BOOTSTRAP_CONFIG_DIR=config/custom-test"]),
             ):
                 selected = root / directory
-                selected.mkdir(parents=True)
-                (selected / "ubuntu-cloud.env").write_text(
+                (selected / "generated").mkdir(parents=True)
+                env.update(BOOTSTRAP_PREPARED="1", BOOTSTRAP_INPUT_DIR=str(selected / "generated"))
+                (selected / "generated/ubuntu-cloud.env").write_text(
                     f"PROXMOX_HOST=fixture-{vmid}\nVMID={vmid}\nVMNAME=fixture-{vmid}\nVM_STORAGE=fixture-storage\nVM_BRIDGE=fixture-bridge\n"
                 )
                 for task in ("vm-preflight", "vm-provision", "vm-wait"):
                     with self.subTest(directory=directory, task=task):
                         result = subprocess.run(  # noqa: S603
-                            [shutil.which("task"), f"bootstrap:{task}", *arguments],
+                            [shutil.which("task"), "bootstrap:native", f"ACTION={task}", "TARGET=proxmox", *arguments],
                             cwd=root,
                             env=env,
                             capture_output=True,
@@ -1323,7 +1326,7 @@ class BootstrapStructureTests(unittest.TestCase):
                         self.assertIn(f"ssh: fixture-{vmid} ", result.stdout)
                         self.assertIn(vmid, result.stdout)
                         if task == "vm-provision":
-                            self.assertIn(str(selected / "ubuntu-cloud.env"), result.stdout)
+                            self.assertIn(str(selected / "generated/ubuntu-cloud.env"), result.stdout)
                             self.assertIn("bootstrap-proxmox-key.yaml", result.stdout)
                             self.assertIn("sudo env VM_SSH_PUBLIC_KEY_FILE=/tmp/vm/proxmox/bootstrap-authorized-key.pub bash", result.stdout)
 
@@ -1358,7 +1361,7 @@ class BootstrapStructureTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("task"), "Task is not installed")
     def test_root_task_passes_bootstrap_directory_without_include_collisions(self) -> None:
         with tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT if TEST_TEMP_ROOT.is_dir() else None) as temporary:
-            wrapper = Path(temporary) / "ansible-playbook"
+            wrapper = Path(temporary) / "python3"
             wrapper.write_text(
                 '#!/bin/sh\nprintf "BOOTSTRAP_TEST_DIR=%s\\nBOOTSTRAP_TEST_REGION=%s\\n" "$BOOTSTRAP_DIR" "${AWS_DEFAULT_REGION-__UNSET__}"\n'
             )
@@ -1388,7 +1391,7 @@ class BootstrapStructureTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("task"), "Task is not installed")
     def test_root_tasks_reject_missing_misspelled_and_invalid_target_before_commands(self) -> None:
         with tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT if TEST_TEMP_ROOT.is_dir() else None) as temporary:
-            for name in ("ansible-playbook", "terraform"):
+            for name in ("python3", "ansible-playbook", "terraform"):
                 wrapper = Path(temporary) / name
                 wrapper.write_text('#!/bin/sh\nprintf "BOOTSTRAP_TEST_UNEXPECTED_COMMAND\\n"\n')
                 wrapper.chmod(0o700)

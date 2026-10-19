@@ -7,23 +7,98 @@ vars:
 
 tasks:
   init:
+    desc: Initialize one private bootstrap.yaml without overwriting operator input
+    requires: {vars: [{name: TARGET, enum: [aws, proxmox]}]}
     env:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
       BOOTSTRAP_TARGET: '{{.TARGET}}'
       BOOTSTRAP_SSH_PUBLIC_KEY: '{{default "" .BOOTSTRAP_SSH_PUBLIC_KEY}}'
-      ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
+    cmds: [python3 scripts/bootstrap_config.py init]
+
+  show-config:
+    desc: Show only allowlisted non-secret fields from private bootstrap.yaml
+    requires: {vars: [{name: TARGET, enum: [aws, proxmox]}]}
+    env:
+      BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
+      BOOTSTRAP_TARGET: '{{.TARGET}}'
+    cmds: [python3 scripts/bootstrap_config.py show-config]
+
+  plan:
+    desc: Prepare native inputs and review the selected target
+    requires: {vars: [{name: TARGET, enum: [aws, proxmox]}]}
+    cmds: [{task: dispatch, vars: {ACTION: plan}}]
+
+  apply:
+    desc: Apply the reviewed target plan, then configure and verify
+    requires: {vars: [{name: TARGET, enum: [aws, proxmox]}]}
+    prompt: Apply the reviewed target plan? Resources can remain billable after failures.
+    cmds: [{task: dispatch, vars: {ACTION: apply}}]
+
+  configure:
+    desc: Prepare inputs and configure/verify an existing guest (never provision)
+    requires: {vars: [{name: TARGET, enum: [aws, proxmox]}]}
+    cmds: [{task: dispatch, vars: {ACTION: configure}}]
+
+  verify:
+    desc: Verify DNS, HTTPS, application behavior, persistence and repeat Compose deployment
+    requires: {vars: [{name: TARGET, enum: [aws, proxmox]}]}
+    cmds: [{task: dispatch, vars: {ACTION: verify}}]
+
+  destroy-plan:
+    desc: Review full AWS destruction (requires DELETE_DATA=1)
+    requires: {vars: [{name: TARGET, enum: [aws]}]}
+    cmds: [{task: dispatch, vars: {ACTION: destroy-plan}}]
+
+  destroy:
+    desc: Destroy only the reviewed AWS deployment and verify cleanup
+    requires: {vars: [{name: TARGET, enum: [aws]}]}
+    prompt: Delete the reviewed AWS deployment and both disks permanently?
+    cmds: [{task: dispatch, vars: {ACTION: destroy}}]
+
+  destroy-cleanup:
+    desc: Retry AWS post-destroy verification and owned DNS cleanup
+    requires: {vars: [{name: TARGET, enum: [aws]}]}
+    cmds: [{task: dispatch, vars: {ACTION: destroy-cleanup}}]
+
+  vm-preflight:
+    desc: Validate the selected fresh Proxmox VM without provisioning
+    cmds: [{task: dispatch, vars: {ACTION: vm-preflight, TARGET: proxmox}}]
+
+  vm-provision:
+    desc: Provision the selected fresh Proxmox VM (never replace)
+    cmds: [{task: dispatch, vars: {ACTION: vm-provision, TARGET: proxmox}}]
+
+  vm-wait:
+    desc: Wait for the selected existing Proxmox guest
+    cmds: [{task: dispatch, vars: {ACTION: vm-wait, TARGET: proxmox}}]
+
+  dispatch:
+    internal: true
+    requires: {vars: [{name: TARGET, enum: [aws, proxmox]}]}
+    env:
+      BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
+      BOOTSTRAP_TARGET: '{{.TARGET}}'
+      DELETE_DATA: '{{default "0" .DELETE_DATA}}'
+    cmds: ['python3 scripts/bootstrap_config.py {{.ACTION}}']
+
+  # Compiler-only bridge: actual native stages stay internal to Task.
+  native:
     requires:
       vars:
         - name: TARGET
           enum: [aws, proxmox]
-    desc: Initialize target inputs (including Proxmox VM inputs) without overwriting configured values
+        - name: ACTION
+          enum: [plan, apply, configure, verify, destroy-plan, destroy, destroy-cleanup, vm-preflight, vm-provision, vm-wait]
+    preconditions:
+      - sh: test "${BOOTSTRAP_PREPARED:-}" = 1
+        msg: Use the public bootstrap command to prepare inputs first.
     cmds:
-      - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-init.yaml
+      - task: 'native-{{.ACTION}}'
 
   test:
     desc: Run only bootstrap Python and Proxmox shell tests
     cmds:
-      - uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.test_bootstrap
+      - uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.test_bootstrap tests.test_bootstrap_config
       - task: test-shell
 
   test-shell:
@@ -32,20 +107,9 @@ tasks:
       - bash vm/test-lib-common.sh
       - bash vm/test-wait-for-cloud-init.sh
 
-  show-config:
-    env:
-      BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
-      BOOTSTRAP_TARGET: '{{.TARGET}}'
-      ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
-    requires:
-      vars:
-        - name: TARGET
-          enum: [aws, proxmox]
-    desc: Show allowlisted public host settings offline (never loads secrets.yaml)
-    cmds:
-      - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-inspect.yaml
-
-  plan:
+  native-plan:
+    internal: true
+    preconditions: [{sh: 'test "${BOOTSTRAP_PREPARED:-}" = 1', msg: Use bootstrap:plan to prepare inputs first.}]
     desc: Review the selected target (AWS saved Terraform plan; Proxmox read-only preflight)
     requires:
       vars:
@@ -62,7 +126,7 @@ tasks:
     internal: true
     cmds:
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-check.yaml --extra-vars bootstrap_required_target=proxmox
-      - task: vm-preflight
+      - task: native-vm-preflight
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-proxmox-preflight.yaml
 
   plan-aws:
@@ -75,27 +139,28 @@ tasks:
     preconditions:
       - sh: test "$BOOTSTRAP_TARGET" = aws
         msg: AWS planning requires TARGET=aws.
-      - sh: test -r "$BOOTSTRAP_DIR/aws.tfvars"
-        msg: Run bootstrap:init TARGET=aws and edit aws.tfvars first.
+      - sh: test -r "$BOOTSTRAP_INPUT_DIR/aws.tfvars.json"
+        msg: Run bootstrap:init TARGET=aws and edit bootstrap.yaml first.
       - sh: test ! -e terraform/aws-vm/bootstrap_destroy_override.tf
         msg: A destruction override remains after an interrupted operation. Inspect it before planning.
     cmds:
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-check.yaml --extra-vars bootstrap_required_target=aws
       - terraform -chdir=terraform/aws-vm init -input=false -backend-config="path=$BOOTSTRAP_DIR/aws.tfstate"
       - terraform -chdir=terraform/aws-vm validate
-      - terraform -chdir=terraform/aws-vm plan -lock-timeout=30s -var-file="$BOOTSTRAP_DIR/aws.tfvars" -out="$BOOTSTRAP_DIR/aws.tfplan"
+      - terraform -chdir=terraform/aws-vm plan -lock-timeout=30s -var-file="$BOOTSTRAP_INPUT_DIR/aws.tfvars.json" -out="$BOOTSTRAP_DIR/aws.tfplan"
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-preflight.yaml
 
-  apply:
+  native-apply:
+    internal: true
+    preconditions: [{sh: 'test "${BOOTSTRAP_PREPARED:-}" = 1', msg: Use bootstrap:apply to check reviewed inputs first.}]
     requires:
       vars:
         - name: TARGET
           enum: [aws, proxmox]
     desc: Apply the saved AWS plan or provision Proxmox, then configure and verify the core host
-    prompt: Apply the reviewed target plan? Resources can remain billable after failures.
     cmds:
       - task: 'apply-{{.TARGET}}'
-      - task: configure
+      - task: native-configure
 
   apply-aws:
     env:
@@ -119,11 +184,13 @@ tasks:
     internal: true
     cmds:
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-check.yaml --extra-vars bootstrap_required_target=proxmox
-      - task: vm-preflight
+      - task: native-vm-preflight
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-proxmox-preflight.yaml
-      - task: vm-provision
+      - task: native-vm-provision
 
-  configure:
+  native-configure:
+    internal: true
+    preconditions: [{sh: 'test "${BOOTSTRAP_PREPARED:-}" = 1', msg: Use bootstrap:configure to prepare inputs first.}]
     env:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
       BOOTSTRAP_TARGET: '{{.TARGET}}'
@@ -137,7 +204,9 @@ tasks:
     cmds:
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap.yaml
 
-  verify:
+  native-verify:
+    internal: true
+    preconditions: [{sh: 'test "${BOOTSTRAP_PREPARED:-}" = 1', msg: Use bootstrap:verify to prepare inputs first.}]
     requires:
       vars:
         - name: TARGET
@@ -152,7 +221,8 @@ tasks:
     cmds:
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap.yaml
 
-  destroy-plan:
+  native-destroy-plan:
+    internal: true
     requires:
       vars:
         - name: TARGET
@@ -165,6 +235,8 @@ tasks:
       TF_DATA_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/.terraform'
       BOOTSTRAP_DELETE_DATA: '{{default "0" .DELETE_DATA}}'
     preconditions:
+      - sh: test "${BOOTSTRAP_PREPARED:-}" = 1
+        msg: Use bootstrap:destroy-plan to prepare inputs first.
       - sh: test -s "$BOOTSTRAP_DIR/aws.tfstate"
         msg: Never destroy with missing state. Select the deployment's existing backend first.
     cmds:
@@ -173,7 +245,8 @@ tasks:
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-destroy-plan.yaml
       - terraform -chdir=terraform/aws-vm show "$BOOTSTRAP_DIR/destroy.tfplan"
 
-  destroy:
+  native-destroy:
+    internal: true
     env:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
       BOOTSTRAP_TARGET: '{{.TARGET}}'
@@ -184,8 +257,9 @@ tasks:
         - name: TARGET
           enum: [aws]
     desc: Stop/unmount the guest, destroy the reviewed AWS deployment, verify absence and clean owned artifacts
-    prompt: Delete the reviewed AWS deployment and both disks permanently?
     preconditions:
+      - sh: test "${BOOTSTRAP_PREPARED:-}" = 1
+        msg: Use bootstrap:destroy to check reviewed inputs first.
       - sh: test -s "$BOOTSTRAP_DIR/aws.tfstate" && test -s "$BOOTSTRAP_DIR/destroy.tfplan"
         msg: Use the original state and review bootstrap:destroy-plan first.
     cmds:
@@ -194,7 +268,8 @@ tasks:
       - terraform -chdir=terraform/aws-vm apply -lock-timeout=30s "$BOOTSTRAP_DIR/destroy.tfplan"
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-destroy.yaml --tags cleanup
 
-  destroy-cleanup:
+  native-destroy-cleanup:
+    internal: true
     desc: Retry post-destroy verification and owned DNS cleanup without reapplying a destroy plan
     env:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
@@ -206,12 +281,15 @@ tasks:
         - name: TARGET
           enum: [aws]
     preconditions:
+      - sh: test "${BOOTSTRAP_PREPARED:-}" = 1
+        msg: Use bootstrap:destroy-cleanup to prepare inputs first.
       - sh: test -s "$BOOTSTRAP_DIR/aws.tfstate" && test -s "$BOOTSTRAP_DIR/teardown-host.yaml"
         msg: Preserve the deployment's state and teardown handoff until cleanup succeeds.
     cmds:
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-destroy.yaml --tags cleanup
 
-  vm-provision:
+  native-vm-provision:
+    internal: true
     desc: Create/start a fresh Proxmox VM using the existing provisioner (never replaces an existing VM)
     silent: true
     env:
@@ -219,9 +297,11 @@ tasks:
       BOOTSTRAP_TARGET: proxmox
       ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
     dotenv:
-      - '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/ubuntu-cloud.env'
+      - '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/generated/ubuntu-cloud.env'
     preconditions:
-      - sh: test -r "$BOOTSTRAP_DIR/ubuntu-cloud.env"
+      - sh: test "${BOOTSTRAP_PREPARED:-}" = 1
+        msg: Use bootstrap:vm-provision to prepare inputs first.
+      - sh: test -r "$BOOTSTRAP_INPUT_DIR/ubuntu-cloud.env"
         msg: Run 'task bootstrap:init TARGET=proxmox' and edit the configuration first.
       - sh: test -n "${VMID:-}"
         msg: VMID must be set in the VM configuration.
@@ -230,21 +310,24 @@ tasks:
     cmds:
       - echo "Provisioning VM ${VMID} on ${PROXMOX_HOST:-proxmox}"
       - rsync -a vm/ "${PROXMOX_HOST:-proxmox}:/tmp/vm/"
-      - rsync -a "$BOOTSTRAP_DIR/ubuntu-cloud.env" "${PROXMOX_HOST:-proxmox}:/tmp/vm/proxmox/"
+      - rsync -a "$BOOTSTRAP_INPUT_DIR/ubuntu-cloud.env" "${PROXMOX_HOST:-proxmox}:/tmp/vm/proxmox/"
       - BOOTSTRAP_PROXMOX_HOST="${PROXMOX_HOST:-proxmox}" BOOTSTRAP_SYNC_PUBLIC_KEY=1 ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-proxmox-key.yaml
       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo env VM_SSH_PUBLIC_KEY_FILE=/tmp/vm/proxmox/bootstrap-authorized-key.pub bash /tmp/vm/proxmox/create-ubuntu-cloud-vm.sh
       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo qm start "${VMID}"
       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
 
-  vm-wait:
+  native-vm-wait:
+    internal: true
     desc: Wait for an existing Proxmox VM through its guest agent
     silent: true
     env:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
     dotenv:
-      - '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/ubuntu-cloud.env'
+      - '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/generated/ubuntu-cloud.env'
     preconditions:
-      - sh: test -r "$BOOTSTRAP_DIR/ubuntu-cloud.env"
+      - sh: test "${BOOTSTRAP_PREPARED:-}" = 1
+        msg: Use bootstrap:vm-wait to prepare inputs first.
+      - sh: test -r "$BOOTSTRAP_INPUT_DIR/ubuntu-cloud.env"
         msg: Run 'task bootstrap:init TARGET=proxmox' and edit the configuration first.
       - sh: case "${VMID:-}" in *[!0-9]*|'') exit 1;; esac
         msg: VMID must be a positive integer.
@@ -252,7 +335,8 @@ tasks:
       - rsync -a vm/ "${PROXMOX_HOST:-proxmox}:/tmp/vm/"
       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
 
-  vm-preflight:
+  native-vm-preflight:
+    internal: true
     desc: Validate fresh Proxmox VM identity, storage, bridge and public key
     silent: true
     env:
@@ -260,9 +344,11 @@ tasks:
       BOOTSTRAP_TARGET: proxmox
       ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
     dotenv:
-      - '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/ubuntu-cloud.env'
+      - '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/generated/ubuntu-cloud.env'
     preconditions:
-      - sh: test -r "$BOOTSTRAP_DIR/ubuntu-cloud.env"
+      - sh: test "${BOOTSTRAP_PREPARED:-}" = 1
+        msg: Use bootstrap:vm-preflight to prepare inputs first.
+      - sh: test -r "$BOOTSTRAP_INPUT_DIR/ubuntu-cloud.env"
         msg: Run 'task bootstrap:init TARGET=proxmox' and edit the configuration first.
       - sh: test -n "${VMID:-}" && test -n "${VM_STORAGE:-}" && test -n "${VM_BRIDGE:-}"
         msg: VMID, VM_STORAGE, and VM_BRIDGE must be set in the VM configuration.

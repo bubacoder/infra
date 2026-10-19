@@ -74,7 +74,8 @@ Choose either bootstrap target explicitly; neither is the default:
 | Proxmox | `task bootstrap:init TARGET=proxmox` | [Proxmox installation](docs/setup.md) |
 
 Both use native provisioning, Ansible host configuration and Docker Compose, with
-separate infrastructure inputs and service secrets. Pass the same `TARGET` on
+one private operator-edited `bootstrap.yaml`, automatically converted to native
+inputs under `generated/`. Service secrets are excluded from Terraform inputs. Pass the same `TARGET` on
 subsequent bootstrap commands; each target has its own default input/state directory.
 See [configuration and safety](docs/bootstrap-configuration.md).
 The underlying [AWS EC2 Terraform configuration](terraform/aws-vm/README.md) also

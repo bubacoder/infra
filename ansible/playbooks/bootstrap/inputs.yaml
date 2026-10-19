@@ -2,6 +2,7 @@
 - name: Locate explicitly selected native inputs
   ansible.builtin.set_fact:
     bootstrap_dir: "{{ lookup('env', 'BOOTSTRAP_DIR') }}"
+    bootstrap_input_dir: "{{ lookup('env', 'BOOTSTRAP_INPUT_DIR') | default(lookup('env', 'BOOTSTRAP_DIR'), true) }}"
     bootstrap_root: "{{ (playbook_dir + '/../..') | realpath }}"
     bootstrap_verify_only: "{{ lookup('env', 'BOOTSTRAP_VERIFY_ONLY') == '1' }}"
 - name: Require an explicit supported target before loading inputs
@@ -13,10 +14,11 @@
     that:
       - (bootstrap_dir | realpath).startswith(bootstrap_root + '/config/')
       - bootstrap_dir | length > 0
+      - (bootstrap_input_dir | realpath) == (bootstrap_dir | realpath) or (bootstrap_input_dir | realpath) == ((bootstrap_dir + '/generated') | realpath)
     fail_msg: Choose a directory under config/ with BOOTSTRAP_CONFIG_DIR.
 - name: Load public host settings
   ansible.builtin.include_vars:
-    file: "{{ bootstrap_dir }}/host.yaml"
+    file: "{{ bootstrap_input_dir }}/host.yaml"
     name: bootstrap
 - name: Validate host settings with Ansible's native argument specification
   ansible.builtin.validate_argument_spec:

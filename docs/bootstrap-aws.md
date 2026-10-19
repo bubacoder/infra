@@ -11,7 +11,7 @@ stopping EC2 does not eliminate all charges. Teardown is separately approved.**
 ## Prerequisites and inputs
 
 Use a Linux controller with [Task](https://taskfile.dev/docs/installation),
-Terraform >= 1.5, AWS CLI, Ansible, Git, SSH,
+Python 3.11+ with PyYAML (`python3 -c 'import yaml'`), Terraform >= 1.5, AWS CLI, Ansible, Git, SSH,
 `ssh-keygen`, curl, controller Python's `netaddr>=0.10.1`, and the collections from
 `ansible/requirements.yml`. Install netaddr in the same environment as Ansible.
 Supply AWS credentials through the standard chain in the
@@ -31,9 +31,10 @@ ansible-galaxy collection install -r ansible/requirements.yml
 task bootstrap:init TARGET=aws
 ```
 
-Initialization fills `expected_account_id` from `aws sts get-caller-identity`,
-`admin_source_address` from this controller's public IPv4 plus `/32`, and
-`ssh_public_key` from `~/.ssh/id_ed25519.pub`. It reads no private key and creates
+Initialization fills `aws.expected_account_id` from `aws sts get-caller-identity`
+and `aws.admin_source_address` from this controller's public IPv4 plus `/32`.
+The public SSH key is referenced by path under `vm`, not copied into source YAML.
+It reads no private key and creates
 no AWS resources. For a different existing public key:
 
 ```bash
@@ -41,9 +42,8 @@ task bootstrap:init TARGET=aws BOOTSTRAP_SSH_PUBLIC_KEY=~/.ssh/my-aws-key.pub
 ```
 
 The selected public-key path and corresponding private-key path are written to new
-host settings. For existing host settings, the selected public key must match
-`ssh_public_key` there. Initialization fills only the three exact template
-placeholders, including in an existing copied template. Configured values and all
+`bootstrap.yaml` inputs. Existing source key paths are preserved. Initialization
+fills only the exact account/CIDR placeholders. Configured values and all
 other edits remain untouched. Subsequent runs with no placeholders need neither
 AWS credentials nor IP detection. Detection failures stop with placeholders intact;
 fix credentials, networking or the key path and rerun initialization.
@@ -53,9 +53,11 @@ bootstrap command; Proxmox uses the same interface with `TARGET=proxmox`. To use
 existing custom directory, also pass its `BOOTSTRAP_CONFIG_DIR` on every command.
 Never create a fresh backend to resume resources recorded in a different directory.
 
-Privately edit `config/bootstrap-aws/host.yaml`, `aws.tfvars`, and `secrets.yaml`.
+Privately edit only `config/bootstrap-aws/bootstrap.yaml`, including `secrets`.
+Native Ansible and Terraform inputs are generated under `generated/` when commands run.
+Never edit those generated files.
 See [inputs and safety](bootstrap-configuration.md). Review the detected account,
-administrator CIDR and public key, then replace the remaining placeholders. Select a
+administrator CIDR and public-key path, then replace the remaining placeholders. Select a
 published repository branch, tag or commit. Use a dedicated deployment subdomain,
 not the homelab's existing base/wildcard. Docker bind mounts must be below `/storage/`.
 

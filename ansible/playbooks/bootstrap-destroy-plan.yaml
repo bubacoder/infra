@@ -32,7 +32,7 @@
             mode: '0600'
         - name: Save the native destroy plan in the original backend
           ansible.builtin.command:
-            argv: [terraform, "-chdir={{ bootstrap_root }}/terraform/aws-vm", plan, -destroy, -lock-timeout=30s, "-var-file={{ bootstrap_dir }}/aws.tfvars", "-out={{ bootstrap_dir }}/destroy.tfplan"]
+            argv: [terraform, "-chdir={{ bootstrap_root }}/terraform/aws-vm", plan, -destroy, -lock-timeout=30s, "-var-file={{ bootstrap_input_dir | default(bootstrap_dir) }}/{{ 'aws.tfvars.json' if lookup('env', 'BOOTSTRAP_INPUT_DIR') else 'aws.tfvars' }}", "-out={{ bootstrap_dir }}/destroy.tfplan"]
           changed_when: false
       always:
         - name: Restore protection without modifying the tracked template
