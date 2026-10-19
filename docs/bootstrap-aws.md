@@ -7,6 +7,11 @@ templates select Docker with Traefik/Homepage; [role and service selection](boot
 also supports Docker-free hosts. Automatic adoption, private subnets, Spot and
 ARM bootstrap are not supported.
 
+For a default Kubernetes server, use the [`k3s` bootstrap profile](../ansible/roles/k3s/README.md)
+instead of the Docker roles/services. K3s state and local volumes use the OS disk
+by default, not the separate `/storage` EBS volume. TCP 6443 remains closed;
+administration can use SSH tunneling without changing the security group.
+
 **EC2, EBS and public IPv4 charges apply. Failures leave resources/state intact;
 stopping EC2 does not eliminate all charges. Teardown is separately approved.**
 

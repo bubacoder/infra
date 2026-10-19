@@ -62,6 +62,11 @@
       when: not bootstrap_verify_only and bootstrap.services | length > 0
     - name: Verify the guest independently of selected roles and services
       ansible.builtin.import_tasks: bootstrap/verify-host.yaml
+    - name: Independently verify the selected K3s server without applying its installation tasks
+      ansible.builtin.include_role:
+        name: k3s
+        tasks_from: verify
+      when: "'k3s' in bootstrap.roles"
     - name: Verify observable application functionality and repeatability
       ansible.builtin.import_tasks: bootstrap/verify.yaml
       when: bootstrap.services | length > 0

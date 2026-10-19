@@ -59,8 +59,12 @@
       - bootstrap.services | unique | length == bootstrap.services | length
       - bootstrap.services | difference(['security/traefik', 'dashboard/homepage']) | length == 0
       - "bootstrap.services | length == 0 or 'debian_docker_host' in bootstrap.roles"
+      - "'k3s' not in bootstrap.roles or bootstrap.services | length == 0"
       - "'dashboard/homepage' not in bootstrap.services or 'security/traefik' in bootstrap.services"
-    fail_msg: Select unique local roles and supported services. Docker services require debian_docker_host; Homepage requires Traefik.
+    fail_msg: >-
+      Select unique local roles and supported services. Docker services require
+      debian_docker_host; Homepage requires Traefik. Default K3s requires services: []
+      to avoid ingress port conflicts.
 - name: Require each selected role to exist locally rather than accepting paths or collection names
   ansible.builtin.assert:
     that:
