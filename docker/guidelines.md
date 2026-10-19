@@ -260,7 +260,7 @@ When adding or modifying a service:
 2. Register it in the intended host's `services.yaml`.
 3. Document required variables and put operator-supplied values in the appropriate
    ignored `.env` files, following [environment-variable precedence](#environment-variables-management).
-4. After authorization, deploy that service with `labctl.py service up`, or apply
+4. After authorization, deploy that service with `scripts/labctl.py service up <category>/<service-name>`, or apply
    the full host configuration with `task docker:apply`.
 
 ### Managing Individual Services (`labctl.py`)

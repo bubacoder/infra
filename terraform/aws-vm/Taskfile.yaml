@@ -175,7 +175,7 @@ tasks:
         echo "Secret name: $SECRET_NAME"
         echo ""
         echo "=== How to retrieve git credentials from Secrets Manager ==="
-        echo "aws secretsmanager get-secret-value --secret-id \"$SECRET_NAME\" --query SecretString --output text"
+        echo "aws secretsmanager get-secret-value --region \"$({{.TFBIN}} output -raw aws_region)\" --secret-id \"$SECRET_NAME\" --query SecretString --output text"
 
   setup-secret:
     desc: Populate git credentials in Secrets Manager (create if not exists, update if exists)
