@@ -6,6 +6,9 @@ Traefik and Homepage; [role and service selection](bootstrap-configuration.md#se
 also supports hosts without Docker. Proxmox CLI scripts provision the VM; Ansible
 configures and verifies the guest, never the hypervisor.
 
+For Kubernetes, select the [`k3s` bootstrap profile](../ansible/roles/k3s/README.md)
+on a dedicated guest instead of the default Docker roles/services.
+
 ## Prerequisites
 
 Prepare the [shared Linux controller and Ansible collections](bootstrap-configuration.md#controller-prerequisites),
@@ -100,8 +103,9 @@ Every deployment checks authenticated access and matching guest facts. Selected
 services additionally check controller DNS, trusted HTTPS, persistent certificate/log
 paths and stable containers without recreation on repeat Compose deployment.
 Homepage also checks its live Traefik widget; `up --wait` alone is not acceptance.
-Host-only verification runs no Docker/application checks and does not establish
-readiness of workloads installed by custom roles.
+Host-only verification runs no Docker/application checks. Selecting `k3s` adds
+API, node and bundled-deployment readiness checks; other custom role workloads
+need their own acceptance checks.
 
 Verification never provisions, applies roles, formats storage or rewrites DNS.
 

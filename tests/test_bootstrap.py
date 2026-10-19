@@ -582,6 +582,7 @@ class NativeBootstrapTests(unittest.TestCase):
             {"roles": ["../debian_base"]},
             {"roles": ["missing_role"]},
             {"roles": ["debian_base"]},
+            {"roles": ["debian_base", "debian_docker_host", "k3s"]},
             {"services": ["dashboard/homepage"]},
             {"services": ["unknown/service"]},
         ):
@@ -591,6 +592,102 @@ class NativeBootstrapTests(unittest.TestCase):
         host = {**original, "services": ["security/traefik"]}
         (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
         self.run_play("bootstrap-check.yaml")
+
+    def test_k3s_verify_only_never_executes_installation_tasks(self) -> None:
+        source = yaml.safe_load((ROOT / "ansible/playbooks/bootstrap.yaml").read_text())[1]
+        source.pop("vars_files")
+        source["hosts"] = "localhost"
+        source["vars"].update(
+            bootstrap={"name": "fixture-host", "target": "proxmox", "roles": ["k3s"], "services": []},
+            ansible_user="fixture",
+        )
+        source["pre_tasks"] = [{"ansible.builtin.set_fact": {"ansible_facts": {"hostname": "fixture-host", "os_family": "Debian"}}}]
+        role = self.root / "ansible/roles/k3s/tasks"
+        (role / "main.yaml").write_text(yaml.safe_dump([{"ansible.builtin.set_fact": {"test_k3s_installed": True}}]))
+        (role / "verify.yaml").write_text(yaml.safe_dump([{"ansible.builtin.set_fact": {"test_k3s_verified": True}}]))
+        source["tasks"].append(
+            {
+                "ansible.builtin.assert": {
+                    "that": [
+                        "test_k3s_verified",
+                        "test_k3s_installed | default(false) == (not bootstrap_verify_only)",
+                    ]
+                }
+            }
+        )
+        for verify_only in (False, True):
+            source["vars"]["bootstrap_verify_only"] = verify_only
+            (self.root / "ansible/playbooks/test-k3s-selection.yaml").write_text(yaml.safe_dump([source]))
+            self.run_play("test-k3s-selection.yaml")
+
+    def test_k3s_readiness_checks_reject_unhealthy_or_insecure_servers(self) -> None:
+        source = yaml.safe_load((ROOT / "ansible/roles/k3s/tasks/verify.yaml").read_text())
+        source[0].pop("become")
+        for task in source[0]["block"]:
+            if "ansible.builtin.service_facts" in task:
+                del task["ansible.builtin.service_facts"]
+                task["ansible.builtin.set_fact"] = {
+                    "ansible_facts": {"services": {"k3s.service": {"state": "{{ fixture_state }}", "status": "enabled"}}}
+                }
+            elif "ansible.builtin.stat" in task:
+                del task["ansible.builtin.stat"]
+                task["ansible.builtin.set_fact"] = {task.pop("register"): {"stat": {"isreg": True, "uid": 0, "mode": "{{ fixture_mode }}"}}}
+            elif "ansible.builtin.command" in task:
+                del task["ansible.builtin.command"]
+                task["ansible.builtin.set_fact"] = {task.pop("register"): {"rc": "{{ fixture_rc }}"}}
+                task["retries"] = 1
+                task["delay"] = 0
+        for state, mode, rc in (("running", "0600", 0), ("stopped", "0600", 0), ("running", "0644", 0), ("running", "0600", 1)):
+            with self.subTest(state=state, mode=mode, rc=rc):
+                play = [
+                    {
+                        "name": "Exercise real K3s readiness guards without contacting a cluster",
+                        "hosts": "localhost",
+                        "gather_facts": False,
+                        "vars": {"fixture_state": state, "fixture_mode": mode, "fixture_rc": rc},
+                        "tasks": source,
+                    }
+                ]
+                (self.root / "ansible/playbooks/test-k3s-readiness.yaml").write_text(yaml.safe_dump(play))
+                result = self.run_play("test-k3s-readiness.yaml", check=False)
+                self.assertEqual(result.returncode == 0, state == "running" and mode == "0600" and rc == 0, result.stdout + result.stderr)
+
+    def test_k3s_repeat_role_run_skips_download_and_install(self) -> None:
+        role = self.root / "ansible/roles/k3s/tasks"
+        service = self.root / "k3s.service"
+        installer = self.root / "install.sh"
+        source = yaml.safe_load((role / "main.yaml").read_text())
+        source[0].pop("become")
+        tasks = source[0]["block"]
+        tasks[1]["ansible.builtin.stat"]["path"] = str(service)
+        install = tasks[2]["block"]
+        install[0] = {"ansible.builtin.set_fact": {"test_k3s_downloads": "{{ test_k3s_downloads | default(0) | int + 1 }}"}}
+        install[1]["ansible.builtin.file"]["path"] = str(self.root / "cache")
+        install[1]["ansible.builtin.file"].pop("owner")
+        install[1]["ansible.builtin.file"].pop("group")
+        install[2] = {"ansible.builtin.copy": {"dest": str(installer), "content": f"touch '{service}'\n", "mode": "0700"}}
+        install[3]["ansible.builtin.command"] = {"argv": ["/bin/sh", str(installer), "server"], "creates": str(service)}
+        tasks[3] = {"ansible.builtin.set_fact": {"test_k3s_started": True}}
+        (role / "main.yaml").write_text(yaml.safe_dump(source))
+        (role / "verify.yaml").write_text(
+            yaml.safe_dump([{"ansible.builtin.set_fact": {"test_k3s_verifications": "{{ test_k3s_verifications | default(0) | int + 1 }}"}}])
+        )
+        play = [
+            {
+                "name": "Exercise real first-install guard and creates without privileged changes",
+                "hosts": "localhost",
+                "gather_facts": False,
+                "tasks": [
+                    {"ansible.builtin.set_fact": {"ansible_facts": {"os_family": "Debian", "service_mgr": "systemd", "architecture": "x86_64"}}},
+                    {"ansible.builtin.include_role": {"name": "k3s"}},
+                    {"ansible.builtin.include_role": {"name": "k3s"}},
+                    {"ansible.builtin.assert": {"that": ["test_k3s_downloads | int == 1", "test_k3s_verifications | int == 2", "test_k3s_started"]}},
+                ],
+            }
+        ]
+        (self.root / "ansible/playbooks/test-k3s-repeat.yaml").write_text(yaml.safe_dump(play))
+        self.run_play("test-k3s-repeat.yaml")
+        self.assertTrue(service.is_file())
 
     def test_application_acceptance_tracks_selected_services(self) -> None:
         tasks = yaml.safe_load((ROOT / "ansible/playbooks/bootstrap/verify.yaml").read_text())

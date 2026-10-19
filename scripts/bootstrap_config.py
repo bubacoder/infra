@@ -187,6 +187,8 @@ def validate_selection(config: dict, root: Path) -> None:
         raise ConfigError("Unsupported bootstrap service; currently supported: security/traefik, dashboard/homepage.")
     if services and "debian_docker_host" not in config["roles"]:
         raise ConfigError("Docker services require the debian_docker_host role.")
+    if services and "k3s" in config["roles"]:
+        raise ConfigError("The default k3s role requires services: []; bundled Traefik uses ports 80/443.")
     if "dashboard/homepage" in services and "security/traefik" not in services:
         raise ConfigError("The bootstrap Homepage profile requires security/traefik.")
 
