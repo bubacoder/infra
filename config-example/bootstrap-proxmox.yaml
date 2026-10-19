@@ -3,6 +3,8 @@
 version: 1
 target: proxmox
 roles: # Applied in this order. Removing a role does not uninstall it.
+  # For K3s instead: [debian_base, k3s], services: [], host: {},
+  # dns: {enabled: false}, secrets: {}. See ansible/roles/k3s/README.md.
   - debian_base
   - debian_docker_host
 services: # Use [] for a host without bootstrap-managed Docker applications.
