@@ -66,7 +66,8 @@ The long-term goal is to reduce these dependencies and provide offline alternati
 
 ## Getting Started
 
-Choose either bootstrap target explicitly; neither is the default:
+Choose either bootstrap target explicitly; neither is the default. Follow the
+selected guide's prerequisites before running initialization:
 
 | Target | Start | Installation guide |
 | --- | --- | --- |
