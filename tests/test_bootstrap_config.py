@@ -19,13 +19,14 @@ import yaml
 from scripts.bootstrap_config import ConfigError, Configuration, main
 
 ROOT = Path(__file__).resolve().parents[1]
+TEST_TEMP_ROOT = Path("/tmp/opencode")  # noqa: S108 -- optional harness directory
 
 
 class ConfigurationTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(dir="/tmp/opencode")
+        self.temp = tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT if TEST_TEMP_ROOT.is_dir() else None)
         self.addCleanup(self.temp.cleanup)
-        self.root = Path(self.temp.name)
+        self.root = Path(self.temp.name).resolve()
         shutil.copytree(ROOT / "config-example", self.root / "config-example")
         shutil.copytree(ROOT / "ansible/roles", self.root / "ansible/roles")
         self.directory = self.root / "config/deployment"
@@ -46,6 +47,38 @@ class ConfigurationTests(unittest.TestCase):
         before = self.config.source.read_bytes()
         self.config.init()
         self.assertEqual(self.config.source.read_bytes(), before)
+
+    def test_setup_falls_back_when_harness_directory_is_absent(self):
+        is_dir = Path.is_dir
+        fixture = ConfigurationTests()
+        try:
+            with (
+                patch.object(Path, "is_dir", lambda path: False if path == TEST_TEMP_ROOT else is_dir(path)),
+                patch("tempfile.TemporaryDirectory", wraps=tempfile.TemporaryDirectory) as temporary,
+            ):
+                fixture.setUp()
+                self.assertIsNone(temporary.call_args.kwargs["dir"])
+        finally:
+            fixture.doCleanups()
+
+    def test_repository_aliases_dispatch_with_a_canonical_directory(self):
+        for parent_alias in (False, True):
+            with self.subTest(parent_alias=parent_alias):
+                alias = self.root.parent / (self.root.name + ("-parent-alias" if parent_alias else "-alias"))
+                alias.symlink_to(self.root.parent if parent_alias else self.root, target_is_directory=True)
+                self.addCleanup(alias.unlink)
+                repository = alias / self.root.name if parent_alias else alias
+                config = Configuration(self.root, repository / "config/deployment", "proxmox")
+                with patch("scripts.bootstrap_config.subprocess.run", return_value=subprocess.CompletedProcess([], 0)) as run:
+                    self.assertEqual(config.run("vm-wait"), 0)
+                self.assertEqual(config.directory, self.directory)
+                self.assertIn("BOOTSTRAP_CONFIG_DIR=config/deployment", run.call_args.args[0])
+
+    def test_aliases_below_config_are_refused_even_when_they_point_to_the_repository(self):
+        alias = self.root / "config/repository-alias"
+        alias.symlink_to(self.root, target_is_directory=True)
+        with self.assertRaises(ConfigError):
+            Configuration(self.root, alias / "config/deployment", "proxmox")
 
     def test_native_identity_is_derived_and_secrets_are_separated(self):
         self.edit(lambda value: value["vm"].update(name="test-host", username="tester"))
@@ -246,7 +279,6 @@ class ConfigurationTests(unittest.TestCase):
         def native(command, **_kwargs):
             if "ACTION=plan" in command:
                 plan.write_bytes(b"PLAN")
-                plan.chmod(0o600)
             return subprocess.CompletedProcess(command, 0)
 
         with patch("scripts.bootstrap_config.subprocess.run", side_effect=native) as run:
@@ -270,6 +302,32 @@ class ConfigurationTests(unittest.TestCase):
         with patch("scripts.bootstrap_config.subprocess.run", return_value=subprocess.CompletedProcess([], 1)):
             self.assertEqual(self.config.run("plan"), 1)
         self.assertFalse(receipt.exists())
+
+    @patch("scripts.bootstrap_config.public_key", return_value="ssh-ed25519 PUBLIC_FIXTURE")
+    def test_native_dispatch_creates_private_artifacts_and_restores_umask(self, _key):
+        self.aws()
+        previous = os.umask(0o022)
+        try:
+            for action, filename in (("plan", "aws.tfplan"), ("destroy-plan", "destroy.tfplan")):
+                with self.subTest(action=action):
+                    artifact = self.directory / filename
+
+                    def native(command, artifact=artifact, **_kwargs):
+                        artifact.write_bytes(b"PLAN")
+                        return subprocess.CompletedProcess(command, 0)
+
+                    with patch("scripts.bootstrap_config.subprocess.run", side_effect=native):
+                        self.assertEqual(self.config.run(action), 0)
+                    self.assertEqual(stat.S_IMODE(artifact.stat().st_mode), 0o600)
+                    self.assertEqual(os.umask(0o022), 0o022)
+            with (
+                patch("scripts.bootstrap_config.subprocess.run", side_effect=OSError("simulated native failure")),
+                self.assertRaises(OSError),
+            ):
+                self.config.run("plan")
+            self.assertEqual(os.umask(0o022), 0o022)
+        finally:
+            os.umask(previous)
 
     @patch("scripts.bootstrap_config.public_key", return_value="ssh-ed25519 PUBLIC_FIXTURE")
     def test_aws_detection_preserves_operator_edits_and_retries_safely(self, _key):
@@ -310,7 +368,6 @@ class ConfigurationTests(unittest.TestCase):
 
         def native(command, **_kwargs):
             plan.write_bytes(b"DESTROY")
-            plan.chmod(0o600)
             return subprocess.CompletedProcess(command, 0)
 
         with patch("scripts.bootstrap_config.subprocess.run", side_effect=native) as run:

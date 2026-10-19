@@ -291,12 +291,17 @@ class Configuration:
         config_root = self.root / "config"
         if not self.directory.resolve().is_relative_to(config_root.resolve()) or self.directory.resolve() == config_root.resolve():
             raise ConfigError("Select a deployment directory under ignored config/.")
+        # Allow aliases above the repository, not symlinked paths within config/.
+        # Use the outermost boundary so a config/ alias back to the root cannot
+        # masquerade as a second repository boundary.
+        repository = next((parent for parent in reversed(self.directory.parents) if parent.resolve() == self.root), self.root)
         # Refuse aliases into another deployment, even when still below config/.
         current = self.directory
-        while current not in (self.root, current.parent):
+        while current not in (repository, current.parent):
             if current.is_symlink():
                 raise ConfigError("Refusing symlinked configuration paths.")
             current = current.parent
+        self.directory = self.directory.resolve()
         self.target = target
         self.source = self.directory / "bootstrap.yaml"
         self.generated = self.directory / "generated"
@@ -427,18 +432,23 @@ class Configuration:
         # unrelated exported VMID/host, must select the VM for this deployment.
         inherited = {key: value for key, value in os.environ.items() if key not in set(PVE_ENV.values()) | {"VMNAME", "USERNAME", "EXPECTED_IPV4"}}
         env = {**inherited, "BOOTSTRAP_INPUT_DIR": str(self.generated), "BOOTSTRAP_PREPARED": "1"}
-        result = subprocess.run(  # noqa: S603 -- fixed action allowlist; configuration paths are not shell-expanded
-            [
-                executable("task"),
-                "bootstrap:native",
-                f"ACTION={action}",
-                f"TARGET={self.target}",
-                f"BOOTSTRAP_CONFIG_DIR={self.directory.relative_to(self.root)}",
-            ],
-            cwd=self.root,
-            env=env,
-            check=False,
-        )
+        # Native tools must create private plans/state, regardless of controller defaults.
+        previous_umask = os.umask(0o077)
+        try:
+            result = subprocess.run(  # noqa: S603 -- fixed action allowlist; configuration paths are not shell-expanded
+                [
+                    executable("task"),
+                    "bootstrap:native",
+                    f"ACTION={action}",
+                    f"TARGET={self.target}",
+                    f"BOOTSTRAP_CONFIG_DIR={self.directory.relative_to(self.root)}",
+                ],
+                cwd=self.root,
+                env=env,
+                check=False,
+            )
+        finally:
+            os.umask(previous_umask)
         if result.returncode == 0 and planning:
             if digest != hashlib.sha256(json.dumps(outputs(self.load(), self.root), sort_keys=True).encode()).hexdigest():
                 raise ConfigError("Inputs changed during planning. Review a new plan; this plan is not approved for apply.")

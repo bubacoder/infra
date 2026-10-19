@@ -85,8 +85,3 @@ data "cloudinit_config" "main" {
     })
   }
 }
-
-moved {
-  from = data.aws_ami.ubuntu
-  to   = data.aws_ami.ubuntu[0]
-}

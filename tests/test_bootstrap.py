@@ -1384,6 +1384,31 @@ else: sys.exit(91)
 
 class BootstrapStructureTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("task"), "Task is not installed")
+    def test_secrets_info_uses_the_deployment_region_not_the_profile_default(self) -> None:
+        with tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT if TEST_TEMP_ROOT.is_dir() else None) as temporary:
+            root = Path(temporary)
+            shutil.copy(ROOT / "terraform/aws-vm/Taskfile.yaml", root / "Taskfile.yaml")
+            terraform = root / "terraform"
+            terraform.write_text(
+                '#!/bin/sh\ncase "$*" in\n'
+                '"output -raw aws_region") echo eu-central-1;;\n'
+                '"output -raw secrets_manager_secret_name") echo fixture-secret;;\n'
+                "*) exit 42;;\nesac\n"
+            )
+            terraform.chmod(0o700)
+            result = subprocess.run(  # noqa: S603 -- isolated Task fixture; Terraform is a local stub
+                [shutil.which("task"), "secrets-info", f"TFBIN={terraform}"],
+                cwd=root,
+                env={**os.environ, "AWS_DEFAULT_REGION": "us-west-2", "AWS_REGION": "us-west-2"},
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn('aws secretsmanager get-secret-value --region "eu-central-1" --secret-id "fixture-secret"', result.stdout)
+
+    @unittest.skipUnless(shutil.which("task"), "Task is not installed")
     def test_vm_preflight_preserves_arguments_with_optional_mac(self) -> None:
         with tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT if TEST_TEMP_ROOT.is_dir() else None) as temporary:
             root = Path(temporary)
