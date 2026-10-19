@@ -119,6 +119,27 @@ are rejected before provider access. Select roles suitable for the Ubuntu guest;
 role dependencies and role-specific prerequisites still follow native Ansible behavior.
 New local roles do not need a compiler allowlist entry, but must exist before selection.
 
+For a default single-server Kubernetes guest on either target, select the local
+[`k3s` role](../ansible/roles/k3s/README.md):
+
+```yaml
+roles:
+  - debian_base
+  - k3s
+services: []
+host: {}
+dns:
+  enabled: false
+secrets: {}
+```
+
+Keep the template's VM/provider settings and choose a fresh dedicated VM. K3s uses
+its bundled Traefik and ServiceLB, so bootstrap-managed Docker applications cannot
+be selected alongside it. Existing Docker defaults are unchanged. No domain, TLS
+credentials or published repository ref is needed for this profile. The default
+K3s datastore and local volumes live on the OS disk, including on AWS; the separate
+AWS `/storage` disk is not used by K3s. See the role guide for access and backups.
+
 For a host without Docker or bootstrap-managed applications, retain the VM/provider
 sections and replace these configuration sections:
 
@@ -156,7 +177,9 @@ Host-only acceptance checks authenticated access, matching guest facts and, on A
 the verified persistent storage mount. It runs no Docker, Compose, widget or HTTPS
 application tests. With services selected, acceptance checks only their routes,
 persistent data and containers. `bootstrap:verify` never applies roles, even when
-the role list is nonempty. Role-specific workloads require their own acceptance checks.
+the role list is nonempty. Selecting `k3s` additionally runs its read-only checks
+for service, credentials permissions, API, nodes and default packaged deployments.
+Other role-specific workloads require their own acceptance checks.
 
 ## Repository revisions and configuration updates
 

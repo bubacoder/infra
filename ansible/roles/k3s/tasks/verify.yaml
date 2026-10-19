@@ -1,0 +1,63 @@
+---
+- name: Verify K3s without installing or changing cluster resources
+  become: true
+  block:
+    - name: Inspect the K3s service
+      ansible.builtin.service_facts:
+
+    - name: Require an enabled and running K3s server
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.services.get('k3s.service', {}).get('state') == 'running'
+          - ansible_facts.services.get('k3s.service', {}).get('status') == 'enabled'
+
+    - name: Inspect admin kubeconfig permissions without reading credentials
+      ansible.builtin.stat:
+        path: /etc/rancher/k3s/k3s.yaml
+        get_checksum: false
+        get_mime: false
+      register: k3s_kubeconfig
+
+    - name: Require a root-only admin kubeconfig
+      ansible.builtin.assert:
+        that:
+          - k3s_kubeconfig.stat.isreg | default(false)
+          - k3s_kubeconfig.stat.uid | default(-1) == 0
+          - k3s_kubeconfig.stat.mode | default('') == '0600'
+
+    - name: Wait for the Kubernetes API to become ready
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, get, --raw=/readyz, --request-timeout=10s]
+      register: k3s_api_ready
+      changed_when: false
+      until: k3s_api_ready.rc == 0
+      retries: 60
+      delay: 5
+
+    - name: Wait for the server node to become Ready
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, wait, --for=condition=Ready, node, --all, --timeout=30s]
+      register: k3s_node_ready
+      changed_when: false
+      until: k3s_node_ready.rc == 0
+      retries: 10
+      delay: 5
+
+    - name: Wait for the default packaged deployments
+      ansible.builtin.command:
+        argv:
+          - /usr/local/bin/k3s
+          - kubectl
+          - --namespace=kube-system
+          - wait
+          - --for=condition=Available
+          - deployment/coredns
+          - deployment/local-path-provisioner
+          - deployment/metrics-server
+          - deployment/traefik
+          - --timeout=30s
+      register: k3s_deployments_ready
+      changed_when: false
+      until: k3s_deployments_ready.rc == 0
+      retries: 20
+      delay: 5

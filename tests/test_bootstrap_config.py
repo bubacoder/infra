@@ -164,14 +164,33 @@ class ConfigurationTests(unittest.TestCase):
         self.assertIsNone(self.config.show()["domain"])
 
     def test_future_local_role_does_not_require_compiler_changes(self):
-        self.edit(lambda v: v.update(roles=["debian_base", "k3s"], services=[], host={}, dns={"enabled": False}, secrets={}))
+        self.edit(lambda v: v.update(roles=["debian_base", "future_role"], services=[], host={}, dns={"enabled": False}, secrets={}))
         with self.assertRaises(ConfigError):
             self.config.prepare()
-        tasks = self.root / "ansible/roles/k3s/tasks"
+        tasks = self.root / "ansible/roles/future_role/tasks"
         tasks.mkdir(parents=True)
         (tasks / "main.yml").write_text("[]\n")
         self.config.prepare()
-        self.assertEqual(self.config.show()["roles"], ["debian_base", "k3s"])
+        self.assertEqual(self.config.show()["roles"], ["debian_base", "future_role"])
+
+    @patch("scripts.bootstrap_config.public_key", return_value="ssh-ed25519 PUBLIC_FIXTURE")
+    def test_k3s_bootstrap_on_both_targets_uses_no_service_credentials(self, _key):
+        for target in ("proxmox", "aws"):
+            with self.subTest(target=target):
+                if target == "aws":
+                    self.aws()
+                self.edit(lambda v: v.update(roles=["debian_base", "k3s"], services=[], host={}, dns={"enabled": False}, secrets={}))
+                self.config.prepare()
+                host = yaml.safe_load((self.config.generated / "host.yaml").read_text())
+                self.assertEqual(host["roles"], ["debian_base", "k3s"])
+                self.assertEqual(host["target"], target)
+                self.assertEqual(host["services"], [])
+                self.assertEqual(yaml.safe_load((self.config.generated / "secrets.yaml").read_text()), {})
+
+    def test_k3s_rejects_bootstrap_docker_ingress_before_provider_access(self):
+        self.edit(lambda v: v["roles"].append("k3s"))
+        with self.assertRaisesRegex(ConfigError, "services"):
+            self.config.prepare()
 
     def test_docker_role_without_services_requires_only_volume_setting(self):
         self.edit(lambda v: v.update(services=[], host={}, dns={"enabled": False}, secrets={}))
