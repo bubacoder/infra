@@ -103,6 +103,8 @@
         - aws.tfstate.backup
         - aws.tfplan
         - destroy.tfplan
+        - apply-inputs.json
+        - destroy-inputs.json
         - known_hosts
         - dns-state.yaml
         - "format-{{ bootstrap_aws.data_volume_id }}"

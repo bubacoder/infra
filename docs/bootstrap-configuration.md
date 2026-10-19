@@ -1,14 +1,21 @@
 # Bootstrap inputs and safety
 
 Bootstrap delegates infrastructure to Terraform, guest configuration to Ansible,
-and container lifecycle to Compose. Task only sequences their native commands.
+and container lifecycle to Compose. A small Python configuration compiler prepares
+their inputs; Task sequences the native commands. Python does not own infrastructure
+state, DNS ownership, SSH trust or storage initialization.
 
 This guide is the shared reference for operators and agents. For the complete
 installation and teardown procedures, choose the [AWS guide](bootstrap-aws.md) or
 [Proxmox guide](setup.md). Provider settings and DNS ownership are covered in
 [Bootstrap DNS](bootstrap-dns.md).
 
-## Separate inputs
+## One private operator input
+
+The compiler needs Python 3.11+ and PyYAML in the controller's `python3` environment.
+On Ubuntu, install missing YAML support with `sudo apt install python3-yaml`;
+check it with `python3 -c 'import yaml'`. No additional Python orchestration
+framework is needed.
 
 Every target-selecting bootstrap command requires `TARGET=aws` or `TARGET=proxmox`.
 Neither is a default. Missing, empty or invalid targets fail before commands run.
@@ -21,55 +28,72 @@ task bootstrap:init TARGET=proxmox
 ```
 
 Defaults are isolated: AWS uses `config/bootstrap-aws/`, Proxmox uses
-`config/bootstrap-proxmox/`. Initialization creates the following under the selected
-directory, without overwriting configured values:
+`config/bootstrap-proxmox/`. Initialization creates only `bootstrap.yaml`, without
+overwriting operator edits. Start with the tracked templates:
+[Proxmox](../config-example/bootstrap-proxmox.yaml) or
+[AWS](../config-example/bootstrap-aws.yaml).
 
-| File | Consumer | Contents |
+If `bootstrap.yaml` is missing, initialization requires an empty deployment
+directory. Restore the original source when recovering an existing deployment;
+never discard its state or recovery records to make initialization proceed.
+
+Define VM name, user and SSH key paths once under `vm`. Set host/application
+settings under `host`, provider inputs under `proxmox` or `aws`, DNS settings under
+`dns`, and Cloudflare/optional AdGuard credentials under `secrets`.
+The schema rejects unknown fields, duplicate YAML keys and mismatched targets.
+Native Terraform/Ansible validation still applies after conversion.
+
+Every operational command prepares the needed native inputs automatically:
+
+| Generated file | Consumer | Contents |
 | --- | --- | --- |
-| `host.yaml` | Ansible | Public host, DNS, application and requested repository settings |
-| `aws.tfvars` | Terraform, AWS only | Public infrastructure inputs; native template validation applies |
-| `secrets.yaml` | Ansible only | Cloudflare token and optional AdGuard credentials |
+| `generated/host.yaml` | Ansible | Non-secret host, DNS and application settings |
+| `generated/secrets.yaml` | Ansible only | Service credentials, never Terraform inputs |
+| `generated/aws.tfvars.json` | Terraform, AWS only | Infrastructure inputs and public SSH key |
+| `generated/ubuntu-cloud.env` | Proxmox scripts only | VM inputs derived from the same identity |
 
-Proxmox initialization also creates `ubuntu-cloud.env` in the selected directory
-without overwriting an existing file. Keep SSH keys in their original controller
-location and reference their paths in `host.yaml`; provisioning transfers only the
-public key directly to Proxmox. `BOOTSTRAP_CONFIG_DIR` selects deployment inputs, including those used
-by the Proxmox `vm-*` helpers. Initialization does not connect to Proxmox or create a VM.
+Never edit generated files: they are machine-owned and replaced on subsequent
+commands. Keep the source and generated files private (`0600`) and their deployment
+and generated directories `0700`. Unsafe permissions and symlinked inputs/artifact
+directories are rejected. State, plans and recovery files remain in the original
+deployment directory, not `generated/`; regeneration never deletes them.
 
-AWS initialization fills the account ID, administrator public IPv4 `/32`, and SSH
-public key in `aws.tfvars` using the active AWS identity, `https://api4.ipify.org`,
-and the selected `.pub` file. Only exact template placeholders are replaced;
-configured values are never refreshed. Review all detected values before planning.
-Use `BOOTSTRAP_SSH_PUBLIC_KEY=~/.ssh/<key>.pub` during initialization to select a
-different key (otherwise the existing `host.yaml` path or `~/.ssh/id_ed25519.pub`
-is used). New host settings use that path and infer the private-key path by removing
-`.pub`; no private key is read. Proxmox initialization does not call AWS or detect
-a public IP. Both targets use the selected key paths in new host settings.
+Keep SSH keys in their original controller location and reference their paths under
+`vm`. Provisioning transfers only the public key directly to Proxmox. No private
+key is read by the compiler. Initialization does not connect to Proxmox or create a VM.
 
-The directory is mode `0700`, files `0600`. Edit them privately. Secrets may be
-encrypted with `ansible-vault encrypt <selected-directory>/secrets.yaml`; provide a
-Vault identity through Ansible's normal controller configuration. Never put
-credentials in Terraform variables, command arguments, host settings or logs.
-Ansible loads and renders secret-bearing tasks with `no_log: true` and mode `0600`.
-Do not use `--diff` or debug secret variables.
+AWS initialization fills exact account/CIDR template placeholders using the active
+AWS identity and `https://api4.ipify.org`, validating the selected public key before
+writing detected defaults. Review them before planning. Configured account/CIDR
+values are never refreshed. Public key material is read from `vm.ssh_public_key`
+when Terraform inputs are generated, rather than duplicated in the source.
+Detection failures preserve placeholders; correct the cause and rerun init.
+Use `BOOTSTRAP_SSH_PUBLIC_KEY=~/.ssh/<key>.pub` when initializing a new source to
+select another key pair. Existing source key settings are not overwritten.
+
+The entire `bootstrap.yaml` is secret-bearing, including when most fields look
+public. Edit it privately; never share it with an agent. Vault-encrypted input is
+not supported. Native Ansible loads/renders generated credentials with `no_log: true`.
+Never put credentials in Terraform variables, command arguments or logs. Do not
+use `--diff` or debug secret variables.
 
 Use `BOOTSTRAP_CONFIG_DIR=config/<directory>` to select a different deployment input/state
 directory. Keep it under the ignored `config/` directory. Use one directory per
 deployment; do not reuse an initialized backend for a different account/host.
 Pass the same explicit `TARGET` and custom directory on every command. A mismatch
-between `TARGET` and `host.yaml` is rejected, including during reinitialization.
+between `TARGET` and `bootstrap.yaml` is rejected, including during reinitialization.
 Always use the deployment's existing backend when managing provisioned resources;
 never substitute a fresh empty state directory.
 AWS credentials use the normal credential chain (for example an explicitly
 selected `AWS_PROFILE`); credentials are never copied to the guest.
 
-`host.yaml` accepts a published branch, tag or full commit SHA as `repository_ref`.
+`host.repository_ref` accepts a published branch, tag or full commit SHA.
 Terraform validates infrastructure inputs; Ansible's native argument specification
 validates host/service inputs.
 
 ## Repository revisions and configuration updates
 
-For example, `repository_ref: main` or `repository_ref: feature/bootstrap` is valid.
+For example, `repository_ref: main` or `repository_ref: feature/bootstrap` under `host` is valid.
 Ansible passes this value directly to its native Git module during configuration:
 a full SHA checks out that exact commit; a branch follows its current remote tip.
 Git reports unavailable refs when checking out the guest repository, not during
@@ -91,15 +115,15 @@ task bootstrap:show-config TARGET=aws BOOTSTRAP_CONFIG_DIR=config/my-test
 ```
 
 For agents, these commands are the only supported configuration inspection
-interface. Do not read `secrets.yaml`, Terraform state or other secret-bearing
+interface. Do not read `bootstrap.yaml`, generated credentials, Terraform state or other secret-bearing
 inputs with file tools, `cat`, `grep` or ad-hoc scripts. Operators enter secrets
 privately; never copy them into chat, command arguments, logs or Terraform inputs.
 
-The offline playbook opens only the **non-secret** `host.yaml` and prints
-allowlisted settings. It never opens `secrets.yaml`, Terraform state, provider
-credentials or other private inputs. Unknown fields are omitted. Keep secrets
-out of the public file; this is not a general-purpose secret scrubber. Output is
-not anonymized: redact identifiers before sharing outside the trusted session.
+The offline compiler reads the private source internally and prints only explicitly
+allowlisted non-secret settings. It does not generate files, read Terraform state,
+read private SSH keys or contact providers. Parser failures never display private
+values. This is not a general-purpose secret scrubber: put credentials only under
+`secrets`. Output is not anonymized: redact identifiers before sharing outside the trusted session.
 On failure have the operator correct the file privately; never fall back to raw
 secret-file reads. Use `bootstrap:plan` separately for authorized live preflight.
 
@@ -112,6 +136,12 @@ locking, refresh and destruction. Do not use standalone `aws-vm:*` tasks against
 this backend. Review native plans: missing resources can be recreated by Terraform
 and changed provisioning inputs can propose replacement. Never apply an unreviewed
 replacement plan.
+
+Successful AWS planning also saves a private input/plan fingerprint beside the plan.
+Apply/destruction requires both the prepared inputs and saved plan bytes to match
+that record. Configuration changes, public-key changes or plan changes require a new
+reviewed plan. A failed planning run invalidates the previous fingerprint. Do not
+run concurrent bootstrap commands or edit the source during a command.
 
 Live planning, provisioning, configuration and destruction require operator
 authorization. Do not modify private inputs or deployment state without approval.
@@ -141,6 +171,7 @@ guide.
 
 `task bootstrap:test` runs only the offline bootstrap Python and Proxmox shell tests,
 not unrelated service or backup tests. Use `task test` for the full Python suite.
-Python bootstrap coverage is in [`tests/test_bootstrap.py`](../tests/test_bootstrap.py).
+Python coverage is in [`tests/test_bootstrap.py`](../tests/test_bootstrap.py) and
+[`tests/test_bootstrap_config.py`](../tests/test_bootstrap_config.py).
 For mocked Terraform tests and their prerequisites, see the
 [AWS Terraform module](../terraform/aws-vm/README.md).

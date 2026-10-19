@@ -1,0 +1,39 @@
+# Private operator input. Keep mode 0600; never share this file with an agent.
+# Only this file is edited. Native inputs are derived under generated/.
+version: 1
+target: proxmox
+vm:
+  name: docker-proxmox
+  username: admin
+  ssh_public_key: ~/.ssh/id_ed25519.pub
+  ssh_private_key: ~/.ssh/id_ed25519
+proxmox:
+  host: proxmox # Existing trusted SSH alias.
+  vmid: 999
+  address: auto # Or an externally reserved DHCP IPv4 address.
+  ubuntu_version: '26.04'
+  cpu_cores: 4
+  memory_max_mib: 4096
+  memory_min_mib: 1024
+  disk_size: 256G
+  storage: local-lvm
+  bridge: vmbr0
+  mac: ''
+host:
+  domain: proxmox-test.example.com
+  acme_email: admin@example.com
+  timezone: Etc/UTC
+  docker_volumes: /srv/docker-volumes
+  repository_url: https://github.com/bubacoder/infra.git
+  repository_ref: REPLACE_WITH_BRANCH_TAG_OR_COMMIT
+dns:
+  enabled: true
+  # Optional existing AdGuard instances. HTTPS is recommended. HTTP sends
+  # credentials unencrypted; use only on an operator-approved trusted network.
+  # adguard_urls:
+  #   - https://adguard-primary.example.com
+  #   - http://192.0.2.10:3000
+secrets:
+  cloudflare_token: REPLACE_WITH_CLOUDFLARE_TOKEN
+  # adguard_username: REPLACE_WITH_ADGUARD_USERNAME
+  # adguard_password: REPLACE_WITH_ADGUARD_PASSWORD

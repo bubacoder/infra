@@ -10,7 +10,7 @@ DNS is managed through Ansible modules:
 For shared input formats, inspection and safety rules, see
 [Bootstrap inputs and safety](bootstrap-configuration.md).
 
-In the non-secret `host.yaml`, set:
+In the private `bootstrap.yaml`, set:
 
 ```yaml
 dns:
@@ -28,7 +28,7 @@ endpoints share the same credentials. A single endpoint can use `adguard_url`;
 do not combine it with `adguard_urls`. Endpoints must be unique HTTP or HTTPS origins with
 no credentials, paths, query strings or fragments.
 
-In private mode-`0600` `secrets.yaml`, supply `cloudflare_token` with `Zone:Read` and
+In its `secrets` section, supply `cloudflare_token` with `Zone:Read` and
 `DNS:Edit` on that zone. Optional AdGuard uses `adguard_username` and
 `adguard_password` for HTTP Basic authentication. Prefer HTTPS with a trusted
 certificate; TLS verification is never disabled. HTTP AdGuard endpoints (for example,

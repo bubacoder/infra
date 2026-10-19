@@ -1,0 +1,36 @@
+# Private operator input. Keep mode 0600; never share this file with an agent.
+# AWS credentials use the standard credential chain, never this file.
+version: 1
+target: aws
+vm:
+  name: docker-aws
+  username: ubuntu
+  ssh_public_key: ~/.ssh/id_ed25519.pub
+  ssh_private_key: ~/.ssh/id_ed25519
+aws:
+  expected_account_id: '123456789012' # Filled by init from the active AWS identity.
+  aws_region: eu-central-1
+  admin_source_address: 203.0.113.10/32 # Filled by init from the controller IPv4.
+  architecture: x86_64
+  instance_type: t3.small
+  allocate_elastic_ip: true
+  os_disk_size_gb: 20
+  data_disk_size_gb: 30
+  # ami_id: ami-... # Optional pin; review image selection in each plan.
+host:
+  domain: aws-test.example.com
+  acme_email: admin@example.com
+  timezone: Etc/UTC
+  docker_volumes: /storage/docker-volumes
+  repository_url: https://github.com/bubacoder/infra.git
+  repository_ref: REPLACE_WITH_BRANCH_TAG_OR_COMMIT
+dns:
+  enabled: true
+  cloudflare_zone: example.com
+  # Optional existing AdGuard instances; see Bootstrap DNS for HTTP risks.
+  # adguard_urls:
+  #   - https://adguard-primary.example.com
+secrets:
+  cloudflare_token: REPLACE_WITH_CLOUDFLARE_TOKEN
+  # adguard_username: REPLACE_WITH_ADGUARD_USERNAME
+  # adguard_password: REPLACE_WITH_ADGUARD_PASSWORD
