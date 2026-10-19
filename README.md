@@ -73,9 +73,11 @@ Choose either bootstrap target explicitly; neither is the default:
 | AWS | `task bootstrap:init TARGET=aws` | [AWS installation](docs/bootstrap-aws.md) |
 | Proxmox | `task bootstrap:init TARGET=proxmox` | [Proxmox installation](docs/setup.md) |
 
-Both use native provisioning, Ansible host configuration and Docker Compose, with
+Both use native provisioning and configurable ordered Ansible roles, with
 one private operator-edited `bootstrap.yaml`, automatically converted to native
-inputs under `generated/`. Service secrets are excluded from Terraform inputs. Pass the same `TARGET` on
+inputs under `generated/`. Templates select Docker/Traefik/Homepage; set `services: []`
+for a host without those applications and select only its needed roles.
+Service secrets are excluded from Terraform inputs. Pass the same `TARGET` on
 subsequent bootstrap commands; each target has its own default input/state directory.
 See [configuration and safety](docs/bootstrap-configuration.md).
 The underlying [AWS EC2 Terraform configuration](terraform/aws-vm/README.md) also

@@ -37,10 +37,12 @@
   vars:
     bootstrap_checkout: "/home/{{ ansible_user }}/repos/infra"
     bootstrap_host_dir: "{{ bootstrap_checkout }}/config/docker/{{ bootstrap.name }}"
-    bootstrap_services:
-      - {directory: security/traefik, file: traefik.yaml}
-      - {directory: dashboard/homepage, file: homepage.yaml}
-    debian_docker_host_volumes_path: "{{ bootstrap.docker_volumes }}"
+    bootstrap_service_catalog:
+      security/traefik: {directory: security/traefik, file: traefik.yaml}
+      dashboard/homepage: {directory: dashboard/homepage, file: homepage.yaml}
+    bootstrap_services: "{{ bootstrap.services | map('extract', bootstrap_service_catalog) | list }}"
+    bootstrap_containers: "{{ (['traefik', 'logrotate'] if 'security/traefik' in bootstrap.services else []) + (['homepage', 'dockerproxy'] if 'dashboard/homepage' in bootstrap.services else []) }}"
+    debian_docker_host_volumes_path: "{{ bootstrap.docker_volumes | default('/srv/docker-volumes') }}"
     debian_base_ssh_key_file: "{{ bootstrap.ssh_public_key | expanduser }}"
   pre_tasks:
     - name: Wait for authenticated SSH (bounded, no TOFU fallback)
@@ -52,19 +54,14 @@
     - name: Gather host facts
       ansible.builtin.setup:
   tasks:
-    - name: Configure Debian using the existing role # noqa: var-naming[no-role-prefix] -- existing role's public interface
-      ansible.builtin.include_role:
-        name: debian_base
-      vars:
-        admin_name: "{{ bootstrap.name }}"
-        admin_email: "{{ bootstrap.acme_email }}"
-      when: not bootstrap_verify_only
-    - name: Configure Docker using the existing role
-      ansible.builtin.include_role:
-        name: debian_docker_host
+    - name: Configure only the selected host roles
+      ansible.builtin.include_tasks: bootstrap/roles.yaml
       when: not bootstrap_verify_only
     - name: Render and deploy core applications with native modules
       ansible.builtin.include_tasks: bootstrap/services.yaml
-      when: not bootstrap_verify_only
+      when: not bootstrap_verify_only and bootstrap.services | length > 0
+    - name: Verify the guest independently of selected roles and services
+      ansible.builtin.import_tasks: bootstrap/verify-host.yaml
     - name: Verify observable application functionality and repeatability
       ansible.builtin.import_tasks: bootstrap/verify.yaml
+      when: bootstrap.services | length > 0

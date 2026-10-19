@@ -2,7 +2,8 @@
 - name: Select DNS operation and required resolution names
   ansible.builtin.set_fact:
     bootstrap_dns_action: "{{ bootstrap_dns_action | default('preview' if bootstrap_verify_only | default(false) else 'present') }}"
-    bootstrap_dns_names: "{{ [bootstrap.domain, 'home.' + bootstrap.domain, 'traefik.' + bootstrap.domain, 'bootstrap-check.' + bootstrap.domain] }}"
+    bootstrap_dns_domain: "{{ bootstrap.domain | default('') }}"
+    bootstrap_dns_names: "{{ ([bootstrap.domain] + (['home.' + bootstrap.domain] if 'dashboard/homepage' in bootstrap.services | default([]) else []) + (['traefik.' + bootstrap.domain] if 'security/traefik' in bootstrap.services | default([]) else []) + ['bootstrap-check.' + bootstrap.domain]) if (bootstrap.domain | default('') | length > 0 and (bootstrap.dns.enabled or bootstrap.services | default([]) | length > 0)) else [] }}"
     bootstrap_dns_records: []
     bootstrap_adguard_urls: "{{ bootstrap.dns.adguard_urls | default([bootstrap.dns.adguard_url] if bootstrap.dns.adguard_url is defined else []) }}"
 - name: Locate native DNS ownership receipt
@@ -19,7 +20,7 @@
     bootstrap_dns_identity:
       target: "{{ bootstrap.target }}"
       name: "{{ bootstrap.name }}"
-      domain: "{{ bootstrap.domain }}"
+      domain: "{{ bootstrap_dns_domain }}"
       cloudflare_zone: "{{ bootstrap.dns.cloudflare_zone | default('') }}"
       adguard_urls: "{{ bootstrap_adguard_urls | sort }}"
 - name: Normalize the receipt's endpoint identity without changing its ownership
@@ -49,6 +50,10 @@
   ansible.builtin.set_fact:
     bootstrap_dns_records: "{{ bootstrap_dns_records + [item | combine({'endpoint': item.endpoint | default(bootstrap_dns_previous_urls | first | default(''))}) if item.provider == 'adguard' else item] }}"
   loop: "{{ bootstrap_dns_receipt.records | default([]) }}"
+- name: Include every receipt-owned name during approved cleanup even if services were deselected
+  ansible.builtin.set_fact:
+    bootstrap_dns_names: "{{ (bootstrap_dns_names + (bootstrap_dns_records | map(attribute='name') | list)) | unique | list }}"
+  when: bootstrap_dns_action == 'absent'
 - name: Resolve the explicitly selected Cloudflare zone using Ansible's HTTP module
   ansible.builtin.uri:
     url: "https://api.cloudflare.com/client/v4/zones?name={{ bootstrap.dns.cloudflare_zone | urlencode }}&status=active"
@@ -64,7 +69,7 @@
     that:
       - bootstrap_cf_zone.json.success
       - bootstrap_cf_zone.json.result | length == 1
-      - bootstrap.domain.endswith('.' + bootstrap.dns.cloudflare_zone)
+      - bootstrap_dns_domain.endswith('.' + bootstrap.dns.cloudflare_zone)
   when: bootstrap.target == 'aws' and bootstrap.dns.cloudflare_zone is defined and (bootstrap.dns.enabled or bootstrap_dns_action == 'absent')
 - name: Check explicit service records cannot defeat the wildcard (never create or adopt them)
   ansible.builtin.include_tasks: dns-record.yaml
@@ -76,7 +81,7 @@
   when: bootstrap.target == 'aws' and bootstrap.dns.enabled
 - name: Manage AWS address records with the native Cloudflare module
   ansible.builtin.include_tasks: dns-record.yaml
-  loop: "{{ [bootstrap.domain, '*.' + bootstrap.domain] }}"
+  loop: "{{ [bootstrap_dns_domain, '*.' + bootstrap_dns_domain] }}"
   loop_control: {loop_var: bootstrap_dns_name}
   vars:
     bootstrap_dns_provider: cloudflare

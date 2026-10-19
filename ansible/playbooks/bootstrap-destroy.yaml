@@ -2,6 +2,8 @@
 - name: Preserve teardown handoff and finalize only after Terraform succeeds
   hosts: localhost
   gather_facts: false
+  vars:
+    bootstrap_dns_teardown: true
   tasks:
     - name: Validate selected native inputs
       ansible.builtin.import_tasks: bootstrap/inputs.yaml

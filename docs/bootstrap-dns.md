@@ -4,7 +4,7 @@ DNS is managed through Ansible modules:
 
 - AWS: `community.general.cloudflare_dns` creates DNS-only base/wildcard A records.
 - Either target: optional `community.dns.adguardhome_rewrite` manages exact local
-  base, `home`, `traefik` and `bootstrap-check` rewrites.
+  base and `bootstrap-check` rewrites, plus `home`/`traefik` for selected services.
 - Proxmox never changes public address records; existing DDNS remains responsible.
 
 For shared input formats, inspection and safety rules, see
@@ -37,8 +37,10 @@ credentials and API traffic are transmitted unencrypted. Cloudflare and applicat
 acceptance routes still require HTTPS. Do not paste secrets into chat, args,
 logs, public host settings or Terraform. Use a dedicated deployment subdomain.
 
-`dns.enabled: false` leaves DNS to the operator while retaining resolver acceptance.
-TLS DNS challenges still need the token. Cloudflare alone is sufficient when no
+`dns.enabled: false` leaves DNS to the operator while retaining resolver acceptance
+for selected applications. With no services and DNS disabled, no resolver/application
+checks or DNS credentials are required. TLS DNS challenges for selected services
+still need the token. Cloudflare alone is sufficient when no
 local resolver overrides the domain. If AdGuard already overrides it, public DNS
 alone may not fix the controller's answers; configure that provider explicitly.
 Without AdGuard, Proxmox names must resolve externally to the guest's LAN address.
@@ -71,7 +73,9 @@ actual resolver for all required names with bounded retries. Caches, split DNS a
 filtering can still stop installation. Failures can leave partial DNS and billable
 AWS resources running. There is no automatic rollback or hosts-file fallback.
 `bootstrap:verify` also requires every configured AdGuard endpoint to contain each
-exact deployment rewrite; a successful answer from just one resolver is not enough.
+required deployment rewrite when DNS management is enabled; a successful answer
+from just one resolver is not enough. Approved teardown also considers receipt-owned
+names for services that have since been deselected; deselection itself never deletes them.
 
 ## Cleanup
 

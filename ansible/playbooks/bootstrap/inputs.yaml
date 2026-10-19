@@ -33,15 +33,16 @@
     that:
       - bootstrap.target == bootstrap_required_target | default(bootstrap.target)
       - bootstrap.name is match('^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$')
-      - bootstrap.domain is match('^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z][a-z0-9-]+$')
-      - "'@' in bootstrap.acme_email"
-      - bootstrap.repository_url is match('^https://[^@?# ]+$')
-      - bootstrap.repository_ref | length > 0
-      - not bootstrap.repository_ref.startswith('-')
-      - bootstrap.repository_ref is not search('\s')
-      - not bootstrap.repository_ref.startswith('REPLACE_WITH_')
-      - bootstrap.docker_volumes.startswith('/') and '..' not in bootstrap.docker_volumes.split('/')
-      - bootstrap.target != 'aws' or bootstrap.docker_volumes.startswith('/storage/')
+      - not (bootstrap.dns.enabled or bootstrap.services | length > 0) or bootstrap.domain | default('') is match('^([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z][a-z0-9-]+$')
+      - bootstrap.services | length == 0 or '@' in bootstrap.acme_email | default('')
+      - bootstrap.services | length == 0 or bootstrap.repository_url | default('') is match('^https://[^@?# ]+$')
+      - bootstrap.services | length == 0 or bootstrap.repository_ref | default('') | length > 0
+      - bootstrap.services | length == 0 or not bootstrap.repository_ref | default('') is match('^-')
+      - bootstrap.services | length == 0 or bootstrap.repository_ref | default('') is not search('\s')
+      - bootstrap.services | length == 0 or not bootstrap.repository_ref | default('') is match('^REPLACE_WITH_')
+      - bootstrap.services | length == 0 or bootstrap.timezone | default('') | length > 0
+      - "'debian_docker_host' not in bootstrap.roles or (bootstrap.docker_volumes | default('')).startswith('/') and '..' not in (bootstrap.docker_volumes | default('')).split('/')"
+      - "bootstrap.target != 'aws' or 'debian_docker_host' not in bootstrap.roles or (bootstrap.docker_volumes | default('')).startswith('/storage/')"
       - bootstrap.target != 'proxmox' or bootstrap.dns.cloudflare_zone | default('') == ''
       - bootstrap.target != 'aws' or not bootstrap.dns.enabled or bootstrap.dns.cloudflare_zone | default('') | length > 0
       - bootstrap.target != 'proxmox' or bootstrap.proxmox_vmid | default(0) | int > 0
@@ -51,3 +52,20 @@
       - bootstrap.dns.adguard_urls | default([]) | unique | length == bootstrap.dns.adguard_urls | default([]) | length
       - bootstrap.dns.adguard_urls | default([]) | select('match', '^https?://[^/@?#\s]+$') | list | length == bootstrap.dns.adguard_urls | default([]) | length
     fail_msg: Correct the public host settings; use a published branch, tag or commit, deployment subdomain and HTTP(S) AdGuard origins without credentials, paths, query strings or fragments.
+- name: Validate ordered role and service selections before contacting providers
+  ansible.builtin.assert:
+    that:
+      - bootstrap.roles | unique | length == bootstrap.roles | length
+      - bootstrap.services | unique | length == bootstrap.services | length
+      - bootstrap.services | difference(['security/traefik', 'dashboard/homepage']) | length == 0
+      - "bootstrap.services | length == 0 or 'debian_docker_host' in bootstrap.roles"
+      - "'dashboard/homepage' not in bootstrap.services or 'security/traefik' in bootstrap.services"
+    fail_msg: Select unique local roles and supported services. Docker services require debian_docker_host; Homepage requires Traefik.
+- name: Require each selected role to exist locally rather than accepting paths or collection names
+  ansible.builtin.assert:
+    that:
+      - item is match('^[a-z][a-z0-9_]*$')
+      - (bootstrap_root + '/ansible/roles/' + item | realpath).startswith(bootstrap_root + '/ansible/roles/')
+      - (bootstrap_root + '/ansible/roles/' + item + '/tasks/main.yaml') is file or (bootstrap_root + '/ansible/roles/' + item + '/tasks/main.yml') is file
+    fail_msg: A selected role is unavailable under ansible/roles. Add the role before selecting it.
+  loop: "{{ bootstrap.roles }}"

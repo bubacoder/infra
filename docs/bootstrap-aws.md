@@ -2,7 +2,9 @@
 
 Terraform provisions an on-demand x86_64 Ubuntu EC2 host, encrypted persistent EBS
 at `/storage`, an Elastic IP, and SSH/HTTPS restricted to an explicit administrator
-CIDR. Ansible configures Traefik/Homepage and optional managed DNS. No automatic
+CIDR. Ansible applies the configured host roles and optional managed DNS. The
+templates select Docker with Traefik/Homepage; [role and service selection](bootstrap-configuration.md#selecting-host-roles-and-applications)
+also supports Docker-free hosts. No automatic
 adoption, private subnet, Spot or ARM bootstrap is supported.
 
 **EC2, EBS and public IPv4 charges apply. Failures leave resources/state intact;
@@ -21,10 +23,12 @@ The identity needs the template's EC2/network/EBS/EIP/IAM permissions, STS ident
 and SSM Run Command/read permissions for the owned instance. The guest receives
 only its SSM role. No administrator AWS credentials are transferred. The private
 SSH key must match the public key supplied to Terraform; AWS bootstrap requires
-the `ubuntu` user. Use a Cloudflare domain and scoped DNS token, ACME email, and
+the `ubuntu` user. For the default service profile use a Cloudflare domain and scoped DNS token, ACME email, and
 an optional existing AdGuard endpoint. HTTPS is recommended; HTTP is supported on
 operator-approved trusted networks with unencrypted credentials and API traffic.
 See [Bootstrap DNS](bootstrap-dns.md).
+With `services: []` and DNS disabled, service credentials, domain and TLS settings
+are unnecessary. AWS credentials, SSH access and persistent storage safeguards remain required.
 
 ```bash
 ansible-galaxy collection install -r ansible/requirements.yml
@@ -109,9 +113,11 @@ cloud-init also installs Docker's `/storage` mount prerequisite.
 
 Native Ansible modules configure DNS, the existing host roles, the selected Git
 checkout and private Compose files. Compose waits for running/healthy services.
-Acceptance additionally checks the controller's DNS resolution, trusted HTTPS for
+For the default service profile, acceptance additionally checks the controller's DNS resolution, trusted HTTPS for
 both routes, the live Homepage-to-Traefik widget, persistent ACME/log paths, stable
 containers and no recreation on repeat Compose deployment.
+Host-only verification checks authenticated access, guest identity and the owned
+storage mount without running Docker or application checks.
 
 ```bash
 task bootstrap:verify TARGET=aws

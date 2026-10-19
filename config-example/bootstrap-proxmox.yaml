@@ -2,6 +2,12 @@
 # Only this file is edited. Native inputs are derived under generated/.
 version: 1
 target: proxmox
+roles: # Applied in this order. Removing a role does not uninstall it.
+  - debian_base
+  - debian_docker_host
+services: # Use [] for a host without bootstrap-managed Docker applications.
+  - security/traefik
+  - dashboard/homepage
 vm:
   name: docker-proxmox
   username: admin

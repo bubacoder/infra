@@ -26,6 +26,7 @@ VM_KEYS = {"name", "username", "ssh_public_key", "ssh_private_key"}
 HOST_KEYS = {"domain", "acme_email", "timezone", "docker_volumes", "repository_url", "repository_ref"}
 DNS_KEYS = {"enabled", "cloudflare_zone", "adguard_url", "adguard_urls"}
 SECRET_KEYS = {"cloudflare_token", "adguard_username", "adguard_password"}
+SERVICE_KEYS = {"security/traefik", "dashboard/homepage"}
 PVE_ENV = {
     "host": "PROXMOX_HOST",
     "vmid": "VMID",
@@ -120,16 +121,24 @@ def section(config: dict, name: str, allowed: set, required: set | None = None) 
     return value
 
 
-def validate(config: dict, target: str) -> None:
-    if set(config) != {"version", "target", "vm", "host", "dns", "secrets", target}:
+def validate(config: dict, target: str, root: Path = ROOT) -> None:
+    if set(config) != {"version", "target", "vm", "host", "dns", "secrets", "roles", "services", target}:
         raise ConfigError("Check top-level fields against the selected target's template.")
     if type(config["version"]) is not int or config["version"] != 1 or config["target"] != target:
         raise ConfigError("Unsupported version or TARGET mismatch; select the original target/directory.")
     vm = section(config, "vm", VM_KEYS, VM_KEYS)
-    host = section(config, "host", HOST_KEYS, HOST_KEYS)
+    validate_selection(config, root)
     dns = section(config, "dns", DNS_KEYS, {"enabled"})
-    secrets = section(config, "secrets", SECRET_KEYS, {"cloudflare_token"})
-    for group, fields in ((vm, VM_KEYS), (host, HOST_KEYS), (secrets, set(secrets))):
+    host_required = set(HOST_KEYS) if config["services"] else ({"docker_volumes"} if "debian_docker_host" in config["roles"] else set())
+    if dns["enabled"]:
+        host_required |= {"domain"}
+    host = section(config, "host", HOST_KEYS, host_required)
+    cloudflare_required = bool(config["services"]) or (target == "aws" and dns["enabled"])
+    secret_required = {"cloudflare_token"} if cloudflare_required else set()
+    if dns["enabled"] and (dns.get("adguard_url") or dns.get("adguard_urls")):
+        secret_required |= {"adguard_username", "adguard_password"}
+    secrets = section(config, "secrets", SECRET_KEYS, secret_required)
+    for group, fields in ((vm, VM_KEYS), (host, set(host)), (secrets, set(secrets))):
         if any(not isinstance(group[key], str) or not group[key] or "\x00" in group[key] for key in fields):
             raise ConfigError("VM, host and secret fields must be nonempty strings.")
     if not vm["ssh_public_key"].endswith(".pub"):
@@ -157,6 +166,29 @@ def validate(config: dict, target: str) -> None:
         if not valid:
             raise ConfigError("AdGuard endpoints must be HTTP(S) origins without credentials, paths, queries or fragments.")
     validate_platform(config, target)
+
+
+def validate_selection(config: dict, root: Path) -> None:
+    for field in ("roles", "services"):
+        value = config[field]
+        if not isinstance(value, list) or any(not isinstance(item, str) for item in value) or len(set(value)) != len(value):
+            raise ConfigError(f"{field} must be an ordered list of unique names.")
+    roles_root = (root / "ansible/roles").resolve()
+    for role in config["roles"]:
+        if not re.fullmatch(r"[a-z][a-z0-9_]*", role):
+            raise ConfigError("Roles must be local repository role names, not paths or collection names.")
+        directory = roles_root / role
+        if not directory.resolve().is_relative_to(roles_root) or not any(
+            (directory / f"tasks/main.{suffix}").is_file() for suffix in ("yaml", "yml")
+        ):
+            raise ConfigError("A selected role is not available under ansible/roles. Add it before selecting it.")
+    services = config["services"]
+    if set(services) - SERVICE_KEYS:
+        raise ConfigError("Unsupported bootstrap service; currently supported: security/traefik, dashboard/homepage.")
+    if services and "debian_docker_host" not in config["roles"]:
+        raise ConfigError("Docker services require the debian_docker_host role.")
+    if "dashboard/homepage" in services and "security/traefik" not in services:
+        raise ConfigError("The bootstrap Homepage profile requires security/traefik.")
 
 
 def validate_platform(config: dict, target: str) -> None:
@@ -217,9 +249,9 @@ def public_key(path: str) -> str:
     return value
 
 
-def outputs(config: dict) -> dict[str, str]:
+def outputs(config: dict, root: Path = ROOT) -> dict[str, str]:
     """Explicit allowlists prevent secrets entering public inputs or Terraform."""
-    validate(config, config["target"])
+    validate(config, config["target"], root)
     vm = config["vm"]
     host = {
         **config["host"],
@@ -227,6 +259,8 @@ def outputs(config: dict) -> dict[str, str]:
         "name": vm["name"],
         "target": config["target"],
         "dns": config["dns"],
+        "roles": config["roles"],
+        "services": config["services"],
     }
     result = {"secrets.yaml": yaml.safe_dump(config["secrets"], sort_keys=False)}
     if config["target"] == "proxmox":
@@ -271,7 +305,7 @@ class Configuration:
         if not self.directory.is_dir() or stat.S_IMODE(self.directory.stat().st_mode) & 0o077:
             raise ConfigError("Deployment directory permissions must be private (0700).")
         config = read_yaml(self.source)
-        validate(config, self.target)
+        validate(config, self.target, self.root)
         return config
 
     def init(self) -> None:
@@ -341,7 +375,7 @@ class Configuration:
 
     def prepare(self) -> str:
         config = self.load()
-        rendered = outputs(config)
+        rendered = outputs(config, self.root)
         private_directory(self.generated)
         # Validate all destinations before updating any; never touch deployment state.
         for name in rendered:
@@ -358,9 +392,11 @@ class Configuration:
         return {
             "target": self.target,
             "name": config["vm"]["name"],
-            "domain": config["host"]["domain"],
-            "repository_ref": config["host"]["repository_ref"],
-            "docker_volumes": config["host"]["docker_volumes"],
+            "domain": config["host"].get("domain"),
+            "repository_ref": config["host"].get("repository_ref"),
+            "docker_volumes": config["host"].get("docker_volumes"),
+            "roles": config["roles"],
+            "services": config["services"],
             "proxmox_host": config.get("proxmox", {}).get("host"),
             "proxmox_vmid": config.get("proxmox", {}).get("vmid"),
             "adguard_hosts": [urlsplit(url).hostname for url in endpoints],
@@ -404,7 +440,7 @@ class Configuration:
             check=False,
         )
         if result.returncode == 0 and planning:
-            if digest != hashlib.sha256(json.dumps(outputs(self.load()), sort_keys=True).encode()).hexdigest():
+            if digest != hashlib.sha256(json.dumps(outputs(self.load(), self.root), sort_keys=True).encode()).hexdigest():
                 raise ConfigError("Inputs changed during planning. Review a new plan; this plan is not approved for apply.")
             regular(plan)
             write_private(receipt, json.dumps({"inputs": digest, "plan": hashlib.sha256(plan.read_bytes()).hexdigest()}) + "\n")

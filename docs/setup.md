@@ -1,7 +1,9 @@
 # Getting started on Proxmox
 
-For AWS use [Bootstrap on AWS](bootstrap-aws.md). Both paths deploy an Ubuntu Docker
-host with Traefik and Homepage, using a separate administrative host. Provisioning
+For AWS use [Bootstrap on AWS](bootstrap-aws.md). Both paths provision an Ubuntu
+guest using a separate administrative host. The templates select a Docker host with
+Traefik and Homepage; [role and service selection](bootstrap-configuration.md#selecting-host-roles-and-applications)
+also supports hosts without Docker. Provisioning
 uses the existing Proxmox CLI scripts; Ansible owns configuration and verification.
 
 ## Prerequisites
@@ -37,6 +39,8 @@ are generated automatically under `generated/` when commands run; never edit the
 VM identity is defined once, not repeated across native inputs. Set the published repository branch,
 tag or commit and deployment subdomain. Public DNS stays with DDNS; configure AdGuard
 only if it already exists. See [inputs and secrets](bootstrap-configuration.md).
+For a host-only installation, select the desired `roles`, set `services: []`, and
+omit unused Docker/TLS/repository settings and credentials as described there.
 
 Set `vm.ssh_public_key` to the original controller `.pub` file (for
 example `~/.ssh/id_ed25519.pub`), with its matching `vm.ssh_private_key` path. Do not
@@ -64,9 +68,11 @@ Ansible optionally creates exact AdGuard rewrites, checks the controller's actua
 DNS answers, applies the existing Debian/Docker roles to only this guest, checks
 out the selected repository revision, templates private service settings and runs
 Compose.
-It verifies trusted HTTPS for Homepage and Traefik, the live Homepage widget,
+For the default service selection it verifies trusted HTTPS for Homepage and Traefik, the live Homepage widget,
 persistent certificate/log paths, stable containers and repeat Compose deployment
 without recreation. `up --wait` alone is not the application acceptance check.
+Without selected services, verification checks guest identity/access rather than
+Docker applications. Role selection never configures the Proxmox hypervisor itself.
 
 For a provisioned guest, correct the reported cause, then explicitly approve:
 

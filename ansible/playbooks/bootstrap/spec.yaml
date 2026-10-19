@@ -1,13 +1,15 @@
 target: {type: str, required: true, choices: [aws, proxmox]}
 name: {type: str, required: true}
-domain: {type: str, required: true}
-acme_email: {type: str, required: true}
-timezone: {type: str, required: true}
-docker_volumes: {type: str, required: true}
+roles: {type: list, elements: str, required: true}
+services: {type: list, elements: str, required: true}
+domain: {type: str}
+acme_email: {type: str}
+timezone: {type: str}
+docker_volumes: {type: str}
 ssh_public_key: {type: path, required: true}
 ssh_private_key: {type: path, required: true}
-repository_url: {type: str, required: true}
-repository_ref: {type: str, required: true}
+repository_url: {type: str}
+repository_ref: {type: str}
 proxmox_host: {type: str}
 proxmox_vmid: {type: int}
 proxmox_username: {type: str}

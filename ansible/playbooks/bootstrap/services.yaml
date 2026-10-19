@@ -27,9 +27,9 @@
     dest: "{{ bootstrap_host_dir }}/.env.traefik"
     mode: '0600'
   no_log: true
-- name: Keep the existing service-management tool usable for this core profile
-  ansible.builtin.copy:
-    src: "{{ hostvars.localhost.bootstrap_root }}/config-example/docker/profiles/local-core.yaml"
+- name: Keep the service-management profile aligned with selected applications
+  ansible.builtin.template:
+    src: "{{ hostvars.localhost.bootstrap_root }}/ansible/templates/bootstrap/services.yaml.j2"
     dest: "{{ bootstrap_host_dir }}/services.yaml"
     mode: '0600'
 - name: Deploy each existing Compose project with native Compose health waiting
