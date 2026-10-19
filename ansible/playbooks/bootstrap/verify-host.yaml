@@ -1,0 +1,7 @@
+---
+- name: Verify guest identity and supported operating system independently of applications
+  ansible.builtin.assert:
+    that:
+      - ansible_facts.hostname == bootstrap.name
+      - ansible_facts.os_family == 'Debian'
+    fail_msg: Guest facts must match the selected Ubuntu/Debian deployment identity.

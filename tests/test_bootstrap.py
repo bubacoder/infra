@@ -24,11 +24,12 @@ class NativeBootstrapTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
         shutil.copytree(ROOT / "ansible/playbooks", self.root / "ansible/playbooks")
+        shutil.copytree(ROOT / "ansible/roles", self.root / "ansible/roles")
         shutil.copytree(ROOT / "config-example", self.root / "config-example")
         self.directory = self.root / "config/bootstrap"
         self.env = {**os.environ, "BOOTSTRAP_DIR": str(self.directory), "BOOTSTRAP_TARGET": "aws", "ANSIBLE_NOCOLOR": "1"}
         self.env["ANSIBLE_CONFIG"] = str(self.root / "ansible.cfg")
-        (self.root / "ansible.cfg").write_text("[defaults]\nretry_files_enabled=False\n")
+        (self.root / "ansible.cfg").write_text("[defaults]\nretry_files_enabled=False\nroles_path=ansible/roles\n")
         self.public_key_file = self.root / "controller-key.pub"
         self.public_key = "ssh-ed25519 " + base64.b64encode(b"\x00\x00\x00\x0bssh-ed25519\x00\x00\x00\x20" + bytes(range(32))).decode()
         self.public_key_file.write_text(self.public_key + " fixture-comment\n")
@@ -477,6 +478,187 @@ class NativeBootstrapTests(unittest.TestCase):
         (self.directory / "host.yaml").write_text(yaml.safe_dump(value))
         self.assertNotEqual(self.run_play("bootstrap-check.yaml", check=False).returncode, 0)
 
+    def test_host_only_native_validation_and_empty_secrets(self) -> None:
+        self.env["BOOTSTRAP_TARGET"] = "proxmox"
+        self.initialize()
+        host = self.valid_host()
+        host.update(roles=["debian_base"], services=[], dns={"enabled": False})
+        for key in ("domain", "acme_email", "timezone", "docker_volumes", "repository_url", "repository_ref"):
+            host.pop(key)
+        (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
+        (self.directory / "secrets.yaml").write_text("{}\n")
+        self.run_play("bootstrap-check.yaml")
+        # Exercise real offline inputs and credential validation without DNS APIs.
+        play = [
+            {
+                "name": "Host-only preflight",
+                "hosts": "localhost",
+                "gather_facts": False,
+                "tasks": [
+                    {"ansible.builtin.import_tasks": "bootstrap/inputs.yaml"},
+                    {"ansible.builtin.import_tasks": "bootstrap/secrets.yaml"},
+                    {"ansible.builtin.import_tasks": "bootstrap/dns.yaml"},
+                    {"ansible.builtin.assert": {"that": ["bootstrap_dns_names | length == 0", "bootstrap_secrets | length == 0"]}},
+                ],
+            }
+        ]
+        (self.root / "ansible/playbooks/test-host-only.yaml").write_text(yaml.safe_dump(play))
+        self.run_play("test-host-only.yaml")
+
+    def test_teardown_still_requires_credentials_for_configured_dns_after_services_are_deselected(self) -> None:
+        self.directory.mkdir(parents=True)
+        secrets = self.directory / "secrets.yaml"
+        secrets.write_text("{}\n")
+        secrets.chmod(0o600)
+        play = [
+            {
+                "name": "Credential boundary",
+                "hosts": "localhost",
+                "gather_facts": False,
+                "vars": {
+                    "bootstrap_dir": str(self.directory),
+                    "bootstrap": {"target": "aws", "services": [], "dns": {"enabled": False, "cloudflare_zone": "example.com"}},
+                    "bootstrap_dns_teardown": False,
+                },
+                "tasks": [{"ansible.builtin.import_tasks": "bootstrap/secrets.yaml"}],
+            }
+        ]
+        path = self.root / "ansible/playbooks/test-teardown-credentials.yaml"
+        path.write_text(yaml.safe_dump(play))
+        self.run_play("test-teardown-credentials.yaml")
+        play[0]["vars"]["bootstrap_dns_teardown"] = True
+        path.write_text(yaml.safe_dump(play))
+        self.assertNotEqual(self.run_play("test-teardown-credentials.yaml", check=False).returncode, 0)
+        secrets.write_text("cloudflare_token: fixture-token\n")
+        self.run_play("test-teardown-credentials.yaml")
+
+    def test_native_role_order_and_host_only_configure_verify_skip_docker(self) -> None:
+        source = yaml.safe_load((ROOT / "ansible/playbooks/bootstrap.yaml").read_text())[1]
+        source.pop("vars_files")
+        source["hosts"] = "localhost"
+        for role in ("fixture_first", "fixture_second"):
+            directory = self.root / f"ansible/roles/{role}/tasks"
+            directory.mkdir(parents=True)
+            (directory / "main.yaml").write_text(
+                yaml.safe_dump(
+                    [
+                        {
+                            "name": "Record selected role",
+                            "ansible.builtin.set_fact": {"test_role_trace": "{{ test_role_trace | default([]) + ['" + role + "'] }}"},
+                        }
+                    ]
+                )
+            )
+        source["vars"].update(
+            bootstrap={"name": "fixture-host", "target": "proxmox", "roles": ["fixture_second", "fixture_first"], "services": []},
+            ansible_user="fixture",
+        )
+        source["pre_tasks"] = [
+            {"name": "Mock collected guest facts", "ansible.builtin.set_fact": {"ansible_facts": {"hostname": "fixture-host", "os_family": "Debian"}}}
+        ]
+        source["tasks"].append(
+            {
+                "name": "No Docker operations on a host-only deployment",
+                "ansible.builtin.assert": {
+                    "that": [
+                        "bootstrap_container_before is not defined or bootstrap_container_before.skipped | default(false)",
+                        "bootstrap_container_after is not defined or bootstrap_container_after.skipped | default(false)",
+                        "test_role_trace | default([]) == ([] if bootstrap_verify_only else ['fixture_second', 'fixture_first'])",
+                    ]
+                },
+            }
+        )
+        path = self.root / "ansible/playbooks/test-selected-roles.yaml"
+        for verify_only in (False, True):
+            source["vars"]["bootstrap_verify_only"] = verify_only
+            path.write_text(yaml.safe_dump([source]))
+            self.run_play("test-selected-roles.yaml")
+
+    def test_native_role_service_combinations_are_validated_before_provider_access(self) -> None:
+        self.initialize()
+        original = self.valid_host()
+        for updates in (
+            {"roles": ["debian_base", "debian_base"]},
+            {"roles": ["../debian_base"]},
+            {"roles": ["missing_role"]},
+            {"roles": ["debian_base"]},
+            {"services": ["dashboard/homepage"]},
+            {"services": ["unknown/service"]},
+        ):
+            host = {**original, **updates}
+            (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
+            self.assertNotEqual(self.run_play("bootstrap-check.yaml", check=False).returncode, 0)
+        host = {**original, "services": ["security/traefik"]}
+        (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
+        self.run_play("bootstrap-check.yaml")
+
+    def test_application_acceptance_tracks_selected_services(self) -> None:
+        tasks = yaml.safe_load((ROOT / "ansible/playbooks/bootstrap/verify.yaml").read_text())
+        for task in tasks:
+            task.pop("become", None)
+            if task.get("ansible.builtin.include_tasks") == "compose.yaml":
+                task["ansible.builtin.include_tasks"] = "bootstrap/compose.yaml"
+            if "ansible.builtin.uri" in task:
+                task.pop("ansible.builtin.uri")
+                task["ansible.builtin.set_fact"] = {"test_http_calls": "{{ test_http_calls | default([]) + [item | default('widget')] }}"}
+                for key in ("register", "until", "retries", "delay"):
+                    task.pop(key, None)
+            if "ansible.builtin.pause" in task:
+                task.pop("ansible.builtin.pause")
+                task["ansible.builtin.set_fact"] = {"test_pause_skipped": True}
+        (self.root / "ansible/playbooks/bootstrap/compose.yaml").write_text(
+            "- name: Mock repeat Compose deployment\n  ansible.builtin.assert:\n    that: bootstrap_service.directory in bootstrap.services\n"
+        )
+        volumes = self.root / "volumes"
+        (volumes / "traefik/letsencrypt").mkdir(parents=True)
+        (volumes / "traefik/letsencrypt/acme.json").write_text("fixture-not-a-certificate")
+        (volumes / "traefik/logs").mkdir()
+        (volumes / "homepage/logs").mkdir(parents=True)
+        docker = self.root / "bin/docker"
+        docker.write_text('#!/bin/sh\nshift 3\nfor container in "$@"; do printf "%s:0:true\\n" "$container"; done\n')
+        docker.chmod(0o700)
+        profile = self.root / "selected-services.yaml"
+        for homepage in (False, True):
+            services = ["security/traefik"] + (["dashboard/homepage"] if homepage else [])
+            containers = ["traefik", "logrotate"] + (["homepage", "dockerproxy"] if homepage else [])
+            play = [
+                {
+                    "name": "Selected application acceptance",
+                    "hosts": "localhost",
+                    "gather_facts": False,
+                    "vars": {
+                        "bootstrap": {"domain": "test.example.com", "docker_volumes": str(volumes), "services": services},
+                        "bootstrap_containers": containers,
+                        "bootstrap_services": [{"directory": service} for service in services],
+                        "ansible_become": False,
+                    },
+                    "tasks": [
+                        {
+                            "name": "Render selected management profile",
+                            "ansible.builtin.template": {
+                                "src": str(ROOT / "ansible/templates/bootstrap/services.yaml.j2"),
+                                "dest": str(profile),
+                                "mode": "0600",
+                            },
+                        },
+                        *tasks,
+                        {
+                            "name": "Check only selected routes and containers",
+                            "ansible.builtin.assert": {
+                                "that": [
+                                    "test_http_calls == " + str(["traefik", "home", "widget"] if homepage else ["traefik"]),
+                                    "bootstrap_container_after.stdout_lines | length == " + str(len(containers)),
+                                ]
+                            },
+                        },
+                    ],
+                }
+            ]
+            (self.root / "ansible/playbooks/test-service-acceptance.yaml").write_text(yaml.safe_dump(play))
+            self.run_play("test-service-acceptance.yaml")
+            expected = [{service.split("/")[0]: [{"name": service.split("/")[1], "state": "up"}]} for service in services]
+            self.assertEqual(yaml.safe_load(profile.read_text())["services"], expected)
+
     def fixture_git(self, repository: Path, *arguments: str) -> str:
         result = subprocess.run(  # noqa: S603
             [
@@ -803,6 +985,7 @@ class NativeBootstrapTests(unittest.TestCase):
                         "target": "proxmox",
                         "name": "guest",
                         "domain": "test.example.com",
+                        "services": ["security/traefik", "dashboard/homepage"],
                         "dns": {"enabled": True, "adguard_urls": endpoints},
                     },
                     "bootstrap_dir": str(self.directory),
@@ -1009,7 +1192,13 @@ class NativeBootstrapTests(unittest.TestCase):
                 "hosts": "localhost",
                 "gather_facts": False,
                 "vars": {
-                    "bootstrap": {"target": "aws", "name": "guest", "domain": domain, "dns": {"enabled": False, "cloudflare_zone": "example.com"}},
+                    "bootstrap": {
+                        "target": "aws",
+                        "name": "guest",
+                        "domain": domain,
+                        "services": ["security/traefik", "dashboard/homepage"],
+                        "dns": {"enabled": False, "cloudflare_zone": "example.com"},
+                    },
                     "bootstrap_dir": str(self.directory),
                     "bootstrap_address": address,
                     "bootstrap_dns_action": "absent",

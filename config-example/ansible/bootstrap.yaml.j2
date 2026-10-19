@@ -1,5 +1,7 @@
 # Public host/service settings; secrets go in secrets.yaml, never Terraform.
 target: {{ bootstrap_init_target }}
+roles: [debian_base, debian_docker_host]
+services: [security/traefik, dashboard/homepage]
 name: docker-{{ bootstrap_init_target }}
 domain: {{ bootstrap_init_target }}-test.example.com
 acme_email: admin@example.com

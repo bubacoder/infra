@@ -1,0 +1,10 @@
+---
+- name: Apply selected host roles in operator-defined order # noqa: var-naming[no-role-prefix] -- shared interfaces of selected local roles
+  ansible.builtin.include_role:
+    name: "{{ bootstrap_role }}"
+  loop: "{{ bootstrap.roles }}"
+  loop_control:
+    loop_var: bootstrap_role
+  vars:
+    admin_name: "{{ bootstrap.name }}"
+    admin_email: "{{ bootstrap.acme_email | default('') }}"

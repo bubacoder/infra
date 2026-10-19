@@ -27,6 +27,7 @@ class ConfigurationTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         shutil.copytree(ROOT / "config-example", self.root / "config-example")
+        shutil.copytree(ROOT / "ansible/roles", self.root / "ansible/roles")
         self.directory = self.root / "config/deployment"
         self.config = Configuration(self.root, self.directory, "proxmox")
         self.config.init()
@@ -95,6 +96,84 @@ class ConfigurationTests(unittest.TestCase):
         output = json.dumps(self.config.show())
         self.assertNotIn("SENTINEL_PRIVATE", output)
         self.assertFalse(self.config.generated.exists())
+
+    def test_roles_and_services_are_explicit_ordered_and_available(self):
+        original = self.config.source.read_text()
+        for fields in (
+            {"roles": "debian_base"},
+            {"roles": ["debian_base", "debian_base"]},
+            {"roles": ["../debian_base"]},
+            {"roles": ["missing_role"]},
+            {"roles": ["debian_base"]},
+            {"services": ["dashboard/homepage"]},
+            {"services": ["unknown/service"]},
+            {"services": ["security/traefik", "security/traefik"]},
+        ):
+            self.config.source.write_text(original)
+            self.edit(lambda v, update=fields: v.update(update))
+            with self.assertRaises(ConfigError):
+                self.config.prepare()
+        self.config.source.write_text(original)
+        self.edit(lambda v: v.update(roles=["debian_tools", "debian_base", "debian_docker_host"]))
+        self.config.prepare()
+        host = yaml.safe_load((self.config.generated / "host.yaml").read_text())
+        self.assertEqual(host["roles"], ["debian_tools", "debian_base", "debian_docker_host"])
+
+    def test_host_only_needs_no_docker_tls_repository_or_dns_credentials(self):
+        self.edit(lambda v: v.update(roles=["debian_base"], services=[], host={}, dns={"enabled": False}, secrets={}))
+        self.config.prepare()
+        host = yaml.safe_load((self.config.generated / "host.yaml").read_text())
+        self.assertNotIn("docker_volumes", host)
+        self.assertNotIn("domain", host)
+        self.assertEqual(host["services"], [])
+        self.assertEqual(yaml.safe_load((self.config.generated / "secrets.yaml").read_text()), {})
+        self.assertEqual(self.config.show()["roles"], ["debian_base"])
+        self.assertIsNone(self.config.show()["domain"])
+
+    def test_future_local_role_does_not_require_compiler_changes(self):
+        self.edit(lambda v: v.update(roles=["debian_base", "k3s"], services=[], host={}, dns={"enabled": False}, secrets={}))
+        with self.assertRaises(ConfigError):
+            self.config.prepare()
+        tasks = self.root / "ansible/roles/k3s/tasks"
+        tasks.mkdir(parents=True)
+        (tasks / "main.yml").write_text("[]\n")
+        self.config.prepare()
+        self.assertEqual(self.config.show()["roles"], ["debian_base", "k3s"])
+
+    def test_docker_role_without_services_requires_only_volume_setting(self):
+        self.edit(lambda v: v.update(services=[], host={}, dns={"enabled": False}, secrets={}))
+        with self.assertRaises(ConfigError):
+            self.config.prepare()
+        self.edit(lambda v: v["host"].update(docker_volumes="/srv/docker-volumes"))
+        self.config.prepare()
+
+    @patch("scripts.bootstrap_config.public_key", return_value="ssh-ed25519 PUBLIC_FIXTURE")
+    def test_aws_host_only_keeps_storage_inputs_without_service_credentials(self, _key):
+        self.aws()
+        self.edit(lambda v: v.update(roles=["debian_base"], services=[], host={}, dns={"enabled": False}, secrets={}))
+        self.config.prepare()
+        variables = json.loads((self.config.generated / "aws.tfvars.json").read_text())
+        self.assertEqual(variables["data_disk_size_gb"], 30)
+        self.assertEqual(variables["bootstrap_mode"], "external")
+        self.assertNotIn("roles", variables)
+        self.edit(lambda v: v.update(host={"domain": "test.example.com"}, dns={"enabled": True, "cloudflare_zone": "example.com"}))
+        with self.assertRaises(ConfigError):
+            self.config.prepare()
+
+    def test_adguard_dns_without_services_needs_only_adguard_credentials(self):
+        self.edit(
+            lambda v: v.update(
+                roles=["debian_base"],
+                services=[],
+                host={"domain": "test.example.com"},
+                dns={"enabled": True, "adguard_urls": ["https://dns.example.com"]},
+                secrets={},
+            )
+        )
+        with self.assertRaises(ConfigError):
+            self.config.prepare()
+        self.edit(lambda v: v["secrets"].update(adguard_username="fixture", adguard_password="SENTINEL_PRIVATE"))
+        self.config.prepare()
 
     def test_permissions_and_symlinks_fail_without_overwriting(self):
         self.directory.chmod(0o755)
@@ -257,7 +336,7 @@ class ConfigurationTests(unittest.TestCase):
     @unittest.skipUnless(shutil.which("task"), "Task is not installed")
     def test_task_initialization_and_helper_prepare_before_native_dotenv(self):
         shutil.copytree(ROOT / "scripts", self.root / "scripts")
-        (self.root / "ansible").mkdir()
+        (self.root / "ansible").mkdir(exist_ok=True)
         shutil.copy(ROOT / "ansible/Taskfile.bootstrap.yaml", self.root / "ansible/Taskfile.bootstrap.yaml")
         (self.root / "Taskfile.yaml").write_text("version: '3'\nincludes:\n  bootstrap: ./ansible/Taskfile.bootstrap.yaml\n")
         binary = self.root / "bin"

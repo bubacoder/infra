@@ -39,7 +39,8 @@ never discard its state or recovery records to make initialization proceed.
 
 Define VM name, user and SSH key paths once under `vm`. Set host/application
 settings under `host`, provider inputs under `proxmox` or `aws`, DNS settings under
-`dns`, and Cloudflare/optional AdGuard credentials under `secrets`.
+`dns`, Cloudflare/optional AdGuard credentials under `secrets`, and ordered host
+roles and applications under the explicit `roles` and `services` lists.
 The schema rejects unknown fields, duplicate YAML keys and mismatched targets.
 Native Terraform/Ansible validation still applies after conversion.
 
@@ -90,6 +91,67 @@ selected `AWS_PROFILE`); credentials are never copied to the guest.
 `host.repository_ref` accepts a published branch, tag or full commit SHA.
 Terraform validates infrastructure inputs; Ansible's native argument specification
 validates host/service inputs.
+
+## Selecting host roles and applications
+
+Both target templates explicitly select the existing Docker host setup:
+
+```yaml
+roles:
+  - debian_base
+  - debian_docker_host
+services:
+  - security/traefik
+  - dashboard/homepage
+```
+
+Roles execute in list order using native Ansible role inclusion. Names must be
+unique local directories under `ansible/roles/`, with a `tasks/main.yaml` or
+`tasks/main.yml` entry point. Paths, collection names, missing roles and duplicates
+are rejected before provider access. Select roles suitable for the Ubuntu guest;
+role dependencies and role-specific prerequisites still follow native Ansible behavior.
+Adding a future local role makes it selectable without a compiler allowlist change;
+this repository does not yet include a k3s role or k3s acceptance checks.
+
+For a host without Docker or bootstrap-managed applications, retain the VM/provider
+sections and replace these configuration sections:
+
+```yaml
+roles:
+  - debian_base
+services: []
+host: {}
+dns:
+  enabled: false
+secrets: {}
+```
+
+An empty role list is also allowed for a provisioned guest with no role-based
+configuration. `debian_base` is not silently inserted. Removing a role or service
+from the lists does **not** uninstall software, stop existing containers, or delete
+data/DNS. Such lifecycle changes require separately reviewed operations.
+
+Currently supported services are `security/traefik` and `dashboard/homepage`.
+Any nonempty service list requires `debian_docker_host`; Homepage also requires
+Traefik for its bootstrap routing/widget profile. Traefik alone is supported.
+The guest's generated service-management profile contains only selected services.
+
+Settings are required only by enabled features:
+
+| Feature | Required settings |
+| --- | --- |
+| Any bootstrap service | All `host` fields from the template and `secrets.cloudflare_token` for TLS |
+| Docker role, even with no services | `host.docker_volumes`; AWS bind mounts must remain below `/storage/` |
+| Enabled DNS management | `host.domain`; AWS also needs `dns.cloudflare_zone` and `secrets.cloudflare_token` |
+| Enabled DNS with existing AdGuard endpoints | `secrets.adguard_username` and `secrets.adguard_password` |
+| No services and DNS disabled | No domain, ACME email, repository settings, or service credentials required |
+
+Host-only acceptance checks authenticated access, matching guest facts and, on AWS,
+the verified persistent storage mount. It runs no Docker, Compose, widget or HTTPS
+application tests. With services selected, acceptance checks only their routes,
+persistent data and containers. `bootstrap:verify` never applies roles, even when
+the role list is nonempty. It does not imply application-specific readiness for
+future roles such as k3s.
 
 ## Repository revisions and configuration updates
 

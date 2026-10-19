@@ -7,7 +7,7 @@
     timeout: 15
     status_code: 200
   delegate_to: localhost
-  loop: [home, traefik]
+  loop: "{{ (['traefik'] if 'security/traefik' in bootstrap.services else []) + (['home'] if 'dashboard/homepage' in bootstrap.services else []) }}"
   register: bootstrap_https
   until: bootstrap_https.status | default(0) == 200
   retries: 36
@@ -24,10 +24,11 @@
   until: bootstrap_widget.json.http | default(none) is mapping and bootstrap_widget.json.error is not defined
   retries: 12
   delay: 5
+  when: "'dashboard/homepage' in bootstrap.services"
 - name: Check persistent certificate and log locations without reading their contents
   ansible.builtin.stat:
     path: "{{ bootstrap.docker_volumes }}/{{ item }}"
-  loop: [traefik/letsencrypt/acme.json, traefik/logs, homepage/logs]
+  loop: "{{ ['traefik/letsencrypt/acme.json', 'traefik/logs'] + (['homepage/logs'] if 'dashboard/homepage' in bootstrap.services else []) }}"
   register: bootstrap_persistence
   become: true
 - name: Require persisted service data
@@ -35,10 +36,10 @@
     that:
       - bootstrap_persistence.results[0].stat.size | default(0) > 0
       - bootstrap_persistence.results[1].stat.isdir | default(false)
-      - bootstrap_persistence.results[2].stat.isdir | default(false)
+      - "'dashboard/homepage' not in bootstrap.services or bootstrap_persistence.results[2].stat.isdir | default(false)"
 - name: Capture native container identities and restart counters
   ansible.builtin.command:
-    argv: [docker, inspect, --format, "{{ '{{.Id}}:{{.RestartCount}}:{{.State.Running}}' }}", traefik, logrotate, homepage, dockerproxy]
+    argv: "{{ ['docker', 'inspect', '--format', '{{.Id}}:{{.RestartCount}}:{{.State.Running}}'] + bootstrap_containers }}"
   register: bootstrap_container_before
   changed_when: false
   become: true
@@ -51,13 +52,13 @@
     seconds: 10
 - name: Read identities and counters again without exposing container environments
   ansible.builtin.command:
-    argv: [docker, inspect, --format, "{{ '{{.Id}}:{{.RestartCount}}:{{.State.Running}}' }}", traefik, logrotate, homepage, dockerproxy]
+    argv: "{{ ['docker', 'inspect', '--format', '{{.Id}}:{{.RestartCount}}:{{.State.Running}}'] + bootstrap_containers }}"
   register: bootstrap_container_after
   changed_when: false
   become: true
 - name: Require stable running containers and no recreation on repeat deployment
   ansible.builtin.assert:
     that:
-      - bootstrap_container_before.stdout_lines | length == 4
+      - bootstrap_container_before.stdout_lines | length == bootstrap_containers | length
       - bootstrap_container_after.stdout_lines == bootstrap_container_before.stdout_lines
-      - bootstrap_container_after.stdout_lines | select('search', ':true$') | list | length == 4
+      - bootstrap_container_after.stdout_lines | select('search', ':true$') | list | length == bootstrap_containers | length

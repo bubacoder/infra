@@ -1,0 +1,7 @@
+# Generated from bootstrap.yaml; edit the source, not this profile.
+services:
+{% for service in bootstrap.services %}
+  - {{ service.split('/')[0] }}:
+      - name: {{ service.split('/')[1] }}
+        state: up
+{% endfor %}
