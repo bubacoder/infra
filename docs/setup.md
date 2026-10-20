@@ -91,6 +91,13 @@ Ansible pins the SSH host key obtained through the trusted guest agent, reconcil
 enabled DNS, applies selected roles and deploys selected services. Apply finishes
 with acceptance checks.
 
+For a non-mutating progress snapshot while apply runs, use
+`task bootstrap:status TARGET=proxmox` (add the same
+`BOOTSTRAP_CONFIG_DIR=config/<deployment>` when applicable). It reports whether
+the VM and guest agent are running, cloud-init has finished and, after the pinned
+SSH key exists, whether K3s is active and its node Ready. It does not replace
+independent acceptance verification.
+
 ## Verify acceptance
 
 Run the independent verification command after apply:

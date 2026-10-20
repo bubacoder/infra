@@ -461,7 +461,7 @@ class Configuration:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("init", "show-config", "prepare", *ACTIONS))
+    parser.add_argument("command", choices=("init", "show-config", "status", "prepare", *ACTIONS))
     args = parser.parse_args()
     try:
         target = os.environ.get("BOOTSTRAP_TARGET", "")
@@ -471,6 +471,17 @@ def main() -> int:
             config.init()
         elif args.command == "show-config":
             print(yaml.safe_dump(config.show(), sort_keys=False), end="")
+        elif args.command == "status":
+            if __package__:
+                from scripts.bootstrap_status import StatusError, status  # noqa: PLC0415 -- avoid circular imports and support package invocation
+            else:
+                from bootstrap_status import StatusError, status  # noqa: PLC0415 -- support direct script invocation without a package import path
+
+            try:
+                status(config)
+            except StatusError as error:
+                print(f"Bootstrap status: {error}", file=sys.stderr)
+                return 1
         elif args.command == "prepare":
             config.prepare()
         else:

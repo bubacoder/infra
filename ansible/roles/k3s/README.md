@@ -37,6 +37,11 @@ enabled/running service, root-only kubeconfig, API readiness, Ready nodes and
 availability of the default packaged deployments. Verification never installs,
 restarts, upgrades or changes Kubernetes resources.
 
+While apply is still running, `task bootstrap:status TARGET=proxmox` or
+`TARGET=aws` reports the current VM/EC2 state and, once trust has been established,
+K3s service and node readiness. This read-only snapshot does not check all
+packaged deployments; run `bootstrap:verify` after apply for acceptance.
+
 AWS still provisions/verifies its standard `/storage` data disk. **K3s defaults
 store cluster state and local-path volumes on the OS disk** under
 `/var/lib/rancher/k3s`, not on `/storage`. Size the OS disk for workloads and back
