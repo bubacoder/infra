@@ -15,6 +15,12 @@ administration can use SSH tunneling without changing the security group.
 **EC2, EBS and public IPv4 charges apply. Failures leave resources/state intact;
 stopping EC2 does not eliminate all charges. Teardown is separately approved.**
 
+During provisioning, `task bootstrap:status TARGET=aws` (with the deployment's
+`BOOTSTRAP_CONFIG_DIR` when customized) provides a bounded read-only snapshot of
+the EC2 state, SSM registration and, after SSH trust is pinned, guest cloud-init
+and K3s if selected. It checks the active AWS account before resource queries.
+This does not apply changes or replace `bootstrap:verify`.
+
 ## Prerequisites
 
 Prepare the [shared Linux controller and Ansible collections](bootstrap-configuration.md#controller-prerequisites),

@@ -1591,6 +1591,7 @@ class BootstrapStructureTests(unittest.TestCase):
                     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                     if task == "bootstrap:test":
                         self.assertIn("python3 -m unittest tests.test_bootstrap", result.stdout)
+                        self.assertIn("tests.test_bootstrap_status", result.stdout)
                         self.assertNotIn("unittest discover", result.stdout)
                         self.assertIn("bash: vm/test-lib-common.sh", result.stdout)
                         self.assertIn("bash: vm/test-wait-for-cloud-init.sh", result.stdout)
@@ -1708,7 +1709,7 @@ class BootstrapStructureTests(unittest.TestCase):
                 wrapper.chmod(0o700)
             env = {key: value for key, value in os.environ.items() if key not in ("TARGET", "BOOTSTRAP_TARGET")}
             env["PATH"] = temporary + os.pathsep + env["PATH"]
-            for task in ("init", "show-config", "plan", "apply", "configure", "verify", "destroy-plan", "destroy", "destroy-cleanup"):
+            for task in ("init", "show-config", "status", "plan", "apply", "configure", "verify", "destroy-plan", "destroy", "destroy-cleanup"):
                 for arguments in ([], ["TARGER=aws"], ["TARGER=proxmox"], ["TARGET="], ["TARGET=other"]):
                     with self.subTest(task=task, arguments=arguments):
                         result = subprocess.run(  # noqa: S603
