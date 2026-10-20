@@ -49,12 +49,25 @@
             INSTALL_K3S_SKIP_START: 'true'
           no_log: true
 
+    - name: Configure the selected API hostname before K3s starts
+      ansible.builtin.include_tasks: access.yaml
+      when: k3s_access.enabled | default(false)
+
     - name: Enable and start the K3s server
       ansible.builtin.systemd_service:
         name: k3s
         enabled: true
         state: started
         daemon_reload: true
+
+    - name: Restart an existing K3s server only when its API hostname changed
+      ansible.builtin.systemd_service:
+        name: k3s
+        state: restarted
+      when:
+        - k3s_service.stat.exists
+        - k3s_access_configuration is defined
+        - k3s_access_configuration is changed
 
 - name: Verify the default K3s server
   ansible.builtin.import_tasks: verify.yaml

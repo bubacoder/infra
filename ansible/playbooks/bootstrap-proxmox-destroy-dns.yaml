@@ -1,0 +1,33 @@
+---
+- name: Verify and reconcile only this Proxmox deployment's owned DNS
+  hosts: localhost
+  gather_facts: false
+  vars:
+    bootstrap_dns_teardown: true
+  tasks:
+    - name: Validate selected private bootstrap inputs
+      ansible.builtin.import_tasks: bootstrap/inputs.yaml
+    - name: Load DNS credentials with redaction
+      ansible.builtin.import_tasks: bootstrap/secrets.yaml
+    - name: Require an explicit Proxmox teardown phase
+      ansible.builtin.assert:
+        that:
+          - bootstrap.target == 'proxmox'
+          - bootstrap_destroy_phase in ['plan', 'cleanup']
+    - name: Load the reviewed deployment-specific Proxmox identity
+      ansible.builtin.include_vars:
+        file: "{{ bootstrap_dir }}/proxmox-destroy-plan.json"
+        name: bootstrap_proxmox_plan
+    - name: Refuse changed VM or DNS ownership identity
+      ansible.builtin.assert:
+        that:
+          - bootstrap_proxmox_plan.name == bootstrap.name
+          - bootstrap_proxmox_plan.vmid == bootstrap.proxmox_vmid
+          - not bootstrap.dns.enabled or bootstrap_proxmox_plan.address | length > 0
+    - name: Select DNS preview or owned-record removal without resolver waits
+      ansible.builtin.set_fact:
+        bootstrap_address: "{{ bootstrap_proxmox_plan.address }}"
+        bootstrap_dns_action: "{{ 'preview' if bootstrap_destroy_phase == 'plan' else 'absent' }}"
+        bootstrap_dns_preflight_only: true
+    - name: Check provider ownership and manage only receipt-owned records
+      ansible.builtin.import_tasks: bootstrap/dns.yaml

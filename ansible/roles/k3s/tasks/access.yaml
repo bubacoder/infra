@@ -1,0 +1,43 @@
+---
+- name: Inspect existing K3s configuration without following symlinks
+  ansible.builtin.stat:
+    path: /etc/rancher/k3s/config.yaml
+  register: k3s_existing_config
+
+- name: Refuse a non-regular K3s configuration
+  ansible.builtin.assert:
+    that:
+      - not k3s_existing_config.stat.exists or (k3s_existing_config.stat.isreg and not k3s_existing_config.stat.islnk)
+    fail_msg: Inspect the existing K3s config path before changing API access.
+
+- name: Read existing K3s configuration privately
+  ansible.builtin.slurp:
+    src: /etc/rancher/k3s/config.yaml
+  register: k3s_existing_content
+  no_log: true
+  when: k3s_existing_config.stat.exists
+
+- name: Preserve all existing K3s settings
+  ansible.builtin.set_fact:
+    k3s_settings: "{{ (k3s_existing_content.content | b64decode | from_yaml) if k3s_existing_config.stat.exists else {} }}"
+  no_log: true
+
+- name: Require a mapping with a list of TLS SANs
+  ansible.builtin.assert:
+    that:
+      - k3s_settings is mapping
+      - k3s_settings['tls-san'] | default([]) is sequence
+      - k3s_settings['tls-san'] | default([]) is not string
+    fail_msg: K3s config.yaml must be a mapping with a list-valued tls-san; no changes made.
+
+- name: Add the selected API host without removing other K3s settings
+  ansible.builtin.copy:
+    dest: /etc/rancher/k3s/config.yaml
+    content: "{{ k3s_settings | combine({'tls-san': (k3s_settings['tls-san'] | default([])) + [k3s_access.host]}) | to_nice_yaml }}"
+    owner: root
+    group: root
+    mode: '0600'
+    backup: true
+  register: k3s_access_configuration
+  no_log: true
+  when: k3s_access.host not in k3s_settings['tls-san'] | default([])
