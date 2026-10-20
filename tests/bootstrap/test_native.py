@@ -13,7 +13,7 @@ from pathlib import Path
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 TEST_TEMP_ROOT = Path("/tmp/opencode")  # noqa: S108 -- approved harness directory; TemporaryDirectory creates private randomized children
 
 
@@ -593,6 +593,77 @@ class NativeBootstrapTests(unittest.TestCase):
         (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
         self.run_play("bootstrap-check.yaml")
 
+    def test_native_k3s_access_profile_is_validated_before_provider_access(self) -> None:
+        self.env["BOOTSTRAP_TARGET"] = "proxmox"
+        self.initialize()
+        host = self.valid_host()
+        host.update(
+            roles=["debian_base", "k3s"],
+            services=[],
+            k3s={"access": {"enabled": True, "host": "k3s.example.com", "context": "k3s-test", "install_context": True}},
+        )
+        (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
+        self.run_play("bootstrap-check.yaml")
+        for change in (
+            lambda v: v["roles"].remove("k3s"),
+            lambda v: v["k3s"]["access"].update(install_context=False),
+            lambda v: v["k3s"]["access"].update(context="../unsafe"),
+        ):
+            with self.subTest(change=change):
+                invalid = yaml.safe_load(yaml.safe_dump(host))
+                change(invalid)
+                (self.directory / "host.yaml").write_text(yaml.safe_dump(invalid))
+                self.assertNotEqual(self.run_play("bootstrap-check.yaml", check=False).returncode, 0)
+
+    def test_proxmox_destroy_dns_requires_matching_reviewed_identity(self) -> None:
+        self.env["BOOTSTRAP_TARGET"] = "proxmox"
+        self.initialize()
+        host = self.valid_host()
+        host.update(roles=["debian_base"], services=[], dns={"enabled": False})
+        (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
+        plan = self.directory / "proxmox-destroy-plan.json"
+        plan.write_text(json.dumps({"name": host["name"], "vmid": host["proxmox_vmid"], "address": ""}))
+        plan.chmod(0o600)
+        play = yaml.safe_load((ROOT / "ansible/playbooks/bootstrap-proxmox-destroy-dns.yaml").read_text())
+        for phase in ("plan", "cleanup"):
+            play[0]["vars"]["bootstrap_destroy_phase"] = phase
+            (self.root / "ansible/playbooks/test-proxmox-destroy-dns.yaml").write_text(yaml.safe_dump(play))
+            self.run_play("test-proxmox-destroy-dns.yaml")
+        plan.write_text(json.dumps({"name": "foreign-guest", "vmid": host["proxmox_vmid"], "address": ""}))
+        self.assertNotEqual(self.run_play("test-proxmox-destroy-dns.yaml", check=False).returncode, 0)
+
+    def test_k3s_access_preserves_existing_settings_and_is_idempotent(self) -> None:
+        path = self.root / "k3s-config.yaml"
+        existing = {"token": "SENTINEL_PRIVATE", "node-label": ["managed=elsewhere"], "tls-san": ["existing.example.com"]}
+        path.write_text(yaml.safe_dump(existing))
+        path.chmod(0o600)
+        tasks = yaml.safe_load((ROOT / "ansible/roles/k3s/tasks/access.yaml").read_text())
+        for task in tasks:
+            for module in ("ansible.builtin.stat", "ansible.builtin.slurp", "ansible.builtin.copy"):
+                if module in task:
+                    options = task[module]
+                    for key in ("path", "src", "dest"):
+                        if key in options:
+                            options[key] = str(path)
+                    options.pop("owner", None)
+                    options.pop("group", None)
+        play = [
+            {
+                "name": "Test K3s API hostname reconciliation without changing a systemd service",
+                "hosts": "localhost",
+                "gather_facts": False,
+                "vars": {"k3s_access": {"host": "api.example.com"}},
+                "tasks": tasks,
+            }
+        ]
+        (self.root / "ansible/playbooks/test-k3s-access.yaml").write_text(yaml.safe_dump(play))
+        result = self.run_play("test-k3s-access.yaml")
+        self.assertNotIn("SENTINEL_PRIVATE", result.stdout)
+        self.assertEqual(yaml.safe_load(path.read_text()), {**existing, "tls-san": ["existing.example.com", "api.example.com"]})
+        second = self.run_play("test-k3s-access.yaml")
+        self.assertIn("changed=0", second.stdout)
+        self.assertEqual(yaml.safe_load(path.read_text())["tls-san"], ["existing.example.com", "api.example.com"])
+
     def test_k3s_verify_only_never_executes_installation_tasks(self) -> None:
         source = yaml.safe_load((ROOT / "ansible/playbooks/bootstrap.yaml").read_text())[1]
         source.pop("vars_files")
@@ -667,7 +738,9 @@ class NativeBootstrapTests(unittest.TestCase):
         install[1]["ansible.builtin.file"].pop("group")
         install[2] = {"ansible.builtin.copy": {"dest": str(installer), "content": f"touch '{service}'\n", "mode": "0700"}}
         install[3]["ansible.builtin.command"] = {"argv": ["/bin/sh", str(installer), "server"], "creates": str(service)}
-        tasks[3] = {"ansible.builtin.set_fact": {"test_k3s_started": True}}
+        for index, task in enumerate(tasks):
+            if "ansible.builtin.systemd_service" in task:
+                tasks[index] = {"ansible.builtin.set_fact": {"test_k3s_started": True}}
         (role / "main.yaml").write_text(yaml.safe_dump(source))
         (role / "verify.yaml").write_text(
             yaml.safe_dump([{"ansible.builtin.set_fact": {"test_k3s_verifications": "{{ test_k3s_verifications | default(0) | int + 1 }}"}}])
@@ -1590,8 +1663,8 @@ class BootstrapStructureTests(unittest.TestCase):
                     )
                     self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
                     if task == "bootstrap:test":
-                        self.assertIn("python3 -m unittest tests.test_bootstrap", result.stdout)
-                        self.assertIn("tests.test_bootstrap_status", result.stdout)
+                        self.assertIn("python3 -m unittest tests.bootstrap.test_native", result.stdout)
+                        self.assertIn("tests.bootstrap.test_status", result.stdout)
                         self.assertNotIn("unittest discover", result.stdout)
                         self.assertIn("bash: vm/test-lib-common.sh", result.stdout)
                         self.assertIn("bash: vm/test-wait-for-cloud-init.sh", result.stdout)
