@@ -99,6 +99,22 @@ scrubber. Output is not anonymized: redact identifiers before sharing evidence.
 On failure, have the operator correct the file privately; do not fall back to raw
 file reads. `bootstrap:plan` is a separate, authorized live preflight.
 
+To check live provisioning progress without running another apply/verify or
+changing generated files, receipts or pinned SSH trust, run:
+
+```bash
+task bootstrap:status TARGET=proxmox BOOTSTRAP_CONFIG_DIR=config/<deployment>
+# or: task bootstrap:status TARGET=aws BOOTSTRAP_CONFIG_DIR=config/<deployment>
+```
+
+Status takes one bounded read-only snapshot: provider VM/EC2 state, Proxmox guest
+agent and cloud-init (or AWS SSM), and, once guest SSH was already pinned by
+bootstrap, guest cloud-init and the selected K3s service/node. It neither waits
+for completion nor creates a guest, changes SSH trust, applies roles or regenerates
+native inputs. Pending checks are reported without failing; provider access or VM
+identity mismatches fail safely. Repeat status as needed while an apply is running.
+Status is **not** acceptance: run `bootstrap:verify` after apply completes.
+
 ## Selecting host roles and applications
 
 Both target templates explicitly select the existing Docker host setup:
@@ -246,6 +262,7 @@ same custom directory, if any, throughout a deployment:
 | --- | --- |
 | `init` | Create the single private input; AWS also detects initial account/IP defaults |
 | `show-config` | Inspect allowlisted settings offline; no generation or provider access |
+| `status` | Bounded read-only snapshot of VM, agent/cloud-init and trusted guest/K3s readiness; no generation or writes |
 | `plan` | AWS: save a Terraform plan and run preflight. Proxmox: read-only VM/DNS preflight |
 | `apply` | AWS: apply the reviewed saved plan. Proxmox: create/start a fresh VM. Then configure and verify |
 | `configure` | Apply selected roles/services to an existing guest and verify; never provision |
@@ -260,7 +277,8 @@ and manual. `bootstrap:test` needs no target because it runs offline tests for b
 
 `task bootstrap:test` runs only the offline bootstrap Python and Proxmox shell tests,
 not unrelated service or backup tests. Use `task test` for the full Python suite.
-Python coverage is in [`tests/test_bootstrap.py`](../tests/test_bootstrap.py) and
-[`tests/test_bootstrap_config.py`](../tests/test_bootstrap_config.py).
+Python coverage is in [`tests/test_bootstrap.py`](../tests/test_bootstrap.py),
+[`tests/test_bootstrap_config.py`](../tests/test_bootstrap_config.py), and
+[`tests/test_bootstrap_status.py`](../tests/test_bootstrap_status.py).
 For mocked Terraform tests and their prerequisites, see the
 [AWS Terraform module](../terraform/aws-vm/README.md).
