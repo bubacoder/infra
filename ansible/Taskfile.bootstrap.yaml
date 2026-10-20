@@ -23,6 +23,14 @@ tasks:
       BOOTSTRAP_TARGET: '{{.TARGET}}'
     cmds: [python3 scripts/bootstrap_config.py show-config]
 
+  status:
+    desc: Read-only snapshot of provider, guest and K3s progress (no waits or generated input changes)
+    requires: {vars: [{name: TARGET, enum: [aws, proxmox]}]}
+    env:
+      BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
+      BOOTSTRAP_TARGET: '{{.TARGET}}'
+    cmds: [python3 scripts/bootstrap_config.py status]
+
   plan:
     desc: Prepare native inputs and review the selected target
     requires: {vars: [{name: TARGET, enum: [aws, proxmox]}]}
@@ -98,7 +106,7 @@ tasks:
   test:
     desc: Run only bootstrap Python and Proxmox shell tests
     cmds:
-      - uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.test_bootstrap tests.test_bootstrap_config
+      - uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.test_bootstrap tests.test_bootstrap_config tests.test_bootstrap_status
       - task: test-shell
 
   test-shell:
