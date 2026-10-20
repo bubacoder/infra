@@ -8,6 +8,8 @@ configures and verifies the guest, never the hypervisor.
 
 For Kubernetes, select the [`k3s` bootstrap profile](../ansible/roles/k3s/README.md)
 on a dedicated guest instead of the default Docker roles/services.
+For optional direct API access and a controller-side kubeconfig/context, follow
+the [K3s access profile](../ansible/roles/k3s/README.md#access-and-lifecycle).
 
 ## Prerequisites
 
@@ -138,9 +140,39 @@ task bootstrap:verify TARGET=proxmox
 
 ## Cleanup
 
-No automated Proxmox teardown is provided. VM, disk and deployment-owned DNS
-disposal require separate approval and provider-side verification. Back up needed
-data first; do not delete recovery records while resource or DNS ownership is uncertain.
+Use the same reviewed bootstrap commands for Proxmox and AWS, always with the
+original private deployment directory. Back up needed data before destruction:
+
+```bash
+task bootstrap:destroy-plan TARGET=proxmox BOOTSTRAP_CONFIG_DIR=config/my-deployment DELETE_DATA=1
+task bootstrap:destroy TARGET=proxmox BOOTSTRAP_CONFIG_DIR=config/my-deployment
+```
+
+The plan checks native Proxmox VM identity, disk and cloud-init snippet ownership,
+guest state, configured storage, snapshots and backups. It refuses ambiguous or
+protected resources, snapshots, backups, and foreign/unreferenced disks. DNS
+ownership is previewed without writes. Review the saved private plan and the
+summarized scope before confirming destruction. The second command requires
+unchanged inputs and plan bytes, shuts down the guest gracefully (no forced stop),
+rechecks identity, destroys the VM and its referenced disks, then verifies absence.
+Only the two plan-owned VM-specific cloud-init snippets and DNS receipt-owned
+records are removed; no shared snippets, backups or snapshots are deleted.
+Keep original DNS provider settings and credentials available until owned records
+have been removed; disabling DNS while records remain blocks the reviewed plan.
+Receipt-owned local Kubernetes credentials are removed without touching unrelated
+contexts. Private `bootstrap.yaml`, generated input, reviewed plan and ownership
+receipts remain for recovery; do not remove them to bypass a failed check.
+
+If verification or DNS/local cleanup fails **after** VM destruction, retain the
+original directory and retry without destroying again:
+
+```bash
+task bootstrap:destroy-cleanup TARGET=proxmox BOOTSTRAP_CONFIG_DIR=config/my-deployment
+```
+
+Changed inputs or an absent reviewed plan must be investigated, not replaced with
+a fresh plan for a deleted VM. Externally managed DHCP reservations, public DNS
+and backups require their own separately reviewed cleanup.
 
 ## Operational limits
 

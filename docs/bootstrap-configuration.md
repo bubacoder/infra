@@ -109,7 +109,8 @@ task bootstrap:status TARGET=proxmox BOOTSTRAP_CONFIG_DIR=config/<deployment>
 
 Status takes one bounded read-only snapshot: provider VM/EC2 state, Proxmox guest
 agent and cloud-init (or AWS SSM), and, once guest SSH was already pinned by
-bootstrap, guest cloud-init and the selected K3s service/node. It neither waits
+bootstrap, guest cloud-init and the selected K3s service/node. With opted-in K3s
+access, it also checks the deployment-owned local context and Ready node. It neither waits
 for completion nor creates a guest, changes SSH trust, applies roles or regenerates
 native inputs. Pending checks are reported without failing; provider access or VM
 identity mismatches fail safely. Repeat status as needed while an apply is running.
@@ -155,6 +156,13 @@ be selected alongside it. Existing Docker defaults are unchanged. No domain, TLS
 credentials or published repository ref is needed for this profile. The default
 K3s datastore and local volumes live on the OS disk, including on AWS; the separate
 AWS `/storage` disk is not used by K3s. See the role guide for access and backups.
+
+Direct controller-side `kubectl` and K9s access is explicitly opt-in using
+`k3s.access` in the private source. It configures K3s's API TLS hostname and,
+after authenticated guest verification, securely installs a unique local context.
+See [K3s access](../ansible/roles/k3s/README.md#access-and-lifecycle) for the
+required DNS, network and controller setup. Existing inputs without this section
+continue using the guest-only K3s profile.
 
 For a host without Docker or bootstrap-managed applications, retain the VM/provider
 sections and replace these configuration sections:
@@ -267,18 +275,23 @@ same custom directory, if any, throughout a deployment:
 | `apply` | AWS: apply the reviewed saved plan. Proxmox: create/start a fresh VM. Then configure and verify |
 | `configure` | Apply selected roles/services to an existing guest and verify; never provision |
 | `verify` | Check guest/storage and selected services; no role application, formatting or DNS writes. Repeat Compose only for selected services |
-| `destroy-plan`, `destroy`, `destroy-cleanup` | AWS-only reviewed destruction and recoverable cleanup; see [AWS teardown](bootstrap-aws.md#teardown) |
+| `destroy-plan`, `destroy`, `destroy-cleanup` | Reviewed target-specific destruction and recoverable cleanup; see [AWS teardown](bootstrap-aws.md#teardown) or [Proxmox cleanup](setup.md#cleanup) |
 
 Proxmox `vm-preflight`, `vm-provision` and `vm-wait` explicitly address Proxmox;
-they are not a generic target fallback. Proxmox disposal is separately approved
-and manual. `bootstrap:test` needs no target because it runs offline tests for both.
+they are not a generic target fallback. Destruction uses a common command contract
+with separate AWS Terraform and Proxmox native implementations, each requiring
+review of the original deployment's identities before deletion. `bootstrap:test`
+needs no target because it runs offline tests for both.
 
 ## Tests
 
 `task bootstrap:test` runs only the offline bootstrap Python and Proxmox shell tests,
 not unrelated service or backup tests. Use `task test` for the full Python suite.
-Python coverage is in [`tests/test_bootstrap.py`](../tests/test_bootstrap.py),
-[`tests/test_bootstrap_config.py`](../tests/test_bootstrap_config.py), and
-[`tests/test_bootstrap_status.py`](../tests/test_bootstrap_status.py).
+Python coverage is in [`tests/bootstrap/test_native.py`](../tests/bootstrap/test_native.py),
+[`tests/bootstrap/test_config.py`](../tests/bootstrap/test_config.py), and
+[`tests/bootstrap/test_status.py`](../tests/bootstrap/test_status.py).
+Controller access coverage is in [`tests/bootstrap/test_access.py`](../tests/bootstrap/test_access.py).
+Guarded Proxmox destroy coverage is in
+[`tests/bootstrap/test_proxmox_destroy.py`](../tests/bootstrap/test_proxmox_destroy.py).
 For mocked Terraform tests and their prerequisites, see the
 [AWS Terraform module](../terraform/aws-vm/README.md).

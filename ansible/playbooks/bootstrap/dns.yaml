@@ -53,7 +53,7 @@
 - name: Include every receipt-owned name during approved cleanup even if services were deselected
   ansible.builtin.set_fact:
     bootstrap_dns_names: "{{ (bootstrap_dns_names + (bootstrap_dns_records | map(attribute='name') | list)) | unique | list }}"
-  when: bootstrap_dns_action == 'absent'
+  when: bootstrap_dns_action == 'absent' or (bootstrap_dns_teardown | default(false) and bootstrap_dns_action == 'preview')
 - name: Resolve the explicitly selected Cloudflare zone using Ansible's HTTP module
   ansible.builtin.uri:
     url: "https://api.cloudflare.com/client/v4/zones?name={{ bootstrap.dns.cloudflare_zone | urlencode }}&status=active"

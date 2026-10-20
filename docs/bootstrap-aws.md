@@ -11,6 +11,8 @@ For a default Kubernetes server, use the [`k3s` bootstrap profile](../ansible/ro
 instead of the Docker roles/services. K3s state and local volumes use the OS disk
 by default, not the separate `/storage` EBS volume. TCP 6443 remains closed;
 administration can use SSH tunneling without changing the security group.
+With explicit `k3s.access.enabled: true`, a reviewed Terraform plan opens TCP 6443
+only from the existing administrator CIDR; see the [K3s access profile](../ansible/roles/k3s/README.md#access-and-lifecycle).
 
 **EC2, EBS and public IPv4 charges apply. Failures leave resources/state intact;
 stopping EC2 does not eliminate all charges. Teardown is separately approved.**
@@ -202,7 +204,9 @@ get permissions, including `ec2:DescribeSnapshots`. Permission errors are not
 treated as proof of deletion. Snapshots are reported, never automatically deleted.
 
 Only after those checks pass are exact deployment-owned DNS records and generated
-controller artifacts removed. Private `bootstrap.yaml` and generated inputs are
+controller artifacts removed. If K3s controller access was explicitly enabled,
+the deployment-owned local kubeconfig context and credentials are also removed;
+unrelated contexts are preserved. Private `bootstrap.yaml` and generated inputs are
 retained. Keep DNS provider settings and cleanup credentials available even when
 services or DNS management have been disabled.
 If post-destroy verification or DNS cleanup fails, recovery files remain. Correct

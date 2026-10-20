@@ -40,6 +40,9 @@ max-statements = 75   # Increased from default 50
 
 [lint.isort]
 known-first-party = [
+  # Direct-script imports from scripts/bootstrap; independent of ignored config/.
+  "access",
+  "config",
   "src",
   "tools",
   "utils",

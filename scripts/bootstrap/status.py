@@ -10,9 +10,11 @@ import subprocess
 from pathlib import Path
 
 if __package__:
-    from scripts.bootstrap_config import ROOT, Configuration, executable, regular
+    from scripts.bootstrap.access import AccessError, verify
+    from scripts.bootstrap.config import ROOT, ConfigError, Configuration, executable, regular
 else:
-    from bootstrap_config import ROOT, Configuration, executable, regular
+    from access import AccessError, verify
+    from config import ROOT, ConfigError, Configuration, executable, regular
 
 
 class StatusError(Exception):
@@ -277,3 +279,11 @@ def status(configuration: Configuration) -> None:
         proxmox_status(config, configuration.directory)
     else:
         aws_status(config, configuration.directory)
+    access = config.get("k3s", {}).get("access", {})
+    if access.get("enabled"):
+        try:
+            verify(configuration.directory, access["context"], config["vm"]["name"], Path.home())
+        except (AccessError, ConfigError, OSError):
+            print("K3s controller access: not ready or not yet installed")
+        else:
+            print(f"K3s controller access: ready (context {access['context']})")

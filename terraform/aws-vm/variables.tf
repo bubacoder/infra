@@ -96,6 +96,12 @@ variable "admin_source_address" {
   }
 }
 
+variable "k3s_api_access" {
+  description = "Allow the K3s Kubernetes API from admin_source_address for external bootstrap"
+  type        = bool
+  default     = false
+}
+
 # --- Storage ---
 
 variable "os_disk_size_gb" {
