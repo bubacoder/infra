@@ -1,0 +1,29 @@
+---
+- name: Retrieve root-only admin kubeconfig for authorized controller access
+  ansible.builtin.slurp:
+    src: /etc/rancher/k3s/k3s.yaml
+  become: true
+  no_log: true
+  register: bootstrap_k3s_admin
+  when: not bootstrap_verify_only
+
+- name: Install and check only this deployment's client context
+  ansible.builtin.command:
+    argv:
+      - python3
+      - "{{ (playbook_dir + '/../../scripts/bootstrap/access.py') | realpath }}"
+      - "{{ 'verify' if bootstrap_verify_only else 'install' }}"
+      - "{{ bootstrap_dir }}"
+      - "{{ bootstrap.k3s.access.context }}"
+      - "{{ bootstrap.k3s.access.host }}"
+      - "{{ bootstrap.name }}"
+    stdin: "{{ bootstrap_k3s_admin.content | b64decode if not bootstrap_verify_only else omit }}"
+  delegate_to: localhost
+  become: false
+  no_log: true
+  register: bootstrap_k3s_local_result
+  changed_when: bootstrap_k3s_local_result.stdout == 'updated'
+
+- name: Describe the local client context without exposing its credentials
+  ansible.builtin.debug:
+    msg: "K3s access ready: kubectl config use-context {{ bootstrap.k3s.access.context }}"

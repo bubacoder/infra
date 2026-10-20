@@ -280,6 +280,7 @@ Then create an IAM role with a trust policy scoped to your repo and reference it
 | data\_disk\_size\_gb | Persistent data EBS volume size in GB (survives instance termination) | `number` | `10` | no |
 | expected\_account\_id | Optional account guard; bootstrap always supplies its expected AWS account | `string` | `null` | no |
 | instance\_type | EC2 instance type. Defaults to t3.small (x86\_64) or t4g.small (arm64) when null. | `string` | `null` | no |
+| k3s\_api\_access | Allow the K3s Kubernetes API from admin\_source\_address for external bootstrap | `bool` | `false` | no |
 | os\_disk\_size\_gb | Root OS disk size in GB | `number` | `20` | no |
 | repo\_directory | Local directory name for the cloned repository | `string` | `"infra"` | no |
 | repo\_url | URL of the infrastructure repository to clone | `string` | `""` | no |

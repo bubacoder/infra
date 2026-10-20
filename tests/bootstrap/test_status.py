@@ -14,10 +14,10 @@ from unittest.mock import patch
 
 import yaml
 
-from scripts.bootstrap_config import Configuration
-from scripts.bootstrap_status import StatusError, status
+from scripts.bootstrap.config import Configuration
+from scripts.bootstrap.status import StatusError, status
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 TEST_TEMP_ROOT = Path("/tmp/opencode")  # noqa: S108 -- approved harness directory
 
 
@@ -61,7 +61,7 @@ class BootstrapStatusTests(unittest.TestCase):
             status(self.configuration)
         return stream.getvalue()
 
-    @patch("scripts.bootstrap_status.ssh_status")
+    @patch("scripts.bootstrap.status.ssh_status")
     def test_absent_proxmox_vm_does_not_create_artifacts(self, ssh):
         ssh.return_value = result(rc=2, error="Configuration file does not exist")
         before = self.configuration.source.read_bytes()
@@ -70,21 +70,30 @@ class BootstrapStatusTests(unittest.TestCase):
         self.assertFalse(self.configuration.generated.exists())
         self.assertEqual(ssh.call_count, 1)
 
-    @patch("scripts.bootstrap_status.ssh_status")
+    @patch("scripts.bootstrap.status.verify")
+    @patch("scripts.bootstrap.status.ssh_status")
+    def test_opted_in_access_reports_controller_readiness_without_installing(self, ssh, verify):
+        self.edit(lambda value: value.update(k3s={"access": {"enabled": True, "host": "192.0.2.10", "context": "k3s-test", "install_context": True}}))
+        ssh.return_value = result(rc=2, error="Configuration file does not exist")
+        self.assertIn("K3s controller access: ready (context k3s-test)", self.inspect())
+        verify.assert_called_once()
+        self.assertFalse(self.configuration.generated.exists())
+
+    @patch("scripts.bootstrap.status.ssh_status")
     def test_existing_id_with_wrong_identity_refuses_guest_queries(self, ssh):
         ssh.side_effect = [result("status: running\n"), result("name: another-vm\nciuser: admin\n")]
         with self.assertRaisesRegex(StatusError, "identity does not match"):
             self.inspect()
         self.assertEqual(ssh.call_count, 2)
 
-    @patch("scripts.bootstrap_status.ssh_status")
+    @patch("scripts.bootstrap.status.ssh_status")
     def test_guest_agent_pending_is_bounded_and_not_a_failure(self, ssh):
         ssh.side_effect = [result("status: running\n"), result(VM_CONFIG), result(rc=255)]
         self.assertIn("Guest agent: not ready", self.inspect())
         self.assertEqual(ssh.call_count, 3)
 
-    @patch("scripts.bootstrap_status.command")
-    @patch("scripts.bootstrap_status.ssh_status")
+    @patch("scripts.bootstrap.status.command")
+    @patch("scripts.bootstrap.status.ssh_status")
     def test_ready_vm_uses_pinned_key_and_only_read_only_guest_checks(self, ssh, command):
         trust = self.directory / "known_hosts"
         trust.write_text("fixture")
@@ -120,8 +129,8 @@ class BootstrapStatusTests(unittest.TestCase):
         self.assertEqual(ssh.call_count, 4)
         self.assertTrue(all("StrictHostKeyChecking=yes" in call.args[0] for call in command.call_args_list[1:]))
 
-    @patch("scripts.bootstrap_status.command")
-    @patch("scripts.bootstrap_status.ssh_status")
+    @patch("scripts.bootstrap.status.command")
+    @patch("scripts.bootstrap.status.ssh_status")
     def test_missing_trust_never_tries_guest_ssh(self, ssh, command):
         ssh.side_effect = [
             result("status: running\n"),
@@ -134,8 +143,8 @@ class BootstrapStatusTests(unittest.TestCase):
         self.assertIn("not yet pinned", self.inspect())
         command.assert_not_called()
 
-    @patch("scripts.bootstrap_status.command")
-    @patch("scripts.bootstrap_status.ssh_status")
+    @patch("scripts.bootstrap.status.command")
+    @patch("scripts.bootstrap.status.ssh_status")
     def test_pinned_key_rejection_never_falls_back_to_tofu(self, ssh, command):
         trust = self.directory / "known_hosts"
         trust.write_text("fixture")
@@ -155,13 +164,13 @@ class BootstrapStatusTests(unittest.TestCase):
         self.assertEqual(trust.read_text(), "fixture")
         self.assertEqual(command.call_count, 2)
 
-    @patch("scripts.bootstrap_status.command")
+    @patch("scripts.bootstrap.status.command")
     def test_aws_missing_state_has_no_api_or_terraform_calls(self, command):
         self.select_aws()
         self.assertIn("no local Terraform state", self.inspect())
         command.assert_not_called()
 
-    @patch("scripts.bootstrap_status.command")
+    @patch("scripts.bootstrap.status.command")
     def test_aws_wrong_account_refuses_terraform_and_instance_lookup(self, command):
         self.select_aws()
         state = self.directory / "aws.tfstate"
@@ -172,7 +181,7 @@ class BootstrapStatusTests(unittest.TestCase):
             self.inspect()
         self.assertEqual(command.call_count, 1)
 
-    @patch("scripts.bootstrap_status.command")
+    @patch("scripts.bootstrap.status.command")
     def test_aws_reads_only_selected_nonsecret_terraform_output(self, command):
         self.select_aws()
         state = self.directory / "aws.tfstate"
@@ -198,7 +207,7 @@ class BootstrapStatusTests(unittest.TestCase):
         self.assertEqual(command.call_args_list[1].args[0][-4:], ["output", f"-state={state}", "-json", "bootstrap_host"])
         self.assertFalse(self.configuration.generated.exists())
 
-    @patch("scripts.bootstrap_status.command")
+    @patch("scripts.bootstrap.status.command")
     def test_aws_empty_state_reports_no_managed_resources(self, command):
         self.select_aws()
         state = self.directory / "aws.tfstate"
@@ -208,7 +217,7 @@ class BootstrapStatusTests(unittest.TestCase):
         self.assertIn("no managed resources", self.inspect())
         self.assertEqual(command.call_args_list[2].args[0][-3:], ["state", "list", f"-state={state}"])
 
-    @patch("scripts.bootstrap_status.command")
+    @patch("scripts.bootstrap.status.command")
     def test_aws_running_reports_ssm_without_creating_ssh_trust(self, command):
         self.select_aws()
         state = self.directory / "aws.tfstate"
