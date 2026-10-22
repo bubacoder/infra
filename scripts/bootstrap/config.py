@@ -11,6 +11,7 @@ import ipaddress
 import json
 import os
 import re
+import shlex
 import shutil
 import stat
 import subprocess
@@ -40,6 +41,7 @@ PVE_ENV = {
     "bridge": "VM_BRIDGE",
     "mac": "VM_MAC",
 }
+PVE_TIMEOUTS = {"agent_timeout_seconds": 600, "cloud_init_timeout_seconds": 1800}
 PVE_KEYS = set(PVE_ENV) | {"address"}
 AWS_KEYS = {
     "expected_account_id",
@@ -180,6 +182,7 @@ def validate(config: dict, target: str, root: Path = ROOT) -> None:
     for group, fields in ((vm, VM_KEYS), (host, set(host)), (secrets, set(secrets))):
         if any(not isinstance(group[key], str) or not group[key] or "\x00" in group[key] for key in fields):
             raise ConfigError("VM, host and secret fields must be nonempty strings.")
+    validate_host(config, host)
     if not vm["ssh_public_key"].endswith(".pub"):
         raise ConfigError("vm.ssh_public_key must reference a .pub file; private keys are never read.")
     if not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", vm["name"]):
@@ -205,6 +208,14 @@ def validate(config: dict, target: str, root: Path = ROOT) -> None:
         if not valid:
             raise ConfigError("AdGuard endpoints must be HTTP(S) origins without credentials, paths, queries or fragments.")
     validate_platform(config, target)
+
+
+def validate_host(config: dict, host: dict) -> None:
+    """Keep offline inspection aligned with native application constraints."""
+    if (config["dns"]["enabled"] or config["services"]) and not re.fullmatch(
+        r"([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z][a-z0-9-]+", host.get("domain", "")
+    ):
+        raise ConfigError("host.domain must be a fully qualified lowercase deployment name when DNS or services are enabled.")
 
 
 def validate_selection(config: dict, root: Path) -> None:
@@ -235,7 +246,10 @@ def validate_selection(config: dict, root: Path) -> None:
 def validate_platform(config: dict, target: str) -> None:
     vm, dns = config["vm"], config["dns"]
     if target == "proxmox":
-        pve = section(config, target, PVE_KEYS, PVE_KEYS)
+        pve = section(config, target, PVE_KEYS | set(PVE_TIMEOUTS), PVE_KEYS)
+        for key in PVE_TIMEOUTS:
+            if key in pve and (type(pve[key]) is not int or not 1 <= pve[key] <= 86400):
+                raise ConfigError(f"proxmox.{key} must be an integer between 1 and 86400 seconds.")
         for key in ("vmid", "cpu_cores", "memory_max_mib", "memory_min_mib"):
             if type(pve[key]) is not int or pve[key] <= 0:
                 raise ConfigError(f"proxmox.{key} must be a positive integer.")
@@ -312,8 +326,10 @@ def outputs(config: dict, root: Path = ROOT) -> dict[str, str]:
             proxmox_username=vm["username"],
             proxmox_address=pve["address"],
             proxmox_storage=pve["storage"],
+            **{f"proxmox_{key}": pve.get(key, default) for key, default in PVE_TIMEOUTS.items()},
         )
         values = {dest: str(pve[source]) for source, dest in PVE_ENV.items()}
+        values.update({key.upper(): str(pve.get(key, default)) for key, default in PVE_TIMEOUTS.items()})
         values.update(VMNAME=vm["name"], USERNAME=vm["username"], EXPECTED_IPV4="" if pve["address"] == "auto" else pve["address"])
         result["ubuntu-cloud.env"] = "".join(f"{key}={value}\n" for key, value in values.items())
     else:
@@ -362,10 +378,19 @@ class Configuration:
         validate(config, self.target, self.root)
         return config
 
-    def init(self) -> None:
+    def init(self, profile: str = "", *, api_host: str = "", context: str = "") -> None:
+        if profile not in ("", "docker", "k3s"):
+            raise ConfigError("Select PROFILE=docker or PROFILE=k3s.")
+        if (api_host or context) and (profile != "k3s" or not api_host):
+            raise ConfigError("K3S_API_HOST requires PROFILE=k3s; K3S_CONTEXT also requires K3S_API_HOST.")
         private_directory(self.directory)
         if self.source.exists() or self.source.is_symlink():
-            self.load()
+            existing = self.load()
+            if profile and ("k3s" in existing["roles"]) != (profile == "k3s"):
+                raise ConfigError("PROFILE differs from the existing deployment. Initialization never changes selected roles.")
+            access = existing.get("k3s", {}).get("access", {})
+            if api_host and (access.get("host", existing["host"].get("domain")) != api_host or (context and access.get("context") != context)):
+                raise ConfigError("K3s access differs from the existing deployment. Edit the original source privately; init never overwrites it.")
             if self.target == "aws":
                 self.detect_aws()
             return
@@ -374,6 +399,14 @@ class Configuration:
                 "Deployment directory is not empty. Restore its original bootstrap.yaml or select an empty directory for a new deployment."
             )
         template = (self.root / f"config-example/bootstrap-{self.target}.yaml").read_text()
+        if profile == "k3s":
+            value = yaml.safe_load(template)
+            value.update(roles=["debian_base", "k3s"], services=[], host={}, dns={"enabled": False}, secrets={})
+            value["vm"]["name"] = f"k3s-{self.target}"
+            if api_host:
+                value["k3s"] = {"access": {"enabled": True, "host": api_host, "context": context or f"k3s-{self.target}", "install_context": True}}
+            validate(value, self.target, self.root)
+            template = yaml.safe_dump(value, sort_keys=False)
         selected = os.environ.get("BOOTSTRAP_SSH_PUBLIC_KEY", "")
         if selected:
             if not selected.endswith(".pub"):
@@ -454,6 +487,9 @@ class Configuration:
             "k3s_access": config.get("k3s", {}).get("access", {"enabled": False}),
             "proxmox_host": config.get("proxmox", {}).get("host"),
             "proxmox_vmid": config.get("proxmox", {}).get("vmid"),
+            "proxmox_timeouts": {key: config.get("proxmox", {}).get(key, default) for key, default in PVE_TIMEOUTS.items()}
+            if self.target == "proxmox"
+            else None,
             "adguard_hosts": [urlsplit(url).hostname for url in endpoints],
             "secrets": "Omitted. The source is private; never share it with an agent.",
         }
@@ -488,7 +524,11 @@ class Configuration:
             receipt.unlink(missing_ok=True)
         # Task gives process environment precedence over dotenv. The source, not an
         # unrelated exported VMID/host, must select the VM for this deployment.
-        inherited = {key: value for key, value in os.environ.items() if key not in set(PVE_ENV.values()) | {"VMNAME", "USERNAME", "EXPECTED_IPV4"}}
+        inherited = {
+            key: value
+            for key, value in os.environ.items()
+            if key not in set(PVE_ENV.values()) | {key.upper() for key in PVE_TIMEOUTS} | {"VMNAME", "USERNAME", "EXPECTED_IPV4"}
+        }
         env = {**inherited, "BOOTSTRAP_INPUT_DIR": str(self.generated), "BOOTSTRAP_PREPARED": "1"}
         # Native tools must create private plans/state, regardless of controller defaults.
         previous_umask = os.umask(0o077)
@@ -544,7 +584,17 @@ class Configuration:
                     remove(self.directory, record["context"], record["node"], Path.home())
             except (AccessError, ValueError, TypeError):
                 raise ConfigError("Owned local K3s credentials changed; preserve them and retry guarded cleanup.") from None
+        if result.returncode and self.target == "proxmox" and action in ("apply", "vm-provision", "vm-wait", "configure"):
+            print(
+                "Bootstrap stopped; preserve the original deployment directory. Do not retry VM creation against an existing guest.", file=sys.stderr
+            )
+            print(f"Inspect progress: {self.recovery_command('status')}", file=sys.stderr)
+            print(f"For an existing initializing guest: {self.recovery_command('vm-wait')}", file=sys.stderr)
+            print(f"After cloud-init succeeds, resume with approval: {self.recovery_command('configure')}", file=sys.stderr)
         return result.returncode
+
+    def recovery_command(self, action: str) -> str:
+        return f"task bootstrap:{action} TARGET={self.target} BOOTSTRAP_CONFIG_DIR={shlex.quote(str(self.directory.relative_to(self.root)))}"
 
 
 def main() -> int:
@@ -556,7 +606,11 @@ def main() -> int:
         directory = Path(os.environ.get("BOOTSTRAP_DIR", ROOT / f"config/bootstrap-{target}"))
         config = Configuration(ROOT, directory, target)
         if args.command == "init":
-            config.init()
+            config.init(
+                os.environ.get("BOOTSTRAP_PROFILE", ""),
+                api_host=os.environ.get("BOOTSTRAP_K3S_API_HOST", ""),
+                context=os.environ.get("BOOTSTRAP_K3S_CONTEXT", ""),
+            )
         elif args.command == "show-config":
             print(yaml.safe_dump(config.show(), sort_keys=False), end="")
         elif args.command == "status":

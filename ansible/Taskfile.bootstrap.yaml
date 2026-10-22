@@ -13,6 +13,9 @@ tasks:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
       BOOTSTRAP_TARGET: '{{.TARGET}}'
       BOOTSTRAP_SSH_PUBLIC_KEY: '{{default "" .BOOTSTRAP_SSH_PUBLIC_KEY}}'
+      BOOTSTRAP_PROFILE: '{{default "" .PROFILE}}'
+      BOOTSTRAP_K3S_API_HOST: '{{default "" .K3S_API_HOST}}'
+      BOOTSTRAP_K3S_CONTEXT: '{{default "" .K3S_CONTEXT}}'
     cmds: [python3 scripts/bootstrap/config.py init]
 
   show-config:
@@ -377,7 +380,7 @@ tasks:
       - BOOTSTRAP_PROXMOX_HOST="${PROXMOX_HOST:-proxmox}" BOOTSTRAP_SYNC_PUBLIC_KEY=1 ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-proxmox-key.yaml
       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo env VM_SSH_PUBLIC_KEY_FILE=/tmp/vm/proxmox/bootstrap-authorized-key.pub bash /tmp/vm/proxmox/create-ubuntu-cloud-vm.sh
       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo qm start "${VMID}"
-      - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
+      - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" "${AGENT_TIMEOUT_SECONDS:-600}" "'${EXPECTED_IPV4:-}'" "${CLOUD_INIT_TIMEOUT_SECONDS:-1800}"
 
   native-vm-wait:
     internal: true
@@ -396,7 +399,7 @@ tasks:
         msg: VMID must be a positive integer.
     cmds:
       - rsync -a vm/ "${PROXMOX_HOST:-proxmox}:/tmp/vm/"
-      - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
+      - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" "${AGENT_TIMEOUT_SECONDS:-600}" "'${EXPECTED_IPV4:-}'" "${CLOUD_INIT_TIMEOUT_SECONDS:-1800}"
 
   native-vm-preflight:
     internal: true

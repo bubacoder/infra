@@ -1,0 +1,7 @@
+- {name: k3s, valid: false}
+- {name: UPPER.example.com, valid: false}
+- {name: bad..example.com, valid: false}
+- {name: bad.example.com., valid: false}
+- {name: 'https://api.example.com', valid: false}
+- {name: api.example.com, valid: true}
+- {name: k3s.lab.example.com, valid: true}

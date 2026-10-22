@@ -112,7 +112,7 @@ def guest_status(config: dict, directory: Path, address: str, *, cloud_init: boo
     print(f"K3s node Ready: {ready}")
 
 
-def proxmox_status(config: dict, directory: Path) -> None:
+def proxmox_status(config: dict, directory: Path) -> str:
     pve = config["proxmox"]
     vmid = str(pve["vmid"])
     host = pve["host"]
@@ -120,7 +120,7 @@ def proxmox_status(config: dict, directory: Path) -> None:
     if result.returncode:
         if "does not exist" in result.stderr or "does not exist" in result.stdout:
             print(f"Proxmox VM {vmid}: absent")
-            return
+            return "absent"
         raise StatusError("Cannot read Proxmox VM status; check trusted access and VM ID.")
     match = re.fullmatch(r"status: (running|stopped|paused|suspended|prelaunch)", result.stdout.strip())
     if not match:
@@ -141,11 +141,12 @@ def proxmox_status(config: dict, directory: Path) -> None:
         raise StatusError("VM ID exists but identity does not match this deployment; inspect the hypervisor.")
     print(f"Proxmox VM {vmid} ({config['vm']['name']}): {state}")
     if state != "running":
-        return
+        return "inactive"
     interfaces = ssh_status(host, ["sudo", "-n", "qm", "guest", "cmd", vmid, "network-get-interfaces"])
     if interfaces.returncode:
         print("Guest agent: not ready")
-        return
+        print("Guest boot/cloud-init phase: unavailable until the agent responds; this is not proof of a boot failure")
+        return "agent-pending"
     data = parsed(interfaces)
     nics = data.get("result", data) if isinstance(data, dict) else data
     mac_match = re.search(r"virtio=([0-9a-f:]{17})", next((line for line in config_lines if line.startswith("net0: ")), ""), re.I)
@@ -163,7 +164,7 @@ def proxmox_status(config: dict, directory: Path) -> None:
     }
     if len(addresses) != 1:
         print("Guest agent: ready; primary IPv4 not uniquely available")
-        return
+        return "network-pending"
     address = addresses.pop()
     try:
         ipaddress.IPv4Address(address)
@@ -173,18 +174,34 @@ def proxmox_status(config: dict, directory: Path) -> None:
     if pve["address"] != "auto" and pve["address"] != address:
         raise StatusError("Guest address differs from the deployment's reserved address.")
     # The guest agent executes only a read-only command; no credentials or cloud-init logs.
-    cloud = ssh_status(host, ["sudo", "-n", "qm", "guest", "exec", vmid, "--timeout", "10", "--", "cloud-init", "status"])
+    cloud = ssh_status(host, ["sudo", "-n", "qm", "guest", "exec", vmid, "--timeout", "10", "--", "cloud-init", "status", "--format", "json"])
     if cloud.returncode:
         print("Cloud-init: not yet queryable through guest agent")
-        return
+        return "cloud-pending"
     status = parsed(cloud)
-    if not isinstance(status, dict) or status.get("exitcode") != 0:
+    if not isinstance(status, dict) or status.get("exitcode") not in (0, 1, 2):
         print("Cloud-init: not yet queryable through guest agent")
-        return
-    text = status.get("out-data", "").strip()
-    print(f"Cloud-init (guest agent): {text if text in ('status: done', 'status: running', 'status: error', 'status: disabled') else 'unknown'}")
-    if text == "status: done":
+        return "cloud-pending"
+    try:
+        cloud_data = json.loads(status.get("out-data", ""))
+    except (TypeError, ValueError):
+        cloud_data = {}
+    if not isinstance(cloud_data, dict):
+        cloud_data = {}
+    state = cloud_data.get("status")
+    label = state if state in ("done", "running", "error", "disabled", "not started") else "unknown"
+    print(f"Cloud-init (guest agent): status: {label}")
+    stage = cloud_data.get("stage")
+    if stage in ("init-local", "init", "modules-config", "modules-final"):
+        print(f"Cloud-init phase: {stage}")
+        if stage == "modules-final":
+            print("First-boot package installation/upgrades may still be running; agent readiness alone is not acceptance")
+    if status["exitcode"] != 0 or state in ("error", "disabled"):
+        return "cloud-error"
+    if state == "done":
         guest_status(config, directory, address, cloud_init=False)
+        return "ready"
+    return "cloud-pending"
 
 
 def aws_status(config: dict, directory: Path) -> None:
@@ -276,7 +293,19 @@ def aws_status(config: dict, directory: Path) -> None:
 def status(configuration: Configuration) -> None:
     config = configuration.load()  # Validate privately without generating inputs or changing receipts.
     if configuration.target == "proxmox":
-        proxmox_status(config, configuration.directory)
+        phase = proxmox_status(config, configuration.directory)
+        if phase == "absent":
+            print(f"Next: review {configuration.recovery_command('plan')} before authorizing apply")
+        elif phase == "inactive":
+            print("Next: inspect the existing non-running VM; starting it requires approval. Do not recreate it")
+        elif phase == "cloud-error":
+            print("Next: inspect cloud-init errors privately and repair the existing guest with approval; do not configure or recreate it yet")
+        elif phase == "ready":
+            print(f"Next: if configuration is incomplete, resume with approval: {configuration.recovery_command('configure')}")
+            print(f"Acceptance: {configuration.recovery_command('verify')}")
+        else:
+            print(f"Next: wait for this existing guest: {configuration.recovery_command('vm-wait')}")
+            print("Do not rerun VM creation or discard deployment state; configure only after cloud-init succeeds")
     else:
         aws_status(config, configuration.directory)
     access = config.get("k3s", {}).get("access", {})

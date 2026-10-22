@@ -32,7 +32,7 @@
   register: bootstrap_pve_interfaces
   changed_when: false
   until: bootstrap_pve_interfaces.rc == 0
-  retries: 120
+  retries: "{{ ((bootstrap.proxmox_agent_timeout_seconds | default(600) | int + 4) // 5) | int }}"
   delay: 5
 - name: Bind discovery to the VM's primary NIC MAC
   ansible.builtin.set_fact:
@@ -48,7 +48,7 @@
       - bootstrap.proxmox_address == 'auto' or bootstrap.proxmox_address == bootstrap_pve_addresses[0]
 - name: Wait for successful cloud-init through the authenticated guest agent
   ansible.builtin.command:
-    argv: [qm, guest, exec, "{{ bootstrap.proxmox_vmid }}", --timeout, '900', --, cloud-init, status, --wait]
+    argv: [qm, guest, exec, "{{ bootstrap.proxmox_vmid }}", --timeout, "{{ bootstrap.proxmox_cloud_init_timeout_seconds | default(1800) | string }}", --, cloud-init, status, --wait]
   become: true
   delegate_to: bootstrap_hypervisor
   register: bootstrap_pve_ready
