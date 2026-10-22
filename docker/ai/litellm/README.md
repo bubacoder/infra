@@ -1,5 +1,16 @@
 Python SDK, Proxy Server (LLM Gateway) to call 100+ LLM APIs in OpenAI format - [Bedrock, Azure, OpenAI, VertexAI, Cohere, Anthropic, Sagemaker, HuggingFace, Replicate, Groq]
 
+## Authentication
+
+Set a strong, randomly generated `LITELLM_MASTER_KEY` in the ignored
+`config/docker/<hostname>/.env.litellm` file and restrict its permissions to `0600`.
+LiteLLM refuses to start without a safe master key. Keep this key separate from
+the upstream provider API keys and never commit it.
+
+Configure gateway clients with this key as their LiteLLM API key; requests use
+`Authorization: Bearer <key>`. Recreate `ai/litellm` after changing the environment.
+The local `/health/liveliness` check does not require authentication.
+
 ## References
 
 - Home: [LiteLLM - Getting Started | liteLLM](https://docs.litellm.ai/)

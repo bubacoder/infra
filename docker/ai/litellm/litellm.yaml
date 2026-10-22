@@ -12,6 +12,7 @@ services:
     networks:
       - proxy
     environment:
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?Set LITELLM_MASTER_KEY in the service environment file}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-""}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-""}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-""}
