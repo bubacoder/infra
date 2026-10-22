@@ -4,6 +4,10 @@ services:
     image: crocodilestick/calibre-web-automated:v4.0.8
     container_name: calibre-web-automated
     restart: unless-stopped
+    healthcheck:
+      # Avoid / redirecting through Traefik, which excludes unhealthy containers.
+      test: ["CMD-SHELL", "curl -fs --connect-timeout 1 --max-time 2 -o /dev/null http://localhost:$${CWA_PORT_OVERRIDE:-8083}/login"]
+      start_period: 120s
     environment:
       PUID: ${PUID}
       PGID: ${PGID}
