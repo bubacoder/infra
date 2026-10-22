@@ -38,6 +38,8 @@ For inventory-based installation or other layouts, see [manual installation](man
 
 ```bash
 task bootstrap:init TARGET=proxmox
+# Dedicated Kubernetes guest instead of the default Docker profile:
+task bootstrap:init TARGET=proxmox PROFILE=k3s BOOTSTRAP_CONFIG_DIR=config/my-k3s
 ```
 
 Pass `TARGET=proxmox` on every target-selecting command. If using a custom
@@ -120,8 +122,30 @@ Verification never provisions, applies roles, formats storage or rewrites DNS.
 
 ## Recovery and updates
 
+Cloud-init installs and starts the guest agent before performing the full OS
+upgrade, so progress remains observable during lengthy upgrades. Readiness has
+two independent bounded waits, configurable in the private `proxmox` section:
+
+```yaml
+proxmox:
+  # Retain all existing VM/provider settings.
+  agent_timeout_seconds: 600
+  cloud_init_timeout_seconds: 1800
+```
+
+Each timeout is an integer from 1 to 86400 seconds; existing sources without these
+fields use the shown defaults. The cloud-init budget starts **after** the agent
+and expected address are available, rather than consuming the agent's remaining
+time. The same settings apply to provisioning, `vm-wait` and configuration.
+Cloud-init success is still required before configuration or SSH trust pinning;
+an available agent alone is not acceptance. OS upgrade failures fail cloud-init.
+
 After a partial create/apply failure, inspect the VM first. Do not blindly repeat
 creation or bypass conflicts. Preserve configuration, SSH trust and DNS receipts.
+Use `bootstrap:status` with the original target/directory to distinguish an absent
+or stopped VM, pending agent/network, active cloud-init and completed initialization.
+An agent timeout is not proof of a boot failure. Cloud-init errors need private
+diagnosis; do not restart, delete or replace the guest merely to clear a timeout.
 If the existing guest is still initializing, the bounded readiness helper is:
 
 ```bash

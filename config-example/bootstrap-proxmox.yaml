@@ -27,6 +27,9 @@ proxmox:
   storage: local-lvm
   bridge: vmbr0
   mac: ''
+  # Separate bounded waits; optional on existing deployments.
+  agent_timeout_seconds: 600
+  cloud_init_timeout_seconds: 1800
 host:
   domain: proxmox-test.example.com
   acme_email: admin@example.com

@@ -25,6 +25,8 @@ proxmox_vmid: {type: int}
 proxmox_storage: {type: str}
 proxmox_username: {type: str}
 proxmox_address: {type: str}
+proxmox_agent_timeout_seconds: {type: int}
+proxmox_cloud_init_timeout_seconds: {type: int}
 dns:
   type: dict
   required: true

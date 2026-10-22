@@ -89,8 +89,51 @@ class BootstrapStatusTests(unittest.TestCase):
     @patch("scripts.bootstrap.status.ssh_status")
     def test_guest_agent_pending_is_bounded_and_not_a_failure(self, ssh):
         ssh.side_effect = [result("status: running\n"), result(VM_CONFIG), result(rc=255)]
-        self.assertIn("Guest agent: not ready", self.inspect())
+        output = self.inspect()
+        self.assertIn("Guest agent: not ready", output)
+        self.assertIn("not proof of a boot failure", output)
+        self.assertIn("bootstrap:vm-wait TARGET=proxmox BOOTSTRAP_CONFIG_DIR=config/deployment", output)
+        self.assertIn("Do not rerun VM creation", output)
         self.assertEqual(ssh.call_count, 3)
+
+    @patch("scripts.bootstrap.status.command")
+    @patch("scripts.bootstrap.status.ssh_status")
+    def test_cloud_init_progress_and_error_are_allowlisted_without_ssh_or_log_disclosure(self, ssh, command):
+        for state, rc, expected in (
+            ("running", 0, "package installation/upgrades"),
+            ("error", 1, "repair the existing guest"),
+            ("done", 2, "repair the existing guest"),
+            ("disabled", 0, "repair the existing guest"),
+        ):
+            with self.subTest(state=state, rc=rc):
+                ssh.side_effect = [
+                    result("status: running\n"),
+                    result(VM_CONFIG + "net0: virtio=aa:bb:cc:dd:ee:ff\n"),
+                    result(
+                        json.dumps(
+                            [{"hardware-address": "aa:bb:cc:dd:ee:ff", "ip-addresses": [{"ip-address-type": "ipv4", "ip-address": "192.0.2.10"}]}]
+                        )
+                    ),
+                    result(
+                        json.dumps(
+                            {"exitcode": rc, "out-data": json.dumps({"status": state, "stage": "modules-final", "errors": ["SENTINEL_PRIVATE"]})}
+                        )
+                    ),
+                ]
+                output = self.inspect()
+                self.assertIn(f"status: {state}", output)
+                self.assertIn("Cloud-init phase: modules-final", output)
+                self.assertIn(expected, output)
+                self.assertNotIn("SENTINEL_PRIVATE", output)
+                self.assertIn("--format", ssh.call_args.args[1])
+        command.assert_not_called()
+
+    @patch("scripts.bootstrap.status.ssh_status")
+    def test_stopped_vm_only_suggests_reviewed_start_and_never_creation(self, ssh):
+        ssh.side_effect = [result("status: stopped\n"), result(VM_CONFIG)]
+        output = self.inspect()
+        self.assertIn("starting it requires approval", output)
+        self.assertEqual(ssh.call_count, 2)
 
     @patch("scripts.bootstrap.status.command")
     @patch("scripts.bootstrap.status.ssh_status")
@@ -111,7 +154,7 @@ class BootstrapStatusTests(unittest.TestCase):
             result(
                 json.dumps([{"hardware-address": "aa:bb:cc:dd:ee:ff", "ip-addresses": [{"ip-address-type": "ipv4", "ip-address": "192.0.2.10"}]}])
             ),
-            result(json.dumps({"exitcode": 0, "out-data": "status: done\n"})),
+            result(json.dumps({"exitcode": 0, "out-data": json.dumps({"status": "done", "stage": None})})),
         ]
         command.side_effect = [
             result("# Host 192.0.2.10 found\n"),
@@ -138,7 +181,7 @@ class BootstrapStatusTests(unittest.TestCase):
             result(
                 json.dumps([{"hardware-address": "aa:bb:cc:dd:ee:ff", "ip-addresses": [{"ip-address-type": "ipv4", "ip-address": "192.0.2.10"}]}])
             ),
-            result(json.dumps({"exitcode": 0, "out-data": "status: done\n"})),
+            result(json.dumps({"exitcode": 0, "out-data": json.dumps({"status": "done", "stage": None})})),
         ]
         self.assertIn("not yet pinned", self.inspect())
         command.assert_not_called()
@@ -155,7 +198,7 @@ class BootstrapStatusTests(unittest.TestCase):
             result(
                 json.dumps([{"hardware-address": "aa:bb:cc:dd:ee:ff", "ip-addresses": [{"ip-address-type": "ipv4", "ip-address": "192.0.2.10"}]}])
             ),
-            result(json.dumps({"exitcode": 0, "out-data": "status: done\n"})),
+            result(json.dumps({"exitcode": 0, "out-data": json.dumps({"status": "done", "stage": None})})),
         ]
         command.side_effect = [result("pinned-key"), result(rc=255, error="changed key, should not be printed")]
         output = self.inspect()
