@@ -8,13 +8,15 @@ services:
     environment:
       TZ: ${TIMEZONE}
       MYDOMAIN: ${MYDOMAIN}
+      PRIMARY_NODE_IP: ${PRIMARY_NODE_IP}
       # AWS bootstrap extends the private-network policy by its explicit admin CIDR.
       LOCAL_ACCESS_ADMIN_CIDR: ${LOCAL_ACCESS_ADMIN_CIDR:-127.0.0.1/32}
+      # TLS Cert
       CLOUDFLARE_DNS_API_TOKEN: ${CLOUDFLARE_DNS_API_TOKEN}
-      CROWDSEC_ENABLED: ${CROWDSEC_ENABLED:-false}
-      # Generate key within the crowdsec container: cscli bouncers add traefik-bouncer
-      CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_API_KEY}
       TRAEFIK_CERTIFICATESRESOLVERS_LETSENCRYPT_ACME_EMAIL: "${ADMIN_EMAIL}"
+      # CrowdSec - Generate key within the crowdsec container: cscli bouncers add traefik-bouncer
+      CROWDSEC_ENABLED: ${CROWDSEC_ENABLED:-false}
+      CROWDSEC_BOUNCER_API_KEY: ${CROWDSEC_BOUNCER_API_KEY}
     volumes:
       # kics-scan ignore-line
       - /var/run/docker.sock:/var/run/docker.sock:ro # So that Traefik can listen to the Docker events # TODO To improve the security use a docker socket proxy
