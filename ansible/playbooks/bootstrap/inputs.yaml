@@ -47,6 +47,8 @@
       - bootstrap.target != 'aws' or not bootstrap.dns.enabled or bootstrap.dns.cloudflare_zone | default('') | length > 0
       - bootstrap.target != 'proxmox' or bootstrap.proxmox_vmid | default(0) | int > 0
       - bootstrap.target != 'proxmox' or (bootstrap.proxmox_host is defined and bootstrap.proxmox_username is defined and bootstrap.proxmox_address is defined)
+      - bootstrap.target != 'proxmox' or (bootstrap.proxmox_agent_timeout_seconds | default(600) | int > 0 and bootstrap.proxmox_agent_timeout_seconds | default(600) | int <= 86400)
+      - bootstrap.target != 'proxmox' or (bootstrap.proxmox_cloud_init_timeout_seconds | default(1800) | int > 0 and bootstrap.proxmox_cloud_init_timeout_seconds | default(1800) | int <= 86400)
       - bootstrap.dns.adguard_url | default('https://unused') is match('^https?://[^/@?#\s]+$')
       - bootstrap.dns.adguard_url is not defined or bootstrap.dns.adguard_urls is not defined
       - bootstrap.dns.adguard_urls | default([]) | unique | length == bootstrap.dns.adguard_urls | default([]) | length

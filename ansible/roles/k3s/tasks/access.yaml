@@ -30,6 +30,14 @@
       - k3s_settings['tls-san'] | default([]) is not string
     fail_msg: K3s config.yaml must be a mapping with a list-valued tls-san; no changes made.
 
+- name: Create the K3s configuration directory before the first server start
+  ansible.builtin.file:
+    path: /etc/rancher/k3s
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
 - name: Add the selected API host without removing other K3s settings
   ansible.builtin.copy:
     dest: /etc/rancher/k3s/config.yaml

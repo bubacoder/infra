@@ -38,6 +38,27 @@ Initialization creates only `bootstrap.yaml`, without overwriting operator edits
 | AWS | `config/bootstrap-aws/` | [AWS](../config-example/bootstrap-aws.yaml) |
 | Proxmox | `config/bootstrap-proxmox/` | [Proxmox](../config-example/bootstrap-proxmox.yaml) |
 
+Initialization accepts `PROFILE=docker` (the default for a new source) or
+`PROFILE=k3s` on either target. K3s selects `debian_base`, `k3s`, no Docker services,
+disabled DNS management and no service credentials, with a dedicated `k3s-<target>`
+VM name. VM/provider sizing, storage, networking and SSH settings still come from
+the target template and must be reviewed before planning:
+
+```bash
+task bootstrap:init TARGET=proxmox PROFILE=k3s BOOTSTRAP_CONFIG_DIR=config/my-k3s
+# Optional direct controller access, using DNS maintained outside bootstrap:
+task bootstrap:init TARGET=proxmox PROFILE=k3s BOOTSTRAP_CONFIG_DIR=config/another-k3s \
+  K3S_API_HOST=k3s.example.com K3S_CONTEXT=my-k3s
+```
+
+`K3S_API_HOST` opts into installing a controller context; `K3S_CONTEXT` defaults
+to `k3s-<target>` and is valid only with that host. These are non-secret settings.
+The profile does not create DNS records or reserve DHCP addresses. To enable
+bootstrap-managed AdGuard DNS, privately set `host.domain` to the API's fully
+qualified name, enable `dns`, list every endpoint and supply its credentials.
+Existing sources are never rewritten to switch profiles or access settings;
+conflicting explicit initialization options fail instead of silently migrating them.
+
 If `bootstrap.yaml` is missing, initialization requires an empty deployment
 directory. Restore the original source when recovering an existing deployment;
 never discard its state or recovery records to make initialization proceed.
@@ -96,6 +117,11 @@ allowlisted non-secret settings. It does not generate files, read Terraform stat
 or private SSH keys, or contact providers. Parser failures never display private
 values. Put credentials only under `secrets`; this is not a general-purpose secret
 scrubber. Output is not anonymized: redact identifiers before sharing evidence.
+Offline inspection enforces the same deployment-name rule as native Ansible:
+DNS management or Docker services require a fully qualified lowercase
+`host.domain`. Short API names remain valid only for externally managed K3s access
+with bootstrap DNS disabled. No provider calls or generation are needed to find
+this configuration error.
 On failure, have the operator correct the file privately; do not fall back to raw
 file reads. `bootstrap:plan` is a separate, authorized live preflight.
 
@@ -115,6 +141,12 @@ for completion nor creates a guest, changes SSH trust, applies roles or regenera
 native inputs. Pending checks are reported without failing; provider access or VM
 identity mismatches fail safely. Repeat status as needed while an apply is running.
 Status is **not** acceptance: run `bootstrap:verify` after apply completes.
+With a responding Proxmox agent, status reports cloud-init's allowlisted state
+and phase separately from guest networking and K3s readiness. Agent absence does
+not establish a boot failure: first-boot package installation may still be running.
+Recovery hints retain the selected deployment directory, never recreate an
+existing VM, and never start, configure or repair it automatically. Cloud-init
+errors are diagnosed privately; raw logs and error details are not printed.
 
 ## Selecting host roles and applications
 

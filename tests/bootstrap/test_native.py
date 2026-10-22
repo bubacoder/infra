@@ -593,6 +593,16 @@ class NativeBootstrapTests(unittest.TestCase):
         (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
         self.run_play("bootstrap-check.yaml")
 
+    def test_native_dns_validation_matches_offline_hostname_cases(self) -> None:
+        self.initialize()
+        host = self.valid_host()
+        for case in yaml.safe_load((ROOT / "tests/bootstrap/fixtures/dns-names.yaml").read_text()):
+            with self.subTest(case=case):
+                host["domain"] = case["name"]
+                (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
+                result = self.run_play("bootstrap-check.yaml", check=False)
+                self.assertEqual(result.returncode == 0, case["valid"], result.stdout + result.stderr)
+
     def test_native_k3s_access_profile_is_validated_before_provider_access(self) -> None:
         self.env["BOOTSTRAP_TARGET"] = "proxmox"
         self.initialize()
@@ -633,18 +643,19 @@ class NativeBootstrapTests(unittest.TestCase):
         self.assertNotEqual(self.run_play("test-proxmox-destroy-dns.yaml", check=False).returncode, 0)
 
     def test_k3s_access_preserves_existing_settings_and_is_idempotent(self) -> None:
-        path = self.root / "k3s-config.yaml"
+        path = self.root / "k3s" / "config.yaml"
+        path.parent.mkdir()
         existing = {"token": "SENTINEL_PRIVATE", "node-label": ["managed=elsewhere"], "tls-san": ["existing.example.com"]}
         path.write_text(yaml.safe_dump(existing))
         path.chmod(0o600)
         tasks = yaml.safe_load((ROOT / "ansible/roles/k3s/tasks/access.yaml").read_text())
         for task in tasks:
-            for module in ("ansible.builtin.stat", "ansible.builtin.slurp", "ansible.builtin.copy"):
+            for module in ("ansible.builtin.stat", "ansible.builtin.slurp", "ansible.builtin.copy", "ansible.builtin.file"):
                 if module in task:
                     options = task[module]
                     for key in ("path", "src", "dest"):
                         if key in options:
-                            options[key] = str(path)
+                            options[key] = str(path.parent if module == "ansible.builtin.file" else path)
                     options.pop("owner", None)
                     options.pop("group", None)
         play = [
@@ -663,6 +674,17 @@ class NativeBootstrapTests(unittest.TestCase):
         second = self.run_play("test-k3s-access.yaml")
         self.assertIn("changed=0", second.stdout)
         self.assertEqual(yaml.safe_load(path.read_text())["tls-san"], ["existing.example.com", "api.example.com"])
+        fresh_path = self.root / "fresh-k3s" / "config.yaml"
+        for task in tasks:
+            for module in ("ansible.builtin.stat", "ansible.builtin.slurp", "ansible.builtin.copy", "ansible.builtin.file"):
+                for key in ("path", "src", "dest"):
+                    if key in task.get(module, {}):
+                        task[module][key] = str(fresh_path.parent if module == "ansible.builtin.file" else fresh_path)
+        (self.root / "ansible/playbooks/test-k3s-access.yaml").write_text(yaml.safe_dump(play))
+        self.run_play("test-k3s-access.yaml")
+        self.assertEqual(yaml.safe_load(fresh_path.read_text()), {"tls-san": ["api.example.com"]})
+        self.assertEqual(fresh_path.stat().st_mode & 0o777, 0o600)
+        self.assertIn("changed=0", self.run_play("test-k3s-access.yaml").stdout)
 
     def test_k3s_verify_only_never_executes_installation_tasks(self) -> None:
         source = yaml.safe_load((ROOT / "ansible/playbooks/bootstrap.yaml").read_text())[1]
@@ -1553,6 +1575,92 @@ else: sys.exit(91)
 
 
 class BootstrapStructureTests(unittest.TestCase):
+    @unittest.skipUnless(shutil.which("task"), "Task is not installed")
+    def test_k3s_profile_is_available_through_public_init_task(self) -> None:
+        with tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT if TEST_TEMP_ROOT.is_dir() else None) as temporary:
+            root = Path(temporary)
+            (root / "ansible").mkdir()
+            shutil.copy(ROOT / "ansible/Taskfile.bootstrap.yaml", root / "ansible/Taskfile.bootstrap.yaml")
+            shutil.copytree(ROOT / "ansible/roles", root / "ansible/roles")
+            shutil.copytree(ROOT / "config-example", root / "config-example")
+            shutil.copytree(ROOT / "scripts/bootstrap", root / "scripts/bootstrap")
+            (root / "Taskfile.yaml").write_text("version: '3'\nincludes:\n  bootstrap: ./ansible/Taskfile.bootstrap.yaml\n")
+            env = {key: value for key, value in os.environ.items() if not key.startswith("BOOTSTRAP_")}
+            result = subprocess.run(  # noqa: S603 -- real init task in an isolated fixture, no provider calls
+                [
+                    shutil.which("task"),
+                    "bootstrap:init",
+                    "TARGET=proxmox",
+                    "PROFILE=k3s",
+                    "K3S_API_HOST=api.example.com",
+                    "K3S_CONTEXT=lab",
+                    "BOOTSTRAP_CONFIG_DIR=config/lab",
+                ],
+                cwd=root,
+                env=env,
+                text=True,
+                capture_output=True,
+                timeout=30,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            source = root / "config/lab/bootstrap.yaml"
+            value = yaml.safe_load(source.read_text())
+            self.assertEqual(value["roles"], ["debian_base", "k3s"])
+            self.assertEqual(value["k3s"]["access"]["host"], "api.example.com")
+            self.assertEqual(value["k3s"]["access"]["context"], "lab")
+            self.assertEqual(list(source.parent.iterdir()), [source])
+
+    @unittest.skipUnless(shutil.which("task"), "Task is not installed")
+    def test_vm_wait_passes_separate_generated_phase_timeouts(self) -> None:
+        with tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT if TEST_TEMP_ROOT.is_dir() else None) as temporary:
+            root = Path(temporary)
+            (root / "ansible").mkdir()
+            shutil.copy(ROOT / "ansible/Taskfile.bootstrap.yaml", root / "ansible/Taskfile.bootstrap.yaml")
+            (root / "Taskfile.yaml").write_text("version: '3'\nincludes:\n  bootstrap: ./ansible/Taskfile.bootstrap.yaml\n")
+            generated = root / "config/lab/generated"
+            generated.mkdir(parents=True)
+            binaries = root / "bin"
+            binaries.mkdir()
+            for name, content in (
+                ("rsync", "#!/bin/sh\nexit 0\n"),
+                ("ansible-playbook", "#!/bin/sh\nexit 0\n"),
+                # OpenSSH joins arguments, then a remote shell parses them again.
+                ("ssh", '#!/bin/sh\nshift\nexec /bin/sh -c "$*"\n'),
+                ("sudo", '#!/bin/sh\nprintf "%s\\n" "$@" > "$TRACE"\n'),
+            ):
+                path = binaries / name
+                path.write_text(content)
+                path.chmod(0o700)
+            env = {
+                key: value
+                for key, value in os.environ.items()
+                if key not in ("VMID", "PROXMOX_HOST", "EXPECTED_IPV4", "AGENT_TIMEOUT_SECONDS", "CLOUD_INIT_TIMEOUT_SECONDS")
+            }
+            env.update(
+                PATH=str(binaries) + os.pathsep + os.environ["PATH"],
+                TRACE=str(root / "trace"),
+                BOOTSTRAP_PREPARED="1",
+                BOOTSTRAP_INPUT_DIR=str(generated),
+            )
+            for action in ("vm-wait", "vm-provision"):
+                for address in ("192.0.2.10", ""):
+                    with self.subTest(action=action, address=address):
+                        (generated / "ubuntu-cloud.env").write_text(
+                            f"PROXMOX_HOST=fixture\nVMID=456\nEXPECTED_IPV4={address}\nAGENT_TIMEOUT_SECONDS=12\nCLOUD_INIT_TIMEOUT_SECONDS=34\n"
+                        )
+                        result = subprocess.run(  # noqa: S603 -- native task with isolated inputs and native-tool stubs
+                            [shutil.which("task"), "bootstrap:native", f"ACTION={action}", "TARGET=proxmox", "BOOTSTRAP_CONFIG_DIR=config/lab"],
+                            cwd=root,
+                            env=env,
+                            text=True,
+                            capture_output=True,
+                            timeout=30,
+                            check=False,
+                        )
+                        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                        self.assertEqual((root / "trace").read_text().splitlines()[-4:], ["456", "12", address, "34"])
+
     @unittest.skipUnless(shutil.which("task"), "Task is not installed")
     def test_secrets_info_uses_the_deployment_region_not_the_profile_default(self) -> None:
         with tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT if TEST_TEMP_ROOT.is_dir() else None) as temporary:

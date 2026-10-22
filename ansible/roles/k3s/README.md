@@ -10,7 +10,20 @@ cores and 2 GB RAM; 4 GB RAM is preferable for workloads.
 
 ## Bootstrap (Proxmox or AWS)
 
-Initialize the desired target normally, then replace these sections in its private
+Initialize either target with the K3s profile:
+
+```bash
+task bootstrap:init TARGET=proxmox PROFILE=k3s BOOTSTRAP_CONFIG_DIR=config/my-k3s
+# Or use TARGET=aws with a separate deployment directory.
+```
+
+For opt-in direct controller access, add `K3S_API_HOST=k3s.example.com` and an
+optional `K3S_CONTEXT=my-k3s` during initialization. The API name must resolve
+externally unless you privately enable the AdGuard DNS settings described below.
+This creates no VM, changes no existing deployment and keeps provider settings
+from the target template for review.
+
+Alternatively, initialize normally and replace these sections in its private
 `bootstrap.yaml` before planning:
 
 ```yaml
@@ -90,6 +103,12 @@ name or a fixed IPv4 instead of `host.domain`. Proxmox public records, DHCP and
 router DNS remain outside bootstrap; reserve a stable address. Clients must reach
 TCP 6443, and the API TLS certificate must match the configured host. Do not expose
 the API publicly without appropriate network restrictions.
+
+Bootstrap-managed DNS requires a fully qualified `host.domain` such as
+`k3s.example.com`, not a short name like `k3s`; `bootstrap:show-config` checks this
+offline. List every local AdGuard endpoint so bootstrap verifies and tracks
+record ownership independently on each instance. It never edits the controller's
+hosts file as a fallback.
 
 The controller needs `kubectl`, Python 3/PyYAML and a private `~/.kube` (mode `0700`;
 an existing `~/.kube/config` must be a regular `0600` file). Configure retrieves the

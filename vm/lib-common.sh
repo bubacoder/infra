@@ -118,13 +118,17 @@ packages:
   - qemu-guest-agent
 
 package_update: true
-package_upgrade: true
+# Install/start the agent before the potentially lengthy full OS upgrade.
+package_upgrade: false
 
 timezone: UTC
 
 runcmd:
-  - systemctl enable qemu-guest-agent
-  - systemctl start qemu-guest-agent
+  - |
+    set -eu
+    systemctl start qemu-guest-agent
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get --assume-yes --option Dpkg::Options::=--force-confdef --option Dpkg::Options::=--force-confold dist-upgrade
 
 final_message: "Cloud-init completed after \$UPTIME seconds"
 EOF
