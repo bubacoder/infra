@@ -202,7 +202,7 @@ services:
   realtime:
     # This container name looks inconsistent but is correct because realtime constructs tenant id by parsing the subdomain
     container_name: realtime-dev.supabase-realtime
-    image: supabase/realtime:v2.144.2
+    image: supabase/realtime:v2.147.1
     restart: unless-stopped
     depends_on:
       db:
@@ -248,7 +248,7 @@ services:
 
   storage:
     container_name: supabase-storage
-    image: supabase/storage-api:v1.83.5
+    image: supabase/storage-api:v1.84.17
     restart: unless-stopped
     volumes:
       - ${DOCKER_VOLUMES}/supabase/storage:/var/lib/storage
@@ -339,7 +339,7 @@ services:
 
   functions:
     container_name: supabase-edge-functions
-    image: supabase/edge-runtime:v1.77.4
+    image: supabase/edge-runtime:v1.77.8
     restart: unless-stopped
     volumes:
       - ./config/functions:/home/deno/functions:Z
@@ -422,7 +422,7 @@ services:
 
   db:
     container_name: supabase-db
-    image: supabase/postgres:15.19.0.004
+    image: supabase/postgres:15.19.0.007
     restart: unless-stopped
     volumes:
       - ./config/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
@@ -483,7 +483,7 @@ services:
 
   vector:
     container_name: supabase-vector
-    image: timberio/vector:0.59.0-alpine
+    image: timberio/vector:0.60.0-alpine
     restart: unless-stopped
     volumes:
       - ./config/logs/vector.yml:/etc/vector/vector.yml:ro
