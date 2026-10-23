@@ -2,6 +2,16 @@ target: {type: str, required: true, choices: [aws, proxmox]}
 name: {type: str, required: true}
 roles: {type: list, elements: str, required: true}
 services: {type: list, elements: str, required: true}
+k3s:
+  type: dict
+  options:
+    access:
+      type: dict
+      options:
+        enabled: {type: bool, required: true}
+        host: {type: str}
+        context: {type: str}
+        install_context: {type: bool}
 domain: {type: str}
 acme_email: {type: str}
 timezone: {type: str}
@@ -12,8 +22,11 @@ repository_url: {type: str}
 repository_ref: {type: str}
 proxmox_host: {type: str}
 proxmox_vmid: {type: int}
+proxmox_storage: {type: str}
 proxmox_username: {type: str}
 proxmox_address: {type: str}
+proxmox_agent_timeout_seconds: {type: int}
+proxmox_cloud_init_timeout_seconds: {type: int}
 dns:
   type: dict
   required: true

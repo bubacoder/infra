@@ -8,3 +8,4 @@
   vars:
     admin_name: "{{ bootstrap.name }}"
     admin_email: "{{ bootstrap.acme_email | default('') }}"
+    k3s_access: "{{ bootstrap.k3s.access | default({'enabled': false}) }}"

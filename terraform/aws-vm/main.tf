@@ -44,7 +44,7 @@ module "security_group" {
   description = "Allow SSH and HTTPS from admin source"
   vpc_id      = module.vpc.vpc_id
 
-  ingress_rules = {
+  ingress_rules = merge({
     ssh = {
       from_port   = 22
       to_port     = 22
@@ -59,7 +59,15 @@ module "security_group" {
       description = "HTTPS from admin"
       cidr_ipv4   = local.admin_cidr
     }
-  }
+    }, var.k3s_api_access ? {
+    k3s_api = {
+      from_port   = 6443
+      to_port     = 6443
+      ip_protocol = "tcp"
+      description = "K3s API from admin"
+      cidr_ipv4   = local.admin_cidr
+    }
+  } : {})
 
   egress_rules = {
     all = {

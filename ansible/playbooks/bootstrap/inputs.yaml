@@ -47,10 +47,16 @@
       - bootstrap.target != 'aws' or not bootstrap.dns.enabled or bootstrap.dns.cloudflare_zone | default('') | length > 0
       - bootstrap.target != 'proxmox' or bootstrap.proxmox_vmid | default(0) | int > 0
       - bootstrap.target != 'proxmox' or (bootstrap.proxmox_host is defined and bootstrap.proxmox_username is defined and bootstrap.proxmox_address is defined)
+      - bootstrap.target != 'proxmox' or (bootstrap.proxmox_agent_timeout_seconds | default(600) | int > 0 and bootstrap.proxmox_agent_timeout_seconds | default(600) | int <= 86400)
+      - bootstrap.target != 'proxmox' or (bootstrap.proxmox_cloud_init_timeout_seconds | default(1800) | int > 0 and bootstrap.proxmox_cloud_init_timeout_seconds | default(1800) | int <= 86400)
       - bootstrap.dns.adguard_url | default('https://unused') is match('^https?://[^/@?#\s]+$')
       - bootstrap.dns.adguard_url is not defined or bootstrap.dns.adguard_urls is not defined
       - bootstrap.dns.adguard_urls | default([]) | unique | length == bootstrap.dns.adguard_urls | default([]) | length
       - bootstrap.dns.adguard_urls | default([]) | select('match', '^https?://[^/@?#\s]+$') | list | length == bootstrap.dns.adguard_urls | default([]) | length
+      - not bootstrap.k3s.access.enabled | default(false) or 'k3s' in bootstrap.roles
+      - not bootstrap.k3s.access.enabled | default(false) or bootstrap.k3s.access.install_context | default(false)
+      - not bootstrap.k3s.access.enabled | default(false) or bootstrap.k3s.access.host | default('') is match('^[a-z0-9.-]+$')
+      - not bootstrap.k3s.access.enabled | default(false) or bootstrap.k3s.access.context | default('') is match('^[a-z0-9-]+$')
     fail_msg: Correct the public host settings; use a published branch, tag or commit, deployment subdomain and HTTP(S) AdGuard origins without credentials, paths, query strings or fragments.
 - name: Validate ordered role and service selections before contacting providers
   ansible.builtin.assert:
@@ -59,8 +65,12 @@
       - bootstrap.services | unique | length == bootstrap.services | length
       - bootstrap.services | difference(['security/traefik', 'dashboard/homepage']) | length == 0
       - "bootstrap.services | length == 0 or 'debian_docker_host' in bootstrap.roles"
+      - "'k3s' not in bootstrap.roles or bootstrap.services | length == 0"
       - "'dashboard/homepage' not in bootstrap.services or 'security/traefik' in bootstrap.services"
-    fail_msg: Select unique local roles and supported services. Docker services require debian_docker_host; Homepage requires Traefik.
+    fail_msg: >-
+      Select unique local roles and supported services. Docker services require
+      debian_docker_host; Homepage requires Traefik. Default K3s requires services: []
+      to avoid ingress port conflicts.
 - name: Require each selected role to exist locally rather than accepting paths or collection names
   ansible.builtin.assert:
     that:

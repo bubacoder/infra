@@ -47,6 +47,9 @@ For complete automated installation, choose the [AWS](../docs/bootstrap-aws.md) 
 [Proxmox](../docs/setup.md) guide. For manual inventory-based installation, see
 [Manual installation](../docs/manual-setup.md).
 
+The [`k3s` role](roles/k3s/README.md) provides an opt-in default single-server
+Kubernetes profile for either bootstrap target, including read-only verification.
+
 ## Bootstrapping hosts with authentication
 
 1. Copy public SSH key, e.g.:

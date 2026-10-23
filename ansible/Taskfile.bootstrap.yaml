@@ -13,7 +13,10 @@ tasks:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
       BOOTSTRAP_TARGET: '{{.TARGET}}'
       BOOTSTRAP_SSH_PUBLIC_KEY: '{{default "" .BOOTSTRAP_SSH_PUBLIC_KEY}}'
-    cmds: [python3 scripts/bootstrap_config.py init]
+      BOOTSTRAP_PROFILE: '{{default "" .PROFILE}}'
+      BOOTSTRAP_K3S_API_HOST: '{{default "" .K3S_API_HOST}}'
+      BOOTSTRAP_K3S_CONTEXT: '{{default "" .K3S_CONTEXT}}'
+    cmds: [python3 scripts/bootstrap/config.py init]
 
   show-config:
     desc: Show only allowlisted non-secret fields from private bootstrap.yaml
@@ -21,7 +24,15 @@ tasks:
     env:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
       BOOTSTRAP_TARGET: '{{.TARGET}}'
-    cmds: [python3 scripts/bootstrap_config.py show-config]
+    cmds: [python3 scripts/bootstrap/config.py show-config]
+
+  status:
+    desc: Read-only snapshot of provider, guest and K3s progress (no waits or generated input changes)
+    requires: {vars: [{name: TARGET, enum: [aws, proxmox]}]}
+    env:
+      BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
+      BOOTSTRAP_TARGET: '{{.TARGET}}'
+    cmds: [python3 scripts/bootstrap/config.py status]
 
   plan:
     desc: Prepare native inputs and review the selected target
@@ -45,19 +56,19 @@ tasks:
     cmds: [{task: dispatch, vars: {ACTION: verify}}]
 
   destroy-plan:
-    desc: Review full AWS destruction (requires DELETE_DATA=1)
-    requires: {vars: [{name: TARGET, enum: [aws]}]}
+    desc: Review provider-owned VM and data destruction (requires DELETE_DATA=1)
+    requires: {vars: [{name: TARGET, enum: [aws, proxmox]}]}
     cmds: [{task: dispatch, vars: {ACTION: destroy-plan}}]
 
   destroy:
-    desc: Destroy only the reviewed AWS deployment and verify cleanup
-    requires: {vars: [{name: TARGET, enum: [aws]}]}
-    prompt: Delete the reviewed AWS deployment and both disks permanently?
+    desc: Destroy only the reviewed provider deployment and verify cleanup
+    requires: {vars: [{name: TARGET, enum: [aws, proxmox]}]}
+    prompt: Delete the reviewed deployment and its VM disks permanently?
     cmds: [{task: dispatch, vars: {ACTION: destroy}}]
 
   destroy-cleanup:
-    desc: Retry AWS post-destroy verification and owned DNS cleanup
-    requires: {vars: [{name: TARGET, enum: [aws]}]}
+    desc: Retry post-destroy verification and owned DNS/local access cleanup
+    requires: {vars: [{name: TARGET, enum: [aws, proxmox]}]}
     cmds: [{task: dispatch, vars: {ACTION: destroy-cleanup}}]
 
   vm-preflight:
@@ -79,7 +90,7 @@ tasks:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
       BOOTSTRAP_TARGET: '{{.TARGET}}'
       DELETE_DATA: '{{default "0" .DELETE_DATA}}'
-    cmds: ['python3 scripts/bootstrap_config.py {{.ACTION}}']
+    cmds: ['python3 scripts/bootstrap/config.py {{.ACTION}}']
 
   # Compiler-only bridge: actual native stages stay internal to Task.
   native:
@@ -98,7 +109,7 @@ tasks:
   test:
     desc: Run only bootstrap Python and Proxmox shell tests
     cmds:
-      - uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.test_bootstrap tests.test_bootstrap_config
+      - uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.bootstrap.test_native tests.bootstrap.test_config tests.bootstrap.test_status tests.bootstrap.test_access tests.bootstrap.test_proxmox_destroy
       - task: test-shell
 
   test-shell:
@@ -223,6 +234,12 @@ tasks:
 
   native-destroy-plan:
     internal: true
+    requires: {vars: [{name: TARGET, enum: [aws, proxmox]}]}
+    preconditions: [{sh: 'test "${BOOTSTRAP_PREPARED:-}" = 1', msg: Use bootstrap:destroy-plan to prepare inputs first.}]
+    cmds: [{task: 'native-destroy-plan-{{.TARGET}}'}]
+
+  native-destroy-plan-aws:
+    internal: true
     requires:
       vars:
         - name: TARGET
@@ -247,6 +264,12 @@ tasks:
 
   native-destroy:
     internal: true
+    requires: {vars: [{name: TARGET, enum: [aws, proxmox]}]}
+    preconditions: [{sh: 'test "${BOOTSTRAP_PREPARED:-}" = 1', msg: Use bootstrap:destroy to check reviewed inputs first.}]
+    cmds: [{task: 'native-destroy-{{.TARGET}}'}]
+
+  native-destroy-aws:
+    internal: true
     env:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
       BOOTSTRAP_TARGET: '{{.TARGET}}'
@@ -270,6 +293,12 @@ tasks:
 
   native-destroy-cleanup:
     internal: true
+    requires: {vars: [{name: TARGET, enum: [aws, proxmox]}]}
+    preconditions: [{sh: 'test "${BOOTSTRAP_PREPARED:-}" = 1', msg: Use bootstrap:destroy-cleanup to prepare inputs first.}]
+    cmds: [{task: 'native-destroy-cleanup-{{.TARGET}}'}]
+
+  native-destroy-cleanup-aws:
+    internal: true
     desc: Retry post-destroy verification and owned DNS cleanup without reapplying a destroy plan
     env:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
@@ -287,6 +316,43 @@ tasks:
         msg: Preserve the deployment's state and teardown handoff until cleanup succeeds.
     cmds:
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-destroy.yaml --tags cleanup
+
+  native-destroy-plan-proxmox:
+    internal: true
+    requires: {vars: [{name: TARGET, enum: [proxmox]}]}
+    env:
+      BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
+      BOOTSTRAP_INPUT_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/generated'
+      BOOTSTRAP_TARGET: proxmox
+      BOOTSTRAP_DELETE_DATA: '{{default "0" .DELETE_DATA}}'
+      ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
+    cmds:
+      - python3 scripts/bootstrap/proxmox_destroy.py plan "$BOOTSTRAP_DIR"
+      - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-proxmox-destroy-dns.yaml --extra-vars bootstrap_destroy_phase=plan
+
+  native-destroy-proxmox:
+    internal: true
+    requires: {vars: [{name: TARGET, enum: [proxmox]}]}
+    env:
+      BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
+      BOOTSTRAP_INPUT_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/generated'
+      BOOTSTRAP_TARGET: proxmox
+      ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
+    cmds:
+      - python3 scripts/bootstrap/proxmox_destroy.py destroy "$BOOTSTRAP_DIR"
+      - task: native-destroy-cleanup-proxmox
+
+  native-destroy-cleanup-proxmox:
+    internal: true
+    requires: {vars: [{name: TARGET, enum: [proxmox]}]}
+    env:
+      BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
+      BOOTSTRAP_INPUT_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/generated'
+      BOOTSTRAP_TARGET: proxmox
+      ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
+    cmds:
+      - python3 scripts/bootstrap/proxmox_destroy.py cleanup "$BOOTSTRAP_DIR"
+      - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-proxmox-destroy-dns.yaml --extra-vars bootstrap_destroy_phase=cleanup
 
   native-vm-provision:
     internal: true
@@ -314,7 +380,7 @@ tasks:
       - BOOTSTRAP_PROXMOX_HOST="${PROXMOX_HOST:-proxmox}" BOOTSTRAP_SYNC_PUBLIC_KEY=1 ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-proxmox-key.yaml
       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo env VM_SSH_PUBLIC_KEY_FILE=/tmp/vm/proxmox/bootstrap-authorized-key.pub bash /tmp/vm/proxmox/create-ubuntu-cloud-vm.sh
       - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo qm start "${VMID}"
-      - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
+      - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" "${AGENT_TIMEOUT_SECONDS:-600}" "'${EXPECTED_IPV4:-}'" "${CLOUD_INIT_TIMEOUT_SECONDS:-1800}"
 
   native-vm-wait:
     internal: true
@@ -333,7 +399,7 @@ tasks:
         msg: VMID must be a positive integer.
     cmds:
       - rsync -a vm/ "${PROXMOX_HOST:-proxmox}:/tmp/vm/"
-      - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" 600 "${EXPECTED_IPV4:-}"
+      - ssh "${PROXMOX_HOST:-proxmox}" env LC_ALL=C LANG=C sudo bash /tmp/vm/proxmox/wait-for-cloud-init.sh "${VMID}" "${AGENT_TIMEOUT_SECONDS:-600}" "'${EXPECTED_IPV4:-}'" "${CLOUD_INIT_TIMEOUT_SECONDS:-1800}"
 
   native-vm-preflight:
     internal: true

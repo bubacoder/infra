@@ -38,6 +38,27 @@ Initialization creates only `bootstrap.yaml`, without overwriting operator edits
 | AWS | `config/bootstrap-aws/` | [AWS](../config-example/bootstrap-aws.yaml) |
 | Proxmox | `config/bootstrap-proxmox/` | [Proxmox](../config-example/bootstrap-proxmox.yaml) |
 
+Initialization accepts `PROFILE=docker` (the default for a new source) or
+`PROFILE=k3s` on either target. K3s selects `debian_base`, `k3s`, no Docker services,
+disabled DNS management and no service credentials, with a dedicated `k3s-<target>`
+VM name. VM/provider sizing, storage, networking and SSH settings still come from
+the target template and must be reviewed before planning:
+
+```bash
+task bootstrap:init TARGET=proxmox PROFILE=k3s BOOTSTRAP_CONFIG_DIR=config/my-k3s
+# Optional direct controller access, using DNS maintained outside bootstrap:
+task bootstrap:init TARGET=proxmox PROFILE=k3s BOOTSTRAP_CONFIG_DIR=config/another-k3s \
+  K3S_API_HOST=k3s.example.com K3S_CONTEXT=my-k3s
+```
+
+`K3S_API_HOST` opts into installing a controller context; `K3S_CONTEXT` defaults
+to `k3s-<target>` and is valid only with that host. These are non-secret settings.
+The profile does not create DNS records or reserve DHCP addresses. To enable
+bootstrap-managed AdGuard DNS, privately set `host.domain` to the API's fully
+qualified name, enable `dns`, list every endpoint and supply its credentials.
+Existing sources are never rewritten to switch profiles or access settings;
+conflicting explicit initialization options fail instead of silently migrating them.
+
 If `bootstrap.yaml` is missing, initialization requires an empty deployment
 directory. Restore the original source when recovering an existing deployment;
 never discard its state or recovery records to make initialization proceed.
@@ -96,8 +117,36 @@ allowlisted non-secret settings. It does not generate files, read Terraform stat
 or private SSH keys, or contact providers. Parser failures never display private
 values. Put credentials only under `secrets`; this is not a general-purpose secret
 scrubber. Output is not anonymized: redact identifiers before sharing evidence.
+Offline inspection enforces the same deployment-name rule as native Ansible:
+DNS management or Docker services require a fully qualified lowercase
+`host.domain`. Short API names remain valid only for externally managed K3s access
+with bootstrap DNS disabled. No provider calls or generation are needed to find
+this configuration error.
 On failure, have the operator correct the file privately; do not fall back to raw
 file reads. `bootstrap:plan` is a separate, authorized live preflight.
+
+To check live provisioning progress without running another apply/verify or
+changing generated files, receipts or pinned SSH trust, run:
+
+```bash
+task bootstrap:status TARGET=proxmox BOOTSTRAP_CONFIG_DIR=config/<deployment>
+# or: task bootstrap:status TARGET=aws BOOTSTRAP_CONFIG_DIR=config/<deployment>
+```
+
+Status takes one bounded read-only snapshot: provider VM/EC2 state, Proxmox guest
+agent and cloud-init (or AWS SSM), and, once guest SSH was already pinned by
+bootstrap, guest cloud-init and the selected K3s service/node. With opted-in K3s
+access, it also checks the deployment-owned local context and Ready node. It neither waits
+for completion nor creates a guest, changes SSH trust, applies roles or regenerates
+native inputs. Pending checks are reported without failing; provider access or VM
+identity mismatches fail safely. Repeat status as needed while an apply is running.
+Status is **not** acceptance: run `bootstrap:verify` after apply completes.
+With a responding Proxmox agent, status reports cloud-init's allowlisted state
+and phase separately from guest networking and K3s readiness. Agent absence does
+not establish a boot failure: first-boot package installation may still be running.
+Recovery hints retain the selected deployment directory, never recreate an
+existing VM, and never start, configure or repair it automatically. Cloud-init
+errors are diagnosed privately; raw logs and error details are not printed.
 
 ## Selecting host roles and applications
 
@@ -118,6 +167,34 @@ unique local directories under `ansible/roles/`, with a `tasks/main.yaml` or
 are rejected before provider access. Select roles suitable for the Ubuntu guest;
 role dependencies and role-specific prerequisites still follow native Ansible behavior.
 New local roles do not need a compiler allowlist entry, but must exist before selection.
+
+For a default single-server Kubernetes guest on either target, select the local
+[`k3s` role](../ansible/roles/k3s/README.md):
+
+```yaml
+roles:
+  - debian_base
+  - k3s
+services: []
+host: {}
+dns:
+  enabled: false
+secrets: {}
+```
+
+Keep the template's VM/provider settings and choose a fresh dedicated VM. K3s uses
+its bundled Traefik and ServiceLB, so bootstrap-managed Docker applications cannot
+be selected alongside it. Existing Docker defaults are unchanged. No domain, TLS
+credentials or published repository ref is needed for this profile. The default
+K3s datastore and local volumes live on the OS disk, including on AWS; the separate
+AWS `/storage` disk is not used by K3s. See the role guide for access and backups.
+
+Direct controller-side `kubectl` and K9s access is explicitly opt-in using
+`k3s.access` in the private source. It configures K3s's API TLS hostname and,
+after authenticated guest verification, securely installs a unique local context.
+See [K3s access](../ansible/roles/k3s/README.md#access-and-lifecycle) for the
+required DNS, network and controller setup. Existing inputs without this section
+continue using the guest-only K3s profile.
 
 For a host without Docker or bootstrap-managed applications, retain the VM/provider
 sections and replace these configuration sections:
@@ -156,7 +233,9 @@ Host-only acceptance checks authenticated access, matching guest facts and, on A
 the verified persistent storage mount. It runs no Docker, Compose, widget or HTTPS
 application tests. With services selected, acceptance checks only their routes,
 persistent data and containers. `bootstrap:verify` never applies roles, even when
-the role list is nonempty. Role-specific workloads require their own acceptance checks.
+the role list is nonempty. Selecting `k3s` additionally runs its read-only checks
+for service, credentials permissions, API, nodes and default packaged deployments.
+Other role-specific workloads require their own acceptance checks.
 
 ## Repository revisions and configuration updates
 
@@ -223,21 +302,28 @@ same custom directory, if any, throughout a deployment:
 | --- | --- |
 | `init` | Create the single private input; AWS also detects initial account/IP defaults |
 | `show-config` | Inspect allowlisted settings offline; no generation or provider access |
+| `status` | Bounded read-only snapshot of VM, agent/cloud-init and trusted guest/K3s readiness; no generation or writes |
 | `plan` | AWS: save a Terraform plan and run preflight. Proxmox: read-only VM/DNS preflight |
 | `apply` | AWS: apply the reviewed saved plan. Proxmox: create/start a fresh VM. Then configure and verify |
 | `configure` | Apply selected roles/services to an existing guest and verify; never provision |
 | `verify` | Check guest/storage and selected services; no role application, formatting or DNS writes. Repeat Compose only for selected services |
-| `destroy-plan`, `destroy`, `destroy-cleanup` | AWS-only reviewed destruction and recoverable cleanup; see [AWS teardown](bootstrap-aws.md#teardown) |
+| `destroy-plan`, `destroy`, `destroy-cleanup` | Reviewed target-specific destruction and recoverable cleanup; see [AWS teardown](bootstrap-aws.md#teardown) or [Proxmox cleanup](setup.md#cleanup) |
 
 Proxmox `vm-preflight`, `vm-provision` and `vm-wait` explicitly address Proxmox;
-they are not a generic target fallback. Proxmox disposal is separately approved
-and manual. `bootstrap:test` needs no target because it runs offline tests for both.
+they are not a generic target fallback. Destruction uses a common command contract
+with separate AWS Terraform and Proxmox native implementations, each requiring
+review of the original deployment's identities before deletion. `bootstrap:test`
+needs no target because it runs offline tests for both.
 
 ## Tests
 
 `task bootstrap:test` runs only the offline bootstrap Python and Proxmox shell tests,
 not unrelated service or backup tests. Use `task test` for the full Python suite.
-Python coverage is in [`tests/test_bootstrap.py`](../tests/test_bootstrap.py) and
-[`tests/test_bootstrap_config.py`](../tests/test_bootstrap_config.py).
+Python coverage is in [`tests/bootstrap/test_native.py`](../tests/bootstrap/test_native.py),
+[`tests/bootstrap/test_config.py`](../tests/bootstrap/test_config.py), and
+[`tests/bootstrap/test_status.py`](../tests/bootstrap/test_status.py).
+Controller access coverage is in [`tests/bootstrap/test_access.py`](../tests/bootstrap/test_access.py).
+Guarded Proxmox destroy coverage is in
+[`tests/bootstrap/test_proxmox_destroy.py`](../tests/bootstrap/test_proxmox_destroy.py).
 For mocked Terraform tests and their prerequisites, see the
 [AWS Terraform module](../terraform/aws-vm/README.md).
