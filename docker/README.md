@@ -52,6 +52,30 @@ commands use `config/docker/<hostname>/services.yaml`:
 Updating the container image tags is automated with [Renovate](https://docs.renovatebot.com/).
 Check mutable image tags with `task docker:check-updates`.
 
+### Container update safety
+
+The repository's [Renovate configuration](../renovate.json) pins image digests
+and disables container automerge. Keep the digest when deploying: a tag alone
+can resolve to different content after review.
+Hash-only updates are disabled: Renovate adds initial digest pins and updates
+digests with version changes, but does not refresh the digest of an unchanged
+tag. Digest-pinned floating tags such as `v3` or `stable` therefore stay on their
+current content until the tag changes or the digest is updated manually.
+
+- **Docker Hub:** Renovate waits seven days after the tag's last push before
+  proposing image updates. Missing timestamps block the update.
+  The existing Saturday schedule still applies, so updates may wait longer.
+- **GHCR and other registries:** updates are ungrouped and require Dependency
+  Dashboard approval before Renovate creates a PR, followed by manual merge.
+  Before approving/merging, check the upstream release date, the proposed digest,
+  and security advisories; wait at least seven days after publication. This is a
+  **manual review policy**, not an automatically enforced cooldown.
+
+Use upstream-published Docker Hub equivalents where available. Registry changes
+must preserve image content/platforms, not just similar names or tags. An image
+signature or a passing vulnerability scan does not guarantee a release is clean.
+For a security emergency, explicitly review any exception to the waiting period.
+
 For a single service, use [`labctl.py`](guidelines.md#managing-individual-services-labctlpy)
 rather than applying every configured service. Rendered Compose configuration may
 contain credentials; do not print or share it without redaction.

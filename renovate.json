@@ -159,50 +159,6 @@
         "dockerfile"
       ],
       "matchPackageNames": [
-        "lscr.io/linuxserver/jellyfin"
-      ],
-      "allowedVersions": "<2000"
-    },
-    {
-      "description": "Disable invalid version tags",
-      "matchManagers": [
-        "docker-compose",
-        "dockerfile"
-      ],
-      "matchPackageNames": [
-        "lscr.io/linuxserver/calibre-web"
-      ],
-      "allowedVersions": "<2000"
-    },
-    {
-      "description": "Disable invalid version tags",
-      "matchManagers": [
-        "docker-compose",
-        "dockerfile"
-      ],
-      "matchPackageNames": [
-        "lscr.io/linuxserver/qbittorrent"
-      ],
-      "allowedVersions": "<6"
-    },
-    {
-      "description": "Disable invalid version tags",
-      "matchManagers": [
-        "docker-compose",
-        "dockerfile"
-      ],
-      "matchPackageNames": [
-        "lscr.io/linuxserver/calibre-web"
-      ],
-      "allowedVersions": "<1"
-    },
-    {
-      "description": "Disable invalid version tags",
-      "matchManagers": [
-        "docker-compose",
-        "dockerfile"
-      ],
-      "matchPackageNames": [
         "lscr.io/linuxserver/kasm"
       ],
       "allowedVersions": "<1.120"
@@ -230,6 +186,42 @@
         "minor",
         "patch"
       ],
+      "enabled": false
+    },
+    {
+      "description": "Pin container image digests and require manual merge",
+      "matchDatasources": ["docker"],
+      "matchFileNames": ["docker/**"],
+      "pinDigests": true,
+      "automerge": false
+    },
+    {
+      "description": "Wait seven days for Docker Hub image releases",
+      "matchDatasources": ["docker"],
+      "matchFileNames": ["docker/**"],
+      "matchPackageNames": ["/^(?:(?:docker\\.io|index\\.docker\\.io|registry-1\\.docker\\.io)\\/)?(?:[^/.:]+\\/)?[^/]+$/"],
+      "minimumReleaseAge": "7 days",
+      "minimumReleaseAgeBehaviour": "timestamp-required",
+      "internalChecksFilter": "strict"
+    },
+    {
+      "description": "Review non-Docker-Hub images individually; release age must be checked manually",
+      "matchDatasources": ["docker"],
+      "matchFileNames": ["docker/**"],
+      "matchPackageNames": ["!/^(?:(?:docker\\.io|index\\.docker\\.io|registry-1\\.docker\\.io)\\/)?(?:[^/.:]+\\/)?[^/]+$/"],
+      "minimumReleaseAge": null,
+      "groupName": null,
+      "groupSlug": null,
+      "dependencyDashboardApproval": true,
+      "prBodyNotes": [
+        "Manual registry review required: verify that this exact image digest belongs to the intended upstream release, check security advisories, and wait at least seven days after publication before merging. Renovate cannot enforce the release-age delay for this registry."
+      ]
+    },
+    {
+      "description": "Disable hash-only container updates; retain pinning and version updates",
+      "matchDatasources": ["docker"],
+      "matchFileNames": ["docker/**"],
+      "matchUpdateTypes": ["digest"],
       "enabled": false
     }
   ]
