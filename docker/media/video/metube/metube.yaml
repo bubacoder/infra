@@ -1,7 +1,7 @@
 name: metube
 services:
   metube:
-    image: ghcr.io/alexta69/metube:2026.10.22
+    image: alexta69/metube:2026.10.22@sha256:7749cb1ee1efe0c56e32475fcf8648c278fb41fd158be13946a1759f7884654a
     container_name: metube
     restart: "unless-stopped"
     environment:
