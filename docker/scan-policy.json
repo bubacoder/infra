@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "database_max_age_hours": 72,
+  "expected_components": {
+    "adminer": ["php-cli", "php-fpm", "libphp"]
+  },
+  "triage": []
+}

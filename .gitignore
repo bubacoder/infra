@@ -14,3 +14,6 @@ WIP/
 
 # Aider
 .aider*
+
+# Local container vulnerability reports
+/reports/trivy/
