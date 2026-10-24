@@ -5,10 +5,12 @@ services:
     container_name: crowdsec
     restart: unless-stopped
     ports:
-      # Host port 7080 for API access
-      - 7080:8080/tcp
+      # Only the host firewall bouncer needs the published LAPI port.
+      - "127.0.0.1:7080:8080/tcp"
     environment:
       PGID: "1000"
+      # SQLite is on local storage; WAL avoids read stalls during blocklist writes.
+      USE_WAL: "true"
       # https://app.crowdsec.net/hub/collections
       COLLECTIONS: "crowdsecurity/traefik crowdsecurity/http-cve Dominic-Wagner/vaultwarden LePresidente/jellyfin crowdsecurity/endlessh firix/authentik"
     volumes:

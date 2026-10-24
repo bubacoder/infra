@@ -1,0 +1,9 @@
+# Managed by Ansible. Package defaults remain in the adjacent .yaml file.
+mode: iptables
+api_url: {{ debian_base_crowdsec_local_api_url | to_json }}
+api_key: {{ debian_base_crowdsec_effective_api_key | to_json }}
+disable_ipv6: false
+iptables_chains:
+{% for chain in debian_base_crowdsec_iptables_chains | default(['INPUT']) %}
+  - {{ chain }}
+{% endfor %}

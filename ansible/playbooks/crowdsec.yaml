@@ -1,0 +1,10 @@
+---
+- name: Configure only CrowdSec firewall enforcement
+  hosts: debian
+  become: true
+  tasks:
+    - name: Apply the CrowdSec firewall bouncer configuration
+      ansible.builtin.import_role:
+        name: debian_base
+        tasks_from: 50-crowdsec.yaml
+      when: debian_base_install_crowdsec_bouncer | default(false) | bool

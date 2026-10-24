@@ -6,6 +6,53 @@
 # Configuration file: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
 # Logs: /var/log/crowdsec-firewall-bouncer.log
 ---
+- name: Resolve CrowdSec bouncer credentials
+  ansible.builtin.set_fact:
+    debian_base_crowdsec_effective_api_key: >-
+      {{ lookup('ansible.builtin.file', debian_base_crowdsec_local_api_key_file)
+         if debian_base_crowdsec_local_api_key_file | default('') | length > 0
+         else debian_base_crowdsec_local_api_key | default('') }}
+  no_log: true
+
+- name: Validate CrowdSec bouncer credentials
+  ansible.builtin.assert:
+    that:
+      - debian_base_crowdsec_local_api_url | default('') | length > 0
+      - debian_base_crowdsec_effective_api_key | length > 0
+    fail_msg: Configure the CrowdSec LAPI URL and a dedicated bouncer API key before enabling enforcement.
+  no_log: true
+
+- name: Check Docker enforcement prerequisites
+  when: "'DOCKER-USER' in debian_base_crowdsec_iptables_chains | default(['INPUT'])"
+  block:
+    - name: Gather Docker service state
+      ansible.builtin.service_facts:
+
+    - name: Require Docker to be installed and running
+      ansible.builtin.assert:
+        that:
+          - "'docker.service' in ansible_facts.services"
+          - "ansible_facts.services['docker.service'].state == 'running'"
+        fail_msg: Provision and start Docker before activating CrowdSec Docker enforcement.
+
+    - name: Verify the Docker IPv4 ingress chain exists
+      ansible.builtin.command:
+        argv: [iptables, --wait, -S, DOCKER-USER]
+      changed_when: false
+      check_mode: false
+
+- name: Wait for the CrowdSec LAPI health endpoint
+  ansible.builtin.uri:
+    url: "{{ debian_base_crowdsec_local_api_url | regex_replace('/+$', '') }}/health"
+    status_code: 200
+    timeout: 5
+    use_proxy: false
+  register: debian_base_crowdsec_api_health
+  until: debian_base_crowdsec_api_health.status | default(0) == 200
+  retries: 12
+  delay: 5
+  no_log: true
+
 - name: Add crowdsec apt repository
   ansible.builtin.deb822_repository:
     name: crowdsec
@@ -15,34 +62,52 @@
     components: main
     signed_by: https://packagecloud.io/crowdsec/crowdsec/gpgkey
     state: present
-  notify: Update apt cache
+  register: debian_base_crowdsec_repository
 
 - name: Install crowdsec iptables bouncer
   ansible.builtin.apt:
     name: crowdsec-firewall-bouncer-iptables
     state: present
+    update_cache: "{{ debian_base_crowdsec_repository.changed }}"
+    # Do not start enforcing until the managed credentials and chains are ready.
+    policy_rc_d: 101
 
-- name: Set crowdsec api_url for iptables bouncer
-  ansible.builtin.lineinfile:
-    path: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
-    regexp: "^api_url:"
-    line: "api_url: {{ debian_base_crowdsec_local_api_url }}"
-  when: debian_base_crowdsec_local_api_url|default('') != ''
+- name: Configure CrowdSec firewall bouncer overrides
+  ansible.builtin.template:
+    src: crowdsec-firewall-bouncer.yaml.local.j2
+    dest: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml.local
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  diff: false
   notify: Restart service crowdsec-firewall-bouncer
 
-- name: Set crowdsec api_key for iptables bouncer
-  ansible.builtin.lineinfile:
-    path: /etc/crowdsec/bouncers/crowdsec-firewall-bouncer.yaml
-    regexp: "^api_key:"
-    line: "api_key: {{ debian_base_crowdsec_local_api_key }}"
-  when: debian_base_crowdsec_local_api_key|default('') != ''
+- name: Create CrowdSec Docker startup ordering directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/crowdsec-firewall-bouncer.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  when: "'DOCKER-USER' in debian_base_crowdsec_iptables_chains | default(['INPUT'])"
+
+- name: Start Docker before the CrowdSec firewall bouncer
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/crowdsec-firewall-bouncer.service.d/docker.conf
+    content: |
+      [Unit]
+      After=docker.service
+      Wants=docker.service
+    owner: root
+    group: root
+    mode: "0644"
+  when: "'DOCKER-USER' in debian_base_crowdsec_iptables_chains | default(['INPUT'])"
   notify: Restart service crowdsec-firewall-bouncer
 
 - name: Enable service crowdsec-firewall-bouncer
-  ansible.builtin.service:
+  ansible.builtin.systemd_service:
     name: crowdsec-firewall-bouncer
+    daemon_reload: true
     enabled: true
     state: started
-  when:
-    - debian_base_crowdsec_local_api_url|default('') != ''
-    - debian_base_crowdsec_local_api_key|default('') != ''
