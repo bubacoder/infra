@@ -88,7 +88,118 @@ Convert `docker run` commands to [docker compose](https://docs.docker.com/compos
 - [Composerize - Online](https://www.composerize.com/)
 - [Composerize - CLI tool](https://github.com/composerize/composerize)
 
-### Monitoring
+### Container vulnerability scanning and SBOMs
+
+The combined scanner uses **Trivy's native image scan** independently of
+**Syft's software inventory (SBOM) scanned by Grype**. Neither replaces the other:
+their component discovery and advisory matching have different coverage. Both
+pipelines feed one human-readable report.
+
+Install the native CLIs, for example with Homebrew on this host:
+
+```sh
+brew install trivy syft grype
+```
+
+Python 3.11+ and access to the intended Docker daemon are also required. Verify your
+Docker context before scanning. The task honors `DOCKER_HOST` / `DOCKER_CONTEXT`
+and explicitly passes the resolved Unix socket to the scanners. SSH/TCP targets
+are rejected; run the task directly on that Docker host. State is separated by
+daemon identity and socket, not just a possibly reused context name.
+
+```sh
+task docker:scan
+task docker:scan CONTAINER=adminer
+task docker:scan FAIL_ON=CRITICAL
+task docker:scan-report
+```
+
+The task snapshots **running containers**, including those outside this repository,
+and deduplicates by the exact deployed image ID rather than mutable tags. It never
+pulls application images, executes commands inside containers, updates services,
+restarts containers or deletes Docker data. Native Docker access is privileged;
+run only trusted scanner binaries.
+
+Scans run sequentially, with a twenty-minute timeout per scanner stage. A lock
+prevents overlapping runs against shared tool databases and the inventory cache.
+Each invocation refreshes advisory databases once, then freezes updates during
+the scans. Failed refreshes, invalid/missing metadata and databases older than
+the policy limit (72 hours by default) make the report incomplete, even if cached
+databases allow results to be generated. The freshness limit also applies to
+Trivy's Java package index; a missing or stale index is a coverage problem, even
+when the vulnerability database is fresh. No tools are automatically installed or
+upgraded. Explicit scanner settings prevent hidden scanner configuration or
+ignore files from silently removing findings.
+
+Syft native JSON and CycloneDX inventories are cached by image ID, platform,
+Syft version and cataloging settings. Go function-symbol capture is enabled.
+Cache reuse verifies source image identity, JSON structure and file hashes.
+Corrupt entries are preserved under `.invalid-*` names and regenerated, not
+silently trusted or deleted. Every invocation still reruns **both vulnerability
+matchers**; a cached SBOM is not a cached vulnerability result. Grype consumes
+native Syft JSON because interchange formats can lose matching evidence.
+
+Private, Git-ignored artifacts remain under `reports/trivy/` for compatibility:
+
+| Path | Purpose |
+| --- | --- |
+| `<target>/runs/<UTC-run-id>/summary.md` | Investigate first, coverage problems, changes and stage timings |
+| `<target>/runs/<UTC-run-id>/findings.json` / `findings.csv` | All combined findings, versions, scanner severities and triage |
+| `<target>/runs/<UTC-run-id>/inventory.json` | Target, exact images, tool/DB versions, stages and coverage status |
+| `<target>/runs/<UTC-run-id>/images/` | Native scanner reports, CycloneDX SBOMs and private logs |
+| `<target>/state.json` | Last trustworthy baseline for each container |
+| `cache/syft/` | Verified inventories reused across runs |
+
+`scan-report` shows the latest **combined** summary for the current Docker target,
+including incomplete runs. Older Trivy-only reports and benchmark artifacts are
+preserved; they are not silently treated as combined reports. Reports/logs may
+contain sensitive image metadata. Keep them private. No reports, history or cache
+entries are automatically deleted.
+The repository's KICS pre-commit hook explicitly excludes this generated report
+directory; infrastructure source files remain in its normal scan scope.
+
+The report merges explicitly linked CVE/GHSA/GO aliases and repeated component
+matches while retaining scanner provenance and severity disagreements. Shared
+vendor bulletins such as DSA/DLA are **not** treated as vulnerability aliases.
+The first page prioritizes known-exploitation flags where available and severe
+findings with reported fixes; all other findings remain in JSON/CSV. Kernel-header
+matches are marked for applicability review, not automatically suppressed. A
+reported fix is not a guarantee that an updated application image is available.
+
+Changes are tracked per container only when both pipelines completed and coverage
+is not degraded. Initial baselines are distinguished from newly reported issues.
+Missing/failed scans never make old findings disappear. Changes in advisory data
+can also cause a finding to be "no longer reported"; that is not proof of a patch.
+Scanning one container does not resolve findings for other containers. Corrupt
+history is preserved and flagged instead of being reset.
+
+By default, vulnerability findings do not fail the task. `FAIL_ON` is an optional
+gate using the highest reported scanner severity after active scoped triage;
+it is not an exploitability assessment. The script returns **1** when that gate
+fails and **2** for incomplete scans/coverage (which takes precedence). Task may
+normalize these exit codes. A zero status is not a declaration that images are safe.
+
+The non-secret policy is [`scan-policy.json`](scan-policy.json). Its expected
+components map container names to alternative Syft component names; at least one
+must be detected. Adminer requires a PHP interpreter so a detection regression
+cannot silently pass. Extend expectations for other important runtimes as their
+inventory is validated. Empty inventories, missing images, EOL/unknown distro
+warnings and unavailable matching evidence remain explicit coverage problems.
+
+The policy's optional `triage` list supports **exact** `container`, `advisory` and
+`component` matches (use the component identifier from `findings.json`). Every
+entry also requires `reason`, `evidence` and an ISO `expires` date. Exceptions
+remain visible in the full results. Expired exceptions stop applying and flag
+the report; no wildcard or blanket baseline suppression is supported.
+
+No finding does **not** prove safety: scanners can miss compiled components and
+new advisories, and vendor backports may need manual verification. Image scans
+exclude writable layers, bind-mounted applications, the running host kernel and
+actual network exploitability. The task does not enable scheduling, notifications,
+dashboard uploads or deployment hooks. Run it manually after image updates; any
+future daily schedule must be explicitly enabled on the intended host.
+
+### Monitoring tools
 
 Use [ctop](https://github.com/bcicen/ctop) to monitor containers from the command-line.
 

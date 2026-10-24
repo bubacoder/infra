@@ -1,6 +1,22 @@
 version: '3'
 
 tasks:
+  scan:
+    desc: Scan running images with Trivy and cached Syft inventories + Grype
+    vars:
+      CONTAINER: '{{default "" .CONTAINER}}'
+      FAIL_ON: '{{default "" .FAIL_ON}}'
+    env:
+      SCAN_CONTAINER: '{{.CONTAINER}}'
+      SCAN_FAIL_ON: '{{.FAIL_ON}}'
+    cmds:
+      - python3 scripts/scan-container-images.py
+
+  scan-report:
+    desc: Show the latest combined scan summary for the current Docker target
+    cmds:
+      - python3 scripts/scan-container-images.py --report
+
   init-local-config:
     desc: Create the minimal local Compose configuration without overwriting operator files
     vars:

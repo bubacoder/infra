@@ -119,6 +119,7 @@ repos:
     hooks:
       - id: kics-scan
         # TODO solve the high severity issues first
-        args: ["--exclude-severities", "info,low,medium"]
+        # Generated inventories can include private image metadata and are not IaC.
+        args: ["--exclude-severities", "info,low,medium", "--exclude-paths", "reports/trivy"]
         pass_filenames: false
         always_run: false
