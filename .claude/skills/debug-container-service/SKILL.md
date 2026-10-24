@@ -47,11 +47,12 @@ docker ps -a --filter "name=<container_name>" --format '{{.Names}}\t{{.Status}}'
 
 ## Step 1 — Get Compose Config and Identify Services
 
-Use the MCP tool to read the resolved compose configuration:
-
-```
-mcp__infra-mcp__container-service-config(service_name="category/service-name")
-```
+Read the tracked Compose file first. Fully resolved Compose configuration
+and raw container environments may contain credentials: do not print them.
+Use a supported redacted interface or an allowlisted projection for the
+specific runtime fields needed. Report credentials only as set/unset.
+Follow repository secret-handling instructions before accessing private
+configuration.
 
 From the config, identify:
 - **Container name** (needed for `docker logs` — usually set explicitly as `container_name:`)
