@@ -49,8 +49,13 @@ debian:
 
       # Crowdsec - configure docker/security/crowdsec/crowdsec.yaml and
       #   set 'debian_base_crowdsec_local_api_key' in group_vars/debian/secret.yaml
-      # debian_base_install_crowdsec_bouncer: true
-      # debian_base_crowdsec_local_api_url: http://127.0.0.1:7080/
+      debian_base_install_crowdsec_bouncer: true
+      debian_base_crowdsec_local_api_url: http://127.0.0.1:7080/
+      debian_base_crowdsec_local_api_key_file: "{{ playbook_dir }}/../../config/ansible/colony/crowdsec-firewall-bouncer-api-key"
+      debian_base_crowdsec_suite: noble
+      debian_base_crowdsec_iptables_chains:
+        - INPUT
+        - DOCKER-USER
 
       # Enable all brew package groups
       debian_tools_brew_install_groups:

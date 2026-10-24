@@ -12,9 +12,21 @@
   become: true
 
 - name: Install Crowdsec iptables bouncer
-  when: debian_base_install_crowdsec_bouncer | default(false) | ansible.builtin.bool
+  when:
+    - debian_base_install_crowdsec_bouncer | default(false) | ansible.builtin.bool
+    - "'DOCKER-USER' not in debian_base_crowdsec_iptables_chains | default(['INPUT'])"
   ansible.builtin.import_tasks: 50-crowdsec.yaml
   become: true
+
+- name: Explain Docker firewall activation
+  ansible.builtin.debug:
+    msg: >-
+      Docker-host CrowdSec enforcement is configured separately after Docker and
+      the CrowdSec container are ready. Run ansible/playbooks/crowdsec.yaml for
+      this host; see docker/security/crowdsec/README.md.
+  when:
+    - debian_base_install_crowdsec_bouncer | default(false) | ansible.builtin.bool
+    - "'DOCKER-USER' in debian_base_crowdsec_iptables_chains | default(['INPUT'])"
 
 - name: Install go-task
   ansible.builtin.import_tasks: 60-go-task.yaml

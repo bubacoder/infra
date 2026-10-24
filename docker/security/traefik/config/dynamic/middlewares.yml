@@ -56,7 +56,11 @@ http:
           Enabled: '{{env "CROWDSEC_ENABLED"}}'
           CrowdsecLapiKey: '{{env "CROWDSEC_BOUNCER_API_KEY"}}'
           CrowdsecLapiHost: crowdsec:8080
-          CrowdsecMode: "live"
+          CrowdsecMode: "stream"
+          UpdateIntervalSeconds: 60
+          StreamStartupBlock: true
+          # Fail closed on the first failed sync; resume after a successful sync.
+          UpdateMaxFailure: 0
 
     security-headers:
       headers:
