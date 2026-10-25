@@ -1,7 +1,7 @@
 name: kopia-b2
 services:
   kopia-b2:
-    image: kopia/kopia:0.23.1
+    image: kopia/kopia:0.23.1@sha256:89fd95ee2942880ca00eae964266958a394421ddbdf69bca62e38afc55f5900e
     container_name: kopia-b2
     restart: "unless-stopped"
     user: "0:0"

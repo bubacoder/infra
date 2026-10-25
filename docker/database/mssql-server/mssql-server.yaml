@@ -1,7 +1,7 @@
 name: mssql-server
 services:
   mssql-server-init:
-    image: busybox:1.38.0
+    image: busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
     container_name: mssql-server-init
     command: ["sh", "-c", "chown -R 10001:10001 /var/opt/mssql"]
     volumes:

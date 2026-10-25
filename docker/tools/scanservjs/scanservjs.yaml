@@ -1,7 +1,7 @@
 name: scanservjs
 services:
   scanservjs:
-    image: sbs20/scanservjs:3.3.0
+    image: sbs20/scanservjs:3.3.0@sha256:7a0c0dfd546f483c2fe8c5ccdcd8fc96301a41fb0d4309747fc8268108defb6a
     container_name: scanservjs
     restart: unless-stopped
     environment:

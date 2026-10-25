@@ -1,7 +1,7 @@
 name: calibre-web-automated
 services:
   calibre-web-automated:
-    image: crocodilestick/calibre-web-automated:v4.0.8
+    image: crocodilestick/calibre-web-automated:v4.0.8@sha256:5e00373854247750cc3e4479b492ae09293ff5e06ed10177f226634d97888679
     container_name: calibre-web-automated
     restart: unless-stopped
     healthcheck:

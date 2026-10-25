@@ -1,7 +1,7 @@
 name: cyberchef
 services:
   cyberchef:
-    image: mpepping/cyberchef:v11.5.0
+    image: mpepping/cyberchef:v11.5.0@sha256:d75426ccf924157f4ade18d319b6eb0963559ac228d5e4a59b4c8fefcad9b420
     container_name: cyberchef
     restart: unless-stopped
     networks:

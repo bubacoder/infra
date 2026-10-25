@@ -1,7 +1,7 @@
 name: n8n
 services:
   n8n-postgres-init:
-    image: busybox:1.38.0
+    image: busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
     container_name: n8n-postgres-init
     command: ["sh", "-c", "chown -R 70:70 /var/lib/postgresql/data"]
     volumes:
@@ -29,7 +29,7 @@ services:
       retries: 10
 
   initContainer:
-    image: busybox:1.38.0
+    image: busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
     container_name: n8n-init
     command: ["sh", "-c", "chown -R 1000:1000 /home/node/.n8n"]
     volumes:

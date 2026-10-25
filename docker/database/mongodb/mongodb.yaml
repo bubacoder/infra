@@ -1,14 +1,14 @@
 name: mongodb
 services:
   mongodb-init:
-    image: busybox:1.38.0
+    image: busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
     container_name: mongodb-init
     command: ["sh", "-c", "chown -R 999:999 /data/db"]
     volumes:
       - ${DOCKER_VOLUMES}/mongodb/data:/data/db
 
   mongodb:
-    image: mongo:7.0.45-jammy
+    image: mongo:7.0.45-jammy@sha256:7fba8c37d681a79f22a85d2b06bd5ed121a7973c0a6ca20ed4887bb0a1548ce0
     container_name: mongodb
     restart: unless-stopped
     # kics-scan ignore-block

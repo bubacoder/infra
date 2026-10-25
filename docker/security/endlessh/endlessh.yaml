@@ -1,7 +1,7 @@
 name: endlessh
 services:
   endlessh:
-    image: shizunge/endlessh-go:2026.0730.0
+    image: shizunge/endlessh-go:2026.0730.0@sha256:8826dad32623c503ec862f9266c1374da3f4a2821e8f9356bda5463a335b6225
     container_name: endlessh
     restart: unless-stopped
     command:
