@@ -196,6 +196,12 @@ See [K3s access](../ansible/roles/k3s/README.md#access-and-lifecycle) for the
 required DNS, network and controller setup. Existing inputs without this section
 continue using the guest-only K3s profile.
 
+Cilium is independently opt-in for a fresh K3s VM with
+`k3s: {cilium: {enabled: true}}`. Omitted or disabled settings preserve the default
+Flannel networking. See [optional Cilium networking](../ansible/roles/k3s/README.md#optional-cilium-networking)
+for installation, acceptance checks and lifecycle guards. Bootstrap does not
+automatically migrate existing CNIs, uninstall Cilium or upgrade its pinned chart.
+
 For a host without Docker or bootstrap-managed applications, retain the VM/provider
 sections and replace these configuration sections:
 

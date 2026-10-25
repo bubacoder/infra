@@ -47,6 +47,7 @@ class ProxmoxDestroyTests(unittest.TestCase):
         self.snapshots = False
         self.snippets_present = True
         self.snippet_hash = "a" * 64
+        self.interfaces = [{"hardware-address": "12:34:56:78:90:ab", "ip-addresses": [{"ip-address-type": "ipv4", "ip-address": "192.0.2.125"}]}]
         self.commands = []
 
     def remote(self, _host, *args, **_kwargs):  # noqa: PLR0911 -- explicit native command fixture
@@ -67,6 +68,8 @@ class ProxmoxDestroyTests(unittest.TestCase):
             )
         if args[:2] == ("qm", "status"):
             return self.state
+        if args[:3] == ("qm", "guest", "cmd"):
+            return json.dumps(self.interfaces)
         if args[:2] == ("qm", "shutdown"):
             self.state = "status: stopped"
             return ""
@@ -83,6 +86,19 @@ class ProxmoxDestroyTests(unittest.TestCase):
         if args[0] == "test":
             return ""
         raise AssertionError(f"Unexpected native command: {args[0]}")
+
+    def test_auto_address_accepts_wrapped_and_unwrapped_guest_interfaces(self):
+        self.config.update(proxmox_address="auto", dns={"enabled": True})
+        interfaces = self.interfaces
+        for response in (interfaces, {"result": interfaces}):
+            with self.subTest(response=response), patch.object(teardown, "remote", side_effect=self.remote):
+                self.interfaces = response
+                self.assertEqual(teardown.inspect(self.config)["address"], "192.0.2.125")
+        for response in (None, "invalid", {}, {"result": {}}):
+            with self.subTest(response=response), patch.object(teardown, "remote", side_effect=self.remote):
+                self.interfaces = response
+                with self.assertRaisesRegex(teardown.DestroyError, "original NIC"):
+                    teardown.inspect(self.config)
 
     def test_reviewed_plan_destroy_and_repeatable_cleanup(self):
         with patch.object(teardown, "remote", side_effect=self.remote), patch.dict(os.environ, {"BOOTSTRAP_DELETE_DATA": "1"}):
