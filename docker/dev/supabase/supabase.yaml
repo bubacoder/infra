@@ -3,7 +3,7 @@ services:
 
   studio:
     container_name: supabase-studio
-    image: supabase/studio:2025.11.10-sha-5291fe3
+    image: supabase/studio:2025.11.10-sha-5291fe3@sha256:db1fb41e13ebd8666116486a9741bf1a1cb1cba36b4d0e44f45d95fca70576ac
     restart: unless-stopped
     healthcheck:
       test:
@@ -55,7 +55,7 @@ services:
 
   kong:
     container_name: supabase-kong
-    image: kong:2.8.5
+    image: kong:2.8.5@sha256:34bbeaf6ee4c2db5f5c33ecf4793f29155753e2191b121eb25ffb6d8f151b37b
     restart: unless-stopped
     ports:
       - ${SUPABASE_KONG_HTTP_PORT}:8000/tcp
@@ -91,7 +91,7 @@ services:
 
   auth:
     container_name: supabase-auth
-    image: supabase/gotrue:v2.197.0
+    image: supabase/gotrue:v2.197.0@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b
     restart: unless-stopped
     healthcheck:
       test:
@@ -176,7 +176,7 @@ services:
 
   rest:
     container_name: supabase-rest
-    image: postgrest/postgrest:v13.0.8
+    image: postgrest/postgrest:v13.0.8@sha256:d09618df2b7b9547c80a076c2f4045b326be8d7ac06060d263caefec1334e3c9
     restart: unless-stopped
     depends_on:
       db:
@@ -294,7 +294,7 @@ services:
 
   imgproxy:
     container_name: supabase-imgproxy
-    image: darthsim/imgproxy:v3.31.4
+    image: darthsim/imgproxy:v3.31.4@sha256:73c5dda13199745b0d2d00e4149d4a589c5b2e205dbf335ca05eca8276b54712
     restart: unless-stopped
     volumes:
       - ${DOCKER_VOLUMES}/supabase/storage:/var/lib/storage
@@ -318,7 +318,7 @@ services:
 
   meta:
     container_name: supabase-meta
-    image: supabase/postgres-meta:v0.100.0
+    image: supabase/postgres-meta:v0.100.0@sha256:145325b7e39f8ef4931d6e8cfd3f6f4d655de09d72a2ccc96d9513542c2202bd
     restart: unless-stopped
     depends_on:
       db:
@@ -365,7 +365,7 @@ services:
 
   analytics:
     container_name: supabase-analytics
-    image: supabase/logflare:1.53.1
+    image: supabase/logflare:1.53.1@sha256:1b9cd7d2ae3fd51851b81e807ddc2a792040050ec4d53187f333741fc8b310af
     restart: unless-stopped
     # Uncomment to use Big Query backend for analytics
     # volumes:
@@ -414,7 +414,7 @@ services:
   # Comment out everything below this point if you are using an external Postgres database
   db-init:
     container_name: supabase-db-init
-    image: busybox:1.38.0
+    image: busybox:1.38.0@sha256:fd7dc98638c8e305f4dc34e979f1c0fdfdcaeb0fbf8fcff77ae834b6da3d7e6e
     command: ["sh", "-c", "chown -R 100:101 /var/lib/postgresql/data /etc/postgresql-custom"]
     volumes:
       - ${DOCKER_VOLUMES}/supabase/db-data:/var/lib/postgresql/data
@@ -517,7 +517,7 @@ services:
   # Update the DATABASE_URL if you are using an external Postgres database
   supavisor:
     container_name: supabase-pooler
-    image: supabase/supavisor:2.9.13
+    image: supabase/supavisor:2.9.13@sha256:07f1a6098ffc04b80263bca4eb5c3e7bd2e03dfd1fc465aa108d7329000a1a4e
     restart: unless-stopped
     ports:
       - ${SUPABASE_POSTGRES_PORT}:5432

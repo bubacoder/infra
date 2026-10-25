@@ -1,7 +1,7 @@
 name: samba
 services:
   samba:
-    image: crazymax/samba:4.23.8
+    image: crazymax/samba:4.23.8@sha256:b37f7af97c773eddb593537f64da6389e5ee6695bcecf44f3ba1a8a6bcf34125
     container_name: samba
     network_mode: host
 

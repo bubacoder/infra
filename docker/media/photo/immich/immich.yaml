@@ -43,7 +43,7 @@ services:
       - immich
 
   redis:
-    image: docker.io/valkey/valkey:9
+    image: docker.io/valkey/valkey:9@sha256:418652cfb58ef879d4978c33553735d7147016032d5aefaa14c828e611eb9dfd
     container_name: immich-redis
     restart: unless-stopped
     healthcheck:

@@ -3,7 +3,7 @@ services:
   jellyfin:
     # GPU acceleration: set GPU_COMPOSE_SUFFIX=amdgpu in host .env to load jellyfin-amdgpu.yaml (VAAPI/AMD).
     #   Then enable VA-API in Jellyfin UI: Dashboard → Playback → Transcoding.
-    image: linuxserver/jellyfin:12.1ubu2604-ls50
+    image: linuxserver/jellyfin:12.1ubu2604-ls50@sha256:51252e7a416e703cdc3cd91e8a54673a2430cc80409be8a38abe511411577b95
     container_name: jellyfin
     restart: unless-stopped
     environment:
