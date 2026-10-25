@@ -1,0 +1,82 @@
+---
+- name: Inspect bootstrap-owned Cilium files without following symlinks
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    get_checksum: false
+    get_mime: false
+  loop:
+    - /etc/rancher/k3s/config.yaml.d/20-bootstrap-cilium.yaml
+    - /var/lib/rancher/k3s/server/manifests/bootstrap-cilium.yaml
+  register: k3s_cilium_files
+
+- name: Refuse automatic CNI migration or removal
+  ansible.builtin.assert:
+    that:
+      - k3s_cilium.enabled | default(false) or not (k3s_cilium_files.results | selectattr('stat.exists') | list | length > 0)
+      - k3s_cilium_files.results | selectattr('stat.islnk', 'defined') | selectattr('stat.islnk') | list | length == 0
+      - not (k3s_cilium.enabled | default(false)) or not k3s_service.stat.exists or (k3s_cilium_files.results | selectattr('stat.exists') | list | length == 2)
+    fail_msg: CNI changes on existing clusters require a separately reviewed migration; use a fresh VM for Cilium. No CNI files were removed.
+
+- name: Configure opt-in Cilium for a fresh single-server cluster
+  when: k3s_cilium.enabled | default(false)
+  block:
+    - name: Require regular bootstrap-owned Cilium files
+      ansible.builtin.assert:
+        that:
+          - not item.stat.exists or (item.stat.isreg | default(false) and not item.stat.islnk | default(false))
+        fail_msg: Inspect the existing Cilium paths privately; non-regular files are not overwritten.
+      loop: "{{ k3s_cilium_files.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Read existing Cilium files privately to guard against edits and implicit upgrades
+      ansible.builtin.slurp:
+        src: "{{ item.item }}"
+      loop: "{{ k3s_cilium_files.results }}"
+      when: item.stat.exists
+      register: k3s_cilium_contents
+      no_log: true
+
+    - name: Preserve existing Cilium settings and pinned version
+      ansible.builtin.assert:
+        that:
+          - item.content | b64decode == lookup('ansible.builtin.file', role_path + '/files/' + ('cilium-network.yaml' if item.item.item.endswith('20-bootstrap-cilium.yaml') else 'cilium-chart.yaml'), rstrip=false)
+        fail_msg: Existing Cilium settings differ. Review migration or upgrade explicitly; no files were overwritten.
+      loop: "{{ k3s_cilium_contents.results }}"
+      when: not item.skipped | default(false)
+      no_log: true
+
+    - name: Keep the K3s server state directory private
+      ansible.builtin.file:
+        path: /var/lib/rancher/k3s/server
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+
+    - name: Create directories for the network configuration and bootstrap Helm chart
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - /etc/rancher/k3s/config.yaml.d
+        - /var/lib/rancher/k3s/server/manifests
+
+    - name: Disable Flannel and the built-in policy controller before the first start
+      ansible.builtin.copy:
+        src: cilium-network.yaml
+        dest: /etc/rancher/k3s/config.yaml.d/20-bootstrap-cilium.yaml
+        owner: root
+        group: root
+        mode: '0600'
+
+    - name: Install the pinned Cilium bootstrap chart through the K3s Helm controller
+      ansible.builtin.copy:
+        src: cilium-chart.yaml
+        dest: /var/lib/rancher/k3s/server/manifests/bootstrap-cilium.yaml
+        owner: root
+        group: root
+        mode: '0600'

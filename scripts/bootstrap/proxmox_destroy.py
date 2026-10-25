@@ -155,7 +155,7 @@ def inspect(config: dict, *, resolve_address: bool = True) -> dict:
         if entry["status"] != "status: running":
             raise DestroyError("DNS teardown requires a running guest agent or an explicit reserved VM address.")
         interfaces = json.loads(remote(host, "qm", "guest", "cmd", str(vmid), "network-get-interfaces"))
-        nics = interfaces.get("result", interfaces)
+        nics = interfaces.get("result", interfaces) if isinstance(interfaces, dict) else interfaces
         mac = re.search(r"virtio=([0-9a-f:]{17})", vm.get("net0", ""), re.I)
         if not mac or not isinstance(nics, list):
             raise DestroyError("Cannot bind DNS cleanup to the guest's original NIC.")

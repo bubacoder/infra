@@ -45,6 +45,8 @@ secrets:
 # For a dedicated K3s host only: select the k3s role, services: [], and configure
 # host.domain/dns (or supply access.host for externally managed DNS or an IPv4).
 # k3s:
+#   cilium: # Optional on a fresh K3s VM, independent of access. Default: false.
+#     enabled: true
 #   access:
 #     enabled: true
 #     context: k3s-aws

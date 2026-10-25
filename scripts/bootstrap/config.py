@@ -127,7 +127,15 @@ def section(config: dict, name: str, allowed: set, required: set | None = None) 
 def validate_k3s_access(config: dict, host: dict) -> None:
     if "k3s" not in config:
         return
-    k3s = section(config, "k3s", {"access"}, {"access"})
+    k3s = section(config, "k3s", {"access", "cilium"}, set())
+    if "cilium" in k3s:
+        cilium = k3s["cilium"]
+        if not isinstance(cilium, dict) or set(cilium) != {"enabled"} or type(cilium["enabled"]) is not bool:
+            raise ConfigError("k3s.cilium requires only a boolean enabled field.")
+        if cilium["enabled"] and "k3s" not in config["roles"]:
+            raise ConfigError("Enabled Cilium requires the k3s role.")
+    if "access" not in k3s:
+        return
     access = k3s.get("access")
     if not isinstance(access, dict) or set(access) - K3S_ACCESS_KEYS or "enabled" not in access:
         raise ConfigError("Check k3s.access fields against the documented profile.")
@@ -485,6 +493,7 @@ class Configuration:
             "roles": config["roles"],
             "services": config["services"],
             "k3s_access": config.get("k3s", {}).get("access", {"enabled": False}),
+            "k3s_cilium": config.get("k3s", {}).get("cilium", {"enabled": False}),
             "proxmox_host": config.get("proxmox", {}).get("host"),
             "proxmox_vmid": config.get("proxmox", {}).get("vmid"),
             "proxmox_timeouts": {key: config.get("proxmox", {}).get(key, default) for key, default in PVE_TIMEOUTS.items()}
