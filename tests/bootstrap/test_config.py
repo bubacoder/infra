@@ -317,6 +317,34 @@ class ConfigurationTests(unittest.TestCase):
         with self.assertRaisesRegex(ConfigError, "services"):
             self.config.prepare()
 
+    @patch("scripts.bootstrap.config.public_key", return_value="ssh-ed25519 PUBLIC_FIXTURE")
+    def test_cilium_is_opt_in_and_rendered_on_both_targets(self, _key):
+        for target in ("proxmox", "aws"):
+            if target == "aws":
+                self.aws()
+            self.edit(lambda v: v.update(roles=["k3s"], services=[], host={}, dns={"enabled": False}, secrets={}))
+            self.assertEqual(self.config.show()["k3s_cilium"], {"enabled": False})
+            for enabled in (False, True):
+                with self.subTest(target=target, enabled=enabled):
+                    self.edit(lambda v, enabled=enabled: v.update(k3s={"cilium": {"enabled": enabled}}))
+                    self.config.prepare()
+                    host = yaml.safe_load((self.config.generated / "host.yaml").read_text())
+                    self.assertEqual(host["k3s"]["cilium"], {"enabled": enabled})
+                    self.assertEqual(self.config.show()["k3s_cilium"], {"enabled": enabled})
+                    self.assertEqual(self.config.show()["k3s_access"], {"enabled": False})
+            self.edit(lambda v: v.pop("k3s"))
+
+    def test_cilium_schema_rejects_invalid_settings_before_provider_access(self):
+        for cilium in (True, {}, {"enabled": "true"}, {"enabled": 1}, {"enabled": True, "version": "latest"}):
+            with self.subTest(cilium=cilium):
+                self.edit(lambda v, cilium=cilium: v.update(k3s={"cilium": cilium}))
+                with self.assertRaisesRegex(ConfigError, "k3s.cilium"), patch("scripts.bootstrap.config.subprocess.run") as run:
+                    self.config.run("plan")
+                run.assert_not_called()
+        self.edit(lambda v: v.update(k3s={"cilium": {"enabled": True}}))
+        with self.assertRaisesRegex(ConfigError, "requires the k3s role"):
+            self.config.show()
+
     def test_k3s_api_access_is_optional_and_resolves_dns_host(self):
         self.edit(
             lambda v: v.update(
@@ -325,12 +353,13 @@ class ConfigurationTests(unittest.TestCase):
                 host={"domain": "k3s.example.com"},
                 dns={"enabled": True},
                 secrets={},
-                k3s={"access": {"enabled": True, "context": "k3s-lab", "install_context": True}},
+                k3s={"access": {"enabled": True, "context": "k3s-lab", "install_context": True}, "cilium": {"enabled": True}},
             )
         )
         self.config.prepare()
         host = yaml.safe_load((self.config.generated / "host.yaml").read_text())
         self.assertEqual(host["k3s"]["access"]["host"], "k3s.example.com")
+        self.assertEqual(host["k3s"]["cilium"], {"enabled": True})
         self.assertEqual(self.config.show()["k3s_access"]["context"], "k3s-lab")
 
     @patch("scripts.bootstrap.config.public_key", return_value="ssh-ed25519 PUBLIC_FIXTURE")

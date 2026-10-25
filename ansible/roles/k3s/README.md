@@ -4,7 +4,8 @@ Installs a single K3s server on an amd64/arm64 Debian-family systemd host using
 the [official installer](https://docs.k3s.io/quick-start). The role uses upstream
 defaults: the stable channel on first installation, containerd, SQLite, Flannel,
 CoreDNS, Traefik, ServiceLB, metrics-server and local-path storage. No Docker
-installation, external datastore or cluster joining is required. Optional direct
+installation, external datastore or cluster joining is required. Cilium can
+optionally replace Flannel on a fresh VM; it is not installed by default. Optional direct
 controller access adds one `tls-san` to the K3s configuration. Allow at least 2 CPU
 cores and 2 GB RAM; 4 GB RAM is preferable for workloads.
 
@@ -64,6 +65,53 @@ the AWS data disk does not preserve this cluster. Default AWS bootstrap security
 groups do not expose TCP 6443 unless K3s controller access is selected. When enabled,
 Terraform allows it only from `aws.admin_source_address` (never from everyone).
 Existing HTTP/HTTPS rules still apply to applications later exposed through ingress.
+
+## Optional Cilium networking
+
+To install Cilium instead of Flannel, add this to the private `bootstrap.yaml`
+**before the first apply**, retaining the VM/provider settings and any `k3s.access`
+settings:
+
+```yaml
+roles: [debian_base, k3s]
+services: []
+k3s:
+  cilium:
+    enabled: true
+```
+
+Omitting `k3s.cilium` or setting `enabled: false` keeps upstream networking defaults
+and installs nothing extra. This works on both Proxmox and AWS, independently of
+controller access. Inspect the selection with `bootstrap:show-config`.
+
+The role disables Flannel and K3s's network-policy controller before first startup,
+then uses the built-in K3s Helm controller to install Cilium **1.20.4** from
+`https://helm.cilium.io/`. The bootstrap Helm job can run before pod networking is
+ready; no Helm or Cilium CLI is required on the controller. Cilium retains
+kube-proxy, uses K3s's default pod CIDR `10.42.0.0/16` and a single operator replica.
+Traefik, ServiceLB and local-path storage remain enabled; Hubble is disabled.
+The guest needs outbound HTTPS access to the chart and container registries and a
+[Cilium-compatible kernel](https://docs.cilium.io/en/stable/operations/system_requirements/).
+This profile supports the default single-server network, not custom CIDRs or
+multi-node networking/security-group configuration.
+
+The role writes `/etc/rancher/k3s/config.yaml.d/20-bootstrap-cilium.yaml` and
+`/var/lib/rancher/k3s/server/manifests/bootstrap-cilium.yaml`. Repeat configuration
+requires their contents to match; it does not silently upgrade the pinned chart or
+overwrite operator edits. Existing installations without these files are rejected
+when opting into Cilium: automatic Flannel migration and adoption of externally
+managed Cilium are not supported. Disabling Cilium after installation also fails
+without deleting files or uninstalling the CNI. Review any migration or upgrade
+separately with backups; never remove these files to bypass a guard.
+
+`bootstrap:verify` additionally waits for the Cilium agent DaemonSet and operator
+Deployment rollouts, then verifies node and bundled-workload readiness. These are
+read-only checks, not a full network-policy/connectivity test. The upstream
+`cilium connectivity test` creates test resources and is a separate, explicitly
+approved operation. `bootstrap:status` retains its lightweight service/node checks.
+
+See [Cilium on K3s](https://docs.cilium.io/en/stable/installation/k3s/) and
+[K3s Helm automation](https://docs.k3s.io/add-ons/helm) for the upstream integration.
 
 ## Access and lifecycle
 

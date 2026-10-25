@@ -53,6 +53,7 @@
       - bootstrap.dns.adguard_url is not defined or bootstrap.dns.adguard_urls is not defined
       - bootstrap.dns.adguard_urls | default([]) | unique | length == bootstrap.dns.adguard_urls | default([]) | length
       - bootstrap.dns.adguard_urls | default([]) | select('match', '^https?://[^/@?#\s]+$') | list | length == bootstrap.dns.adguard_urls | default([]) | length
+      - not bootstrap.k3s.cilium.enabled | default(false) or 'k3s' in bootstrap.roles
       - not bootstrap.k3s.access.enabled | default(false) or 'k3s' in bootstrap.roles
       - not bootstrap.k3s.access.enabled | default(false) or bootstrap.k3s.access.install_context | default(false)
       - not bootstrap.k3s.access.enabled | default(false) or bootstrap.k3s.access.host | default('') is match('^[a-z0-9.-]+$')

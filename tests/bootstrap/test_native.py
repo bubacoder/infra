@@ -686,6 +686,72 @@ class NativeBootstrapTests(unittest.TestCase):
         self.assertEqual(fresh_path.stat().st_mode & 0o777, 0o600)
         self.assertIn("changed=0", self.run_play("test-k3s-access.yaml").stdout)
 
+    def test_cilium_network_setup_is_opt_in_idempotent_and_refuses_migration(self) -> None:
+        role = self.root / "ansible/roles/k3s"
+        source = (role / "tasks/cilium.yaml").read_text()
+        source = source.replace("/etc/rancher/k3s", str(self.root / "settings"))
+        source = source.replace("/var/lib/rancher/k3s", str(self.root / "runtime"))
+        tasks = yaml.safe_load(source)
+        for task in tasks[-1]["block"]:
+            for module in ("ansible.builtin.file", "ansible.builtin.copy"):
+                if module in task:
+                    task[module].pop("owner", None)
+                    task[module].pop("group", None)
+        (role / "tasks/cilium.yaml").write_text(yaml.safe_dump(tasks))
+
+        def run(enabled, installed, *, check=True):
+            play = [
+                {
+                    "name": "Exercise Cilium file management without contacting a cluster",
+                    "hosts": "localhost",
+                    "gather_facts": False,
+                    "vars": {"k3s_cilium": {"enabled": enabled}, "k3s_service": {"stat": {"exists": installed}}},
+                    "tasks": [{"ansible.builtin.include_role": {"name": "k3s", "tasks_from": "cilium"}}],
+                }
+            ]
+            (self.root / "ansible/playbooks/test-cilium.yaml").write_text(yaml.safe_dump(play))
+            return self.run_play("test-cilium.yaml", check=check)
+
+        run(False, False)
+        self.assertFalse((self.root / "settings").exists())
+        self.assertFalse((self.root / "runtime").exists())
+        self.assertNotEqual(run(True, True, check=False).returncode, 0)
+        run(True, False)
+        network = self.root / "settings/config.yaml.d/20-bootstrap-cilium.yaml"
+        chart = self.root / "runtime/server/manifests/bootstrap-cilium.yaml"
+        self.assertEqual(yaml.safe_load(network.read_text()), {"flannel-backend": "none", "disable-network-policy": True})
+        manifest = yaml.safe_load(chart.read_text())
+        self.assertTrue(manifest["spec"]["bootstrap"])
+        self.assertEqual(manifest["spec"]["failurePolicy"], "abort")
+        values = yaml.safe_load(manifest["spec"]["valuesContent"])
+        self.assertFalse(values["kubeProxyReplacement"])
+        self.assertEqual(values["operator"]["replicas"], 1)
+        self.assertEqual(values["ipam"]["operator"]["clusterPoolIPv4PodCIDRList"], ["10.42.0.0/16"])
+        self.assertIn("changed=0", run(True, True).stdout)
+        self.assertNotEqual(run(False, True, check=False).returncode, 0)
+        self.assertTrue(chart.exists())
+        chart.write_text(chart.read_text().replace("version: 1.20.4", "version: 0.0.0"))
+        before = chart.read_bytes()
+        self.assertNotEqual(run(True, True, check=False).returncode, 0)
+        self.assertEqual(chart.read_bytes(), before)
+
+    def test_cilium_verification_is_read_only_and_rejects_failed_rollouts(self) -> None:
+        source = yaml.safe_load((ROOT / "ansible/roles/k3s/tasks/verify-cilium.yaml").read_text())
+        for task in source:
+            argv = task.pop("ansible.builtin.command")["argv"]
+            self.assertIn("rollout", argv)
+            self.assertIn("status", argv)
+            self.assertFalse(task["changed_when"])
+            task["ansible.builtin.set_fact"] = {task.pop("register"): {"rc": "{{ fixture_rc }}"}}
+            task.update(retries=1, delay=0)
+        for rc in (0, 1):
+            play = [
+                {"name": "Check Cilium acceptance offline", "hosts": "localhost", "gather_facts": False, "vars": {"fixture_rc": rc}, "tasks": source}
+            ]
+            (self.root / "ansible/playbooks/test-cilium-verify.yaml").write_text(yaml.safe_dump(play))
+            result = self.run_play("test-cilium-verify.yaml", check=False)
+            self.assertEqual(result.returncode == 0, rc == 0, result.stdout + result.stderr)
+
     def test_k3s_verify_only_never_executes_installation_tasks(self) -> None:
         source = yaml.safe_load((ROOT / "ansible/playbooks/bootstrap.yaml").read_text())[1]
         source.pop("vars_files")
@@ -753,7 +819,7 @@ class NativeBootstrapTests(unittest.TestCase):
         source[0].pop("become")
         tasks = source[0]["block"]
         tasks[1]["ansible.builtin.stat"]["path"] = str(service)
-        install = tasks[2]["block"]
+        install = next(task["block"] for task in tasks if task.get("when") == "not k3s_service.stat.exists")
         install[0] = {"ansible.builtin.set_fact": {"test_k3s_downloads": "{{ test_k3s_downloads | default(0) | int + 1 }}"}}
         install[1]["ansible.builtin.file"]["path"] = str(self.root / "cache")
         install[1]["ansible.builtin.file"].pop("owner")
@@ -763,6 +829,9 @@ class NativeBootstrapTests(unittest.TestCase):
         for index, task in enumerate(tasks):
             if "ansible.builtin.systemd_service" in task:
                 tasks[index] = {"ansible.builtin.set_fact": {"test_k3s_started": True}}
+            elif task.get("ansible.builtin.include_tasks") == "cilium.yaml":
+                # Exercise the CNI safety guards separately against sandboxed paths.
+                tasks[index] = {"ansible.builtin.set_fact": {"test_k3s_cni_checked": True}}
         (role / "main.yaml").write_text(yaml.safe_dump(source))
         (role / "verify.yaml").write_text(
             yaml.safe_dump([{"ansible.builtin.set_fact": {"test_k3s_verifications": "{{ test_k3s_verifications | default(0) | int + 1 }}"}}])
