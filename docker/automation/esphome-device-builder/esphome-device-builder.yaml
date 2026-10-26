@@ -1,7 +1,7 @@
 name: esphome-device-builder
 services:
   esphome-device-builder:
-    image: esphome/esphome:2026.10
+    image: esphome/esphome:2026.10@sha256:3a32372dfbd6d3b7c65cf6f5a86b06282cc9b5799a25dcb1fcbca4843fb88b27
     container_name: esphome-device-builder
     restart: unless-stopped
     network_mode: host

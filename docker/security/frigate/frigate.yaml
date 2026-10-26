@@ -1,7 +1,7 @@
 name: frigate
 services:
   frigate:
-    image: ghcr.io/blakeblackshear/frigate:stable
+    image: ghcr.io/blakeblackshear/frigate:stable@sha256:fd60f99ffd4eb6c42360ed4e14953e270586f239309ab3983e55b2e97ffac09a
     container_name: frigate
     restart: unless-stopped
     stop_grace_period: 30s

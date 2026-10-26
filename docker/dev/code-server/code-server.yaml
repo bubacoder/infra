@@ -1,7 +1,7 @@
 name: code-server
 services:
   code-server:
-    image: lscr.io/linuxserver/code-server:4.141.0
+    image: lscr.io/linuxserver/code-server:4.141.0@sha256:0d590a1a80a36bd2559222ad6e9f69559e962cca003f6f716b62487999d575f5
     container_name: code-server
     hostname: code-server
     restart: unless-stopped

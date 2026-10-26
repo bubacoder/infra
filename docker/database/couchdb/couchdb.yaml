@@ -1,7 +1,7 @@
 name: couchdb
 services:
   couchdb:
-    image: couchdb:3.5.3
+    image: couchdb:3.5.3@sha256:3611ce43bd32fe2368997fd41ec6e7270ec8d84aa5fc13c9828e5b15fd6bafe8
     container_name: couchdb
     restart: unless-stopped
     # kics-scan ignore-block

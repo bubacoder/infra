@@ -1,7 +1,7 @@
 name: mattermost
 services:
   mattermost:
-    image: mattermost/mattermost-team-edition:11.11.3
+    image: mattermost/mattermost-team-edition:11.11.3@sha256:e743b074894133fe131e2274ef8b5295859084641d6657c0e24fb9b0c26c32c0
     container_name: mattermost
     restart: unless-stopped
     security_opt:
