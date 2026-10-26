@@ -1,7 +1,7 @@
 name: unifi-network-application
 services:
   unifi-network-application:
-    image: lscr.io/linuxserver/unifi-network-application:10.6.106
+    image: lscr.io/linuxserver/unifi-network-application:10.6.106@sha256:4d5fc889c2f2c2cecc6b35d4d641780cbedbe90d3a51b8f03283261b137af468
     container_name: unifi-network-application
     restart: unless-stopped
     environment:

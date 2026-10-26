@@ -1,7 +1,7 @@
 name: adguardhome-sync
 services:
   adguardhome-sync:
-    image: ghcr.io/bakito/adguardhome-sync:v0.9.4
+    image: ghcr.io/bakito/adguardhome-sync:v0.9.4@sha256:4fec72b9c580c6711036ea42db645232d86384fde687365b0d0452d38d507280
     container_name: adguardhome-sync
     command: run
     restart: unless-stopped

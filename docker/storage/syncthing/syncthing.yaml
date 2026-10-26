@@ -1,7 +1,7 @@
 name: syncthing
 services:
   syncthing:
-    image: lscr.io/linuxserver/syncthing:2.1.7
+    image: lscr.io/linuxserver/syncthing:2.1.7@sha256:6dadb221ef64ce50fa5121120da316486c6feeb9f93d279ef8df198520203ddb
     container_name: syncthing
     restart: unless-stopped
     network_mode: host

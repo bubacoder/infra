@@ -8,7 +8,7 @@ services:
       - ${DOCKER_VOLUMES}/n8n/postgres-data:/var/lib/postgresql/data
 
   n8n-postgres:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     container_name: n8n-postgres
     networks:
       - n8n-backend
@@ -36,7 +36,7 @@ services:
       - ${DOCKER_VOLUMES}/n8n:/home/node/.n8n
 
   n8n:
-    image: docker.n8n.io/n8nio/n8n:2.45.2
+    image: docker.n8n.io/n8nio/n8n:2.45.2@sha256:fd7f4dc4617e9113c499ba62a6c58f17df2dce3dd82028e357485947af383041
     container_name: n8n
     restart: unless-stopped
     environment:

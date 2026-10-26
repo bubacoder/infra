@@ -1,7 +1,7 @@
 name: kiwix-serve
 services:
   kiwix-serve:
-    image: ghcr.io/kiwix/kiwix-serve:3.8.2
+    image: ghcr.io/kiwix/kiwix-serve:3.8.2@sha256:e478554a9920412eeb5ce1d73f24e4b28445ebed233187cdd03c623c32be46a5
     container_name: kiwix-serve
     command: "*.zim"
     restart: unless-stopped

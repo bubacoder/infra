@@ -1,7 +1,7 @@
 name: authentik
 services:
   postgresql:
-    image: postgres:16.15-alpine3.24
+    image: postgres:16.15-alpine3.24@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
     container_name: authentik-postgresql
     restart: unless-stopped
     environment:

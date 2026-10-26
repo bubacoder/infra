@@ -16,7 +16,7 @@ services:
       - ${DOCKER_VOLUMES}/ddclient:/processed
 
   ddclient:
-    image: lscr.io/linuxserver/ddclient:4.0.0
+    image: lscr.io/linuxserver/ddclient:4.0.0@sha256:61de8a998f00bcf468a361f0df6007fb6ee8b2c6e89ed1c431145a98caeb7755
     container_name: ddclient
     environment:
       PUID: ${PUID}

@@ -1,7 +1,7 @@
 name: scrutiny
 services:
   scrutiny-influxdb:
-    image: influxdb:2.9
+    image: influxdb:2.9@sha256:cdd3dbdea45c2f43513abd06ee9644b6e05d2354a2b93ca829c9f07d716eaaac
     container_name: scrutiny-influxdb
     restart: unless-stopped
     networks:
@@ -15,7 +15,7 @@ services:
       retries: 20
 
   scrutiny-web:
-    image: ghcr.io/analogj/scrutiny:v0.9.5-web
+    image: ghcr.io/analogj/scrutiny:v0.9.5-web@sha256:4f2ec0c874aec7fb0da5505b8ee127a8d7ac5b9d2b0622b53cf27fb47693877c
     container_name: scrutiny-web
     restart: unless-stopped
     networks:
