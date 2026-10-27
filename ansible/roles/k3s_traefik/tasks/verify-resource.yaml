@@ -1,0 +1,17 @@
+---
+- name: Read the live public resource privately to detect operator drift
+  ansible.builtin.command:
+    argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, get, "{{ k3s_traefik_verify_kind }}", '{{ "bootstrap-traefik-dynamic" if k3s_traefik_verify_kind == "configmap" else "traefik" }}', -o=json]
+  register: k3s_traefik_live_public
+  changed_when: false
+  no_log: true
+
+- name: Compare managed data without displaying private operator edits
+  ansible.builtin.assert:
+    that:
+      - >-
+        ((k3s_traefik_live_public.stdout | from_json).data == (lookup('ansible.builtin.file', hostvars.localhost.bootstrap_input_dir + '/k3s-traefik-configmap.yaml') | from_yaml).data)
+        if k3s_traefik_verify_kind == 'configmap' else
+        ((k3s_traefik_live_public.stdout | from_json).spec.valuesContent == (lookup('ansible.builtin.file', hostvars.localhost.bootstrap_input_dir + '/k3s-traefik-helmchartconfig.yaml') | from_yaml).spec.valuesContent)
+    fail_msg: Managed Traefik configuration differs from compiled input. Verify never overwrites edits.
+  no_log: true

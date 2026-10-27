@@ -15,9 +15,6 @@
         path: /etc/systemd/system/k3s.service
       register: k3s_service
 
-    - name: Prepare the selected CNI before installing or starting K3s
-      ansible.builtin.include_tasks: cilium.yaml
-
     - name: Install K3s only on the first run (no implicit upgrades)
       when: not k3s_service.stat.exists
       block:

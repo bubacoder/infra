@@ -22,6 +22,11 @@ from urllib.parse import urlsplit
 
 import yaml
 
+if __package__:
+    from . import traefik
+else:
+    import traefik
+
 ROOT = Path(__file__).resolve().parents[2]
 VM_KEYS = {"name", "username", "ssh_public_key", "ssh_private_key"}
 HOST_KEYS = {"domain", "acme_email", "timezone", "docker_volumes", "repository_url", "repository_ref"}
@@ -125,15 +130,9 @@ def section(config: dict, name: str, allowed: set, required: set | None = None) 
 
 
 def validate_k3s_access(config: dict, host: dict) -> None:
-    if "k3s" not in config:
-        return
-    k3s = section(config, "k3s", {"access", "cilium"}, set())
-    if "cilium" in k3s:
-        cilium = k3s["cilium"]
-        if not isinstance(cilium, dict) or set(cilium) != {"enabled"} or type(cilium["enabled"]) is not bool:
-            raise ConfigError("k3s.cilium requires only a boolean enabled field.")
-        if cilium["enabled"] and "k3s" not in config["roles"]:
-            raise ConfigError("Enabled Cilium requires the k3s role.")
+    k3s = section(config, "k3s", {"access", "traefik"}, set()) if "k3s" in config else {}
+    if "k3s_cilium" in config["roles"] and ("k3s" not in config["roles"] or config["roles"].index("k3s_cilium") > config["roles"].index("k3s")):
+        raise ConfigError("Cilium requires the k3s role after k3s_cilium; prepare networking before K3s starts.")
     if "access" not in k3s:
         return
     access = k3s.get("access")
@@ -182,7 +181,13 @@ def validate(config: dict, target: str, root: Path = ROOT) -> None:
         host_required |= {"domain"}
     host = section(config, "host", HOST_KEYS, host_required)
     validate_k3s_access(config, host)
-    cloudflare_required = bool(config["services"]) or (target == "aws" and dns["enabled"])
+    try:
+        traefik.validate_profile(config, root)
+    except traefik.TraefikError as error:
+        raise ConfigError(str(error)) from None
+    cloudflare_required = (
+        bool(config["services"]) or (target == "aws" and dns["enabled"]) or config.get("k3s", {}).get("traefik", {}).get("enabled", False)
+    )
     secret_required = {"cloudflare_token"} if cloudflare_required else set()
     if dns["enabled"] and (dns.get("adguard_url") or dns.get("adguard_urls")):
         secret_required |= {"adguard_username", "adguard_password"}
@@ -190,6 +195,10 @@ def validate(config: dict, target: str, root: Path = ROOT) -> None:
     for group, fields in ((vm, VM_KEYS), (host, set(host)), (secrets, set(secrets))):
         if any(not isinstance(group[key], str) or not group[key] or "\x00" in group[key] for key in fields):
             raise ConfigError("VM, host and secret fields must be nonempty strings.")
+    if config.get("k3s", {}).get("traefik", {}).get("enabled", False) and (
+        not re.fullmatch(r"[A-Za-z0-9_-]+", secrets["cloudflare_token"]) or secrets["cloudflare_token"].startswith("REPLACE")
+    ):
+        raise ConfigError("Enabled Traefik requires a configured private Cloudflare token, not a placeholder.")
     validate_host(config, host)
     if not vm["ssh_public_key"].endswith(".pub"):
         raise ConfigError("vm.ssh_public_key must reference a .pub file; private keys are never read.")
@@ -352,6 +361,10 @@ def outputs(config: dict, root: Path = ROOT) -> dict[str, str]:
         result["aws.tfvars.json"] = json.dumps(variables, indent=2) + "\n"
     host["k3s"] = config.get("k3s", {"access": {"enabled": False}})
     result["host.yaml"] = yaml.safe_dump(host, sort_keys=False)
+    try:
+        result.update(traefik.manifests(config, root))
+    except traefik.TraefikError as error:
+        raise ConfigError(str(error)) from None
     return result
 
 
@@ -493,7 +506,8 @@ class Configuration:
             "roles": config["roles"],
             "services": config["services"],
             "k3s_access": config.get("k3s", {}).get("access", {"enabled": False}),
-            "k3s_cilium": config.get("k3s", {}).get("cilium", {"enabled": False}),
+            "k3s_cilium": "k3s_cilium" in config["roles"],
+            "k3s_traefik": config.get("k3s", {}).get("traefik", {"enabled": False}),
             "proxmox_host": config.get("proxmox", {}).get("host"),
             "proxmox_vmid": config.get("proxmox", {}).get("vmid"),
             "proxmox_timeouts": {key: config.get("proxmox", {}).get(key, default) for key, default in PVE_TIMEOUTS.items()}

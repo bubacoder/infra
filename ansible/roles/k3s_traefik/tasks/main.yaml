@@ -1,0 +1,19 @@
+---
+- name: Validate and configure the opt-in bundled Traefik profile
+  become: true
+  block:
+    - name: Require enabled explicit bootstrap settings
+      ansible.builtin.assert:
+        that:
+          - k3s_traefik.enabled | default(false)
+          - bootstrap.target in ['aws', 'proxmox']
+        fail_msg: Select the documented k3s_traefik bootstrap profile explicitly.
+    - name: Require a nonempty credential before staging or applying resources
+      ansible.builtin.assert:
+        that:
+          - k3s_traefik_token is string
+          - k3s_traefik_token is match('^[A-Za-z0-9_-]+$')
+          - not k3s_traefik_token.startswith('REPLACE')
+      no_log: true
+    - name: Configure managed platform resources
+      ansible.builtin.include_tasks: configure.yaml

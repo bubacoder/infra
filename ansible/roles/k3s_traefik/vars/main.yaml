@@ -1,0 +1,10 @@
+---
+k3s_traefik_directory: /var/lib/rancher/k3s/bootstrap-traefik
+k3s_traefik_manager: infra-bootstrap-traefik
+k3s_traefik_supported_chart: traefik-40.1.5+up40.1.0.tgz
+k3s_traefik_token: "{{ hostvars.localhost.bootstrap_secrets.cloudflare_token | default('') }}"
+k3s_traefik_resources:
+  - {kind: secret, name: bootstrap-traefik-cloudflare, file: secret.yaml}
+  - {kind: configmap, name: bootstrap-traefik-dynamic, file: configmap.yaml}
+  - {kind: persistentvolumeclaim, name: bootstrap-traefik-acme, file: pvc.yaml}
+  - {kind: helmchartconfig, name: traefik, file: helmchartconfig.yaml}

@@ -196,11 +196,27 @@ See [K3s access](../ansible/roles/k3s/README.md#access-and-lifecycle) for the
 required DNS, network and controller setup. Existing inputs without this section
 continue using the guest-only K3s profile.
 
-Cilium is independently opt-in for a fresh K3s VM with
-`k3s: {cilium: {enabled: true}}`. Omitted or disabled settings preserve the default
-Flannel networking. See [optional Cilium networking](../ansible/roles/k3s/README.md#optional-cilium-networking)
+Cilium is independently opt-in for a fresh K3s VM: select roles
+`[debian_base, k3s_cilium, k3s]`. Role selection is the only switch; there is no
+`k3s.cilium` settings block.
+The Cilium role must precede K3s to prepare networking before its first start;
+the compiler and native validation reject invalid ordering.
+Omit the role to preserve default Flannel networking on a fresh host.
+See [Cilium networking](../ansible/roles/k3s_cilium/README.md)
 for installation, acceptance checks and lifecycle guards. Bootstrap does not
 automatically migrate existing CNIs, uninstall Cilium or upgrade its pinned chart.
+
+Managed ingress is separately opt-in: select `k3s_traefik` after `k3s` and supply
+`k3s.traefik` settings as described in the
+[Traefik role](../ansible/roles/k3s_traefik/README.md). The adapter configures the
+bundled controller with shared dynamic file-provider policies, a Secret-backed
+Cloudflare resolver and explicitly selected persistent ACME storage. It needs
+`host.acme_email` and `secrets.cloudflare_token`, even with `services: []` and DNS
+management disabled. Its application domain is independent of the API hostname.
+Only explicitly selected supported middleware chains are loaded; auth/plugin
+dependencies fail closed. Existing manually managed Traefik objects are never
+automatically adopted. Omitting this role/feature preserves the default K3s
+profile and does not require TLS credentials.
 
 For a host without Docker or bootstrap-managed applications, retain the VM/provider
 sections and replace these configuration sections:
@@ -234,6 +250,9 @@ Settings are required only by enabled features:
 | Enabled DNS management | `host.domain`; AWS also needs `dns.cloudflare_zone` and `secrets.cloudflare_token` |
 | Enabled DNS with existing AdGuard endpoints | `secrets.adguard_username` and `secrets.adguard_password` |
 | No services and DNS disabled | No domain, ACME email, repository settings, or service credentials required |
+
+The last row excludes explicitly enabled `k3s.traefik`: that feature requires its
+own domain/storage/middleware settings, ACME email and private Cloudflare token.
 
 Host-only acceptance checks authenticated access, matching guest facts and, on AWS,
 the verified persistent storage mount. It runs no Docker, Compose, widget or HTTPS
@@ -269,6 +288,7 @@ Every operational command prepares native inputs under the selected directory:
 | `generated/secrets.yaml` | Ansible only | Service credentials, never Terraform inputs |
 | `generated/aws.tfvars.json` | Terraform, AWS only | Infrastructure inputs and public SSH key |
 | `generated/ubuntu-cloud.env` | Proxmox scripts only | VM inputs derived from the same identity |
+| `generated/k3s-traefik-*.yaml` | Optional Traefik role | Public ConfigMap/PVC/HelmChartConfig projections; no credential values |
 
 Never edit generated files: subsequent commands replace them. State, plans and
 recovery records stay in the original deployment directory, not `generated/`;
@@ -331,5 +351,9 @@ Python coverage is in [`tests/bootstrap/test_native.py`](../tests/bootstrap/test
 Controller access coverage is in [`tests/bootstrap/test_access.py`](../tests/bootstrap/test_access.py).
 Guarded Proxmox destroy coverage is in
 [`tests/bootstrap/test_proxmox_destroy.py`](../tests/bootstrap/test_proxmox_destroy.py).
+Managed ingress coverage is in
+[`test_traefik.py`](../tests/bootstrap/test_traefik.py) and
+[`test_traefik_native.py`](../tests/bootstrap/test_traefik_native.py), including
+actual offline Ansible ownership/precondition and Go-template tests.
 For mocked Terraform tests and their prerequisites, see the
 [AWS Terraform module](../terraform/aws-vm/README.md).
