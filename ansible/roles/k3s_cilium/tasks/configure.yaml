@@ -1,24 +1,15 @@
 ---
-- name: Inspect bootstrap-owned Cilium files without following symlinks
-  ansible.builtin.stat:
-    path: "{{ item }}"
-    get_checksum: false
-    get_mime: false
-  loop:
-    - /etc/rancher/k3s/config.yaml.d/20-bootstrap-cilium.yaml
-    - /var/lib/rancher/k3s/server/manifests/bootstrap-cilium.yaml
-  register: k3s_cilium_files
+- name: Inspect existing Cilium paths
+  ansible.builtin.include_tasks: inspect.yaml
 
 - name: Refuse automatic CNI migration or removal
   ansible.builtin.assert:
     that:
-      - k3s_cilium.enabled | default(false) or not (k3s_cilium_files.results | selectattr('stat.exists') | list | length > 0)
       - k3s_cilium_files.results | selectattr('stat.islnk', 'defined') | selectattr('stat.islnk') | list | length == 0
-      - not (k3s_cilium.enabled | default(false)) or not k3s_service.stat.exists or (k3s_cilium_files.results | selectattr('stat.exists') | list | length == 2)
+      - not k3s_cilium_service.stat.exists or (k3s_cilium_files.results | selectattr('stat.exists') | list | length == 2)
     fail_msg: CNI changes on existing clusters require a separately reviewed migration; use a fresh VM for Cilium. No CNI files were removed.
 
 - name: Configure opt-in Cilium for a fresh single-server cluster
-  when: k3s_cilium.enabled | default(false)
   block:
     - name: Require regular bootstrap-owned Cilium files
       ansible.builtin.assert:

@@ -5,10 +5,16 @@ services: {type: list, elements: str, required: true}
 k3s:
   type: dict
   options:
-    cilium:
+    traefik:
       type: dict
       options:
         enabled: {type: bool, required: true}
+        domain: {type: str}
+        admin_cidr: {type: str}
+        middlewares: {type: list, elements: str}
+        acme_environment: {type: str, choices: [staging, production]}
+        storage_class: {type: str}
+        storage_size: {type: str}
     access:
       type: dict
       options:

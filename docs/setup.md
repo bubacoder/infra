@@ -8,8 +8,8 @@ configures and verifies the guest, never the hypervisor.
 
 For Kubernetes, select the [`k3s` bootstrap profile](../ansible/roles/k3s/README.md)
 on a dedicated guest instead of the default Docker roles/services.
-For opt-in Cilium instead of Flannel, see [Cilium networking](../ansible/roles/k3s/README.md#optional-cilium-networking)
-and enable it before the first apply.
+For opt-in Cilium instead of Flannel, select [`k3s_cilium`](../ansible/roles/k3s_cilium/README.md)
+before `k3s` in the role list before the first apply. No enable flag is needed.
 For optional direct API access and a controller-side kubeconfig/context, follow
 the [K3s access profile](../ansible/roles/k3s/README.md#access-and-lifecycle).
 

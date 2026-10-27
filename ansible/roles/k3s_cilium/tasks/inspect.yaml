@@ -1,0 +1,10 @@
+---
+- name: Inspect bootstrap-owned Cilium files without following symlinks
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    get_checksum: false
+    get_mime: false
+  loop:
+    - /etc/rancher/k3s/config.yaml.d/20-bootstrap-cilium.yaml
+    - /var/lib/rancher/k3s/server/manifests/bootstrap-cilium.yaml
+  register: k3s_cilium_files

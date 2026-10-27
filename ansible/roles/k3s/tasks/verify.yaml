@@ -34,10 +34,6 @@
       retries: 60
       delay: 5
 
-    - name: Independently verify Cilium without installing or changing resources
-      ansible.builtin.include_tasks: verify-cilium.yaml
-      when: k3s_cilium.enabled | default(false)
-
     - name: Wait for the server node to become Ready
       ansible.builtin.command:
         argv: [/usr/local/bin/k3s, kubectl, wait, --for=condition=Ready, node, --all, --timeout=30s]
