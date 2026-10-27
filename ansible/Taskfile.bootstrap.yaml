@@ -110,6 +110,7 @@ tasks:
     desc: Run only bootstrap Python and Proxmox shell tests
     cmds:
       - uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.bootstrap.test_native tests.bootstrap.test_config tests.bootstrap.test_status tests.bootstrap.test_access tests.bootstrap.test_proxmox_destroy
+      - uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.bootstrap.test_traefik tests.bootstrap.test_traefik_native
       - task: test-shell
 
   test-shell:

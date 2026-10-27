@@ -687,8 +687,8 @@ class NativeBootstrapTests(unittest.TestCase):
         self.assertIn("changed=0", self.run_play("test-k3s-access.yaml").stdout)
 
     def test_cilium_network_setup_is_opt_in_idempotent_and_refuses_migration(self) -> None:
-        role = self.root / "ansible/roles/k3s"
-        source = (role / "tasks/cilium.yaml").read_text()
+        role = self.root / "ansible/roles/k3s_cilium"
+        source = (role / "tasks/configure.yaml").read_text()
         source = source.replace("/etc/rancher/k3s", str(self.root / "settings"))
         source = source.replace("/var/lib/rancher/k3s", str(self.root / "runtime"))
         tasks = yaml.safe_load(source)
@@ -697,7 +697,21 @@ class NativeBootstrapTests(unittest.TestCase):
                 if module in task:
                     task[module].pop("owner", None)
                     task[module].pop("group", None)
-        (role / "tasks/cilium.yaml").write_text(yaml.safe_dump(tasks))
+        (role / "tasks/configure.yaml").write_text(yaml.safe_dump(tasks))
+        inspect = (
+            (role / "tasks/inspect.yaml")
+            .read_text()
+            .replace("/etc/rancher/k3s", str(self.root / "settings"))
+            .replace("/var/lib/rancher/k3s", str(self.root / "runtime"))
+        )
+        (role / "tasks/inspect.yaml").write_text(inspect)
+        absent = yaml.safe_load((role / "tasks/check-absent.yaml").read_text())
+        absent[0].pop("become")
+        (role / "tasks/check-absent.yaml").write_text(yaml.safe_dump(absent))
+        main = yaml.safe_load((role / "tasks/main.yaml").read_text())
+        main[0].pop("become")
+        main[0]["block"][0] = {"ansible.builtin.set_fact": {"k3s_cilium_service": {"stat": {"exists": "{{ fixture_installed }}"}}}}
+        (role / "tasks/main.yaml").write_text(yaml.safe_dump(main))
 
         def run(enabled, installed, *, check=True):
             play = [
@@ -705,8 +719,8 @@ class NativeBootstrapTests(unittest.TestCase):
                     "name": "Exercise Cilium file management without contacting a cluster",
                     "hosts": "localhost",
                     "gather_facts": False,
-                    "vars": {"k3s_cilium": {"enabled": enabled}, "k3s_service": {"stat": {"exists": installed}}},
-                    "tasks": [{"ansible.builtin.include_role": {"name": "k3s", "tasks_from": "cilium"}}],
+                    "vars": {"fixture_installed": installed},
+                    "tasks": [{"ansible.builtin.include_role": {"name": "k3s_cilium", "tasks_from": "main" if enabled else "check-absent"}}],
                 }
             ]
             (self.root / "ansible/playbooks/test-cilium.yaml").write_text(yaml.safe_dump(play))
@@ -736,8 +750,9 @@ class NativeBootstrapTests(unittest.TestCase):
         self.assertEqual(chart.read_bytes(), before)
 
     def test_cilium_verification_is_read_only_and_rejects_failed_rollouts(self) -> None:
-        source = yaml.safe_load((ROOT / "ansible/roles/k3s/tasks/verify-cilium.yaml").read_text())
+        source = yaml.safe_load((ROOT / "ansible/roles/k3s_cilium/tasks/verify.yaml").read_text())
         for task in source:
+            task.pop("become")
             argv = task.pop("ansible.builtin.command")["argv"]
             self.assertIn("rollout", argv)
             self.assertIn("status", argv)
@@ -762,22 +777,78 @@ class NativeBootstrapTests(unittest.TestCase):
         )
         source["pre_tasks"] = [{"ansible.builtin.set_fact": {"ansible_facts": {"hostname": "fixture-host", "os_family": "Debian"}}}]
         role = self.root / "ansible/roles/k3s/tasks"
-        (role / "main.yaml").write_text(yaml.safe_dump([{"ansible.builtin.set_fact": {"test_k3s_installed": True}}]))
+        (role / "main.yaml").write_text(
+            yaml.safe_dump(
+                [
+                    {"ansible.builtin.assert": {"that": ["'k3s_cilium' not in bootstrap.roles or test_cilium_prepared | default(false)"]}},
+                    {"ansible.builtin.set_fact": {"test_k3s_installed": True}},
+                ]
+            )
+        )
         (role / "verify.yaml").write_text(yaml.safe_dump([{"ansible.builtin.set_fact": {"test_k3s_verified": True}}]))
+        cilium = self.root / "ansible/roles/k3s_cilium/tasks"
+        (cilium / "main.yaml").write_text(
+            yaml.safe_dump([{"ansible.builtin.set_fact": {"test_cilium_prepared": True, "test_cilium_inspected": True}}])
+        )
+        (cilium / "check-absent.yaml").write_text(yaml.safe_dump([{"ansible.builtin.set_fact": {"test_cilium_inspected": True}}]))
+        (cilium / "verify.yaml").write_text(yaml.safe_dump([{"ansible.builtin.set_fact": {"test_cilium_verified": True}}]))
         source["tasks"].append(
             {
                 "ansible.builtin.assert": {
                     "that": [
                         "test_k3s_verified",
                         "test_k3s_installed | default(false) == (not bootstrap_verify_only)",
+                        "test_cilium_verified | default(false) == ('k3s_cilium' in bootstrap.roles)",
+                        "test_cilium_inspected | default(false) == (not bootstrap_verify_only)",
+                        "test_cilium_prepared | default(false) == ('k3s_cilium' in bootstrap.roles and not bootstrap_verify_only)",
                     ]
                 }
             }
         )
-        for verify_only in (False, True):
-            source["vars"]["bootstrap_verify_only"] = verify_only
-            (self.root / "ansible/playbooks/test-k3s-selection.yaml").write_text(yaml.safe_dump([source]))
-            self.run_play("test-k3s-selection.yaml")
+        for enabled in (False, True):
+            source["vars"]["bootstrap"].update(roles=["k3s_cilium", "k3s"] if enabled else ["k3s"])
+            for verify_only in (False, True):
+                source["vars"]["bootstrap_verify_only"] = verify_only
+                (self.root / "ansible/playbooks/test-k3s-selection.yaml").write_text(yaml.safe_dump([source]))
+                self.run_play("test-k3s-selection.yaml")
+
+    def test_cilium_role_owns_its_files_and_has_no_k3s_fact_dependency(self) -> None:
+        cilium = ROOT / "ansible/roles/k3s_cilium"
+        main = yaml.safe_load((cilium / "tasks/main.yaml").read_text())[0]
+        self.assertTrue(main["become"])
+        self.assertEqual(main["block"][0]["register"], "k3s_cilium_service")
+        self.assertEqual(main["block"][1]["ansible.builtin.include_tasks"], "configure.yaml")
+        for filename in ("cilium-network.yaml", "cilium-chart.yaml"):
+            self.assertTrue((cilium / "files" / filename).is_file())
+            self.assertFalse((ROOT / "ansible/roles/k3s/files" / filename).exists())
+        for filename in ("main.yaml", "verify.yaml"):
+            self.assertNotIn("cilium", (ROOT / "ansible/roles/k3s/tasks" / filename).read_text().lower())
+        self.assertNotIn("k3s_service", (cilium / "tasks/configure.yaml").read_text())
+
+    def test_native_cilium_selection_rejects_wrong_order(self) -> None:
+        validation = next(
+            task
+            for task in yaml.safe_load((ROOT / "ansible/playbooks/bootstrap/inputs.yaml").read_text())
+            if task["name"] == "Validate Cilium pre-start role ordering"
+        )
+        for roles, success in (
+            (["k3s"], True),
+            (["k3s_cilium", "k3s"], True),
+            (["k3s", "k3s_cilium"], False),
+            (["k3s_cilium"], False),
+        ):
+            with self.subTest(roles=roles):
+                play = [
+                    {
+                        "hosts": "localhost",
+                        "gather_facts": False,
+                        "vars": {"bootstrap": {"roles": roles}},
+                        "tasks": [validation],
+                    }
+                ]
+                (self.root / "ansible/playbooks/test-cilium-inputs.yaml").write_text(yaml.safe_dump(play))
+                result = self.run_play("test-cilium-inputs.yaml", check=False)
+                self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
 
     def test_k3s_readiness_checks_reject_unhealthy_or_insecure_servers(self) -> None:
         source = yaml.safe_load((ROOT / "ansible/roles/k3s/tasks/verify.yaml").read_text())
@@ -829,9 +900,6 @@ class NativeBootstrapTests(unittest.TestCase):
         for index, task in enumerate(tasks):
             if "ansible.builtin.systemd_service" in task:
                 tasks[index] = {"ansible.builtin.set_fact": {"test_k3s_started": True}}
-            elif task.get("ansible.builtin.include_tasks") == "cilium.yaml":
-                # Exercise the CNI safety guards separately against sandboxed paths.
-                tasks[index] = {"ansible.builtin.set_fact": {"test_k3s_cni_checked": True}}
         (role / "main.yaml").write_text(yaml.safe_dump(source))
         (role / "verify.yaml").write_text(
             yaml.safe_dump([{"ansible.builtin.set_fact": {"test_k3s_verifications": "{{ test_k3s_verifications | default(0) | int + 1 }}"}}])

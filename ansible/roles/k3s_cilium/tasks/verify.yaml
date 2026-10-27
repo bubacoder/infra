@@ -1,5 +1,6 @@
 ---
 - name: Wait for the Cilium agent rollout
+  become: true
   ansible.builtin.command:
     argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, rollout, status, daemonset/cilium, --timeout=30s]
   register: k3s_cilium_agent_ready
@@ -9,6 +10,7 @@
   delay: 5
 
 - name: Wait for the Cilium operator rollout
+  become: true
   ansible.builtin.command:
     argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, rollout, status, deployment/cilium-operator, --timeout=30s]
   register: k3s_cilium_operator_ready

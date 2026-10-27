@@ -1,0 +1,11 @@
+---
+- name: Prepare Cilium before the first K3s server start
+  become: true
+  block:
+    - name: Inspect the K3s installation independently of the server role
+      ansible.builtin.stat:
+        path: /etc/systemd/system/k3s.service
+      register: k3s_cilium_service
+
+    - name: Guard and configure the selected CNI
+      ansible.builtin.include_tasks: configure.yaml
