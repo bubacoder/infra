@@ -52,9 +52,9 @@ class BootstrapAccessTests(unittest.TestCase):
         self.assertEqual(merged["contexts"][0]["context"], {"cluster": self.context, "user": self.context})
         self.assertEqual(merged["clusters"][0]["cluster"]["server"], "https://k3s.example.com:6443")
         self.assertEqual(stat.S_IMODE(kube.stat().st_mode), 0o700)
-        for path in (kube / "config", kube / f"{self.context}.yaml", self.directory / "k3s-access-receipt.json"):
+        for path in (kube / "config", kube / f"{self.context}.yaml", self.directory / "state/k3s-access-receipt.json"):
             self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
-        self.assertEqual(json.loads((self.directory / "k3s-access-receipt.json").read_text())["context"], self.context)
+        self.assertEqual(json.loads((self.directory / "state/k3s-access-receipt.json").read_text())["context"], self.context)
         self.assertEqual(check.call_count, 1)
         verify(self.directory, self.context, "k3s-host", self.home)
         self.assertEqual(check.call_count, 3)
@@ -75,18 +75,18 @@ class BootstrapAccessTests(unittest.TestCase):
         (kube / "config").chmod(0o600)
         self.assertTrue(self.install())
         before = (kube / "config").read_bytes()
-        backups = set(self.directory.glob("k3s-access-backup-*.yaml"))
+        backups = set(self.directory.glob("state/backups/k3s-access-backup-*.yaml"))
         self.assertEqual(len(backups), 1)
         self.assertFalse(self.install())
         self.assertEqual((kube / "config").read_bytes(), before)
-        self.assertEqual(set(self.directory.glob("k3s-access-backup-*.yaml")), backups)
+        self.assertEqual(set(self.directory.glob("state/backups/k3s-access-backup-*.yaml")), backups)
         refreshed = self.source.replace(b"FAKE_CERT", b"NEW_CERT")
         self.assertTrue(self.install(refreshed))
         merged = yaml.safe_load((kube / "config").read_text())
         self.assertEqual(merged["current-context"], "other")
         self.assertEqual(merged["users"][0], original["users"][0])
         self.assertEqual(merged["users"][1]["user"]["client-certificate-data"], "NEW_CERT")
-        self.assertEqual(len(set(self.directory.glob("k3s-access-backup-*.yaml"))), 2)
+        self.assertEqual(len(set(self.directory.glob("state/backups/k3s-access-backup-*.yaml"))), 2)
         self.assertEqual(check.call_count, 3)
 
     @patch("scripts.bootstrap.access.check_node")
@@ -100,7 +100,7 @@ class BootstrapAccessTests(unittest.TestCase):
         with self.assertRaisesRegex(AccessError, "unowned"):
             self.install()
         self.assertEqual((kube / "config").read_bytes(), data)
-        self.assertFalse((self.directory / "k3s-access-receipt.json").exists())
+        self.assertFalse((self.directory / "state/k3s-access-receipt.json").exists())
         check.assert_not_called()
 
     @patch("scripts.bootstrap.access.check_node")
@@ -121,7 +121,7 @@ class BootstrapAccessTests(unittest.TestCase):
         check.side_effect = AccessError("TLS failure")
         with self.assertRaises(AccessError):
             self.install()
-        self.assertFalse((self.directory / "k3s-access-receipt.json").exists())
+        self.assertFalse((self.directory / "state/k3s-access-receipt.json").exists())
         self.assertFalse((self.home / ".kube/config").exists())
 
     @patch("scripts.bootstrap.access.check_node")
@@ -131,7 +131,7 @@ class BootstrapAccessTests(unittest.TestCase):
         with self.assertRaisesRegex(AccessError, "TLS verification"):
             self.install(yaml.safe_dump(source).encode())
         check.assert_not_called()
-        self.assertFalse((self.directory / "k3s-access-receipt.json").exists())
+        self.assertFalse((self.directory / "state/k3s-access-receipt.json").exists())
 
     @patch("scripts.bootstrap.access.check_node")
     def test_cleanup_removes_only_owned_context_and_keeps_recovery_receipt(self, check):
@@ -154,7 +154,7 @@ class BootstrapAccessTests(unittest.TestCase):
         for key in ("clusters", "users", "contexts"):
             self.assertEqual(merged[key], original[key])
         self.assertFalse((kube / f"{self.context}.yaml").exists())
-        self.assertTrue((self.directory / "k3s-access-receipt.json").exists())
+        self.assertTrue((self.directory / "state/k3s-access-receipt.json").exists())
         self.assertFalse(remove(self.directory, self.context, "k3s-host", self.home))
         check.assert_called_once()
 

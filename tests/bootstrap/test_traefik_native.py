@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import yaml
 
@@ -23,6 +24,9 @@ ROLE = ROOT / "ansible/roles/k3s_traefik"
 @unittest.skipUnless(shutil.which("ansible-playbook"), "Ansible is not installed")
 class NativeTraefikTests(unittest.TestCase):
     def setUp(self):
+        reader = patch("scripts.bootstrap.config.load_secret_files", return_value={"cloudflare_token": "SYNTHETIC_TOKEN_NOT_REAL"})
+        reader.start()
+        self.addCleanup(reader.stop)
         self.temp = tempfile.TemporaryDirectory(dir="/tmp/opencode" if Path("/tmp/opencode").is_dir() else None)  # noqa: S108
         self.addCleanup(self.temp.cleanup)
         self.directory = Path(self.temp.name)

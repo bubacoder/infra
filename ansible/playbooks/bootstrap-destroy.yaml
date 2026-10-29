@@ -103,8 +103,8 @@
         - .terraform
         - aws.tfstate
         - aws.tfstate.backup
-        - aws.tfplan
-        - destroy.tfplan
+        - plans/aws.tfplan
+        - plans/destroy.tfplan
         - apply-inputs.json
         - destroy-inputs.json
         - known_hosts

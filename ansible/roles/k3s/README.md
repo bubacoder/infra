@@ -36,7 +36,6 @@ services: []
 host: {}
 dns:
   enabled: false
-secrets: {}
 ```
 
 Retain the template's `version`, `target`, `vm` and provider section. Use a dedicated
@@ -53,10 +52,17 @@ enabled/running service, root-only kubeconfig, API readiness, Ready nodes and
 availability of the default packaged deployments. Verification never installs,
 restarts, upgrades or changes Kubernetes resources.
 
-While apply is still running, `task bootstrap:status TARGET=proxmox` or
-`TARGET=aws` reports the current VM/EC2 state and, once trust has been established,
+While apply is still running, use the same target and deployment directory:
+
+```bash
+task bootstrap:status TARGET=proxmox BOOTSTRAP_CONFIG_DIR=config/my-k3s
+# Or use TARGET=aws with that deployment's directory.
+```
+
+Status reports the current VM/EC2 state and, once trust has been established,
 K3s service and node readiness. This read-only snapshot does not check all
-packaged deployments; run `bootstrap:verify` after apply for acceptance.
+packaged deployments; run `bootstrap:verify` after apply for acceptance, passing
+the same target and deployment directory.
 
 AWS still provisions/verifies its standard `/storage` data disk. **K3s defaults
 store cluster state and local-path volumes on the OS disk** under
@@ -116,11 +122,12 @@ k3s:
     context: k3s-proxmox
     install_context: true
     # host: k3s.example.com # Defaults to host.domain.
-secrets: {} # Supply private AdGuard credentials if its URLs are configured.
 ```
 
 AWS DNS management also needs `dns.cloudflare_zone` and a scoped private
-`secrets.cloudflare_token`. For DNS maintained outside bootstrap, use
+`dns.cloudflare_token: {file: path}`. AdGuard endpoints also require credential
+file references under `dns.adguard_username` and `dns.adguard_password`.
+For DNS maintained outside bootstrap, use
 `dns: {enabled: false}` with `k3s.access.host` set to an externally resolvable
 name or a fixed IPv4 instead of `host.domain`. Proxmox public records, DHCP and
 router DNS remain outside bootstrap; reserve a stable address. Clients must reach
@@ -139,7 +146,8 @@ admin credential through pinned SSH, validates DNS/TLS and the Ready node **befo
 writing `~/.kube/k3s-proxmox.yaml` and registering unique cluster/user/context names
 in `~/.kube/config`. Existing context selection and unrelated entries are preserved;
 conflicting names or operator edits fail closed. A private ownership receipt and
-private backups of changed existing config stay in the deployment directory.
+private backups of changed existing config stay under the deployment's
+`state/backups/`; its ownership receipt stays in `state/`.
 No credentials are printed or passed as command arguments. Run:
 
 ```bash

@@ -9,7 +9,7 @@
         fail_msg: Select TARGET=aws or TARGET=proxmox explicitly; neither is the default.
     - name: Refuse symlinked or non-regular public input before inspection
       ansible.builtin.stat:
-        path: "{{ lookup('env', 'BOOTSTRAP_DIR') }}/host.yaml"
+        path: "{{ lookup('env', 'BOOTSTRAP_STATE_DIR') }}/host.yaml"
         follow: false
       register: bootstrap_public_stat
     - name: Require an explicitly separated public file
@@ -19,7 +19,7 @@
           - not bootstrap_public_stat.stat.islnk | default(false)
     - name: Load public host settings only
       ansible.builtin.include_vars:
-        file: "{{ lookup('env', 'BOOTSTRAP_DIR') }}/host.yaml"
+        file: "{{ lookup('env', 'BOOTSTRAP_STATE_DIR') }}/host.yaml"
         name: bootstrap
     - name: Refuse inspection under a different target
       ansible.builtin.assert:

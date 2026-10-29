@@ -24,8 +24,9 @@ k3s:
     acme_environment: staging
     storage_class: local-path
     storage_size: 1Gi
-secrets:
-  cloudflare_token: REPLACE_PRIVATELY
+dns:
+  enabled: false # Retain true instead if bootstrap also manages your DNS.
+  cloudflare_token: {file: ./secrets/cloudflare-token}
 ```
 
 The sample values are placeholders. Use a domain in an operator-controlled
@@ -78,7 +79,7 @@ Actual client-IP/SNAT behavior still needs an approved live client test.
 
 ## Credentials and certificates
 
-Private `secrets.cloudflare_token` becomes a namespaced Secret on the guest.
+The private file referenced by `dns.cloudflare_token` becomes a namespaced Secret on the guest.
 Traefik uses `valueFrom`; ConfigMaps and Helm values contain no actual token.
 Cloudflare requires zone-read/DNS-edit permissions limited to the authoritative
 zone. DNS-01 uses temporary public TXT records; application addresses may remain

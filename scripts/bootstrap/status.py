@@ -12,7 +12,10 @@ from pathlib import Path
 if __package__:
     from scripts.bootstrap.access import AccessError, verify
     from scripts.bootstrap.config import ROOT, ConfigError, Configuration, executable, regular
+    from scripts.bootstrap.paths import BootstrapPaths
 else:
+    from paths import BootstrapPaths
+
     from access import AccessError, verify
     from config import ROOT, ConfigError, Configuration, executable, regular
 
@@ -47,7 +50,7 @@ def guest_status(config: dict, directory: Path, address: str, *, cloud_init: boo
         ipaddress.IPv4Address(address)
     except ValueError as error:
         raise StatusError("Provider returned an invalid guest address.") from error
-    trust = directory / "known_hosts"
+    trust = BootstrapPaths(directory).state / "known_hosts"
     if not trust.exists() and not trust.is_symlink():
         print("Guest SSH: not yet pinned; run bootstrap:apply or bootstrap:configure after provisioning")
         return
@@ -206,20 +209,22 @@ def proxmox_status(config: dict, directory: Path) -> str:
 
 def aws_status(config: dict, directory: Path) -> None:
     aws = config["aws"]
-    if not (directory / "aws.tfstate").exists() and not (directory / "aws.tfstate").is_symlink():
+    paths = BootstrapPaths(directory)
+    state = paths.state / "aws.tfstate"
+    if not state.exists() and not state.is_symlink():
         print("AWS deployment: no local Terraform state in the selected directory")
         return
-    regular(directory / "aws.tfstate")
+    regular(state)
     identity = command([executable("aws"), "sts", "get-caller-identity", "--query", "Account", "--output", "text"])
     if identity.returncode or identity.stdout.strip() != aws["expected_account_id"]:
         raise StatusError("AWS account check failed or does not match this deployment; no resources queried.")
-    env = {**os.environ, "TF_DATA_DIR": str(directory / ".terraform")}
+    env = {**os.environ, "TF_DATA_DIR": str(paths.state / ".terraform")}
     # Explicitly bind both read-only commands to this deployment's local backend;
     # an uninitialized .terraform directory must never fall back to another state.
-    state = f"-state={directory / 'aws.tfstate'}"
-    output = command([executable("terraform"), f"-chdir={ROOT / 'terraform/aws-vm'}", "output", state, "-json", "bootstrap_host"], env=env)
+    state_argument = f"-state={state}"
+    output = command([executable("terraform"), f"-chdir={ROOT / 'terraform/aws-vm'}", "output", state_argument, "-json", "bootstrap_host"], env=env)
     if output.returncode:
-        resources = command([executable("terraform"), f"-chdir={ROOT / 'terraform/aws-vm'}", "state", "list", state], env=env)
+        resources = command([executable("terraform"), f"-chdir={ROOT / 'terraform/aws-vm'}", "state", "list", state_argument], env=env)
         if resources.returncode == 0 and not resources.stdout.strip():
             print("AWS deployment: no managed resources in the selected Terraform state")
             return

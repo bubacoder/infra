@@ -44,9 +44,9 @@ endpoints share the same credentials. A single endpoint can use `adguard_url`;
 do not combine it with `adguard_urls`. Endpoints must be unique HTTP or HTTPS origins with
 no credentials, paths, query strings or fragments.
 
-For services or AWS DNS management, supply `secrets.cloudflare_token` with
+For services or AWS DNS management, supply `dns.cloudflare_token: {file: path}` with
 `Zone:Read` and `DNS:Edit` on the selected zone. Enabled AdGuard management uses
-`secrets.adguard_username` and `secrets.adguard_password` for HTTP Basic authentication.
+`dns.adguard_username` and `dns.adguard_password` as `{file: path}` references for HTTP Basic authentication.
 
 ### Transport and secrets
 

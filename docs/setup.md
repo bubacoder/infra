@@ -53,7 +53,7 @@ subsequent command. Always resume using the original deployment directory.
 Initialization creates only private `config/bootstrap-proxmox/bootstrap.yaml`
 without overwriting existing settings. It does not connect to Proxmox or create a VM.
 Edit this one file privately, including its `secrets` section. Native tool inputs
-are generated automatically under `generated/` when commands run; never edit them.
+are generated automatically under `state/generated/` when commands run; never edit them.
 Follow [inputs and safety](bootstrap-configuration.md), then review:
 
 - `vm.name`, `vm.username`, key paths and the `proxmox` VM/storage/network settings.
@@ -202,7 +202,7 @@ and backups require their own separately reviewed cleanup.
 
 ## Operational limits
 
-- The `vm-*` helpers regenerate `generated/ubuntu-cloud.env` from `bootstrap.yaml` in
+- The `vm-*` helpers regenerate `state/generated/ubuntu-cloud.env` from `bootstrap.yaml` in
   the selected `BOOTSTRAP_CONFIG_DIR` (default `config/bootstrap-proxmox/`). Pass
   the same custom directory to every command and review VM identity before provisioning.
   Provisioning automatically transfers the original `vm.ssh_public_key` to its

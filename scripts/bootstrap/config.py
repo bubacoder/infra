@@ -1,6 +1,6 @@
-"""Compile private operator inputs; native tools retain lifecycle/state ownership.
+"""Compile file-referenced operator inputs; native tools retain lifecycle/state ownership.
 
-Never log input values or parser exceptions: the entire source file is private.
+Never log secret contents or parser exceptions; legacy sources can contain secrets.
 """
 
 from __future__ import annotations
@@ -24,14 +24,17 @@ import yaml
 
 if __package__:
     from . import traefik
+    from .paths import BootstrapPathError, BootstrapPaths
 else:
     import traefik
+    from paths import BootstrapPathError, BootstrapPaths
 
 ROOT = Path(__file__).resolve().parents[2]
 VM_KEYS = {"name", "username", "ssh_public_key", "ssh_private_key"}
 HOST_KEYS = {"domain", "acme_email", "timezone", "docker_volumes", "repository_url", "repository_ref"}
-DNS_KEYS = {"enabled", "cloudflare_zone", "adguard_url", "adguard_urls"}
 SECRET_KEYS = {"cloudflare_token", "adguard_username", "adguard_password"}
+DNS_KEYS = {"enabled", "cloudflare_zone", "adguard_url", "adguard_urls"} | SECRET_KEYS
+MAX_SECRET_BYTES = 1024 * 1024
 SERVICE_KEYS = {"security/traefik", "dashboard/homepage"}
 K3S_ACCESS_KEYS = {"enabled", "host", "context", "install_context"}
 PVE_ENV = {
@@ -166,9 +169,11 @@ def validate_k3s_access(config: dict, host: dict) -> None:
 
 
 def validate(config: dict, target: str, root: Path = ROOT) -> None:
+    if "secrets" in config:
+        raise ConfigError("Remove the obsolete secrets section; use dns credential fields with {file: path} references only.")
     if set(config) not in (
-        {"version", "target", "vm", "host", "dns", "secrets", "roles", "services", target},
-        {"version", "target", "vm", "host", "dns", "secrets", "roles", "services", target, "k3s"},
+        {"version", "target", "vm", "host", "dns", "roles", "services", target},
+        {"version", "target", "vm", "host", "dns", "roles", "services", target, "k3s"},
     ):
         raise ConfigError("Check top-level fields against the selected target's template.")
     if type(config["version"]) is not int or config["version"] != 1 or config["target"] != target:
@@ -191,14 +196,21 @@ def validate(config: dict, target: str, root: Path = ROOT) -> None:
     secret_required = {"cloudflare_token"} if cloudflare_required else set()
     if dns["enabled"] and (dns.get("adguard_url") or dns.get("adguard_urls")):
         secret_required |= {"adguard_username", "adguard_password"}
-    secrets = section(config, "secrets", SECRET_KEYS, secret_required)
-    for group, fields in ((vm, VM_KEYS), (host, set(host)), (secrets, set(secrets))):
+    if secret_required - set(dns):
+        raise ConfigError("Enabled features require dns credential fields with {file: path} references; see the tracked template.")
+    for key in SECRET_KEYS & set(dns):
+        reference = dns[key]
+        if (
+            not isinstance(reference, dict)
+            or set(reference) != {"file"}
+            or not isinstance(reference["file"], str)
+            or not reference["file"]
+            or any(character in reference["file"] for character in ("\x00", "\r", "\n"))
+        ):
+            raise ConfigError(f"dns.{key} requires exactly {{file: path}}; literal credentials are not supported.")
+    for group, fields in ((vm, VM_KEYS), (host, set(host))):
         if any(not isinstance(group[key], str) or not group[key] or "\x00" in group[key] for key in fields):
-            raise ConfigError("VM, host and secret fields must be nonempty strings.")
-    if config.get("k3s", {}).get("traefik", {}).get("enabled", False) and (
-        not re.fullmatch(r"[A-Za-z0-9_-]+", secrets["cloudflare_token"]) or secrets["cloudflare_token"].startswith("REPLACE")
-    ):
-        raise ConfigError("Enabled Traefik requires a configured private Cloudflare token, not a placeholder.")
+            raise ConfigError("VM and host fields must be nonempty strings.")
     validate_host(config, host)
     if not vm["ssh_public_key"].endswith(".pub"):
         raise ConfigError("vm.ssh_public_key must reference a .pub file; private keys are never read.")
@@ -321,20 +333,89 @@ def public_key(path: str) -> str:
     return value
 
 
-def outputs(config: dict, root: Path = ROOT) -> dict[str, str]:
-    """Explicit allowlists prevent secrets entering public inputs or Terraform."""
+def _open_secret_file(path: Path) -> int:
+    """Open an absolute path component-by-component without following symlinks."""
+    directory = os.open(path.anchor, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        for component in path.parts[1:-1]:
+            child = os.open(component, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=directory)
+            os.close(directory)
+            directory = child
+        return os.open(path.name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=directory)
+    finally:
+        os.close(directory)
+
+
+def read_secret_file(reference: str, source_directory: Path) -> str:
+    """Bounded, no-follow credential read; callers redact filesystem exceptions."""
+    path = Path(reference).expanduser()
+    if not path.is_absolute():
+        path = source_directory / path
+    path = path.absolute()
+    descriptor = _open_secret_file(path)
+    with os.fdopen(descriptor, "rb") as stream:
+        info = os.fstat(stream.fileno())
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or stat.S_IMODE(info.st_mode) not in (0o400, 0o600)
+            or info.st_uid != os.geteuid()
+            or info.st_size > MAX_SECRET_BYTES
+        ):
+            raise ConfigError("Secret files must be owner-private regular files.")
+        content = stream.read(MAX_SECRET_BYTES + 1)
+    if len(content) > MAX_SECRET_BYTES:
+        raise ConfigError("Secret file exceeds the size limit.")
+    value = content.decode("utf-8").rstrip("\r\n")
+    if not value or "\x00" in value:
+        raise ConfigError("Secret files must contain nonempty UTF-8 text without NUL bytes.")
+    return value
+
+
+def load_secret_files(config: dict, source_directory: Path) -> dict[str, str]:
+    """Resolve private credentials only during preparation, never inspection/status."""
+    secrets = {}
+    for key in sorted(SECRET_KEYS & set(config["dns"])):
+        try:
+            secrets[key] = read_secret_file(config["dns"][key]["file"], source_directory)
+        except (OSError, UnicodeError, ValueError, RuntimeError, ConfigError):
+            raise ConfigError(
+                f"Cannot load dns.{key}; require an existing nonsymlinked UTF-8 file owned by the current user, mode 0400/0600, nonempty and at most 1 MiB."
+            ) from None
+    return secrets
+
+
+def outputs(config: dict, root: Path = ROOT, source_directory: Path | None = None) -> dict[str, str]:
+    """Validate and resolve external inputs before rendering native artifacts."""
     validate(config, config["target"], root)
+    secrets = load_secret_files(config, source_directory if source_directory is not None else root)
+    if "cloudflare_token" in secrets and (
+        not re.fullmatch(r"[A-Za-z0-9_-]+", secrets["cloudflare_token"]) or secrets["cloudflare_token"].startswith("REPLACE")
+    ):
+        raise ConfigError("dns.cloudflare_token must reference a configured Cloudflare token, not a placeholder.")
+    key = public_key(config["vm"]["ssh_public_key"]) if config["target"] == "aws" else None
+    try:
+        manifests = traefik.manifests(config, root)
+    except traefik.TraefikError as error:
+        raise ConfigError(str(error)) from None
+    return render_outputs(config, secrets, key, manifests)
+
+
+def render_outputs(config: dict, secrets: dict[str, str], ssh_public_key: str | None, manifests: dict[str, str]) -> dict[str, str]:
+    """Render resolved inputs without filesystem access or subprocesses.
+
+    Explicit allowlists keep credentials and their references out of public inputs.
+    """
     vm = config["vm"]
     host = {
         **config["host"],
         **{key: vm[key] for key in ("ssh_public_key", "ssh_private_key")},
         "name": vm["name"],
         "target": config["target"],
-        "dns": config["dns"],
+        "dns": {key: value for key, value in config["dns"].items() if key not in SECRET_KEYS},
         "roles": config["roles"],
         "services": config["services"],
     }
-    result = {"secrets.yaml": yaml.safe_dump(config["secrets"], sort_keys=False)}
+    result = {"secrets.yaml": yaml.safe_dump(secrets, sort_keys=False)}
     if config["target"] == "proxmox":
         pve = config["proxmox"]
         host.update(
@@ -355,17 +436,25 @@ def outputs(config: dict, root: Path = ROOT) -> dict[str, str]:
             "bootstrap_mode": "external",
             "vm_name": vm["name"],
             "admin_user": vm["username"],
-            "ssh_public_key": public_key(vm["ssh_public_key"]),
+            "ssh_public_key": ssh_public_key,
             "k3s_api_access": config.get("k3s", {}).get("access", {}).get("enabled", False),
         }
         result["aws.tfvars.json"] = json.dumps(variables, indent=2) + "\n"
     host["k3s"] = config.get("k3s", {"access": {"enabled": False}})
     result["host.yaml"] = yaml.safe_dump(host, sort_keys=False)
-    try:
-        result.update(traefik.manifests(config, root))
-    except traefik.TraefikError as error:
-        raise ConfigError(str(error)) from None
+    result.update(manifests)
     return result
+
+
+def fingerprint(rendered: dict[str, str]) -> str:
+    """Hash the exact rendered inputs, including privately resolved credentials."""
+    return hashlib.sha256(json.dumps(rendered, sort_keys=True).encode()).hexdigest()
+
+
+def plan_fingerprint(plan: Path, digest: str) -> dict[str, str]:
+    """Bind a validated saved plan to the rendered input fingerprint."""
+    regular(plan)
+    return {"inputs": digest, "plan": hashlib.sha256(plan.read_bytes()).hexdigest()}
 
 
 class Configuration:
@@ -390,11 +479,36 @@ class Configuration:
         self.directory = self.directory.resolve()
         self.target = target
         self.source = self.directory / "bootstrap.yaml"
-        self.generated = self.directory / "generated"
+        self.paths = BootstrapPaths(self.directory)
+        self.state = self.paths.state
+        self.generated = self.paths.generated
 
     def load(self) -> dict:
         if not self.directory.is_dir() or stat.S_IMODE(self.directory.stat().st_mode) & 0o077:
             raise ConfigError("Deployment directory permissions must be private (0700).")
+        legacy = {
+            "generated",
+            "known_hosts",
+            "dns-state.yaml",
+            "k3s-access-receipt.json",
+            "aws.tfstate",
+            "aws.tfstate.backup",
+            ".terraform",
+            "aws.tfplan",
+            "destroy.tfplan",
+            "proxmox-destroy-plan.json",
+            "apply-inputs.json",
+            "destroy-inputs.json",
+            "teardown-host.yaml",
+        }
+        if any(path.name in legacy or path.name.startswith(("k3s-access-backup-", "format-")) for path in self.directory.iterdir()):
+            raise ConfigError(
+                "Bootstrap artifacts belong under state/. Migrate the existing deployment before running commands; no legacy paths are used."
+            )
+        try:
+            self.paths.check_state()
+        except BootstrapPathError as error:
+            raise ConfigError(str(error)) from None
         config = read_yaml(self.source)
         validate(config, self.target, self.root)
         return config
@@ -422,7 +536,7 @@ class Configuration:
         template = (self.root / f"config-example/bootstrap-{self.target}.yaml").read_text()
         if profile == "k3s":
             value = yaml.safe_load(template)
-            value.update(roles=["debian_base", "k3s"], services=[], host={}, dns={"enabled": False}, secrets={})
+            value.update(roles=["debian_base", "k3s"], services=[], host={}, dns={"enabled": False})
             value["vm"]["name"] = f"k3s-{self.target}"
             if api_host:
                 value["k3s"] = {"access": {"enabled": True, "host": api_host, "context": context or f"k3s-{self.target}", "install_context": True}}
@@ -474,7 +588,7 @@ class Configuration:
             public_key(config["vm"]["ssh_public_key"])
             text = self.source.read_text()
             for field, after in updates.items():
-                # Preserve comments and all unrelated operator values, including secrets.
+                # Preserve comments and all unrelated operator values/references.
                 pattern = rf"(?m)^([ \t]+{field}:[ \t]*)[^\n#]+"
                 text, count = re.subn(pattern, lambda match, value=after: match[1] + json.dumps(value) + " ", text)
                 if count != 1:
@@ -483,7 +597,10 @@ class Configuration:
 
     def prepare(self) -> str:
         config = self.load()
-        rendered = outputs(config, self.root)
+        rendered = outputs(config, self.root, self.directory)
+        private_directory(self.state)
+        private_directory(self.paths.plans)
+        private_directory(self.paths.backups)
         private_directory(self.generated)
         # Validate all destinations before updating any; never touch deployment state.
         for name in rendered:
@@ -492,7 +609,7 @@ class Configuration:
                 regular(path)
         for name, content in rendered.items():
             write_private(self.generated / name, content)
-        return hashlib.sha256(json.dumps(rendered, sort_keys=True).encode()).hexdigest()
+        return fingerprint(rendered)
 
     def show(self) -> dict:
         config = self.load()
@@ -514,7 +631,7 @@ class Configuration:
             if self.target == "proxmox"
             else None,
             "adguard_hosts": [urlsplit(url).hostname for url in endpoints],
-            "secrets": "Omitted. The source is private; never share it with an agent.",
+            "secrets": "File references omitted; secret file contents are never read during inspection.",
         }
 
     def run(self, action: str) -> int:
@@ -524,14 +641,8 @@ class Configuration:
             raise ConfigError("VM helpers require the Proxmox target.")
         digest = self.prepare()
         plan_kind = "destroy" if action.startswith("destroy") else "apply"
-        plan = self.directory / (
-            "proxmox-destroy-plan.json"
-            if self.target == "proxmox" and plan_kind == "destroy"
-            else "destroy.tfplan"
-            if plan_kind == "destroy"
-            else "aws.tfplan"
-        )
-        receipt = self.directory / f"{plan_kind}-inputs.json"
+        plan = self.paths.plan(self.target, plan_kind)
+        receipt = self.state / f"{plan_kind}-inputs.json"
         planning = (self.target == "aws" and action == "plan") or action == "destroy-plan"
         if (
             (self.target == "aws" and action == "apply")
@@ -540,8 +651,7 @@ class Configuration:
         ):
             regular(receipt)
             expected = json.loads(receipt.read_text())
-            regular(plan)
-            if expected != {"inputs": digest, "plan": hashlib.sha256(plan.read_bytes()).hexdigest()}:
+            if expected != plan_fingerprint(plan, digest):
                 raise ConfigError("Inputs or saved plan changed since review. Run and review a new plan before applying.")
         if planning:
             receipt.unlink(missing_ok=True)
@@ -552,7 +662,7 @@ class Configuration:
             for key, value in os.environ.items()
             if key not in set(PVE_ENV.values()) | {key.upper() for key in PVE_TIMEOUTS} | {"VMNAME", "USERNAME", "EXPECTED_IPV4"}
         }
-        env = {**inherited, "BOOTSTRAP_INPUT_DIR": str(self.generated), "BOOTSTRAP_PREPARED": "1"}
+        env = {**inherited, "BOOTSTRAP_STATE_DIR": str(self.state), "BOOTSTRAP_INPUT_DIR": str(self.generated), "BOOTSTRAP_PREPARED": "1"}
         # Native tools must create private plans/state, regardless of controller defaults.
         previous_umask = os.umask(0o077)
         try:
@@ -571,10 +681,9 @@ class Configuration:
         finally:
             os.umask(previous_umask)
         if result.returncode == 0 and planning:
-            if digest != hashlib.sha256(json.dumps(outputs(self.load(), self.root), sort_keys=True).encode()).hexdigest():
+            if digest != fingerprint(outputs(self.load(), self.root, self.directory)):
                 raise ConfigError("Inputs changed during planning. Review a new plan; this plan is not approved for apply.")
-            regular(plan)
-            write_private(receipt, json.dumps({"inputs": digest, "plan": hashlib.sha256(plan.read_bytes()).hexdigest()}) + "\n")
+            write_private(receipt, json.dumps(plan_fingerprint(plan, digest)) + "\n")
         if result.returncode == 0 and action in ("destroy", "destroy-cleanup"):
             if __package__:
                 from scripts.bootstrap.access import (  # noqa: PLC0415 -- preserve direct-script compatibility

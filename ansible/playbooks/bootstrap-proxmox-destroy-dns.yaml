@@ -16,7 +16,7 @@
           - bootstrap_destroy_phase in ['plan', 'cleanup']
     - name: Load the reviewed deployment-specific Proxmox identity
       ansible.builtin.include_vars:
-        file: "{{ bootstrap_dir }}/proxmox-destroy-plan.json"
+        file: "{{ bootstrap_dir }}/plans/proxmox-destroy-plan.json"
         name: bootstrap_proxmox_plan
     - name: Refuse changed VM or DNS ownership identity
       ansible.builtin.assert:

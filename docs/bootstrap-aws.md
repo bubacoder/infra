@@ -76,7 +76,7 @@ subsequent command. Always use the original directory/backend to resume resource
 ## Edit and inspect configuration
 
 Privately edit only `config/bootstrap-aws/bootstrap.yaml`, including `secrets`.
-Native Ansible and Terraform inputs are generated under `generated/` when commands run.
+Native Ansible and Terraform inputs are generated under `state/generated/` when commands run.
 Never edit those generated files.
 Follow [inputs and safety](bootstrap-configuration.md), then review:
 

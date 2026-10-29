@@ -75,10 +75,14 @@ selected guide's prerequisites before running initialization:
 | Proxmox | `task bootstrap:init TARGET=proxmox` | [Proxmox installation](docs/setup.md) |
 
 Both use native provisioning and configurable ordered Ansible roles, with
-one private operator-edited `bootstrap.yaml`, automatically converted to native
-inputs under `generated/`. Templates select Docker/Traefik/Homepage; set `services: []`
+one metadata-only operator-edited `bootstrap.yaml`, automatically converted to native
+inputs under `state/generated/`. Managed receipts, trust, backups and plans also
+stay under `state/`, leaving only `bootstrap.yaml` at the deployment root.
+Templates select Docker/Traefik/Homepage; set `services: []`
 for a host without those applications and select only its needed roles.
-Service secrets are excluded from Terraform inputs. Pass the same `TARGET` on
+Credentials use `{file: path}` references beside DNS settings, never inline values;
+referenced files and generated credentials remain private and excluded from Terraform.
+Pass the same `TARGET` on
 subsequent bootstrap commands; each target has its own default input/state directory.
 See [configuration and safety](docs/bootstrap-configuration.md).
 The underlying [AWS EC2 Terraform configuration](terraform/aws-vm/README.md) also

@@ -38,7 +38,9 @@ class BootstrapStatusTests(unittest.TestCase):
         self.directory = self.root / "config/deployment"
         self.configuration = Configuration(self.root, self.directory, "proxmox")
         self.configuration.init()
-        self.edit(lambda value: value.update(roles=["debian_base", "k3s"], services=[], host={}, dns={"enabled": False}, secrets={}))
+        self.state = self.directory / "state"
+        self.state.mkdir(mode=0o700)
+        self.edit(lambda value: value.update(roles=["debian_base", "k3s"], services=[], host={}, dns={"enabled": False}))
 
     def edit(self, change):
         value = yaml.safe_load(self.configuration.source.read_text())
@@ -138,14 +140,14 @@ class BootstrapStatusTests(unittest.TestCase):
     @patch("scripts.bootstrap.status.command")
     @patch("scripts.bootstrap.status.ssh_status")
     def test_ready_vm_uses_pinned_key_and_only_read_only_guest_checks(self, ssh, command):
-        trust = self.directory / "known_hosts"
+        trust = self.state / "known_hosts"
         trust.write_text("fixture")
         trust.chmod(0o600)
         self.configuration.generated.mkdir(mode=0o700)
         generated = self.configuration.generated / "host.yaml"
         generated.write_text("original-inputs\n")
         generated.chmod(0o600)
-        receipt = self.directory / "apply-inputs.json"
+        receipt = self.state / "apply-inputs.json"
         receipt.write_text("original-receipt\n")
         receipt.chmod(0o600)
         ssh.side_effect = [
@@ -189,7 +191,7 @@ class BootstrapStatusTests(unittest.TestCase):
     @patch("scripts.bootstrap.status.command")
     @patch("scripts.bootstrap.status.ssh_status")
     def test_pinned_key_rejection_never_falls_back_to_tofu(self, ssh, command):
-        trust = self.directory / "known_hosts"
+        trust = self.state / "known_hosts"
         trust.write_text("fixture")
         trust.chmod(0o600)
         ssh.side_effect = [
@@ -216,7 +218,7 @@ class BootstrapStatusTests(unittest.TestCase):
     @patch("scripts.bootstrap.status.command")
     def test_aws_wrong_account_refuses_terraform_and_instance_lookup(self, command):
         self.select_aws()
-        state = self.directory / "aws.tfstate"
+        state = self.state / "aws.tfstate"
         state.write_text("fixture")
         state.chmod(0o600)
         command.return_value = result("000000000000\n")
@@ -227,7 +229,7 @@ class BootstrapStatusTests(unittest.TestCase):
     @patch("scripts.bootstrap.status.command")
     def test_aws_reads_only_selected_nonsecret_terraform_output(self, command):
         self.select_aws()
-        state = self.directory / "aws.tfstate"
+        state = self.state / "aws.tfstate"
         state.write_text("fixture")
         state.chmod(0o600)
         command.side_effect = [
@@ -253,7 +255,7 @@ class BootstrapStatusTests(unittest.TestCase):
     @patch("scripts.bootstrap.status.command")
     def test_aws_empty_state_reports_no_managed_resources(self, command):
         self.select_aws()
-        state = self.directory / "aws.tfstate"
+        state = self.state / "aws.tfstate"
         state.write_text("fixture")
         state.chmod(0o600)
         command.side_effect = [result("123456789012\n"), result(rc=1), result()]
@@ -263,7 +265,7 @@ class BootstrapStatusTests(unittest.TestCase):
     @patch("scripts.bootstrap.status.command")
     def test_aws_running_reports_ssm_without_creating_ssh_trust(self, command):
         self.select_aws()
-        state = self.directory / "aws.tfstate"
+        state = self.state / "aws.tfstate"
         state.write_text("fixture")
         state.chmod(0o600)
         command.side_effect = [
@@ -285,7 +287,7 @@ class BootstrapStatusTests(unittest.TestCase):
         output = self.inspect()
         self.assertIn("SSM: Online", output)
         self.assertIn("not yet pinned", output)
-        self.assertFalse((self.directory / "known_hosts").exists())
+        self.assertFalse((self.state / "known_hosts").exists())
         self.assertEqual(command.call_count, 4)
 
 
