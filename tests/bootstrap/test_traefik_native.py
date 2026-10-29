@@ -2,6 +2,7 @@
 
 # ruff: noqa: PT009, PT027 -- unittest assertions
 
+import copy
 import json
 import os
 import shutil
@@ -122,6 +123,9 @@ class NativeTraefikTests(unittest.TestCase):
         captured = self.directory / "captured.json"
         tasks = yaml.safe_load((ROLE / "tasks/resource.yaml").read_text())
         for task in tasks:
+            if task.get("ansible.builtin.include_tasks") == "ownership.yaml":
+                task.clear()
+                task.update({"name": "Ownership handover is exercised separately", "ansible.builtin.set_fact": {"test_handover_included": True}})
             if "ansible.builtin.copy" in task:
                 task["ansible.builtin.copy"].pop("owner", None)
                 task["ansible.builtin.copy"].pop("group", None)
@@ -160,6 +164,108 @@ class NativeTraefikTests(unittest.TestCase):
         resource = (ROLE / "tasks/resource.yaml").read_text()
         self.assertNotIn("--force-conflicts", resource)
         self.assertIn("resourceVersion", resource)
+
+    def test_create_ownership_is_migrated_without_reset_or_force(self):
+        source = yaml.safe_load((ROLE / "tasks/ownership.yaml").read_text())
+        text = yaml.safe_dump(source)
+        self.assertIn("/operation", text)
+        self.assertIn("/metadata/uid", text)
+        self.assertIn("/metadata/resourceVersion", text)
+        self.assertIn("--dry-run=server", text)
+        self.assertNotIn("--force-conflicts", text)
+        self.assertNotIn("op: remove", text)
+        configure = (ROLE / "tasks/configure.yaml").read_text()
+        self.assertLess(configure.index("ownership.yaml"), configure.index("Validate every resource"))
+        resource = (ROLE / "tasks/resource.yaml").read_text()
+        self.assertLess(resource.index("Atomically persist"), resource.index("ownership.yaml"))
+
+    def handover_fixture(self, *, operation="Update", uid="owned-configmap", cluster="synthetic-cluster", ambiguous=False, conflict=False):
+        own = {
+            "manager": "infra-bootstrap-traefik",
+            "operation": operation,
+            "apiVersion": "v1",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {"f:data": {"f:test.yaml": {}}},
+        }
+        foreign = {
+            "manager": "synthetic-controller",
+            "operation": "Update",
+            "apiVersion": "v1",
+            "fieldsType": "FieldsV1",
+            "fieldsV1": {"f:metadata": {"f:annotations": {"f:controller-owned": {}}}},
+        }
+        metadata = {
+            "uid": uid,
+            "resourceVersion": "42",
+            "labels": {"app.kubernetes.io/managed-by": "infra-bootstrap-traefik", "infra.bootstrap/deployment": "synthetic-vm"},
+            "managedFields": [foreign, own],
+        }
+        if ambiguous:
+            duplicate = copy.deepcopy(own)
+            duplicate["operation"] = "Apply"
+            metadata["managedFields"].append(duplicate)
+        after = copy.deepcopy(metadata)
+        after["managedFields"][1]["operation"] = "Apply"
+        after["resourceVersion"] = "43"
+        captured = self.directory / "ownership-patch.json"
+        tasks = yaml.safe_load((ROLE / "tasks/ownership.yaml").read_text())
+
+        def mock_probes(steps):
+            for task in steps:
+                if "block" in task:
+                    mock_probes(task["block"])
+                if "ansible.builtin.copy" in task:
+                    task["ansible.builtin.copy"].pop("owner", None)
+                    task["ansible.builtin.copy"].pop("group", None)
+                command = task.pop("ansible.builtin.command", None)
+                if command is None:
+                    continue
+                register = task.pop("register", None)
+                task.pop("changed_when", None)
+                if register == "k3s_traefik_handover_cluster":
+                    task["ansible.builtin.set_fact"] = {register: {"stdout": cluster}}
+                elif register in ("k3s_traefik_handover_metadata", "k3s_traefik_handover_readback"):
+                    task["ansible.builtin.set_fact"] = {register: {"stdout": json.dumps(metadata if register.endswith("metadata") else after)}}
+                elif "--dry-run=server" in command["argv"]:
+                    if conflict:
+                        task["ansible.builtin.fail"] = {"msg": "Synthetic API conflict; no ownership mutation is allowed"}
+                    else:
+                        task["ansible.builtin.set_fact"] = {"test_handover_validated": True}
+                else:
+                    task["ansible.builtin.copy"] = {"content": command["stdin"], "dest": str(captured), "mode": "0600"}
+
+        mock_probes(tasks)
+        receipt = {"cluster_uid": "synthetic-cluster", "deployment": "synthetic-vm", "uids": {"configmap": "owned-configmap"}}
+        result = self.run_tasks(tasks, {"k3s_traefik_resource": self.resources[1], "k3s_traefik_receipt": receipt})
+        return result, captured, metadata
+
+    def test_handover_preserves_foreign_ownership_and_original_metadata_for_recovery(self):
+        result, captured, before = self.handover_fixture()
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        patch = json.loads(captured.read_text())
+        self.assertEqual(
+            patch[:2],
+            [{"op": "test", "path": "/metadata/uid", "value": "owned-configmap"}, {"op": "test", "path": "/metadata/resourceVersion", "value": "42"}],
+        )
+        self.assertEqual(patch[2], {"op": "test", "path": "/metadata/managedFields/1", "value": before["managedFields"][1]})
+        self.assertEqual(patch[3:], [{"op": "replace", "path": "/metadata/managedFields/1/operation", "value": "Apply"}])
+        backups = list(self.directory.glob("ownership-configmap-*/metadata.json"))
+        self.assertEqual(len(backups), 1)
+        self.assertEqual(json.loads(backups[0].read_text()), before)
+        self.assertEqual(backups[0].stat().st_mode & 0o777, 0o600)
+
+    def test_handover_is_a_noop_after_success(self):
+        result, captured, _ = self.handover_fixture(operation="Apply")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse(captured.exists())
+        self.assertEqual(list(self.directory.glob("ownership-configmap-*")), [])
+
+    def test_handover_refuses_replaced_objects_wrong_clusters_ambiguity_and_api_conflicts(self):
+        for setting in ({"uid": "replacement"}, {"cluster": "other-cluster"}, {"ambiguous": True}, {"conflict": True}):
+            with self.subTest(setting=setting):
+                result, captured, _ = self.handover_fixture(**setting)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertFalse(captured.exists())
 
     def test_real_native_profile_validation_matches_compiler_inputs(self):
         public = yaml.safe_load(outputs(profile())["host.yaml"])

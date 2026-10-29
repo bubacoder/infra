@@ -148,7 +148,13 @@ def manifests(config, root):
     values = {
         "deployment": {"replicas": 1},
         "updateStrategy": {"type": "Recreate", "rollingUpdate": None},
-        "podSecurityContext": {"runAsUser": 65532, "runAsGroup": 65532, "runAsNonRoot": True, "fsGroup": 65532},
+        "podSecurityContext": {
+            "runAsUser": 65532,
+            "runAsGroup": 65532,
+            "runAsNonRoot": True,
+            "fsGroup": 65532,
+            "fsGroupChangePolicy": "OnRootMismatch",
+        },
         "persistence": {"enabled": True, "existingClaim": PVC, "path": "/data"},
         "providers": {"kubernetesCRD": {"enabled": True, "allowCrossNamespace": False}, "file": {"enabled": False}},
         "additionalArguments": ["--providers.file.directory=/etc/traefik/bootstrap-dynamic", "--providers.file.watch=true"],
@@ -166,7 +172,9 @@ def manifests(config, root):
                     "caServer": "https://acme-staging-v02.api.letsencrypt.org/directory"
                     if staging
                     else "https://acme-v02.api.letsencrypt.org/directory",
-                    "dnsChallenge": {"provider": "cloudflare"},
+                    # Match Compose: split-horizon LAN DNS can hide the public
+                    # SOA and make lego discover the TLD instead of our zone.
+                    "dnsChallenge": {"provider": "cloudflare", "resolvers": ["1.1.1.1:53", "8.8.8.8:53"]},
                 }
             }
         },
