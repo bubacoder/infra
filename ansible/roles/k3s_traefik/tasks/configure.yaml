@@ -105,6 +105,14 @@
   register: k3s_traefik_secret_stat
   no_log: true
 
+- name: Hand over receipt-owned create writers before validating changed values
+  ansible.builtin.include_tasks: ownership.yaml
+  loop: '{{ k3s_traefik_resources }}'
+  loop_control:
+    loop_var: k3s_traefik_resource
+    label: '{{ k3s_traefik_resource.kind }}/{{ k3s_traefik_resource.name }}'
+  when: k3s_traefik_resource.kind in k3s_traefik_receipt.uids
+
 - name: Validate every resource before the first apply
   ansible.builtin.command:
     argv: [/usr/local/bin/k3s, kubectl, apply, --server-side, '--field-manager={{ k3s_traefik_manager }}', --dry-run=server, --validate=strict, '-f={{ k3s_traefik_directory }}/{{ item.file }}']

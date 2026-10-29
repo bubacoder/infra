@@ -1,0 +1,115 @@
+---
+- name: Recheck cluster identity before the create-to-apply ownership handover
+  ansible.builtin.command:
+    argv: [/usr/local/bin/k3s, kubectl, get, namespace, kube-system, '-o=jsonpath={.metadata.uid}']
+  register: k3s_traefik_handover_cluster
+  changed_when: false
+
+- name: Read managed metadata only, never Secret data, before handover
+  ansible.builtin.command:
+    argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, get, '{{ k3s_traefik_resource.kind }}', '{{ k3s_traefik_resource.name }}', --show-managed-fields, '-o=jsonpath={.metadata}']
+  register: k3s_traefik_handover_metadata
+  changed_when: false
+  no_log: true
+
+- name: Decode ownership metadata privately
+  ansible.builtin.set_fact:
+    k3s_traefik_handover_before: '{{ k3s_traefik_handover_metadata.stdout | from_json }}'
+  no_log: true
+
+- name: Bind any ownership handover to the exact receipt and cluster
+  ansible.builtin.assert:
+    that:
+      - k3s_traefik_handover_cluster.stdout == k3s_traefik_receipt.cluster_uid
+      - k3s_traefik_handover_before.uid == k3s_traefik_receipt.uids[k3s_traefik_resource.kind]
+      - k3s_traefik_handover_before.labels['app.kubernetes.io/managed-by'] == k3s_traefik_manager
+      - k3s_traefik_handover_before.labels['infra.bootstrap/deployment'] == bootstrap.name
+    fail_msg: Resource identity changed; no ownership is transferred or adopted.
+  no_log: true
+
+- name: Select only this bootstrap manager's field ownership entries
+  ansible.builtin.set_fact:
+    k3s_traefik_handover_entries: "{{ k3s_traefik_handover_before.managedFields | default([]) | selectattr('manager', 'equalto', k3s_traefik_manager) | list }}"
+  no_log: true
+
+- name: Hand over the initial create writer without taking any other manager's fields
+  when: k3s_traefik_handover_entries | selectattr('operation', 'equalto', 'Update') | list | length > 0
+  block:
+    - name: Require one unambiguous bootstrap create entry in the expected API version
+      ansible.builtin.assert:
+        that:
+          - k3s_traefik_handover_entries | length == 1
+          - k3s_traefik_handover_entries[0].operation == 'Update'
+          - k3s_traefik_handover_entries[0].apiVersion == ('helm.cattle.io/v1' if k3s_traefik_resource.kind == 'helmchartconfig' else 'v1')
+          - k3s_traefik_handover_entries[0].subresource | default('') == ''
+          - k3s_traefik_handover_entries[0].fieldsType == 'FieldsV1'
+          - k3s_traefik_handover_entries[0].fieldsV1 is mapping
+        fail_msg: Ambiguous bootstrap field ownership requires explicit recovery; foreign entries are never reset or merged.
+      no_log: true
+
+    - name: Locate the exact create entry without changing its owned field set
+      ansible.builtin.set_fact:
+        k3s_traefik_handover_index: '{{ k3s_traefik_handover_before.managedFields.index(k3s_traefik_handover_entries[0]) }}'
+      no_log: true
+
+    - name: Build an identity-checked metadata-only Update-to-Apply handover
+      ansible.builtin.set_fact:
+        k3s_traefik_handover_patch:
+          - {op: test, path: /metadata/uid, value: '{{ k3s_traefik_handover_before.uid }}'}
+          - {op: test, path: /metadata/resourceVersion, value: '{{ k3s_traefik_handover_before.resourceVersion }}'}
+          - {op: test, path: '/metadata/managedFields/{{ k3s_traefik_handover_index }}', value: '{{ k3s_traefik_handover_entries[0] }}'}
+          - {op: replace, path: '/metadata/managedFields/{{ k3s_traefik_handover_index }}/operation', value: Apply}
+      no_log: true
+
+    - name: Validate the ownership-only handover on the server before any mutation
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, patch, '{{ k3s_traefik_resource.kind }}', '{{ k3s_traefik_resource.name }}', --type=json, --patch-file=/dev/stdin, --dry-run=server, -o=name]
+        stdin: '{{ k3s_traefik_handover_patch | to_json }}'
+        stdin_add_newline: false
+      changed_when: false
+      no_log: true
+
+    - name: Create a new private recovery directory for original ownership metadata
+      ansible.builtin.tempfile:
+        state: directory
+        path: '{{ k3s_traefik_directory }}'
+        prefix: 'ownership-{{ k3s_traefik_resource.kind }}-'
+      register: k3s_traefik_handover_backup
+      no_log: true
+
+    - name: Preserve the original metadata before the guarded ownership handover
+      ansible.builtin.copy:
+        content: '{{ k3s_traefik_handover_before | to_nice_json }}'
+        dest: '{{ k3s_traefik_handover_backup.path }}/metadata.json'
+        owner: root
+        group: root
+        mode: '0600'
+      no_log: true
+
+    # Like client-go's csaupgrade, retain the exact FieldsV1 and other managers.
+    # Never clear managedFields, force conflicts, or change resource data here.
+    - name: Convert only our initial create entry to Apply with UID and version tests
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, patch, '{{ k3s_traefik_resource.kind }}', '{{ k3s_traefik_resource.name }}', --type=json, --patch-file=/dev/stdin, -o=name]
+        stdin: '{{ k3s_traefik_handover_patch | to_json }}'
+        stdin_add_newline: false
+      changed_when: true
+      no_log: true
+
+    - name: Read back ownership metadata without exposing Secret data
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, get, '{{ k3s_traefik_resource.kind }}', '{{ k3s_traefik_resource.name }}', --show-managed-fields, '-o=jsonpath={.metadata}']
+      register: k3s_traefik_handover_readback
+      changed_when: false
+      no_log: true
+
+    - name: Require the original field set and all foreign entries to be preserved
+      ansible.builtin.assert:
+        that:
+          - (k3s_traefik_handover_readback.stdout | from_json).uid == k3s_traefik_handover_before.uid
+          - >-
+            (k3s_traefik_handover_readback.stdout | from_json).managedFields | selectattr('manager', 'equalto', k3s_traefik_manager) | list ==
+            [k3s_traefik_handover_entries[0] | combine({'operation': 'Apply'})]
+          - (k3s_traefik_handover_readback.stdout | from_json).managedFields | rejectattr('manager', 'equalto', k3s_traefik_manager) | list == k3s_traefik_handover_before.managedFields | rejectattr('manager', 'equalto', k3s_traefik_manager) | list
+        fail_msg: Ownership handover readback differs; preserve the private metadata backup and inspect before continuing.
+      no_log: true

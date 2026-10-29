@@ -73,6 +73,7 @@ class TraefikTests(unittest.TestCase):
         values = yaml.safe_load(hcc["spec"]["valuesContent"])
         self.assertEqual(values["deployment"]["replicas"], 1)
         self.assertEqual(values["updateStrategy"], {"type": "Recreate", "rollingUpdate": None})
+        self.assertEqual(values["podSecurityContext"]["fsGroupChangePolicy"], "OnRootMismatch")
         self.assertTrue(values["persistence"]["enabled"])
         pvc = yaml.safe_load(rendered["k3s-traefik-pvc.yaml"])
         self.assertEqual(values["persistence"]["existingClaim"], pvc["metadata"]["name"])
@@ -82,6 +83,15 @@ class TraefikTests(unittest.TestCase):
         self.assertEqual(acme["storage"], "/data/acme-staging.json")
         self.assertIn("staging", acme["caServer"])
         self.assertFalse(values["providers"]["kubernetesCRD"]["allowCrossNamespace"])
+
+    def test_dns_challenge_uses_public_resolvers_like_compose_despite_split_dns(self):
+        rendered = outputs(profile())
+        values = yaml.safe_load(yaml.safe_load(rendered["k3s-traefik-helmchartconfig.yaml"])["spec"]["valuesContent"])
+        challenge = values["certificatesResolvers"]["letsencrypt"]["acme"]["dnsChallenge"]
+        canonical = yaml.safe_load((ROOT / "docker/security/traefik/config/traefik.yml").read_text())
+        expected = canonical["certificatesResolvers"]["letsencrypt"]["acme"]["dnsChallenge"]["resolvers"]
+        self.assertEqual(expected, ["1.1.1.1:53", "8.8.8.8:53"])
+        self.assertEqual(challenge["resolvers"], expected)
 
     def test_invalid_inputs_are_rejected_without_private_values(self):
         cases = [

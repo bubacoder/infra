@@ -83,6 +83,9 @@ Traefik uses `valueFrom`; ConfigMaps and Helm values contain no actual token.
 Cloudflare requires zone-read/DNS-edit permissions limited to the authoritative
 zone. DNS-01 uses temporary public TXT records; application addresses may remain
 private and inbound public TCP 80 is not required for certificate validation.
+ACME DNS discovery uses `1.1.1.1:53` and `8.8.8.8:53`, matching Compose, rather
+than split-horizon LAN DNS that can hide public SOA records. The controller needs
+outbound DNS access to these resolvers as well as the authoritative nameservers.
 
 Traefik directly owns the `letsencrypt` resolver; cert-manager is not needed.
 Staging uses `/data/acme-staging.json`, production `/data/acme.json`, avoiding
@@ -94,6 +97,13 @@ of ingress downtime during controller updates. This is not HA or protection
 from external writers. UID/GID 65532 and `fsGroup: 65532` support the newly owned
 storage without a privileged chown container. Adoption, resizing and storage
 class changes are refused.
+
+`fsGroupChangePolicy: OnRootMismatch` preserves ACME's mode 0600 on subsequent
+mounts once the volume root has its expected group. The default recursive fsGroup
+handling would reopen an existing ACME file to 0660 on controller replacement,
+which Traefik correctly rejects. Older installs already affected need a reviewed,
+owner-checked permission repair to 0600 before applying this policy; do not delete
+their ACME file or loosen Traefik's permission requirement.
 
 Local-path storage remains on the node/OS disk, including AWS; this role does not
 move K3s data to the separate AWS data disk. Back up the datastore, server token,
@@ -121,6 +131,22 @@ server-side ownership and never force conflicts. Unsafe/symlinked management
 files and deleted/replaced objects fail closed. Each mutation immediately records
 its returned UID. An interruption before receipt persistence needs explicit
 recovery: never delete recovery files to force retry.
+
+Creation uses an atomic create to reject racing existing objects. Once its UID
+is receipted, a guarded metadata-only handover converts this manager's initial
+`Update` ownership entry to `Apply` before subsequent server-side applies. Existing
+receipt-owned installs receive the same handover before validating changed values.
+Applying unchanged values alone would leave both writer types owning the fields,
+causing later configuration changes or credential rotation to conflict.
+
+The handover preserves the exact field set and all other managers, checks cluster
+identity, UID, resourceVersion and the original entry, and server-side dry-runs
+the patch first. Original metadata is saved privately in a new
+`ownership-<kind>-*/metadata.json` recovery directory under the role's state path;
+Secret data is never queried. Ambiguous writer entries fail closed. No resource
+is recreated, field-ownership list reset, or conflict forced. This is the narrow
+single-writer case of Kubernetes client-go's
+[`csaupgrade` migration](https://github.com/kubernetes/client-go/blob/v0.36.0/util/csaupgrade/upgrade.go).
 
 The current manually configured example cluster's `traefik` HelmChartConfig is
 deliberately not adopted. Its real middleware, trial keys, credentials and

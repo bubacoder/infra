@@ -73,3 +73,6 @@
     group: root
     mode: '0600'
   no_log: true
+
+- name: Complete create-to-apply ownership only after persisting the new UID
+  ansible.builtin.include_tasks: ownership.yaml
