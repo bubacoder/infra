@@ -1,4 +1,10 @@
 ---
+- name: Refuse removal of existing Cilium configuration when its role is deselected
+  ansible.builtin.include_role:
+    name: k3s_cilium
+    tasks_from: check-absent
+  when: "'k3s' in bootstrap.roles and 'k3s_cilium' not in bootstrap.roles"
+
 - name: Apply selected host roles in operator-defined order # noqa: var-naming[no-role-prefix] -- shared interfaces of selected local roles
   ansible.builtin.include_role:
     name: "{{ bootstrap_role }}"
@@ -8,3 +14,5 @@
   vars:
     admin_name: "{{ bootstrap.name }}"
     admin_email: "{{ bootstrap.acme_email | default('') }}"
+    k3s_access: "{{ bootstrap.k3s.access | default({'enabled': false}) }}"
+    k3s_traefik: "{{ bootstrap.k3s.traefik | default({'enabled': false}) }}"

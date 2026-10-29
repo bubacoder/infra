@@ -47,10 +47,16 @@
       - bootstrap.target != 'aws' or not bootstrap.dns.enabled or bootstrap.dns.cloudflare_zone | default('') | length > 0
       - bootstrap.target != 'proxmox' or bootstrap.proxmox_vmid | default(0) | int > 0
       - bootstrap.target != 'proxmox' or (bootstrap.proxmox_host is defined and bootstrap.proxmox_username is defined and bootstrap.proxmox_address is defined)
+      - bootstrap.target != 'proxmox' or (bootstrap.proxmox_agent_timeout_seconds | default(600) | int > 0 and bootstrap.proxmox_agent_timeout_seconds | default(600) | int <= 86400)
+      - bootstrap.target != 'proxmox' or (bootstrap.proxmox_cloud_init_timeout_seconds | default(1800) | int > 0 and bootstrap.proxmox_cloud_init_timeout_seconds | default(1800) | int <= 86400)
       - bootstrap.dns.adguard_url | default('https://unused') is match('^https?://[^/@?#\s]+$')
       - bootstrap.dns.adguard_url is not defined or bootstrap.dns.adguard_urls is not defined
       - bootstrap.dns.adguard_urls | default([]) | unique | length == bootstrap.dns.adguard_urls | default([]) | length
       - bootstrap.dns.adguard_urls | default([]) | select('match', '^https?://[^/@?#\s]+$') | list | length == bootstrap.dns.adguard_urls | default([]) | length
+      - not bootstrap.k3s.access.enabled | default(false) or 'k3s' in bootstrap.roles
+      - not bootstrap.k3s.access.enabled | default(false) or bootstrap.k3s.access.install_context | default(false)
+      - not bootstrap.k3s.access.enabled | default(false) or bootstrap.k3s.access.host | default('') is match('^[a-z0-9.-]+$')
+      - not bootstrap.k3s.access.enabled | default(false) or bootstrap.k3s.access.context | default('') is match('^[a-z0-9-]+$')
     fail_msg: Correct the public host settings; use a published branch, tag or commit, deployment subdomain and HTTP(S) AdGuard origins without credentials, paths, query strings or fragments.
 - name: Validate ordered role and service selections before contacting providers
   ansible.builtin.assert:
@@ -59,8 +65,12 @@
       - bootstrap.services | unique | length == bootstrap.services | length
       - bootstrap.services | difference(['security/traefik', 'dashboard/homepage']) | length == 0
       - "bootstrap.services | length == 0 or 'debian_docker_host' in bootstrap.roles"
+      - "'k3s' not in bootstrap.roles or bootstrap.services | length == 0"
       - "'dashboard/homepage' not in bootstrap.services or 'security/traefik' in bootstrap.services"
-    fail_msg: Select unique local roles and supported services. Docker services require debian_docker_host; Homepage requires Traefik.
+    fail_msg: >-
+      Select unique local roles and supported services. Docker services require
+      debian_docker_host; Homepage requires Traefik. Default K3s requires services: []
+      to avoid ingress port conflicts.
 - name: Require each selected role to exist locally rather than accepting paths or collection names
   ansible.builtin.assert:
     that:
@@ -69,3 +79,25 @@
       - (bootstrap_root + '/ansible/roles/' + item + '/tasks/main.yaml') is file or (bootstrap_root + '/ansible/roles/' + item + '/tasks/main.yml') is file
     fail_msg: A selected role is unavailable under ansible/roles. Add the role before selecting it.
   loop: "{{ bootstrap.roles }}"
+
+- name: Validate Cilium pre-start role ordering
+  ansible.builtin.assert:
+    that:
+      - "'k3s_cilium' not in bootstrap.roles or ('k3s' in bootstrap.roles and bootstrap.roles.index('k3s_cilium') < bootstrap.roles.index('k3s'))"
+    fail_msg: Select k3s_cilium before k3s; automatic CNI migration is unsupported.
+
+- name: Validate opt-in Traefik requirements before provider access
+  ansible.builtin.assert:
+    that:
+      - "('k3s_traefik' in bootstrap.roles) == (bootstrap.k3s.traefik.enabled | default(false))"
+      - not bootstrap.k3s.traefik.enabled | default(false) or ('k3s' in bootstrap.roles and bootstrap.roles.index('k3s') < bootstrap.roles.index('k3s_traefik'))
+      - not bootstrap.k3s.traefik.enabled | default(false) or bootstrap.k3s.traefik.domain | default('') is match('^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z][a-z0-9-]*$')
+      - not bootstrap.k3s.traefik.enabled | default(false) or bootstrap.acme_email | default('') is match('^[^@\s]+@[^@\s]+\.[^@\s]+$')
+      - not bootstrap.k3s.traefik.enabled | default(false) or bootstrap.k3s.traefik.admin_cidr | default('') | ansible.utils.ipaddr('network/prefix') == bootstrap.k3s.traefik.admin_cidr
+      - not bootstrap.k3s.traefik.enabled | default(false) or bootstrap.k3s.traefik.admin_cidr is not search('/0$')
+      - not bootstrap.k3s.traefik.enabled | default(false) or bootstrap.k3s.traefik.middlewares | default([]) | length > 0
+      - not bootstrap.k3s.traefik.enabled | default(false) or bootstrap.k3s.traefik.middlewares | unique | length == bootstrap.k3s.traefik.middlewares | length
+      - not bootstrap.k3s.traefik.enabled | default(false) or bootstrap.k3s.traefik.acme_environment | default('') in ['staging', 'production']
+      - not bootstrap.k3s.traefik.enabled | default(false) or bootstrap.k3s.traefik.storage_class | default('') is match('^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$')
+      - not bootstrap.k3s.traefik.enabled | default(false) or bootstrap.k3s.traefik.storage_size | default('') is match('^[1-9][0-9]*(Mi|Gi)$')
+    fail_msg: Select the documented ordered Traefik role, explicit domain/admin CIDR, ACME environment, middleware list and storage; email and Cloudflare credentials are feature-scoped requirements.

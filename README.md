@@ -120,7 +120,7 @@ host-specific inputs. For focused changes, run the relevant tests and
 `pre-commit run --files <changed-files>` instead of the full build.
 
 For a single bootstrap check, use
-`uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.test_bootstrap.<Class>.<test_method>`.
+`uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.bootstrap.test_native.<Class>.<test_method>`.
 `task test` runs all Python tests; `task build` runs those plus the Proxmox shell
 tests before linting and build steps.
 

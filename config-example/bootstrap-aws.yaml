@@ -3,6 +3,8 @@
 version: 1
 target: aws
 roles: # Applied in this order. Removing a role does not uninstall it.
+  # For K3s instead: [debian_base, k3s], services: [], host: {},
+  # dns: {enabled: false}, secrets: {}. See ansible/roles/k3s/README.md.
   - debian_base
   - debian_docker_host
 services: # Use [] for a host without bootstrap-managed Docker applications.
@@ -40,3 +42,15 @@ secrets:
   cloudflare_token: REPLACE_WITH_CLOUDFLARE_TOKEN
   # adguard_username: REPLACE_WITH_ADGUARD_USERNAME
   # adguard_password: REPLACE_WITH_ADGUARD_PASSWORD
+# For a dedicated K3s host only: select the k3s role, services: [], and configure
+# host.domain/dns (or supply access.host for externally managed DNS or an IPv4).
+# For Cilium on a fresh VM, add k3s_cilium BEFORE k3s in roles; no settings block.
+# k3s:
+#   # For managed ingress select k3s_traefik after k3s and add traefik settings
+#   # from ansible/roles/k3s_traefik/README.md. Keep host.acme_email and a private
+#   # secrets.cloudflare_token even with services: [] and DNS disabled.
+#   access:
+#     enabled: true
+#     context: k3s-aws
+#     install_context: true
+#     # host: k3s.example.com # Defaults to host.domain.

@@ -1,0 +1,164 @@
+---
+- name: Inspect ownership before writing any cluster configuration
+  ansible.builtin.include_tasks: inspect.yaml
+
+- name: Read bundled chart configuration privately to detect conflicting overrides
+  ansible.builtin.command:
+    argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, get, helmchart, traefik, -o=json]
+  register: k3s_traefik_chart_result
+  changed_when: false
+  no_log: true
+
+- name: Decode the chart configuration without displaying values
+  ansible.builtin.set_fact:
+    k3s_traefik_chart: "{{ (k3s_traefik_chart_result.stdout | from_json).spec }}"
+    k3s_traefik_base_values: "{{ ((k3s_traefik_chart_result.stdout | from_json).spec.valuesContent | default('') | from_yaml) or {} }}"
+  no_log: true
+
+- name: Require the validated bundled chart and no conflicting base inputs
+  ansible.builtin.assert:
+    that:
+      - k3s_traefik_chart.chart.endswith('/' + k3s_traefik_supported_chart)
+      - k3s_traefik_chart.valuesSecrets | default([]) | length == 0
+      - k3s_traefik_chart.set | default({}) | list | select('match', '^(additionalArguments|volumes|env|persistence|deployment|updateStrategy|podSecurityContext|certificatesResolvers|providers)($|\.|\[)') | list | length == 0
+      - k3s_traefik_base_values.additionalArguments | default([]) | length == 0
+      - k3s_traefik_base_values.volumes | default([]) | length == 0
+      - k3s_traefik_base_values.env | default([]) | length == 0
+      - k3s_traefik_base_values.certificatesResolvers | default({}) | length == 0
+      - not k3s_traefik_base_values.providers.file.enabled | default(false)
+      - not k3s_traefik_base_values.persistence.enabled | default(false)
+      - k3s_traefik_base_values.persistence.existingClaim | default('') == ''
+      - k3s_traefik_base_values.deployment.replicas | default(1) == 1
+      - k3s_traefik_base_values.updateStrategy | default({}) | length == 0
+      - k3s_traefik_base_values.podSecurityContext | default({}) | length == 0
+      - not k3s_traefik_base_values.providers.kubernetesCRD.allowCrossNamespace | default(false)
+    fail_msg: Bundled chart/version or base values conflict with the reviewed Traefik adapter. Inspect privately and plan a migration; no overrides are discarded.
+  no_log: true
+
+- name: Check the explicitly selected storage class exists
+  ansible.builtin.command:
+    argv: [/usr/local/bin/k3s, kubectl, get, storageclass, "{{ k3s_traefik.storage_class }}", -o=name]
+  changed_when: false
+
+- name: Read the existing owned claim to forbid automatic storage migration
+  ansible.builtin.command:
+    argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, get, pvc, bootstrap-traefik-acme, -o=json]
+  register: k3s_traefik_pvc_result
+  changed_when: false
+  when: "'persistentvolumeclaim' in k3s_traefik_receipt.uids"
+
+- name: Preserve existing claim class and size rather than resize or migrate
+  ansible.builtin.assert:
+    that:
+      - (k3s_traefik_pvc_result.stdout | from_json).spec.storageClassName == k3s_traefik.storage_class
+      - (k3s_traefik_pvc_result.stdout | from_json).spec.resources.requests.storage == (lookup('ansible.builtin.file', hostvars.localhost.bootstrap_input_dir + '/k3s-traefik-pvc.yaml') | from_yaml).spec.resources.requests.storage
+    fail_msg: Existing ACME claim class/size differs. Explicit storage migration is required; the claim is not replaced or resized.
+  when: "'persistentvolumeclaim' in k3s_traefik_receipt.uids"
+
+- name: Install native certificate-verification prerequisites after successful preflight
+  ansible.builtin.apt:
+    name: [openssl, ca-certificates]
+    state: present
+
+- name: Create the private Traefik management directory
+  ansible.builtin.file:
+    path: "{{ k3s_traefik_directory }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Record ownership before staging files so failed validation remains recoverable
+  ansible.builtin.copy:
+    content: "{{ k3s_traefik_receipt | to_nice_yaml }}"
+    dest: "{{ k3s_traefik_directory }}/receipt.yaml"
+    owner: root
+    group: root
+    mode: '0600'
+  no_log: true
+
+- name: Copy compiler-generated public resources verbatim, without re-templating Go expressions
+  ansible.builtin.copy:
+    src: "{{ hostvars.localhost.bootstrap_input_dir }}/k3s-traefik-{{ item }}.yaml"
+    dest: "{{ k3s_traefik_directory }}/{{ item }}.yaml"
+    owner: root
+    group: root
+    mode: '0600'
+  loop: [configmap, pvc, helmchartconfig]
+  no_log: true
+
+- name: Render the API credential only on the guest under redaction
+  ansible.builtin.template:
+    src: secret.yaml.j2
+    dest: "{{ k3s_traefik_directory }}/secret.yaml"
+    owner: root
+    group: root
+    mode: '0600'
+  register: k3s_traefik_secret_render
+  no_log: true
+
+- name: Hash the private staged credential without exposing its contents
+  ansible.builtin.stat:
+    path: "{{ k3s_traefik_directory }}/secret.yaml"
+    checksum_algorithm: sha256
+    get_mime: false
+  register: k3s_traefik_secret_stat
+  no_log: true
+
+- name: Hand over receipt-owned create writers before validating changed values
+  ansible.builtin.include_tasks: ownership.yaml
+  loop: '{{ k3s_traefik_resources }}'
+  loop_control:
+    loop_var: k3s_traefik_resource
+    label: '{{ k3s_traefik_resource.kind }}/{{ k3s_traefik_resource.name }}'
+  when: k3s_traefik_resource.kind in k3s_traefik_receipt.uids
+
+- name: Validate every resource before the first apply
+  ansible.builtin.command:
+    argv: [/usr/local/bin/k3s, kubectl, apply, --server-side, '--field-manager={{ k3s_traefik_manager }}', --dry-run=server, --validate=strict, '-f={{ k3s_traefik_directory }}/{{ item.file }}']
+  loop: "{{ k3s_traefik_resources }}"
+  loop_control:
+    label: "{{ item.kind }}/{{ item.name }}"
+  changed_when: false
+  no_log: true
+
+- name: Save cluster ownership before creating resources
+  ansible.builtin.copy:
+    content: "{{ k3s_traefik_receipt | to_nice_yaml }}"
+    dest: "{{ k3s_traefik_directory }}/receipt.yaml"
+    owner: root
+    group: root
+    mode: '0600'
+  no_log: true
+
+- name: Apply dependencies before the controller configuration and record each UID immediately
+  ansible.builtin.include_tasks: resource.yaml
+  loop: "{{ k3s_traefik_resources }}"
+  loop_control:
+    loop_var: k3s_traefik_resource
+    label: "{{ k3s_traefik_resource.kind }}/{{ k3s_traefik_resource.name }}"
+
+- name: Refresh credential consumers only when the secret input changed on an existing installation
+  ansible.builtin.command:
+    argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, rollout, restart, deployment/traefik]
+  when:
+    - k3s_traefik_secret_stat.stat.checksum != k3s_traefik_receipt.secret_checksum | default('')
+    - k3s_traefik_paths.results[1].stat.exists
+  changed_when: true
+
+- name: Record acknowledged credential refresh so retries do not lose a pending rotation
+  ansible.builtin.set_fact:
+    k3s_traefik_receipt: "{{ k3s_traefik_receipt | combine({'secret_checksum': k3s_traefik_secret_stat.stat.checksum}) }}"
+  no_log: true
+
+- name: Persist the private credential-refresh receipt before certificate verification
+  ansible.builtin.copy:
+    content: "{{ k3s_traefik_receipt | to_nice_yaml }}"
+    dest: "{{ k3s_traefik_directory }}/receipt.yaml"
+    owner: root
+    group: root
+    mode: '0600'
+  no_log: true
+
+- name: Verify the installed profile independently
+  ansible.builtin.include_tasks: verify.yaml

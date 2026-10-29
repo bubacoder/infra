@@ -1,0 +1,23 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: cilium
+  namespace: kube-system
+spec:
+  repo: https://helm.cilium.io/
+  chart: cilium
+  version: 1.20.4
+  targetNamespace: kube-system
+  bootstrap: true
+  failurePolicy: abort
+  timeout: 10m
+  valuesContent: |-
+    kubeProxyReplacement: false
+    ipam:
+      operator:
+        clusterPoolIPv4PodCIDRList:
+          - 10.42.0.0/16
+    operator:
+      replicas: 1
+    hubble:
+      enabled: false

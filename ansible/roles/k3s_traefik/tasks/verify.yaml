@@ -1,0 +1,93 @@
+---
+- name: Verify managed Traefik independently without applying resources
+  become: true
+  block:
+    - name: Inspect current cluster and resource ownership
+      ansible.builtin.include_tasks: inspect.yaml
+
+    - name: Require a complete existing installation receipt
+      ansible.builtin.assert:
+        that:
+          - k3s_traefik_paths.results[1].stat.exists
+          - k3s_traefik_receipt.uids | length == k3s_traefik_resources | length
+        fail_msg: Configure the explicit profile first; verification never creates or repairs resources.
+
+    - name: Check applied public configuration against the compiled sources
+      ansible.builtin.include_tasks: verify-resource.yaml
+      loop: [configmap, helmchartconfig]
+      loop_control:
+        loop_var: k3s_traefik_verify_kind
+
+    - name: Wait for Helm to publish the intended controller template, not an old Ready deployment
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, get, deployment, traefik, -o=json]
+      register: k3s_traefik_deployment
+      changed_when: false
+      until:
+        - "'--providers.file.directory=/etc/traefik/bootstrap-dynamic' in (k3s_traefik_deployment.stdout | from_json).spec.template.spec.containers[0].args"
+        - "('--certificatesresolvers.letsencrypt.acme.storage=/data/' + ('acme-staging.json' if k3s_traefik.acme_environment == 'staging' else 'acme.json')) in (k3s_traefik_deployment.stdout | from_json).spec.template.spec.containers[0].args"
+        - (k3s_traefik_deployment.stdout | from_json).spec.template.spec.containers[0].env | selectattr('name', 'equalto', 'MYDOMAIN') | map(attribute='value') | first | default('') == k3s_traefik.domain
+        - (k3s_traefik_deployment.stdout | from_json).spec.template.spec.containers[0].env | selectattr('name', 'equalto', 'LOCAL_ACCESS_ADMIN_CIDR') | map(attribute='value') | first | default('') == k3s_traefik.admin_cidr
+      retries: 60
+      delay: 5
+      no_log: true
+
+    - name: Require single-writer deployment and the owned persistent claim
+      ansible.builtin.assert:
+        that:
+          - (k3s_traefik_deployment.stdout | from_json).spec.replicas == 1
+          - (k3s_traefik_deployment.stdout | from_json).spec.strategy.type == 'Recreate'
+          - (k3s_traefik_deployment.stdout | from_json).spec.template.spec.securityContext.fsGroupChangePolicy | default('') == 'OnRootMismatch'
+          - (k3s_traefik_deployment.stdout | from_json).spec.template.spec.volumes | selectattr('name', 'equalto', 'data') | map(attribute='persistentVolumeClaim.claimName') | list == ['bootstrap-traefik-acme']
+        fail_msg: Controller replica/rollout/storage behavior differs from the managed single-writer profile.
+      no_log: true
+
+    - name: Wait for the reconciled Traefik rollout
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, rollout, status, deployment/traefik, --timeout=180s]
+      changed_when: false
+
+    - name: Require bound ACME storage
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, wait, '--for=jsonpath={.status.phase}=Bound', pvc/bootstrap-traefik-acme, --timeout=60s]
+      changed_when: false
+
+    - name: Wait for the actual mounted files to match the desired ConfigMap projection
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, exec, deployment/traefik, --, sha256sum, '/etc/traefik/bootstrap-dynamic/{{ item }}']
+      loop: [middlewares.yaml, tls.yaml]
+      register: k3s_traefik_projection
+      changed_when: false
+      until: k3s_traefik_projection.rc == 0 and k3s_traefik_projection.stdout.split()[0] == ((lookup('ansible.builtin.file', hostvars.localhost.bootstrap_input_dir + '/k3s-traefik-configmap.yaml') | from_yaml).data[item] | hash('sha256'))
+      retries: 60
+      delay: 3
+      no_log: true
+
+    - name: Verify certificate hostname and validity directly against ingress without requiring application DNS
+      ansible.builtin.shell:
+        cmd: >-
+          set -euo pipefail;
+          certificate="$(timeout 15 openssl s_client
+          -connect {{ (ansible_facts.default_ipv4.address + ':443') | quote }}
+          -servername {{ ('bootstrap-check.' + k3s_traefik.domain) | quote }}
+          -showcerts
+          {{ '-verify_return_error -verify_hostname ' + (('bootstrap-check.' + k3s_traefik.domain) | quote) + ' -CApath /etc/ssl/certs' if k3s_traefik.acme_environment == 'production' else '' }}
+          < /dev/null 2>/dev/null | openssl x509 -outform PEM)";
+          printf '%s\n' "$certificate" | openssl x509 -noout -checkend 86400 > /dev/null;
+          printf '%s\n' "$certificate" | openssl x509 -noout
+          -checkhost {{ ('bootstrap-check.' + k3s_traefik.domain) | quote }} |
+          grep -Fx {{ ('Hostname bootstrap-check.' + k3s_traefik.domain + ' does match certificate') | quote }} > /dev/null
+        executable: /bin/bash
+      register: k3s_traefik_certificate
+      changed_when: false
+      until: k3s_traefik_certificate.rc == 0
+      retries: 60
+      delay: 5
+      no_log: true
+
+    - name: Inspect only persisted ACME file permissions and size, never its private contents
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, exec, deployment/traefik, --, stat, '-c', '%a:%s', '/data/{{ "acme-staging.json" if k3s_traefik.acme_environment == "staging" else "acme.json" }}']
+      register: k3s_traefik_acme_stat
+      changed_when: false
+      failed_when: k3s_traefik_acme_stat.rc != 0 or k3s_traefik_acme_stat.stdout is not match('^600:[1-9][0-9]*$')

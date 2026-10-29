@@ -1,0 +1,2 @@
+flannel-backend: none
+disable-network-policy: true

@@ -1,0 +1,78 @@
+---
+- name: Recheck cluster identity immediately before mutation
+  ansible.builtin.command:
+    argv: [/usr/local/bin/k3s, kubectl, get, namespace, kube-system, '-o=jsonpath={.metadata.uid}']
+  register: k3s_traefik_current_cluster
+  changed_when: false
+
+- name: Recheck the exact object immediately before mutation
+  ansible.builtin.command:
+    argv:
+      - /usr/local/bin/k3s
+      - kubectl
+      - --namespace=kube-system
+      - get
+      - "{{ k3s_traefik_resource.kind }}"
+      - "{{ k3s_traefik_resource.name }}"
+      - --ignore-not-found
+      - '-o=jsonpath={.metadata.uid}{"|"}{.metadata.resourceVersion}{"|"}{.metadata.labels.app\.kubernetes\.io/managed-by}{"|"}{.metadata.labels.infra\.bootstrap/deployment}'
+  register: k3s_traefik_before_mutation
+  changed_when: false
+
+- name: Refuse ownership changes between preflight and mutation
+  ansible.builtin.assert:
+    that:
+      - k3s_traefik_current_cluster.stdout == k3s_traefik_receipt.cluster_uid
+      - >-
+        (k3s_traefik_resource.kind not in k3s_traefik_receipt.uids and k3s_traefik_before_mutation.stdout == '') or
+        (k3s_traefik_resource.kind in k3s_traefik_receipt.uids and
+         k3s_traefik_before_mutation.stdout.split('|')[0] == k3s_traefik_receipt.uids[k3s_traefik_resource.kind] and
+         k3s_traefik_before_mutation.stdout.split('|')[2:] == [k3s_traefik_manager, bootstrap.name])
+    fail_msg: Resource identity changed since preflight; no object is adopted or replaced.
+
+- name: Create new resources rather than adopting a racing existing object
+  ansible.builtin.command:
+    argv: [/usr/local/bin/k3s, kubectl, create, '--field-manager={{ k3s_traefik_manager }}', '-f={{ k3s_traefik_directory }}/{{ k3s_traefik_resource.file }}', '-o=jsonpath={.metadata.uid}{"|"}{.metadata.resourceVersion}']
+  register: k3s_traefik_resource_create
+  changed_when: true
+  when: k3s_traefik_resource.kind not in k3s_traefik_receipt.uids
+  no_log: true
+
+- name: Read the desired manifest privately for an atomic identity-checked update
+  ansible.builtin.slurp:
+    src: "{{ k3s_traefik_directory }}/{{ k3s_traefik_resource.file }}"
+  register: k3s_traefik_desired_file
+  when: k3s_traefik_resource.kind in k3s_traefik_receipt.uids
+  no_log: true
+
+- name: Decode desired data without reinterpreting nested Go templates
+  ansible.builtin.set_fact:
+    k3s_traefik_desired: "{{ k3s_traefik_desired_file.content | b64decode | from_yaml }}"
+  when: k3s_traefik_resource.kind in k3s_traefik_receipt.uids
+  no_log: true
+
+- name: Update owned resource with UID and resourceVersion preconditions and no forced field conflicts
+  ansible.builtin.command:
+    argv: [/usr/local/bin/k3s, kubectl, apply, --server-side, '--field-manager={{ k3s_traefik_manager }}', -f=-, '-o=jsonpath={.metadata.uid}{"|"}{.metadata.resourceVersion}']
+    stdin: "{{ k3s_traefik_desired | combine({'metadata': k3s_traefik_desired.metadata | combine({'uid': k3s_traefik_receipt.uids[k3s_traefik_resource.kind], 'resourceVersion': k3s_traefik_before_mutation.stdout.split('|')[1]})}) | to_json }}"
+    stdin_add_newline: false
+  register: k3s_traefik_resource_apply
+  changed_when: k3s_traefik_resource_apply.stdout.split('|')[1] != k3s_traefik_before_mutation.stdout.split('|')[1]
+  when: k3s_traefik_resource.kind in k3s_traefik_receipt.uids
+  no_log: true
+
+- name: Preserve each applied UID for interrupted-run recovery guards
+  ansible.builtin.set_fact:
+    k3s_traefik_receipt: "{{ k3s_traefik_receipt | combine({'uids': k3s_traefik_receipt.uids | combine({k3s_traefik_resource.kind: (k3s_traefik_resource_apply.stdout if k3s_traefik_resource.kind in k3s_traefik_receipt.uids else k3s_traefik_resource_create.stdout).split('|')[0]})}) }}"
+
+- name: Atomically persist the updated private ownership receipt
+  ansible.builtin.copy:
+    content: "{{ k3s_traefik_receipt | to_nice_yaml }}"
+    dest: "{{ k3s_traefik_directory }}/receipt.yaml"
+    owner: root
+    group: root
+    mode: '0600'
+  no_log: true
+
+- name: Complete create-to-apply ownership only after persisting the new UID
+  ansible.builtin.include_tasks: ownership.yaml

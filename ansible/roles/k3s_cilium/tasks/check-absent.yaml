@@ -1,0 +1,11 @@
+---
+- name: Guard omitted Cilium without installing or removing networking
+  become: true
+  block:
+    - name: Inspect existing Cilium paths
+      ansible.builtin.include_tasks: inspect.yaml
+
+    - name: Refuse silent removal of installed Cilium from role selection
+      ansible.builtin.assert:
+        that: k3s_cilium_files.results | selectattr('stat.exists') | list | length == 0
+        fail_msg: Existing Cilium requires k3s_cilium in roles. CNI removal needs a separately reviewed migration; no files were removed.

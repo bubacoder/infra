@@ -47,6 +47,14 @@ For complete automated installation, choose the [AWS](../docs/bootstrap-aws.md) 
 [Proxmox](../docs/setup.md) guide. For manual inventory-based installation, see
 [Manual installation](../docs/manual-setup.md).
 
+The [`k3s` role](roles/k3s/README.md) provides an opt-in default single-server
+Kubernetes profile for either bootstrap target, including read-only verification.
+The separate [`k3s_cilium` role](roles/k3s_cilium/README.md) prepares opt-in
+networking before `k3s`; bootstrap verifies its rollouts after the server starts.
+The optional [`k3s_traefik` role](roles/k3s_traefik/README.md) configures bundled
+ingress with shared file middleware and persistent ACME, without duplicating
+application Compose definitions or installing a second Traefik.
+
 ## Bootstrapping hosts with authentication
 
 1. Copy public SSH key, e.g.:

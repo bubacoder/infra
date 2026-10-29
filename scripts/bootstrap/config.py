@@ -11,6 +11,7 @@ import ipaddress
 import json
 import os
 import re
+import shlex
 import shutil
 import stat
 import subprocess
@@ -21,12 +22,18 @@ from urllib.parse import urlsplit
 
 import yaml
 
-ROOT = Path(__file__).resolve().parents[1]
+if __package__:
+    from . import traefik
+else:
+    import traefik
+
+ROOT = Path(__file__).resolve().parents[2]
 VM_KEYS = {"name", "username", "ssh_public_key", "ssh_private_key"}
 HOST_KEYS = {"domain", "acme_email", "timezone", "docker_volumes", "repository_url", "repository_ref"}
 DNS_KEYS = {"enabled", "cloudflare_zone", "adguard_url", "adguard_urls"}
 SECRET_KEYS = {"cloudflare_token", "adguard_username", "adguard_password"}
 SERVICE_KEYS = {"security/traefik", "dashboard/homepage"}
+K3S_ACCESS_KEYS = {"enabled", "host", "context", "install_context"}
 PVE_ENV = {
     "host": "PROXMOX_HOST",
     "vmid": "VMID",
@@ -39,6 +46,7 @@ PVE_ENV = {
     "bridge": "VM_BRIDGE",
     "mac": "VM_MAC",
 }
+PVE_TIMEOUTS = {"agent_timeout_seconds": 600, "cloud_init_timeout_seconds": 1800}
 PVE_KEYS = set(PVE_ENV) | {"address"}
 AWS_KEYS = {
     "expected_account_id",
@@ -121,8 +129,47 @@ def section(config: dict, name: str, allowed: set, required: set | None = None) 
     return value
 
 
+def validate_k3s_access(config: dict, host: dict) -> None:
+    k3s = section(config, "k3s", {"access", "traefik"}, set()) if "k3s" in config else {}
+    if "k3s_cilium" in config["roles"] and ("k3s" not in config["roles"] or config["roles"].index("k3s_cilium") > config["roles"].index("k3s")):
+        raise ConfigError("Cilium requires the k3s role after k3s_cilium; prepare networking before K3s starts.")
+    if "access" not in k3s:
+        return
+    access = k3s.get("access")
+    if not isinstance(access, dict) or set(access) - K3S_ACCESS_KEYS or "enabled" not in access:
+        raise ConfigError("Check k3s.access fields against the documented profile.")
+    if type(access["enabled"]) is not bool or ("install_context" in access and type(access["install_context"]) is not bool):
+        raise ConfigError("k3s.access.enabled and install_context must be booleans.")
+    if not access["enabled"]:
+        if set(access) != {"enabled"}:
+            raise ConfigError("Remove k3s access settings when disabled; disabling does not uninstall existing access.")
+        return
+    if "k3s" not in config["roles"] or not access.get("install_context", False):
+        raise ConfigError("Enabled k3s access requires the k3s role and install_context: true.")
+    endpoint = access.get("host", host.get("domain"))
+    if not isinstance(endpoint, str) or not re.fullmatch(r"[a-zA-Z0-9.-]+", endpoint) or endpoint.startswith("-"):
+        raise ConfigError("k3s.access.host or host.domain must be a plain IPv4 address or DNS name.")
+    try:
+        ipaddress.IPv4Address(endpoint)
+    except ValueError:
+        if re.fullmatch(r"[0-9.]+", endpoint) or not re.fullmatch(
+            r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", endpoint
+        ):
+            raise ConfigError("k3s.access.host must be a valid lowercase DNS name or IPv4 address.") from None
+    access["host"] = endpoint
+    if (
+        "context" not in access
+        or not isinstance(access["context"], str)
+        or not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", access["context"])
+    ):
+        raise ConfigError("k3s.access.context must be a unique lowercase context name.")
+
+
 def validate(config: dict, target: str, root: Path = ROOT) -> None:
-    if set(config) != {"version", "target", "vm", "host", "dns", "secrets", "roles", "services", target}:
+    if set(config) not in (
+        {"version", "target", "vm", "host", "dns", "secrets", "roles", "services", target},
+        {"version", "target", "vm", "host", "dns", "secrets", "roles", "services", target, "k3s"},
+    ):
         raise ConfigError("Check top-level fields against the selected target's template.")
     if type(config["version"]) is not int or config["version"] != 1 or config["target"] != target:
         raise ConfigError("Unsupported version or TARGET mismatch; select the original target/directory.")
@@ -133,7 +180,14 @@ def validate(config: dict, target: str, root: Path = ROOT) -> None:
     if dns["enabled"]:
         host_required |= {"domain"}
     host = section(config, "host", HOST_KEYS, host_required)
-    cloudflare_required = bool(config["services"]) or (target == "aws" and dns["enabled"])
+    validate_k3s_access(config, host)
+    try:
+        traefik.validate_profile(config, root)
+    except traefik.TraefikError as error:
+        raise ConfigError(str(error)) from None
+    cloudflare_required = (
+        bool(config["services"]) or (target == "aws" and dns["enabled"]) or config.get("k3s", {}).get("traefik", {}).get("enabled", False)
+    )
     secret_required = {"cloudflare_token"} if cloudflare_required else set()
     if dns["enabled"] and (dns.get("adguard_url") or dns.get("adguard_urls")):
         secret_required |= {"adguard_username", "adguard_password"}
@@ -141,6 +195,11 @@ def validate(config: dict, target: str, root: Path = ROOT) -> None:
     for group, fields in ((vm, VM_KEYS), (host, set(host)), (secrets, set(secrets))):
         if any(not isinstance(group[key], str) or not group[key] or "\x00" in group[key] for key in fields):
             raise ConfigError("VM, host and secret fields must be nonempty strings.")
+    if config.get("k3s", {}).get("traefik", {}).get("enabled", False) and (
+        not re.fullmatch(r"[A-Za-z0-9_-]+", secrets["cloudflare_token"]) or secrets["cloudflare_token"].startswith("REPLACE")
+    ):
+        raise ConfigError("Enabled Traefik requires a configured private Cloudflare token, not a placeholder.")
+    validate_host(config, host)
     if not vm["ssh_public_key"].endswith(".pub"):
         raise ConfigError("vm.ssh_public_key must reference a .pub file; private keys are never read.")
     if not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", vm["name"]):
@@ -168,6 +227,14 @@ def validate(config: dict, target: str, root: Path = ROOT) -> None:
     validate_platform(config, target)
 
 
+def validate_host(config: dict, host: dict) -> None:
+    """Keep offline inspection aligned with native application constraints."""
+    if (config["dns"]["enabled"] or config["services"]) and not re.fullmatch(
+        r"([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z][a-z0-9-]+", host.get("domain", "")
+    ):
+        raise ConfigError("host.domain must be a fully qualified lowercase deployment name when DNS or services are enabled.")
+
+
 def validate_selection(config: dict, root: Path) -> None:
     for field in ("roles", "services"):
         value = config[field]
@@ -187,6 +254,8 @@ def validate_selection(config: dict, root: Path) -> None:
         raise ConfigError("Unsupported bootstrap service; currently supported: security/traefik, dashboard/homepage.")
     if services and "debian_docker_host" not in config["roles"]:
         raise ConfigError("Docker services require the debian_docker_host role.")
+    if services and "k3s" in config["roles"]:
+        raise ConfigError("The default k3s role requires services: []; bundled Traefik uses ports 80/443.")
     if "dashboard/homepage" in services and "security/traefik" not in services:
         raise ConfigError("The bootstrap Homepage profile requires security/traefik.")
 
@@ -194,7 +263,10 @@ def validate_selection(config: dict, root: Path) -> None:
 def validate_platform(config: dict, target: str) -> None:
     vm, dns = config["vm"], config["dns"]
     if target == "proxmox":
-        pve = section(config, target, PVE_KEYS, PVE_KEYS)
+        pve = section(config, target, PVE_KEYS | set(PVE_TIMEOUTS), PVE_KEYS)
+        for key in PVE_TIMEOUTS:
+            if key in pve and (type(pve[key]) is not int or not 1 <= pve[key] <= 86400):
+                raise ConfigError(f"proxmox.{key} must be an integer between 1 and 86400 seconds.")
         for key in ("vmid", "cpu_cores", "memory_max_mib", "memory_min_mib"):
             if type(pve[key]) is not int or pve[key] <= 0:
                 raise ConfigError(f"proxmox.{key} must be a positive integer.")
@@ -265,8 +337,16 @@ def outputs(config: dict, root: Path = ROOT) -> dict[str, str]:
     result = {"secrets.yaml": yaml.safe_dump(config["secrets"], sort_keys=False)}
     if config["target"] == "proxmox":
         pve = config["proxmox"]
-        host.update(proxmox_host=pve["host"], proxmox_vmid=pve["vmid"], proxmox_username=vm["username"], proxmox_address=pve["address"])
+        host.update(
+            proxmox_host=pve["host"],
+            proxmox_vmid=pve["vmid"],
+            proxmox_username=vm["username"],
+            proxmox_address=pve["address"],
+            proxmox_storage=pve["storage"],
+            **{f"proxmox_{key}": pve.get(key, default) for key, default in PVE_TIMEOUTS.items()},
+        )
         values = {dest: str(pve[source]) for source, dest in PVE_ENV.items()}
+        values.update({key.upper(): str(pve.get(key, default)) for key, default in PVE_TIMEOUTS.items()})
         values.update(VMNAME=vm["name"], USERNAME=vm["username"], EXPECTED_IPV4="" if pve["address"] == "auto" else pve["address"])
         result["ubuntu-cloud.env"] = "".join(f"{key}={value}\n" for key, value in values.items())
     else:
@@ -276,9 +356,15 @@ def outputs(config: dict, root: Path = ROOT) -> dict[str, str]:
             "vm_name": vm["name"],
             "admin_user": vm["username"],
             "ssh_public_key": public_key(vm["ssh_public_key"]),
+            "k3s_api_access": config.get("k3s", {}).get("access", {}).get("enabled", False),
         }
         result["aws.tfvars.json"] = json.dumps(variables, indent=2) + "\n"
+    host["k3s"] = config.get("k3s", {"access": {"enabled": False}})
     result["host.yaml"] = yaml.safe_dump(host, sort_keys=False)
+    try:
+        result.update(traefik.manifests(config, root))
+    except traefik.TraefikError as error:
+        raise ConfigError(str(error)) from None
     return result
 
 
@@ -313,10 +399,19 @@ class Configuration:
         validate(config, self.target, self.root)
         return config
 
-    def init(self) -> None:
+    def init(self, profile: str = "", *, api_host: str = "", context: str = "") -> None:
+        if profile not in ("", "docker", "k3s"):
+            raise ConfigError("Select PROFILE=docker or PROFILE=k3s.")
+        if (api_host or context) and (profile != "k3s" or not api_host):
+            raise ConfigError("K3S_API_HOST requires PROFILE=k3s; K3S_CONTEXT also requires K3S_API_HOST.")
         private_directory(self.directory)
         if self.source.exists() or self.source.is_symlink():
-            self.load()
+            existing = self.load()
+            if profile and ("k3s" in existing["roles"]) != (profile == "k3s"):
+                raise ConfigError("PROFILE differs from the existing deployment. Initialization never changes selected roles.")
+            access = existing.get("k3s", {}).get("access", {})
+            if api_host and (access.get("host", existing["host"].get("domain")) != api_host or (context and access.get("context") != context)):
+                raise ConfigError("K3s access differs from the existing deployment. Edit the original source privately; init never overwrites it.")
             if self.target == "aws":
                 self.detect_aws()
             return
@@ -325,6 +420,14 @@ class Configuration:
                 "Deployment directory is not empty. Restore its original bootstrap.yaml or select an empty directory for a new deployment."
             )
         template = (self.root / f"config-example/bootstrap-{self.target}.yaml").read_text()
+        if profile == "k3s":
+            value = yaml.safe_load(template)
+            value.update(roles=["debian_base", "k3s"], services=[], host={}, dns={"enabled": False}, secrets={})
+            value["vm"]["name"] = f"k3s-{self.target}"
+            if api_host:
+                value["k3s"] = {"access": {"enabled": True, "host": api_host, "context": context or f"k3s-{self.target}", "install_context": True}}
+            validate(value, self.target, self.root)
+            template = yaml.safe_dump(value, sort_keys=False)
         selected = os.environ.get("BOOTSTRAP_SSH_PUBLIC_KEY", "")
         if selected:
             if not selected.endswith(".pub"):
@@ -402,8 +505,14 @@ class Configuration:
             "docker_volumes": config["host"].get("docker_volumes"),
             "roles": config["roles"],
             "services": config["services"],
+            "k3s_access": config.get("k3s", {}).get("access", {"enabled": False}),
+            "k3s_cilium": "k3s_cilium" in config["roles"],
+            "k3s_traefik": config.get("k3s", {}).get("traefik", {"enabled": False}),
             "proxmox_host": config.get("proxmox", {}).get("host"),
             "proxmox_vmid": config.get("proxmox", {}).get("vmid"),
+            "proxmox_timeouts": {key: config.get("proxmox", {}).get(key, default) for key, default in PVE_TIMEOUTS.items()}
+            if self.target == "proxmox"
+            else None,
             "adguard_hosts": [urlsplit(url).hostname for url in endpoints],
             "secrets": "Omitted. The source is private; never share it with an agent.",
         }
@@ -413,14 +522,22 @@ class Configuration:
             raise ConfigError("Unsupported bootstrap action.")
         if action.startswith("vm-") and self.target != "proxmox":
             raise ConfigError("VM helpers require the Proxmox target.")
-        if action.startswith("destroy") and self.target != "aws":
-            raise ConfigError("Automated destruction supports only AWS.")
         digest = self.prepare()
         plan_kind = "destroy" if action.startswith("destroy") else "apply"
-        plan = self.directory / ("destroy.tfplan" if plan_kind == "destroy" else "aws.tfplan")
+        plan = self.directory / (
+            "proxmox-destroy-plan.json"
+            if self.target == "proxmox" and plan_kind == "destroy"
+            else "destroy.tfplan"
+            if plan_kind == "destroy"
+            else "aws.tfplan"
+        )
         receipt = self.directory / f"{plan_kind}-inputs.json"
-        planning = self.target == "aws" and action in ("plan", "destroy-plan")
-        if self.target == "aws" and action in ("apply", "destroy"):
+        planning = (self.target == "aws" and action == "plan") or action == "destroy-plan"
+        if (
+            (self.target == "aws" and action == "apply")
+            or (action in ("destroy", "destroy-cleanup") and self.target == "proxmox")
+            or (self.target == "aws" and action == "destroy")
+        ):
             regular(receipt)
             expected = json.loads(receipt.read_text())
             regular(plan)
@@ -430,7 +547,11 @@ class Configuration:
             receipt.unlink(missing_ok=True)
         # Task gives process environment precedence over dotenv. The source, not an
         # unrelated exported VMID/host, must select the VM for this deployment.
-        inherited = {key: value for key, value in os.environ.items() if key not in set(PVE_ENV.values()) | {"VMNAME", "USERNAME", "EXPECTED_IPV4"}}
+        inherited = {
+            key: value
+            for key, value in os.environ.items()
+            if key not in set(PVE_ENV.values()) | {key.upper() for key in PVE_TIMEOUTS} | {"VMNAME", "USERNAME", "EXPECTED_IPV4"}
+        }
         env = {**inherited, "BOOTSTRAP_INPUT_DIR": str(self.generated), "BOOTSTRAP_PREPARED": "1"}
         # Native tools must create private plans/state, regardless of controller defaults.
         previous_umask = os.umask(0o077)
@@ -454,21 +575,78 @@ class Configuration:
                 raise ConfigError("Inputs changed during planning. Review a new plan; this plan is not approved for apply.")
             regular(plan)
             write_private(receipt, json.dumps({"inputs": digest, "plan": hashlib.sha256(plan.read_bytes()).hexdigest()}) + "\n")
+        if result.returncode == 0 and action in ("destroy", "destroy-cleanup"):
+            if __package__:
+                from scripts.bootstrap.access import (  # noqa: PLC0415 -- preserve direct-script compatibility
+                    AccessError,
+                    checked_context,
+                    existing,
+                    receipt_at,
+                    remove,
+                )
+            else:
+                from access import (  # noqa: PLC0415 -- preserve direct-script compatibility
+                    AccessError,
+                    checked_context,
+                    existing,
+                    receipt_at,
+                    remove,
+                )
+
+            try:
+                owner = existing(receipt_at(self.directory))
+                if owner is not None:
+                    record = json.loads(owner)
+                    if (
+                        not isinstance(record, dict)
+                        or record.get("directory") != str(self.directory)
+                        or record.get("node") != self.load()["vm"]["name"]
+                    ):
+                        raise ConfigError("K3s access ownership receipt differs from this deployment; preserve it.")
+                    checked_context(record.get("context"))
+                    remove(self.directory, record["context"], record["node"], Path.home())
+            except (AccessError, ValueError, TypeError):
+                raise ConfigError("Owned local K3s credentials changed; preserve them and retry guarded cleanup.") from None
+        if result.returncode and self.target == "proxmox" and action in ("apply", "vm-provision", "vm-wait", "configure"):
+            print(
+                "Bootstrap stopped; preserve the original deployment directory. Do not retry VM creation against an existing guest.", file=sys.stderr
+            )
+            print(f"Inspect progress: {self.recovery_command('status')}", file=sys.stderr)
+            print(f"For an existing initializing guest: {self.recovery_command('vm-wait')}", file=sys.stderr)
+            print(f"After cloud-init succeeds, resume with approval: {self.recovery_command('configure')}", file=sys.stderr)
         return result.returncode
+
+    def recovery_command(self, action: str) -> str:
+        return f"task bootstrap:{action} TARGET={self.target} BOOTSTRAP_CONFIG_DIR={shlex.quote(str(self.directory.relative_to(self.root)))}"
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("init", "show-config", "prepare", *ACTIONS))
+    parser.add_argument("command", choices=("init", "show-config", "status", "prepare", *ACTIONS))
     args = parser.parse_args()
     try:
         target = os.environ.get("BOOTSTRAP_TARGET", "")
         directory = Path(os.environ.get("BOOTSTRAP_DIR", ROOT / f"config/bootstrap-{target}"))
         config = Configuration(ROOT, directory, target)
         if args.command == "init":
-            config.init()
+            config.init(
+                os.environ.get("BOOTSTRAP_PROFILE", ""),
+                api_host=os.environ.get("BOOTSTRAP_K3S_API_HOST", ""),
+                context=os.environ.get("BOOTSTRAP_K3S_CONTEXT", ""),
+            )
         elif args.command == "show-config":
             print(yaml.safe_dump(config.show(), sort_keys=False), end="")
+        elif args.command == "status":
+            if __package__:
+                from scripts.bootstrap.status import StatusError, status  # noqa: PLC0415 -- avoid circular imports and support package invocation
+            else:
+                from status import StatusError, status  # noqa: PLC0415 -- support direct script invocation without a package import path
+
+            try:
+                status(config)
+            except StatusError as error:
+                print(f"Bootstrap status: {error}", file=sys.stderr)
+                return 1
         elif args.command == "prepare":
             config.prepare()
         else:

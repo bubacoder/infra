@@ -1,0 +1,88 @@
+---
+- name: Inspect private Traefik management paths without following symlinks
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    get_checksum: false
+    get_mime: false
+  loop:
+    - "{{ k3s_traefik_directory }}"
+    - "{{ k3s_traefik_directory }}/receipt.yaml"
+    - "{{ k3s_traefik_directory }}/secret.yaml"
+    - "{{ k3s_traefik_directory }}/configmap.yaml"
+    - "{{ k3s_traefik_directory }}/pvc.yaml"
+    - "{{ k3s_traefik_directory }}/helmchartconfig.yaml"
+  register: k3s_traefik_paths
+
+- name: Refuse unsafe ownership receipt paths
+  ansible.builtin.assert:
+    that:
+      - not k3s_traefik_paths.results[0].stat.exists or (k3s_traefik_paths.results[0].stat.isdir | default(false) and not k3s_traefik_paths.results[0].stat.islnk | default(false) and k3s_traefik_paths.results[0].stat.mode == '0700' and k3s_traefik_paths.results[0].stat.uid == 0)
+      - not k3s_traefik_paths.results[1].stat.exists or (k3s_traefik_paths.results[1].stat.isreg | default(false) and not k3s_traefik_paths.results[1].stat.islnk | default(false) and k3s_traefik_paths.results[1].stat.mode == '0600' and k3s_traefik_paths.results[1].stat.uid == 0)
+    fail_msg: Preserve and inspect existing Traefik ownership/recovery paths privately; unsafe paths are never followed or overwritten.
+
+- name: Require regular private staged files and never adopt unreceipted contents
+  ansible.builtin.assert:
+    that:
+      - not item.stat.exists or (item.stat.isreg | default(false) and not item.stat.islnk | default(false) and item.stat.mode == '0600' and item.stat.uid == 0)
+      - k3s_traefik_paths.results[1].stat.exists or not item.stat.exists
+    fail_msg: Managed staging files are unsafe or lack their ownership receipt. Preserve them for explicit recovery; no file is overwritten.
+  loop: "{{ k3s_traefik_paths.results[2:] }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Read the existing private ownership receipt
+  ansible.builtin.slurp:
+    src: "{{ k3s_traefik_directory }}/receipt.yaml"
+  register: k3s_traefik_receipt_file
+  when: k3s_traefik_paths.results[1].stat.exists
+  no_log: true
+
+- name: Read the cluster identity without exporting credentials
+  ansible.builtin.command:
+    argv: [/usr/local/bin/k3s, kubectl, get, namespace, kube-system, '-o=jsonpath={.metadata.uid}']
+  register: k3s_traefik_cluster
+  changed_when: false
+
+- name: Initialize the in-memory receipt for an unowned empty profile
+  ansible.builtin.set_fact:
+    k3s_traefik_receipt: "{{ (k3s_traefik_receipt_file.content | b64decode | from_yaml) if k3s_traefik_paths.results[1].stat.exists else {'cluster_uid': k3s_traefik_cluster.stdout, 'deployment': bootstrap.name, 'uids': {}} }}"
+  no_log: true
+
+- name: Bind the receipt to the exact cluster and deployment
+  ansible.builtin.assert:
+    that:
+      - k3s_traefik_cluster.stdout | length > 0
+      - k3s_traefik_receipt.cluster_uid == k3s_traefik_cluster.stdout
+      - k3s_traefik_receipt.deployment == bootstrap.name
+      - k3s_traefik_receipt.uids is mapping
+    fail_msg: Traefik ownership receipt does not match this cluster/deployment. No adoption or reset is performed.
+  no_log: true
+
+- name: Inspect only managed resource identities, never Secret contents
+  ansible.builtin.command:
+    argv:
+      - /usr/local/bin/k3s
+      - kubectl
+      - --namespace=kube-system
+      - get
+      - "{{ item.kind }}"
+      - "{{ item.name }}"
+      - --ignore-not-found
+      - '-o=jsonpath={.metadata.uid}{"|"}{.metadata.labels.app\.kubernetes\.io/managed-by}{"|"}{.metadata.labels.infra\.bootstrap/deployment}'
+  loop: "{{ k3s_traefik_resources }}"
+  loop_control:
+    label: "{{ item.kind }}/{{ item.name }}"
+  register: k3s_traefik_live_identities
+  changed_when: false
+
+- name: Refuse adoption, replacement or disappearance of managed objects
+  ansible.builtin.assert:
+    that:
+      - >-
+        (item.item.kind not in k3s_traefik_receipt.uids and item.stdout == '') or
+        (item.item.kind in k3s_traefik_receipt.uids and
+         item.stdout == k3s_traefik_receipt.uids[item.item.kind] + '|' + k3s_traefik_manager + '|' + bootstrap.name)
+    fail_msg: An existing object is not owned by this receipt, or an owned object was deleted/replaced. Review migration/recovery explicitly; no objects are adopted.
+  loop: "{{ k3s_traefik_live_identities.results }}"
+  loop_control:
+    label: "{{ item.item.kind }}/{{ item.item.name }}"

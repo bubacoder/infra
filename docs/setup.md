@@ -6,6 +6,13 @@ Traefik and Homepage; [role and service selection](bootstrap-configuration.md#se
 also supports hosts without Docker. Proxmox CLI scripts provision the VM; Ansible
 configures and verifies the guest, never the hypervisor.
 
+For Kubernetes, select the [`k3s` bootstrap profile](../ansible/roles/k3s/README.md)
+on a dedicated guest instead of the default Docker roles/services.
+For opt-in Cilium instead of Flannel, select [`k3s_cilium`](../ansible/roles/k3s_cilium/README.md)
+before `k3s` in the role list before the first apply. No enable flag is needed.
+For optional direct API access and a controller-side kubeconfig/context, follow
+the [K3s access profile](../ansible/roles/k3s/README.md#access-and-lifecycle).
+
 ## Prerequisites
 
 Prepare the [shared Linux controller and Ansible collections](bootstrap-configuration.md#controller-prerequisites),
@@ -33,6 +40,8 @@ For inventory-based installation or other layouts, see [manual installation](man
 
 ```bash
 task bootstrap:init TARGET=proxmox
+# Dedicated Kubernetes guest instead of the default Docker profile:
+task bootstrap:init TARGET=proxmox PROFILE=k3s BOOTSTRAP_CONFIG_DIR=config/my-k3s
 ```
 
 Pass `TARGET=proxmox` on every target-selecting command. If using a custom
@@ -88,6 +97,13 @@ Ansible pins the SSH host key obtained through the trusted guest agent, reconcil
 enabled DNS, applies selected roles and deploys selected services. Apply finishes
 with acceptance checks.
 
+For a non-mutating progress snapshot while apply runs, use
+`task bootstrap:status TARGET=proxmox` (add the same
+`BOOTSTRAP_CONFIG_DIR=config/<deployment>` when applicable). It reports whether
+the VM and guest agent are running, cloud-init has finished and, after the pinned
+SSH key exists, whether K3s is active and its node Ready. It does not replace
+independent acceptance verification.
+
 ## Verify acceptance
 
 Run the independent verification command after apply:
@@ -100,15 +116,38 @@ Every deployment checks authenticated access and matching guest facts. Selected
 services additionally check controller DNS, trusted HTTPS, persistent certificate/log
 paths and stable containers without recreation on repeat Compose deployment.
 Homepage also checks its live Traefik widget; `up --wait` alone is not acceptance.
-Host-only verification runs no Docker/application checks and does not establish
-readiness of workloads installed by custom roles.
+Host-only verification runs no Docker/application checks. Selecting `k3s` adds
+API, node and bundled-deployment readiness checks; other custom role workloads
+need their own acceptance checks.
 
 Verification never provisions, applies roles, formats storage or rewrites DNS.
 
 ## Recovery and updates
 
+Cloud-init installs and starts the guest agent before performing the full OS
+upgrade, so progress remains observable during lengthy upgrades. Readiness has
+two independent bounded waits, configurable in the private `proxmox` section:
+
+```yaml
+proxmox:
+  # Retain all existing VM/provider settings.
+  agent_timeout_seconds: 600
+  cloud_init_timeout_seconds: 1800
+```
+
+Each timeout is an integer from 1 to 86400 seconds; existing sources without these
+fields use the shown defaults. The cloud-init budget starts **after** the agent
+and expected address are available, rather than consuming the agent's remaining
+time. The same settings apply to provisioning, `vm-wait` and configuration.
+Cloud-init success is still required before configuration or SSH trust pinning;
+an available agent alone is not acceptance. OS upgrade failures fail cloud-init.
+
 After a partial create/apply failure, inspect the VM first. Do not blindly repeat
 creation or bypass conflicts. Preserve configuration, SSH trust and DNS receipts.
+Use `bootstrap:status` with the original target/directory to distinguish an absent
+or stopped VM, pending agent/network, active cloud-init and completed initialization.
+An agent timeout is not proof of a boot failure. Cloud-init errors need private
+diagnosis; do not restart, delete or replace the guest merely to clear a timeout.
 If the existing guest is still initializing, the bounded readiness helper is:
 
 ```bash
@@ -127,9 +166,39 @@ task bootstrap:verify TARGET=proxmox
 
 ## Cleanup
 
-No automated Proxmox teardown is provided. VM, disk and deployment-owned DNS
-disposal require separate approval and provider-side verification. Back up needed
-data first; do not delete recovery records while resource or DNS ownership is uncertain.
+Use the same reviewed bootstrap commands for Proxmox and AWS, always with the
+original private deployment directory. Back up needed data before destruction:
+
+```bash
+task bootstrap:destroy-plan TARGET=proxmox BOOTSTRAP_CONFIG_DIR=config/my-deployment DELETE_DATA=1
+task bootstrap:destroy TARGET=proxmox BOOTSTRAP_CONFIG_DIR=config/my-deployment
+```
+
+The plan checks native Proxmox VM identity, disk and cloud-init snippet ownership,
+guest state, configured storage, snapshots and backups. It refuses ambiguous or
+protected resources, snapshots, backups, and foreign/unreferenced disks. DNS
+ownership is previewed without writes. Review the saved private plan and the
+summarized scope before confirming destruction. The second command requires
+unchanged inputs and plan bytes, shuts down the guest gracefully (no forced stop),
+rechecks identity, destroys the VM and its referenced disks, then verifies absence.
+Only the two plan-owned VM-specific cloud-init snippets and DNS receipt-owned
+records are removed; no shared snippets, backups or snapshots are deleted.
+Keep original DNS provider settings and credentials available until owned records
+have been removed; disabling DNS while records remain blocks the reviewed plan.
+Receipt-owned local Kubernetes credentials are removed without touching unrelated
+contexts. Private `bootstrap.yaml`, generated input, reviewed plan and ownership
+receipts remain for recovery; do not remove them to bypass a failed check.
+
+If verification or DNS/local cleanup fails **after** VM destruction, retain the
+original directory and retry without destroying again:
+
+```bash
+task bootstrap:destroy-cleanup TARGET=proxmox BOOTSTRAP_CONFIG_DIR=config/my-deployment
+```
+
+Changed inputs or an absent reviewed plan must be investigated, not replaced with
+a fresh plan for a deleted VM. Externally managed DHCP reservations, public DNS
+and backups require their own separately reviewed cleanup.
 
 ## Operational limits
 
