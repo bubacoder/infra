@@ -26,7 +26,7 @@ Install the pinned collections in the controller's Ansible environment:
 ansible-galaxy collection install -r ansible/requirements.yml
 ```
 
-## One private operator input
+## One metadata-only operator input
 
 Every target-selecting bootstrap command requires `TARGET=aws` or `TARGET=proxmox`.
 Neither is a default. Missing, empty or invalid targets fail before commands run.
@@ -65,7 +65,7 @@ never discard its state or recovery records to make initialization proceed.
 
 Define VM name, user and SSH key paths once under `vm`. Set host/application
 settings under `host`, provider inputs under `proxmox` or `aws`, DNS settings under
-`dns`, Cloudflare/optional AdGuard credentials under `secrets`, and ordered host
+`dns` (including Cloudflare/AdGuard credential **file references**), and ordered host
 roles and applications under the explicit `roles` and `services` lists.
 The schema rejects unknown fields, duplicate YAML keys and mismatched targets.
 Native Terraform/Ansible validation still applies after conversion.
@@ -77,13 +77,64 @@ performs the [documented account/IP detection](bootstrap-aws.md#initialize).
 Use `BOOTSTRAP_SSH_PUBLIC_KEY=~/.ssh/<key>.pub` when initializing a new source to
 select another key pair. Existing source key settings are not overwritten.
 
-The entire `bootstrap.yaml` is secret-bearing, including when most fields look
-public. Edit it privately; never share it with an agent. Vault-encrypted input is
-not supported. Native Ansible loads/renders generated credentials with `no_log: true`.
-Never put credentials in Terraform variables, command arguments or logs. Do not
-use `--diff` or debug secret variables.
-Keep source/generated files private (`0600`) and deployment/generated directories
-`0700`. Unsafe permissions and symlinked configuration paths are rejected.
+The current schema keeps credential values out of `bootstrap.yaml`: credentials
+must be file references beside their related DNS settings, never literal strings.
+There is no top-level `secrets` section:
+
+```yaml
+dns:
+  enabled: true
+  cloudflare_zone: example.com # AWS-managed public DNS only.
+  cloudflare_token: {file: ./secrets/cloudflare-token}
+  adguard_urls: [https://adguard.example.com]
+  adguard_username: {file: ~/.secrets/adguard-username}
+  adguard_password: {file: ./secrets/adguard-password}
+```
+
+Relative paths resolve against the directory containing `bootstrap.yaml`, not
+the working directory; absolute paths and `~` are supported. File contents must
+be nonempty UTF-8 text, at most 1 MiB. Only trailing CR/LF characters are removed;
+spaces, tabs and interior newlines are preserved. References require exactly one
+`file` key. Files must belong to the current controller user, be regular files
+with mode `0400` or `0600`, and have no symlinked path components. Missing files,
+unsafe permissions, invalid UTF-8 and NUL bytes fail without exposing their paths
+or contents. File references are validated even for disabled features.
+
+Credential reads open each directory component with no-follow semantics and use
+directory descriptors for subsequent lookups. Replacing a parent path with a
+symlink cannot redirect an in-progress read.
+
+Inspection/status validate reference syntax without opening secret files.
+Operational preparation resolves the files into private `state/generated/secrets.yaml`
+for Ansible; public artifacts contain neither credential values nor references.
+Secret-file changes are included in saved-plan fingerprints, so rotating a file
+invalidates an already reviewed plan. Native Ansible loads/renders generated
+credentials with `no_log: true`.
+
+The compiler resolves external inputs before pure artifact rendering. The same
+fingerprint function binds rendered inputs to saved plans and rechecks freshly
+resolved inputs after planning, including credential rotations during that run.
+
+After successful current-schema validation, the source can be inspected by agents
+without revealing credential values. Hostnames, IPs, email and file paths are
+still potentially sensitive metadata. This is not a general-purpose scrubber:
+never paste credentials into comments or unrelated fields. Legacy sources with
+inline secrets remain secret-bearing until privately migrated.
+
+Never read referenced secret files or generated credentials through an agent;
+never put their values in Terraform variables, command arguments or logs. Do not
+use Ansible `--diff` or debug secret variables. Keep source/generated files `0600`
+and deployment/generated directories `0700` for metadata and artifact privacy.
+
+### Migrating an existing source
+
+An operator must privately move each old inline credential to an owner-private
+file, add its `{file: path}` reference under `dns`, then remove the old `secrets`
+section. Do not paste the old source or secret values into chat. Retain existing
+VM/provider identity, DNS ownership, state and recovery data; no live resources
+change merely because credentials are externalized. Run `bootstrap:show-config`,
+then prepare/review a new plan before applying. The compiler deliberately rejects
+legacy sections and literal credentials rather than silently accepting them.
 
 Use `BOOTSTRAP_CONFIG_DIR=config/<directory>` to select a different deployment input/state
 directory. Keep it under the ignored `config/` directory. Use one directory per
@@ -106,17 +157,20 @@ task bootstrap:show-config TARGET=proxmox
 task bootstrap:show-config TARGET=aws BOOTSTRAP_CONFIG_DIR=config/my-test
 ```
 
-Run only the command for the selected deployment. For agents, this is the only
-supported configuration inspection interface. Do not read `bootstrap.yaml`,
-generated credentials, Terraform state or other secret-bearing inputs with file
-tools, `cat`, `grep` or ad-hoc scripts. Operators enter secrets privately, never
-through chat, command arguments, logs or Terraform inputs.
+Run only the command for the selected deployment. Use this command first to
+validate the current file-only schema without opening secret files. A successfully
+validated `bootstrap.yaml` contains metadata/file references and can then be read
+by agents. If validation fails, do not fall back to raw reads of a potentially
+legacy secret-bearing source; have the operator correct or migrate it privately.
+Never read referenced files, generated credentials, Terraform state or other
+secret-bearing inputs with file tools, `cat`, `grep` or ad-hoc scripts. Operators
+enter secrets privately, never through chat, command arguments or Terraform inputs.
 
 The offline compiler reads the private source internally and prints only
 allowlisted non-secret settings. It does not generate files, read Terraform state
 or private SSH keys, or contact providers. Parser failures never display private
-values. Put credentials only under `secrets`; this is not a general-purpose secret
-scrubber. Output is not anonymized: redact identifiers before sharing evidence.
+values. It omits credential file references as well as secret contents. Output
+is not anonymized: redact identifiers before sharing evidence.
 Offline inspection enforces the same deployment-name rule as native Ansible:
 DNS management or Docker services require a fully qualified lowercase
 `host.domain`. Short API names remain valid only for externally managed K3s access
@@ -179,7 +233,6 @@ services: []
 host: {}
 dns:
   enabled: false
-secrets: {}
 ```
 
 Keep the template's VM/provider settings and choose a fresh dedicated VM. K3s uses
@@ -211,7 +264,7 @@ Managed ingress is separately opt-in: select `k3s_traefik` after `k3s` and suppl
 [Traefik role](../ansible/roles/k3s_traefik/README.md). The adapter configures the
 bundled controller with shared dynamic file-provider policies, a Secret-backed
 Cloudflare resolver and explicitly selected persistent ACME storage. It needs
-`host.acme_email` and `secrets.cloudflare_token`, even with `services: []` and DNS
+`host.acme_email` and a `dns.cloudflare_token` file reference, even with `services: []` and DNS
 management disabled. Its application domain is independent of the API hostname.
 Only explicitly selected supported middleware chains are loaded; auth/plugin
 dependencies fail closed. Existing manually managed Traefik objects are never
@@ -228,7 +281,6 @@ services: []
 host: {}
 dns:
   enabled: false
-secrets: {}
 ```
 
 An empty role list is also allowed for a provisioned guest with no role-based
@@ -245,10 +297,10 @@ Settings are required only by enabled features:
 
 | Feature | Required settings |
 | --- | --- |
-| Any bootstrap service | All `host` fields from the template and `secrets.cloudflare_token` for TLS |
+| Any bootstrap service | All `host` fields from the template and `dns.cloudflare_token: {file: path}` for TLS |
 | Docker role, even with no services | `host.docker_volumes`; AWS bind mounts must remain below `/storage/` |
-| Enabled DNS management | `host.domain`; AWS also needs `dns.cloudflare_zone` and `secrets.cloudflare_token` |
-| Enabled DNS with existing AdGuard endpoints | `secrets.adguard_username` and `secrets.adguard_password` |
+| Enabled DNS management | `host.domain`; AWS also needs `dns.cloudflare_zone` and a `dns.cloudflare_token` file reference |
+| Enabled DNS with existing AdGuard endpoints | `dns.adguard_username` and `dns.adguard_password` file references |
 | No services and DNS disabled | No domain, ACME email, repository settings, or service credentials required |
 
 The last row excludes explicitly enabled `k3s.traefik`: that feature requires its
@@ -282,27 +334,45 @@ reviewed plan; configure does not apply Terraform or rerun cloud-init.
 
 Every operational command prepares native inputs under the selected directory:
 
+```text
+<deployment>/
+├── bootstrap.yaml             # The user-edited metadata/file-reference input
+└── state/                    # Bootstrap-managed private artifacts
+    ├── generated/
+    ├── backups/
+    ├── plans/
+    ├── known_hosts
+    ├── dns-state.yaml
+    └── k3s-access-receipt.json
+```
+
+Keep referenced credential files outside this folder, or explicitly choose their
+paths; bootstrap never moves or edits them. All managed artifacts belong under
+`state/`, with directories mode 0700 and files mode 0600. The user-facing
+`BOOTSTRAP_CONFIG_DIR` still names the deployment root, not `state/`.
+
 | Generated file | Consumer | Contents |
 | --- | --- | --- |
-| `generated/host.yaml` | Ansible | Non-secret host, roles, services and DNS settings |
-| `generated/secrets.yaml` | Ansible only | Service credentials, never Terraform inputs |
-| `generated/aws.tfvars.json` | Terraform, AWS only | Infrastructure inputs and public SSH key |
-| `generated/ubuntu-cloud.env` | Proxmox scripts only | VM inputs derived from the same identity |
-| `generated/k3s-traefik-*.yaml` | Optional Traefik role | Public ConfigMap/PVC/HelmChartConfig projections; no credential values |
+| `state/generated/host.yaml` | Ansible | Non-secret host, roles, services and DNS settings |
+| `state/generated/secrets.yaml` | Ansible only | Service credentials, never Terraform inputs |
+| `state/generated/aws.tfvars.json` | Terraform, AWS only | Infrastructure inputs and public SSH key |
+| `state/generated/ubuntu-cloud.env` | Proxmox scripts only | VM inputs derived from the same identity |
+| `state/generated/k3s-traefik-*.yaml` | Optional Traefik role | Public ConfigMap/PVC/HelmChartConfig projections; no credential values |
 
 Never edit generated files: subsequent commands replace them. State, plans and
-recovery records stay in the original deployment directory, not `generated/`;
+recovery records stay under `state/`, outside `state/generated/`;
 input regeneration never deletes them.
 
 AWS runs the canonical `terraform/aws-vm` root directly with an isolated local
-backend at `<selected-directory>/aws.tfstate` and provider cache in `.terraform/` beside
-it. Saved plans are also private. Terraform owns resource identity, dependencies,
+backend at `<selected-directory>/state/aws.tfstate` and provider cache in
+`state/.terraform/`. Saved plans live in `state/plans/`; local Kubernetes access
+backups live in `state/backups/`. Terraform owns resource identity, dependencies,
 locking, refresh and destruction. Do not use standalone `aws-vm:*` tasks against
 this backend. Review native plans: missing resources can be recreated by Terraform
 and changed provisioning inputs can propose replacement. Never apply an unreviewed
 replacement plan.
 
-Successful AWS planning also saves a private input/plan fingerprint beside the plan.
+Successful AWS planning also saves a private input/plan fingerprint in `state/`.
 Apply/destruction requires both the prepared inputs and saved plan bytes to match
 that record. Configuration changes, public-key changes or plan changes require a new
 reviewed plan. A failed planning run invalidates the previous fingerprint. Do not
@@ -318,6 +388,15 @@ is edited. Generated Compose files and service secrets are written directly on t
 guest. The controller retains a dedicated `known_hosts`, a small DNS ownership
 receipt and first-format attempt markers. These records protect SSH trust, DNS
 ownership and storage initialization.
+
+Legacy top-level artifacts are rejected rather than read as fallback inputs. A
+one-time, separately approved layout migration must preserve the original bytes,
+permissions and ownership: move generated inputs to `state/generated/`, plans to
+`state/plans/`, access backups to `state/backups/`, and remaining receipts/trust
+files to `state/`. Keep `bootstrap.yaml` and the deployment root identity unchanged;
+never regenerate trust or discard recovery records to clear a layout guard.
+Existing AWS backends additionally require Terraform's reviewed backend migration
+and new saved plans; never silently initialize an empty replacement state.
 
 ## Target-aware commands
 

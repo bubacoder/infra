@@ -12,7 +12,7 @@
       ansible.builtin.import_tasks: bootstrap/secrets.yaml
     - name: Read the exact saved plan's public variables through Terraform
       ansible.builtin.command:
-        argv: [terraform, "-chdir={{ bootstrap_root }}/terraform/aws-vm", show, -json, "{{ bootstrap_dir }}/aws.tfplan"]
+        argv: [terraform, "-chdir={{ bootstrap_root }}/terraform/aws-vm", show, -json, "{{ bootstrap_dir }}/plans/aws.tfplan"]
       changed_when: false
       register: bootstrap_native_plan
       no_log: true

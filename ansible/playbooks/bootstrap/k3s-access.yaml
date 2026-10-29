@@ -13,7 +13,7 @@
       - python3
       - "{{ (playbook_dir + '/../../scripts/bootstrap/access.py') | realpath }}"
       - "{{ 'verify' if bootstrap_verify_only else 'install' }}"
-      - "{{ bootstrap_dir }}"
+      - "{{ lookup('env', 'BOOTSTRAP_DIR') }}"
       - "{{ bootstrap.k3s.access.context }}"
       - "{{ bootstrap.k3s.access.host }}"
       - "{{ bootstrap.name }}"

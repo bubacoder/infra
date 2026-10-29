@@ -21,7 +21,6 @@ def profile(target="proxmox"):
         services=[],
         dns={"enabled": False},
         host={"acme_email": "synthetic@example.invalid"},
-        secrets={"cloudflare_token": "SYNTHETIC_TOKEN_NOT_REAL"},
     )
     value["k3s"] = {
         "traefik": {
@@ -34,10 +33,16 @@ def profile(target="proxmox"):
             "storage_size": "1Gi",
         }
     }
+    value["dns"]["cloudflare_token"] = {"file": "/synthetic/cloudflare-token"}
     return value
 
 
 class TraefikTests(unittest.TestCase):
+    def setUp(self):
+        reader = patch("scripts.bootstrap.config.load_secret_files", return_value={"cloudflare_token": "SYNTHETIC_TOKEN_NOT_REAL"})
+        reader.start()
+        self.addCleanup(reader.stop)
+
     def test_profile_requires_only_feature_inputs_and_never_exports_token(self):
         for target in ("proxmox", "aws"):
             with self.subTest(target=target):
@@ -112,7 +117,7 @@ class TraefikTests(unittest.TestCase):
                 with self.assertRaises(ConfigError):
                     outputs(value)
         for change in (
-            lambda v: v["secrets"].clear(),
+            lambda v: v["dns"].pop("cloudflare_token"),
             lambda v: v["host"].clear(),
             lambda v: v["roles"].reverse(),
             lambda v: v["roles"].remove("k3s_traefik"),

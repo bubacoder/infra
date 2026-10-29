@@ -29,6 +29,12 @@ class ConfigurationTests(unittest.TestCase):
         self.root = Path(self.temp.name).resolve()
         shutil.copytree(ROOT / "config-example", self.root / "config-example")
         shutil.copytree(ROOT / "ansible/roles", self.root / "ansible/roles")
+        self.secret_file = self.root / "fixture-cloudflare-token"
+        self.secret_file.write_text("SENTINEL_PRIVATE\n")
+        self.secret_file.chmod(0o600)
+        for target in ("aws", "proxmox"):
+            template = self.root / f"config-example/bootstrap-{target}.yaml"
+            template.write_text(template.read_text().replace("./secrets/cloudflare-token", str(self.secret_file)))
         self.directory = self.root / "config/deployment"
         self.config = Configuration(self.root, self.directory, "proxmox")
         self.config.init()
@@ -39,11 +45,17 @@ class ConfigurationTests(unittest.TestCase):
         self.config.source.write_text(yaml.safe_dump(value, sort_keys=False))
         return value
 
+    def secret(self, value, key="cloudflare_token", content="SENTINEL_PRIVATE"):
+        path = self.root / ("fixture-" + key)
+        path.write_text(content)
+        path.chmod(0o600)
+        value["dns"][key] = {"file": str(path)}
+
     def test_init_creates_one_private_file_and_preserves_edits(self):
         self.assertEqual([path.name for path in self.directory.iterdir()], ["bootstrap.yaml"])
         self.assertEqual(stat.S_IMODE(self.directory.stat().st_mode), 0o700)
         self.assertEqual(stat.S_IMODE(self.config.source.stat().st_mode), 0o600)
-        self.edit(lambda value: value["secrets"].update(cloudflare_token="SENTINEL_PRIVATE"))
+        self.edit(self.secret)
         before = self.config.source.read_bytes()
         self.config.init()
         self.assertEqual(self.config.source.read_bytes(), before)
@@ -60,7 +72,7 @@ class ConfigurationTests(unittest.TestCase):
                 self.assertEqual(value[target], template[target])
                 self.assertEqual(value["roles"], ["debian_base", "k3s"])
                 self.assertEqual(value["services"], [])
-                self.assertEqual(value["secrets"], {})
+                self.assertNotIn("secrets", value)
                 self.assertEqual(value["host"], {})
                 self.assertFalse(value["dns"]["enabled"])
                 self.assertEqual(value["k3s"]["access"]["context"], "k3s-lab")
@@ -207,7 +219,7 @@ class ConfigurationTests(unittest.TestCase):
 
     def test_native_identity_is_derived_and_secrets_are_separated(self):
         self.edit(lambda value: value["vm"].update(name="test-host", username="tester"))
-        self.edit(lambda value: value["secrets"].update(cloudflare_token="SENTINEL_PRIVATE"))
+        self.edit(self.secret)
         self.config.prepare()
         host = yaml.safe_load((self.config.generated / "host.yaml").read_text())
         values = dict(line.split("=", 1) for line in (self.config.generated / "ubuntu-cloud.env").read_text().splitlines())
@@ -220,13 +232,35 @@ class ConfigurationTests(unittest.TestCase):
         self.assertTrue(all(stat.S_IMODE(path.stat().st_mode) == 0o600 for path in self.config.generated.iterdir()))
 
     def test_prepare_is_repeatable_and_preserves_state_and_source(self):
-        for name in ("aws.tfstate", "known_hosts", "dns-state.yaml", "storage-format-marker", "aws.tfplan"):
-            (self.directory / name).write_text("KEEP")
+        self.config.state.mkdir(mode=0o700)
+        (self.config.state / "plans").mkdir(mode=0o700)
+        names = ("aws.tfstate", "known_hosts", "dns-state.yaml", "storage-format-marker", "plans/aws.tfplan")
+        for name in names:
+            (self.config.state / name).write_text("KEEP")
         before = self.config.source.read_bytes()
         first = self.config.prepare()
         self.assertEqual(self.config.prepare(), first)
         self.assertEqual(self.config.source.read_bytes(), before)
-        self.assertTrue(all(path.read_text() == "KEEP" for path in self.directory.iterdir() if path.is_file() and path != self.config.source))
+        self.assertTrue(all((self.config.state / name).read_text() == "KEEP" for name in names))
+        self.assertEqual(sorted(path.name for path in self.directory.iterdir()), ["bootstrap.yaml", "state"])
+
+    def test_state_layout_is_private_and_legacy_artifacts_are_never_used(self):
+        legacy = self.directory / "known_hosts"
+        legacy.write_text("SENTINEL_PRIVATE_RECOVERY_DATA")
+        with patch("scripts.bootstrap.config.read_yaml") as read, self.assertRaisesRegex(ConfigError, "under state/"):
+            self.config.show()
+        read.assert_not_called()
+        self.assertEqual(legacy.read_text(), "SENTINEL_PRIVATE_RECOVERY_DATA")
+        legacy.unlink()
+        self.config.prepare()
+        self.assertEqual(self.config.generated, self.directory / "state/generated")
+        self.assertEqual(sorted(path.name for path in self.config.state.iterdir()), ["backups", "generated", "plans"])
+        self.assertTrue(all(path.stat().st_mode & 0o777 == 0o700 for path in (self.config.state, *self.config.state.iterdir())))
+
+    def test_read_only_load_refuses_a_symlinked_state_directory(self):
+        self.config.state.symlink_to(self.root, target_is_directory=True)
+        with self.assertRaisesRegex(ConfigError, "nonsymlinked"):
+            self.config.show()
 
     def test_unknown_fields_versions_targets_duplicates_and_types_fail(self):
         original = self.config.source.read_text()
@@ -250,7 +284,7 @@ class ConfigurationTests(unittest.TestCase):
             self.config.load()
 
     def test_show_config_omits_secrets_and_never_generates(self):
-        self.edit(lambda v: v["secrets"].update(cloudflare_token="SENTINEL_PRIVATE"))
+        self.edit(self.secret)
         output = json.dumps(self.config.show())
         self.assertNotIn("SENTINEL_PRIVATE", output)
         self.assertFalse(self.config.generated.exists())
@@ -278,7 +312,7 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(host["roles"], ["debian_tools", "debian_base", "debian_docker_host"])
 
     def test_host_only_needs_no_docker_tls_repository_or_dns_credentials(self):
-        self.edit(lambda v: v.update(roles=["debian_base"], services=[], host={}, dns={"enabled": False}, secrets={}))
+        self.edit(lambda v: v.update(roles=["debian_base"], services=[], host={}, dns={"enabled": False}))
         self.config.prepare()
         host = yaml.safe_load((self.config.generated / "host.yaml").read_text())
         self.assertNotIn("docker_volumes", host)
@@ -289,7 +323,7 @@ class ConfigurationTests(unittest.TestCase):
         self.assertIsNone(self.config.show()["domain"])
 
     def test_future_local_role_does_not_require_compiler_changes(self):
-        self.edit(lambda v: v.update(roles=["debian_base", "future_role"], services=[], host={}, dns={"enabled": False}, secrets={}))
+        self.edit(lambda v: v.update(roles=["debian_base", "future_role"], services=[], host={}, dns={"enabled": False}))
         with self.assertRaises(ConfigError):
             self.config.prepare()
         tasks = self.root / "ansible/roles/future_role/tasks"
@@ -304,7 +338,7 @@ class ConfigurationTests(unittest.TestCase):
             with self.subTest(target=target):
                 if target == "aws":
                     self.aws()
-                self.edit(lambda v: v.update(roles=["debian_base", "k3s"], services=[], host={}, dns={"enabled": False}, secrets={}))
+                self.edit(lambda v: v.update(roles=["debian_base", "k3s"], services=[], host={}, dns={"enabled": False}))
                 self.config.prepare()
                 host = yaml.safe_load((self.config.generated / "host.yaml").read_text())
                 self.assertEqual(host["roles"], ["debian_base", "k3s"])
@@ -322,7 +356,7 @@ class ConfigurationTests(unittest.TestCase):
         for target in ("proxmox", "aws"):
             if target == "aws":
                 self.aws()
-            self.edit(lambda v: v.update(roles=["k3s"], services=[], host={}, dns={"enabled": False}, secrets={}))
+            self.edit(lambda v: v.update(roles=["k3s"], services=[], host={}, dns={"enabled": False}))
             self.assertFalse(self.config.show()["k3s_cilium"])
             for enabled in (False, True):
                 with self.subTest(target=target, enabled=enabled):
@@ -347,7 +381,7 @@ class ConfigurationTests(unittest.TestCase):
     def test_cilium_role_selection_requires_pre_start_order(self):
         for roles in (["k3s", "k3s_cilium"], ["k3s_cilium"]):
             with self.subTest(roles=roles):
-                self.edit(lambda v, roles=roles: v.update(roles=roles, services=[], host={}, dns={"enabled": False}, secrets={}))
+                self.edit(lambda v, roles=roles: v.update(roles=roles, services=[], host={}, dns={"enabled": False}))
                 with self.assertRaises(ConfigError), patch("scripts.bootstrap.config.subprocess.run") as run:
                     self.config.run("plan")
                 run.assert_not_called()
@@ -359,7 +393,6 @@ class ConfigurationTests(unittest.TestCase):
                 services=[],
                 host={"domain": "k3s.example.com"},
                 dns={"enabled": True},
-                secrets={},
                 k3s={"access": {"enabled": True, "context": "k3s-lab", "install_context": True}},
             )
         )
@@ -378,7 +411,6 @@ class ConfigurationTests(unittest.TestCase):
                 services=[],
                 host={},
                 dns={"enabled": False},
-                secrets={},
                 k3s={"access": {"enabled": True, "host": "198.51.100.10", "context": "k3s-aws", "install_context": True}},
             )
         )
@@ -407,7 +439,6 @@ class ConfigurationTests(unittest.TestCase):
                         services=[],
                         host={},
                         dns={"enabled": False},
-                        secrets={},
                         k3s={
                             "access": {
                                 **{"enabled": True, "host": "k3s.example.com", "context": "k3s-lab", "install_context": True},
@@ -421,7 +452,7 @@ class ConfigurationTests(unittest.TestCase):
         self.config.source.write_text(original)
 
     def test_docker_role_without_services_requires_only_volume_setting(self):
-        self.edit(lambda v: v.update(services=[], host={}, dns={"enabled": False}, secrets={}))
+        self.edit(lambda v: v.update(services=[], host={}, dns={"enabled": False}))
         with self.assertRaises(ConfigError):
             self.config.prepare()
         self.edit(lambda v: v["host"].update(docker_volumes="/srv/docker-volumes"))
@@ -430,7 +461,7 @@ class ConfigurationTests(unittest.TestCase):
     @patch("scripts.bootstrap.config.public_key", return_value="ssh-ed25519 PUBLIC_FIXTURE")
     def test_aws_host_only_keeps_storage_inputs_without_service_credentials(self, _key):
         self.aws()
-        self.edit(lambda v: v.update(roles=["debian_base"], services=[], host={}, dns={"enabled": False}, secrets={}))
+        self.edit(lambda v: v.update(roles=["debian_base"], services=[], host={}, dns={"enabled": False}))
         self.config.prepare()
         variables = json.loads((self.config.generated / "aws.tfvars.json").read_text())
         self.assertEqual(variables["data_disk_size_gb"], 30)
@@ -447,12 +478,11 @@ class ConfigurationTests(unittest.TestCase):
                 services=[],
                 host={"domain": "test.example.com"},
                 dns={"enabled": True, "adguard_urls": ["https://dns.example.com"]},
-                secrets={},
             )
         )
         with self.assertRaises(ConfigError):
             self.config.prepare()
-        self.edit(lambda v: v["secrets"].update(adguard_username="fixture", adguard_password="SENTINEL_PRIVATE"))
+        self.edit(lambda v: (self.secret(v, "adguard_username", "fixture"), self.secret(v, "adguard_password")))
         self.config.prepare()
 
     def test_permissions_and_symlinks_fail_without_overwriting(self):
@@ -466,6 +496,7 @@ class ConfigurationTests(unittest.TestCase):
         self.config.source.chmod(0o600)
         outside = self.root / "untouched"
         outside.write_text("KEEP")
+        self.config.state.mkdir(mode=0o700)
         self.config.generated.symlink_to(self.root, target_is_directory=True)
         with self.assertRaises(ConfigError):
             self.config.prepare()
@@ -508,7 +539,7 @@ class ConfigurationTests(unittest.TestCase):
     @patch("scripts.bootstrap.config.public_key", return_value="ssh-ed25519 PUBLIC_FIXTURE")
     def test_aws_json_has_no_service_secrets_and_derives_identity(self, _key):
         self.aws()
-        self.edit(lambda v: v["secrets"].update(cloudflare_token="SENTINEL_PRIVATE"))
+        self.edit(self.secret)
         self.config.prepare()
         text = (self.config.generated / "aws.tfvars.json").read_text()
         values = json.loads(text)
@@ -521,7 +552,7 @@ class ConfigurationTests(unittest.TestCase):
     @patch("scripts.bootstrap.config.public_key", return_value="ssh-ed25519 PUBLIC_FIXTURE")
     def test_saved_plan_binds_all_inputs_and_plan_bytes(self, _key):
         self.aws()
-        plan = self.directory / "aws.tfplan"
+        plan = self.config.state / "plans/aws.tfplan"
 
         def native(command, **_kwargs):
             if "ACTION=plan" in command:
@@ -544,7 +575,8 @@ class ConfigurationTests(unittest.TestCase):
     @patch("scripts.bootstrap.config.public_key", return_value="ssh-ed25519 PUBLIC_FIXTURE")
     def test_failed_plan_invalidates_previous_receipt(self, _key):
         self.aws()
-        receipt = self.directory / "apply-inputs.json"
+        receipt = self.config.state / "apply-inputs.json"
+        self.config.state.mkdir(mode=0o700)
         receipt.write_text("old")
         with patch("scripts.bootstrap.config.subprocess.run", return_value=subprocess.CompletedProcess([], 1)):
             self.assertEqual(self.config.run("plan"), 1)
@@ -557,7 +589,7 @@ class ConfigurationTests(unittest.TestCase):
         try:
             for action, filename in (("plan", "aws.tfplan"), ("destroy-plan", "destroy.tfplan")):
                 with self.subTest(action=action):
-                    artifact = self.directory / filename
+                    artifact = self.config.state / "plans" / filename
 
                     def native(command, artifact=artifact, **_kwargs):
                         artifact.write_bytes(b"PLAN")
@@ -579,7 +611,7 @@ class ConfigurationTests(unittest.TestCase):
     @patch("scripts.bootstrap.config.public_key", return_value="ssh-ed25519 PUBLIC_FIXTURE")
     def test_aws_detection_preserves_operator_edits_and_retries_safely(self, _key):
         self.aws()
-        self.edit(lambda v: v["secrets"].update(cloudflare_token="123456789012-203.0.113.10/32-SENTINEL_PRIVATE"))
+        self.edit(lambda v: self.secret(v, content="123456789012-203.0.113.10/32-SENTINEL_PRIVATE"))
 
         def detection(command, **_kwargs):
             return subprocess.CompletedProcess(command, 0, "555555555555\n" if command[0].endswith("aws") else "8.8.8.8\n", "")
@@ -595,11 +627,20 @@ class ConfigurationTests(unittest.TestCase):
         value = self.config.load()
         self.assertEqual(value["aws"]["expected_account_id"], "555555555555")
         self.assertEqual(value["aws"]["admin_source_address"], "8.8.8.8/32")
-        self.assertEqual(value["secrets"]["cloudflare_token"], "123456789012-203.0.113.10/32-SENTINEL_PRIVATE")
+        self.assertEqual(Path(value["dns"]["cloudflare_token"]["file"]).read_text(), "123456789012-203.0.113.10/32-SENTINEL_PRIVATE")
 
     def test_native_dispatch_cannot_inherit_a_different_vm_identity(self):
         with (
-            patch.dict(os.environ, {"VMID": "99999", "PROXMOX_HOST": "wrong-host", "AGENT_TIMEOUT_SECONDS": "1", "CLOUD_INIT_TIMEOUT_SECONDS": "1"}),
+            patch.dict(
+                os.environ,
+                {
+                    "VMID": "99999",
+                    "PROXMOX_HOST": "wrong-host",
+                    "AGENT_TIMEOUT_SECONDS": "1",
+                    "CLOUD_INIT_TIMEOUT_SECONDS": "1",
+                    "BOOTSTRAP_STATE_DIR": "/wrong-state",
+                },
+            ),
             patch("scripts.bootstrap.config.subprocess.run", return_value=subprocess.CompletedProcess([], 0)) as run,
         ):
             self.config.run("vm-wait")
@@ -609,11 +650,12 @@ class ConfigurationTests(unittest.TestCase):
         self.assertNotIn("AGENT_TIMEOUT_SECONDS", env)
         self.assertNotIn("CLOUD_INIT_TIMEOUT_SECONDS", env)
         self.assertEqual(env["BOOTSTRAP_INPUT_DIR"], str(self.config.generated))
+        self.assertEqual(env["BOOTSTRAP_STATE_DIR"], str(self.config.state))
 
     @patch("scripts.bootstrap.config.public_key", return_value="ssh-ed25519 PUBLIC_FIXTURE")
     def test_destroy_plan_also_requires_matching_inputs(self, _key):
         self.aws()
-        plan = self.directory / "destroy.tfplan"
+        plan = self.config.state / "plans/destroy.tfplan"
 
         def native(command, **_kwargs):
             plan.write_bytes(b"DESTROY")
@@ -622,13 +664,13 @@ class ConfigurationTests(unittest.TestCase):
         with patch("scripts.bootstrap.config.subprocess.run", side_effect=native) as run:
             self.config.run("destroy-plan")
             self.config.run("destroy")
-            self.edit(lambda v: v["secrets"].update(cloudflare_token="SENTINEL_PRIVATE_CHANGED"))
+            self.edit(lambda v: self.secret(v, content="SENTINEL_PRIVATE_CHANGED"))
             with self.assertRaises(ConfigError):
                 self.config.run("destroy")
             self.assertEqual(run.call_count, 2)
 
     def test_proxmox_destroy_uses_reviewed_plan_and_rejects_changed_inputs(self):
-        plan = self.directory / "proxmox-destroy-plan.json"
+        plan = self.config.state / "plans/proxmox-destroy-plan.json"
 
         def native(command, **_kwargs):
             if "ACTION=destroy-plan" in command:
@@ -637,7 +679,7 @@ class ConfigurationTests(unittest.TestCase):
 
         with patch("scripts.bootstrap.config.subprocess.run", side_effect=native) as run:
             self.assertEqual(self.config.run("destroy-plan"), 0)
-            self.assertEqual(stat.S_IMODE((self.directory / "destroy-inputs.json").stat().st_mode), 0o600)
+            self.assertEqual(stat.S_IMODE((self.config.state / "destroy-inputs.json").stat().st_mode), 0o600)
             self.assertEqual(self.config.run("destroy"), 0)
             self.assertEqual(self.config.run("destroy-cleanup"), 0)
             plan.write_bytes(b"CHANGED")
@@ -646,14 +688,15 @@ class ConfigurationTests(unittest.TestCase):
             self.assertEqual(run.call_count, 3)
 
     def test_failed_proxmox_destroy_plan_invalidates_previous_approval(self):
-        receipt = self.directory / "destroy-inputs.json"
+        receipt = self.config.state / "destroy-inputs.json"
+        self.config.state.mkdir(mode=0o700)
         receipt.write_text("old")
         with patch("scripts.bootstrap.config.subprocess.run", return_value=subprocess.CompletedProcess([], 1)):
             self.assertEqual(self.config.run("destroy-plan"), 1)
         self.assertFalse(receipt.exists())
 
     def test_destroy_cleanup_uses_owned_context_receipt_even_if_access_disabled(self):
-        plan = self.directory / "proxmox-destroy-plan.json"
+        plan = self.config.state / "plans/proxmox-destroy-plan.json"
 
         def native(command, **_kwargs):
             if "ACTION=destroy-plan" in command:
@@ -662,7 +705,7 @@ class ConfigurationTests(unittest.TestCase):
 
         with patch("scripts.bootstrap.config.subprocess.run", side_effect=native):
             self.config.run("destroy-plan")
-            receipt = self.directory / "k3s-access-receipt.json"
+            receipt = self.config.state / "k3s-access-receipt.json"
             receipt.write_text(json.dumps({"directory": str(self.directory), "context": "k3s-old", "node": self.config.load()["vm"]["name"]}))
             receipt.chmod(0o600)
             with patch("scripts.bootstrap.access.remove") as remove:

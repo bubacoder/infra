@@ -20,9 +20,12 @@ from pathlib import Path
 import yaml
 
 if __package__:
-    from scripts.bootstrap.config import ROOT, ConfigError, executable, regular, write_private
+    from scripts.bootstrap.config import ROOT, ConfigError, executable, private_directory, regular, write_private
+    from scripts.bootstrap.paths import BootstrapPathError, BootstrapPaths
 else:
-    from config import ROOT, ConfigError, executable, regular, write_private
+    from paths import BootstrapPathError, BootstrapPaths
+
+    from config import ROOT, ConfigError, executable, private_directory, regular, write_private
 
 
 class AccessError(Exception):
@@ -108,7 +111,13 @@ def renamed(raw: bytes, context: str, host: str) -> dict:
 
 
 def receipt_at(directory: Path) -> Path:
-    return directory / "k3s-access-receipt.json"
+    """Return the ownership receipt after read-only state-directory validation."""
+    paths = BootstrapPaths(directory)
+    try:
+        paths.check_state()
+    except BootstrapPathError as error:
+        raise AccessError(str(error)) from None
+    return paths.state / "k3s-access-receipt.json"
 
 
 def identity(directory: Path, context: str, node: str) -> dict:
@@ -162,6 +171,9 @@ def check_node(kubeconfig: Path, context: str, node: str) -> None:
 
 
 def install(source: bytes, directory: Path, context: str, host: str, node: str, home: Path) -> bool:  # noqa: PLR0913, PLR0917 -- separate credential, owner and controller paths
+    paths = BootstrapPaths(directory)
+    private_directory(paths.state)
+    private_directory(paths.backups)
     kube = kube_dir_for(home)
     owner = identity(directory, context, node)
     owned = read_receipt(directory, owner)
@@ -211,7 +223,7 @@ def install(source: bytes, directory: Path, context: str, host: str, node: str, 
     if not owned:
         write_private(receipt_at(directory), json.dumps(owner) + "\n")
     if current_raw is not None and current_raw != merged_raw:
-        write_private(directory / f"k3s-access-backup-{uuid.uuid4().hex}.yaml", current_raw.decode())
+        write_private(paths.backups / f"k3s-access-backup-{uuid.uuid4().hex}.yaml", current_raw.decode())
     if dedicated_raw != prepared_raw:
         write_private(dedicated, prepared_raw.decode())
     if current_raw != merged_raw:
@@ -283,7 +295,9 @@ def remove(directory: Path, context: str, node: str, home: Path) -> bool:
                 merged.pop("current-context")
             updated = yaml.safe_dump(merged, sort_keys=False).encode()
             if updated != merged_raw:
-                write_private(directory / f"k3s-access-backup-{uuid.uuid4().hex}.yaml", merged_raw.decode())
+                backups = BootstrapPaths(directory).backups
+                private_directory(backups)
+                write_private(backups / f"k3s-access-backup-{uuid.uuid4().hex}.yaml", merged_raw.decode())
                 write_private(merged_path, updated.decode())
     if source_raw is not None:
         dedicated.unlink()

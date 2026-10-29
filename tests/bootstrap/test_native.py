@@ -26,8 +26,12 @@ class NativeBootstrapTests(unittest.TestCase):
         shutil.copytree(ROOT / "ansible/playbooks", self.root / "ansible/playbooks")
         shutil.copytree(ROOT / "ansible/roles", self.root / "ansible/roles")
         shutil.copytree(ROOT / "config-example", self.root / "config-example")
-        self.directory = self.root / "config/bootstrap"
-        self.env = {**os.environ, "BOOTSTRAP_DIR": str(self.directory), "BOOTSTRAP_TARGET": "aws", "ANSIBLE_NOCOLOR": "1"}
+        self.env = {
+            **{key: value for key, value in os.environ.items() if not key.startswith("BOOTSTRAP_")},
+            "BOOTSTRAP_TARGET": "aws",
+            "ANSIBLE_NOCOLOR": "1",
+        }
+        self.select_deployment(self.root / "config/bootstrap")
         self.env["ANSIBLE_CONFIG"] = str(self.root / "ansible.cfg")
         (self.root / "ansible.cfg").write_text("[defaults]\nretry_files_enabled=False\nroles_path=ansible/roles\n")
         self.public_key_file = self.root / "controller-key.pub"
@@ -57,6 +61,17 @@ class NativeBootstrapTests(unittest.TestCase):
                         "bootstrap_init_ip": {"content": "{{ lookup('env', 'BOOTSTRAP_TEST_IP') | default('8.8.8.8', true) }}"}
                     }
         detection.write_text(yaml.safe_dump(tasks))
+
+    def select_deployment(self, directory: Path) -> None:
+        self.deployment_directory = directory
+        # Direct-playbook fixtures may keep native inputs beside state; Task fixtures
+        # explicitly select state/generated below, as the compiler does.
+        self.directory = directory / "state"
+        self.env.update(
+            BOOTSTRAP_DIR=str(self.deployment_directory),
+            BOOTSTRAP_STATE_DIR=str(self.directory),
+            BOOTSTRAP_INPUT_DIR=str(self.directory),
+        )
 
     def run_play(self, name: str, *, check: bool = True, tags: str | None = None):
         result = subprocess.run(  # noqa: S603
@@ -376,8 +391,7 @@ class NativeBootstrapTests(unittest.TestCase):
         self.initialize()
         first = self.directory / "ubuntu-cloud.env"
         first.write_text("VMID=456\n")
-        self.directory = self.root / "config/another-deployment"
-        self.env["BOOTSTRAP_DIR"] = str(self.directory)
+        self.select_deployment(self.root / "config/another-deployment")
         self.initialize()
         example = self.root / "config-example/vm/proxmox/ubuntu-cloud.env"
         self.assertEqual((self.directory / "ubuntu-cloud.env").read_bytes(), example.read_bytes())
@@ -421,8 +435,7 @@ class NativeBootstrapTests(unittest.TestCase):
         proxmox_fields = {"proxmox_host", "proxmox_vmid", "proxmox_username", "proxmox_address"}
         for target in ("aws", "proxmox"):
             self.env["BOOTSTRAP_TARGET"] = target
-            self.directory = self.root / f"config/bootstrap-{target}"
-            self.env["BOOTSTRAP_DIR"] = str(self.directory)
+            self.select_deployment(self.root / f"config/bootstrap-{target}")
             self.initialize()
             rendered = (self.directory / "host.yaml").read_text()
             host = yaml.safe_load(rendered)
@@ -452,8 +465,7 @@ class NativeBootstrapTests(unittest.TestCase):
     def test_target_mismatch_is_rejected_equally_without_modifying_inputs(self) -> None:
         for target, other in (("aws", "proxmox"), ("proxmox", "aws")):
             self.env["BOOTSTRAP_TARGET"] = target
-            self.directory = self.root / f"config/bootstrap-{target}"
-            self.env["BOOTSTRAP_DIR"] = str(self.directory)
+            self.select_deployment(self.root / f"config/bootstrap-{target}")
             self.initialize()
             self.valid_host()
             before = {path.name: path.read_bytes() for path in self.directory.iterdir()}
@@ -631,7 +643,8 @@ class NativeBootstrapTests(unittest.TestCase):
         host = self.valid_host()
         host.update(roles=["debian_base"], services=[], dns={"enabled": False})
         (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
-        plan = self.directory / "proxmox-destroy-plan.json"
+        (self.directory / "plans").mkdir(mode=0o700)
+        plan = self.directory / "plans/proxmox-destroy-plan.json"
         plan.write_text(json.dumps({"name": host["name"], "vmid": host["proxmox_vmid"], "address": ""}))
         plan.chmod(0o600)
         play = yaml.safe_load((ROOT / "ansible/playbooks/bootstrap-proxmox-destroy-dns.yaml").read_text())
@@ -799,7 +812,7 @@ class NativeBootstrapTests(unittest.TestCase):
                         "test_k3s_verified",
                         "test_k3s_installed | default(false) == (not bootstrap_verify_only)",
                         "test_cilium_verified | default(false) == ('k3s_cilium' in bootstrap.roles)",
-                        "test_cilium_inspected | default(false) == (not bootstrap_verify_only)",
+                        "test_cilium_inspected | default(false) == (not bootstrap_verify_only or 'k3s_cilium' not in bootstrap.roles)",
                         "test_cilium_prepared | default(false) == ('k3s_cilium' in bootstrap.roles and not bootstrap_verify_only)",
                     ]
                 }
@@ -1552,6 +1565,14 @@ class NativeBootstrapTests(unittest.TestCase):
         host["dns"] = {"enabled": False}
         (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
         (self.directory / "secrets.yaml").write_text("cloudflare_token: fixture-token\n")
+        self.generated_directory = self.directory / "generated"
+        self.generated_directory.mkdir(mode=0o700)
+        for name in ("host.yaml", "secrets.yaml"):
+            (self.directory / name).rename(self.generated_directory / name)
+        (self.directory / "aws.tfvars").unlink()
+        (self.generated_directory / "aws.tfvars.json").write_text("{}\n")
+        (self.generated_directory / "aws.tfvars.json").chmod(0o600)
+        self.env["BOOTSTRAP_INPUT_DIR"] = str(self.generated_directory)
         handoff = {
             "name": host["name"],
             "account_id": "555555555555",
@@ -1569,7 +1590,8 @@ class NativeBootstrapTests(unittest.TestCase):
         }
         (self.directory / "teardown-host.yaml").write_text(yaml.safe_dump(handoff))
         (self.directory / "aws.tfstate").write_text("{}\n")
-        (self.directory / "destroy.tfplan").write_text("fixture saved plan\n")
+        (self.directory / "plans").mkdir(mode=0o700)
+        (self.directory / "plans/destroy.tfplan").write_text("fixture saved plan\n")
         (self.directory / ".terraform").mkdir()
         identity = {"target": "aws", "name": host["name"], "domain": host["domain"], "cloudflare_zone": "", "adguard_url": ""}
         (self.directory / "dns-state.yaml").write_text(yaml.safe_dump({"identity": identity, "records": [], "pending": None}))
@@ -1637,8 +1659,11 @@ else: sys.exit(91)
 
     def test_teardown_verifies_exact_resources_before_removing_recovery_files(self) -> None:
         handoff = self.prepare_teardown_fixture()
+        generated = {path.name: path.read_bytes() for path in self.generated_directory.iterdir()}
         self.run_play("bootstrap-destroy.yaml", tags="cleanup")
-        self.assertEqual(sorted(path.name for path in self.directory.iterdir()), ["aws.tfvars", "host.yaml", "secrets.yaml"])
+        self.assertEqual(sorted(path.name for path in self.directory.iterdir()), ["generated", "plans"])
+        self.assertEqual(list((self.directory / "plans").iterdir()), [])
+        self.assertEqual({path.name: path.read_bytes() for path in self.generated_directory.iterdir()}, generated)
         calls = (self.root / "teardown-calls.log").read_text()
         for field in ("instance_id", "root_volume_id", "data_volume_id", "allocation_id", "vpc_id", "role_name", "profile_name", "key_name"):
             self.assertIn(handoff[field], calls)
@@ -1646,6 +1671,9 @@ else: sys.exit(91)
 
     def test_teardown_preserves_evidence_on_wrong_account_remaining_resources_or_access_errors(self) -> None:
         handoff = self.prepare_teardown_fixture()
+        evidence = {
+            name: (self.directory / name).read_bytes() for name in ("aws.tfstate", "teardown-host.yaml", "dns-state.yaml", "plans/destroy.tfplan")
+        }
         for key, value in (
             ("TEARDOWN_TEST_ACCOUNT", "444444444444"),
             ("TEARDOWN_TEST_REMAINING", "describe-volumes"),
@@ -1656,8 +1684,9 @@ else: sys.exit(91)
             with self.subTest(failure=value):
                 self.env[key] = value
                 self.assertNotEqual(self.run_play("bootstrap-destroy.yaml", tags="cleanup", check=False).returncode, 0)
-                for name in ("aws.tfstate", "teardown-host.yaml", "dns-state.yaml", "destroy.tfplan", ".terraform"):
-                    self.assertTrue((self.directory / name).exists(), name)
+                for name, content in evidence.items():
+                    self.assertEqual((self.directory / name).read_bytes(), content, name)
+                self.assertTrue((self.directory / ".terraform").is_dir())
                 del self.env[key]
         del handoff["root_volume_id"]
         (self.directory / "teardown-host.yaml").write_text(yaml.safe_dump(handoff))
@@ -1690,6 +1719,9 @@ else: sys.exit(91)
     @unittest.skipUnless(shutil.which("task"), "Task is not installed")
     def test_failed_unmount_prevents_the_task_from_applying_destruction(self) -> None:
         self.prepare_teardown_fixture()
+        evidence = {
+            name: (self.directory / name).read_bytes() for name in ("aws.tfstate", "teardown-host.yaml", "dns-state.yaml", "plans/destroy.tfplan")
+        }
         shutil.copy(ROOT / "ansible/Taskfile.bootstrap.yaml", self.root / "ansible/Taskfile.bootstrap.yaml")
         (self.root / "Taskfile.yaml").write_text("version: '3'\nincludes:\n  bootstrap: ./ansible/Taskfile.bootstrap.yaml\n")
         self.env["TEARDOWN_TEST_UNMOUNT_FAIL"] = "1"
@@ -1704,11 +1736,13 @@ else: sys.exit(91)
             check=False,
         )
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Cleanly unmount storage without removing fstab or formatting anything", result.stdout)
         calls = (self.root / "teardown-calls.log").read_text()
         self.assertIn("umount /storage", calls)
         self.assertNotIn("terraform -chdir=" + str(self.root / "terraform/aws-vm") + " apply", calls)
         self.assertNotIn(" apply ", calls)
-        self.assertTrue((self.directory / "teardown-host.yaml").exists())
+        for name, content in evidence.items():
+            self.assertEqual((self.directory / name).read_bytes(), content, name)
 
 
 class BootstrapStructureTests(unittest.TestCase):
@@ -1755,7 +1789,7 @@ class BootstrapStructureTests(unittest.TestCase):
             (root / "ansible").mkdir()
             shutil.copy(ROOT / "ansible/Taskfile.bootstrap.yaml", root / "ansible/Taskfile.bootstrap.yaml")
             (root / "Taskfile.yaml").write_text("version: '3'\nincludes:\n  bootstrap: ./ansible/Taskfile.bootstrap.yaml\n")
-            generated = root / "config/lab/generated"
+            generated = root / "config/lab/state/generated"
             generated.mkdir(parents=True)
             binaries = root / "bin"
             binaries.mkdir()
@@ -1850,13 +1884,13 @@ class BootstrapStructureTests(unittest.TestCase):
                 wrapper.write_text(content)
                 wrapper.chmod(0o700)
             selected = root / "config/bootstrap-proxmox"
-            (selected / "generated").mkdir(parents=True)
+            (selected / "state/generated").mkdir(parents=True)
             env = {key: value for key, value in os.environ.items() if key not in ("TARGET", "BOOTSTRAP_CONFIG_DIR", "VM_MAC")}
             env["PATH"] = str(binaries) + os.pathsep + os.environ["PATH"]
-            env.update(BOOTSTRAP_PREPARED="1", BOOTSTRAP_INPUT_DIR=str(selected / "generated"))
+            env.update(BOOTSTRAP_PREPARED="1", BOOTSTRAP_INPUT_DIR=str(selected / "state/generated"))
             for mac in ("", "02:00:00:00:00:01"):
                 with self.subTest(mac=mac):
-                    (selected / "generated/ubuntu-cloud.env").write_text(
+                    (selected / "state/generated/ubuntu-cloud.env").write_text(
                         f"PROXMOX_HOST=fixture\nVMID=456\nVMNAME=fixture-name\nVM_STORAGE=fixture-storage\nVM_BRIDGE=fixture-bridge\nVM_MAC={mac}\n"
                     )
                     result = subprocess.run(  # noqa: S603
@@ -1936,9 +1970,9 @@ class BootstrapStructureTests(unittest.TestCase):
                 ("config/custom-test", "789", ["BOOTSTRAP_CONFIG_DIR=config/custom-test"]),
             ):
                 selected = root / directory
-                (selected / "generated").mkdir(parents=True)
-                env.update(BOOTSTRAP_PREPARED="1", BOOTSTRAP_INPUT_DIR=str(selected / "generated"))
-                (selected / "generated/ubuntu-cloud.env").write_text(
+                (selected / "state/generated").mkdir(parents=True)
+                env.update(BOOTSTRAP_PREPARED="1", BOOTSTRAP_INPUT_DIR=str(selected / "state/generated"))
+                (selected / "state/generated/ubuntu-cloud.env").write_text(
                     f"PROXMOX_HOST=fixture-{vmid}\nVMID={vmid}\nVMNAME=fixture-{vmid}\nVM_STORAGE=fixture-storage\nVM_BRIDGE=fixture-bridge\n"
                 )
                 for task in ("vm-preflight", "vm-provision", "vm-wait"):
@@ -1956,7 +1990,7 @@ class BootstrapStructureTests(unittest.TestCase):
                         self.assertIn(f"ssh: fixture-{vmid} ", result.stdout)
                         self.assertIn(vmid, result.stdout)
                         if task == "vm-provision":
-                            self.assertIn(str(selected / "generated/ubuntu-cloud.env"), result.stdout)
+                            self.assertIn(str(selected / "state/generated/ubuntu-cloud.env"), result.stdout)
                             self.assertIn("bootstrap-proxmox-key.yaml", result.stdout)
                             self.assertIn("sudo env VM_SSH_PUBLIC_KEY_FILE=/tmp/vm/proxmox/bootstrap-authorized-key.pub bash", result.stdout)
 

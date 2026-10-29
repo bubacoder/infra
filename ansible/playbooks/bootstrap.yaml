@@ -62,6 +62,11 @@
       when: not bootstrap_verify_only and bootstrap.services | length > 0
     - name: Verify the guest independently of selected roles and services
       ansible.builtin.import_tasks: bootstrap/verify-host.yaml
+    - name: Independently refuse deselected Cilium without changing networking
+      ansible.builtin.include_role:
+        name: k3s_cilium
+        tasks_from: check-absent
+      when: bootstrap_verify_only and 'k3s' in bootstrap.roles and 'k3s_cilium' not in bootstrap.roles
     - name: Independently verify the selected K3s server without applying its installation tasks
       ansible.builtin.include_role:
         name: k3s

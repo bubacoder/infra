@@ -1,8 +1,8 @@
 ---
 - name: Locate explicitly selected native inputs
   ansible.builtin.set_fact:
-    bootstrap_dir: "{{ lookup('env', 'BOOTSTRAP_DIR') }}"
-    bootstrap_input_dir: "{{ lookup('env', 'BOOTSTRAP_INPUT_DIR') | default(lookup('env', 'BOOTSTRAP_DIR'), true) }}"
+    bootstrap_dir: "{{ lookup('env', 'BOOTSTRAP_STATE_DIR') }}"
+    bootstrap_input_dir: "{{ lookup('env', 'BOOTSTRAP_INPUT_DIR') | default(lookup('env', 'BOOTSTRAP_STATE_DIR'), true) }}"
     bootstrap_root: "{{ (playbook_dir + '/../..') | realpath }}"
     bootstrap_verify_only: "{{ lookup('env', 'BOOTSTRAP_VERIFY_ONLY') == '1' }}"
 - name: Require an explicit supported target before loading inputs

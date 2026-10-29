@@ -3,7 +3,7 @@
   hosts: localhost
   gather_facts: false
   vars:
-    bootstrap_dir: "{{ lookup('env', 'BOOTSTRAP_DIR') }}"
+    bootstrap_dir: "{{ lookup('env', 'BOOTSTRAP_STATE_DIR') }}"
     bootstrap_init_target: "{{ lookup('env', 'BOOTSTRAP_TARGET') }}"
     bootstrap_init_public_key_file: "{{ lookup('env', 'BOOTSTRAP_SSH_PUBLIC_KEY') | default(bootstrap_existing.ssh_public_key | default('~/.ssh/id_ed25519.pub'), true) }}"
     bootstrap_init_private_key_file: "{{ bootstrap_existing.ssh_private_key | default(bootstrap_init_public_key_file | regex_replace('\\.pub$', '')) }}"

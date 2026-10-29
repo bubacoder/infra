@@ -13,7 +13,10 @@ from pathlib import Path
 
 if __package__:
     from scripts.bootstrap.config import ROOT, ConfigError, Configuration, executable, read_yaml, regular, write_private
+    from scripts.bootstrap.paths import BootstrapPaths
 else:
+    from paths import BootstrapPaths
+
     from config import ROOT, ConfigError, Configuration, executable, read_yaml, regular, write_private
 
 
@@ -174,7 +177,7 @@ def inspect(config: dict, *, resolve_address: bool = True) -> dict:
 
 
 def plan_path(directory: Path) -> Path:
-    return directory / "proxmox-destroy-plan.json"
+    return BootstrapPaths(directory.parent).plan("proxmox", "destroy")
 
 
 def plan(config: dict, directory: Path) -> None:
@@ -249,10 +252,12 @@ def main() -> int:
     try:
         if os.environ.get("BOOTSTRAP_PREPARED") != "1":
             raise DestroyError("Use the public bootstrap command to prepare and validate this deployment.")  # noqa: TRY301 -- entrypoint guard
-        selected = Configuration(ROOT, args.directory, "proxmox")
+        selected = Configuration(ROOT, args.directory.parent, "proxmox")
         source = selected.load()
-        directory = selected.directory
-        config = read_yaml(directory / "generated/host.yaml")
+        directory = selected.state
+        if args.directory.absolute() != directory:
+            raise DestroyError("Use the selected deployment's state directory.")  # noqa: TRY301 -- entrypoint identity guard
+        config = read_yaml(selected.generated / "host.yaml")
         if (
             config.get("target") != "proxmox"
             or config.get("name") != source["vm"]["name"]
@@ -262,7 +267,10 @@ def main() -> int:
         ):
             raise DestroyError("Generated inputs do not match the private deployment source.")  # noqa: TRY301 -- entrypoint guard
         {"plan": plan, "destroy": destroy, "cleanup": cleanup}[args.action](config, directory)
-    except (DestroyError, ConfigError, OSError, ValueError, KeyError, TypeError):
+    except (DestroyError, ConfigError) as error:
+        print(f"Proxmox teardown stopped: {error}", file=sys.stderr)
+        return 1
+    except (OSError, ValueError, KeyError, TypeError):
         print(
             "Proxmox teardown stopped: verify reviewed VM identity, disk ownership, snapshots and recovery records; no private values are displayed.",
             file=sys.stderr,

@@ -2,12 +2,14 @@
 
 # ruff: noqa: PT009, PT027 -- match bootstrap unittest fixtures
 
+import io
 import json
 import os
 import stat
 import subprocess
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
@@ -20,8 +22,9 @@ class ProxmoxDestroyTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(dir=TEMP_ROOT if TEMP_ROOT.is_dir() else None)
         self.addCleanup(temporary.cleanup)
-        self.directory = Path(temporary.name)
-        self.directory.chmod(0o700)
+        self.directory = Path(temporary.name) / "state"
+        self.directory.mkdir(mode=0o700)
+        (self.directory / "plans").mkdir(mode=0o700)
         self.config = {
             "target": "proxmox",
             "proxmox_host": "fixture-hypervisor",
@@ -181,6 +184,70 @@ class ProxmoxDestroyTests(unittest.TestCase):
             with self.assertRaisesRegex(teardown.DestroyError, "Owned DNS records"):
                 teardown.plan(self.config, self.directory)
             self.assertEqual(self.commands, [])
+
+    def run_main(self, *, action="plan", prepared="1", load_error=None, action_error=None):
+        source = {
+            "vm": {"name": self.config["name"]},
+            "proxmox": {"vmid": self.config["proxmox_vmid"], "host": self.config["proxmox_host"], "storage": self.config["proxmox_storage"]},
+        }
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with (
+            patch.object(teardown.sys, "argv", ["proxmox_destroy.py", action, str(self.directory)]),
+            patch.dict(os.environ, {"BOOTSTRAP_PREPARED": prepared}),
+            patch.object(teardown, "Configuration") as configuration,
+            patch.object(teardown, "read_yaml", return_value=self.config) as read_yaml,
+            patch.object(teardown, action, side_effect=action_error) as operation,
+            redirect_stdout(stdout),
+            redirect_stderr(stderr),
+        ):
+            configuration.return_value.state = self.directory
+            configuration.return_value.generated = self.directory / "generated"
+            configuration.return_value.load.return_value = source
+            configuration.return_value.load.side_effect = load_error
+            result = teardown.main()
+            if prepared == "1" and load_error is None:
+                read_yaml.assert_called_once_with(self.directory / "generated/host.yaml")
+        return result, stdout.getvalue(), stderr.getvalue(), operation
+
+    def test_main_preserves_safe_teardown_diagnostics_for_each_action(self):
+        for action in ("plan", "destroy", "cleanup"):
+            with self.subTest(action=action):
+                message = "VM snapshots or uncertain snapshot state exist; preserve recovery data."
+                result, stdout, stderr, operation = self.run_main(action=action, action_error=teardown.DestroyError(message))
+                self.assertEqual(result, 1)
+                self.assertEqual(stdout, "")
+                self.assertIn(message, stderr)
+                operation.assert_called_once_with(self.config, self.directory)
+
+    def test_main_preserves_safe_configuration_diagnostics(self):
+        message = "bootstrap target does not match the selected deployment"
+        result, stdout, stderr, operation = self.run_main(load_error=teardown.ConfigError(message))
+        self.assertEqual(result, 1)
+        self.assertEqual(stdout, "")
+        self.assertIn(message, stderr)
+        operation.assert_not_called()
+
+    def test_main_reports_public_entrypoint_guard(self):
+        result, stdout, stderr, operation = self.run_main(prepared="0")
+        self.assertEqual(result, 1)
+        self.assertEqual(stdout, "")
+        self.assertIn("Use the public bootstrap command", stderr)
+        operation.assert_not_called()
+
+    def test_main_redacts_raw_exceptions(self):
+        for error_type in (OSError, ValueError, KeyError, TypeError):
+            with self.subTest(error_type=error_type.__name__):
+                result, stdout, stderr, _operation = self.run_main(action_error=error_type("SENTINEL_PRIVATE"))
+                self.assertEqual(result, 1)
+                self.assertEqual(stdout, "")
+                self.assertNotIn("SENTINEL_PRIVATE", stderr)
+                self.assertIn("no private values are displayed", stderr)
+
+    def test_main_returns_success_for_completed_action(self):
+        result, stdout, stderr, operation = self.run_main()
+        self.assertEqual(result, 0)
+        self.assertEqual(stdout + stderr, "")
+        operation.assert_called_once_with(self.config, self.directory)
 
 
 if __name__ == "__main__":

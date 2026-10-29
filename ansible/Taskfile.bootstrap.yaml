@@ -111,6 +111,7 @@ tasks:
     cmds:
       - uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.bootstrap.test_native tests.bootstrap.test_config tests.bootstrap.test_status tests.bootstrap.test_access tests.bootstrap.test_proxmox_destroy
       - uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.bootstrap.test_traefik tests.bootstrap.test_traefik_native
+      - uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.bootstrap.test_secret_files
       - task: test-shell
 
   test-shell:
@@ -146,7 +147,7 @@ tasks:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
       BOOTSTRAP_TARGET: '{{.TARGET}}'
       ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
-      TF_DATA_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/.terraform'
+      TF_DATA_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/state/.terraform'
     internal: true
     preconditions:
       - sh: test "$BOOTSTRAP_TARGET" = aws
@@ -157,9 +158,9 @@ tasks:
         msg: A destruction override remains after an interrupted operation. Inspect it before planning.
     cmds:
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-check.yaml --extra-vars bootstrap_required_target=aws
-      - terraform -chdir=terraform/aws-vm init -input=false -backend-config="path=$BOOTSTRAP_DIR/aws.tfstate"
+      - terraform -chdir=terraform/aws-vm init -input=false -backend-config="path=$BOOTSTRAP_DIR/state/aws.tfstate"
       - terraform -chdir=terraform/aws-vm validate
-      - terraform -chdir=terraform/aws-vm plan -lock-timeout=30s -var-file="$BOOTSTRAP_INPUT_DIR/aws.tfvars.json" -out="$BOOTSTRAP_DIR/aws.tfplan"
+      - terraform -chdir=terraform/aws-vm plan -lock-timeout=30s -var-file="$BOOTSTRAP_INPUT_DIR/aws.tfvars.json" -out="$BOOTSTRAP_DIR/state/plans/aws.tfplan"
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-preflight.yaml
 
   native-apply:
@@ -179,14 +180,14 @@ tasks:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
       BOOTSTRAP_TARGET: '{{.TARGET}}'
       ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
-      TF_DATA_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/.terraform'
+      TF_DATA_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/state/.terraform'
     internal: true
     preconditions:
-      - sh: test -s "$BOOTSTRAP_DIR/aws.tfplan"
+      - sh: test -s "$BOOTSTRAP_DIR/state/plans/aws.tfplan"
         msg: Run bootstrap:plan and review it first. Apply never generates another plan.
     cmds:
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-preflight.yaml
-      - terraform -chdir=terraform/aws-vm apply -lock-timeout=30s "$BOOTSTRAP_DIR/aws.tfplan"
+      - terraform -chdir=terraform/aws-vm apply -lock-timeout=30s "$BOOTSTRAP_DIR/state/plans/aws.tfplan"
 
   apply-proxmox:
     env:
@@ -207,7 +208,7 @@ tasks:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
       BOOTSTRAP_TARGET: '{{.TARGET}}'
       ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
-      TF_DATA_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/.terraform'
+      TF_DATA_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/state/.terraform'
     requires:
       vars:
         - name: TARGET
@@ -228,7 +229,7 @@ tasks:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
       BOOTSTRAP_TARGET: '{{.TARGET}}'
       ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
-      TF_DATA_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/.terraform'
+      TF_DATA_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/state/.terraform'
       BOOTSTRAP_VERIFY_ONLY: '1'
     cmds:
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap.yaml
@@ -250,18 +251,18 @@ tasks:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
       BOOTSTRAP_TARGET: '{{.TARGET}}'
       ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
-      TF_DATA_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/.terraform'
+      TF_DATA_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/state/.terraform'
       BOOTSTRAP_DELETE_DATA: '{{default "0" .DELETE_DATA}}'
     preconditions:
       - sh: test "${BOOTSTRAP_PREPARED:-}" = 1
         msg: Use bootstrap:destroy-plan to prepare inputs first.
-      - sh: test -s "$BOOTSTRAP_DIR/aws.tfstate"
+      - sh: test -s "$BOOTSTRAP_DIR/state/aws.tfstate"
         msg: Never destroy with missing state. Select the deployment's existing backend first.
     cmds:
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-check.yaml --extra-vars bootstrap_required_target=aws
-      - terraform -chdir=terraform/aws-vm init -input=false -backend-config="path=$BOOTSTRAP_DIR/aws.tfstate"
+      - terraform -chdir=terraform/aws-vm init -input=false -backend-config="path=$BOOTSTRAP_DIR/state/aws.tfstate"
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-destroy-plan.yaml
-      - terraform -chdir=terraform/aws-vm show "$BOOTSTRAP_DIR/destroy.tfplan"
+      - terraform -chdir=terraform/aws-vm show "$BOOTSTRAP_DIR/state/plans/destroy.tfplan"
 
   native-destroy:
     internal: true
@@ -275,7 +276,7 @@ tasks:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
       BOOTSTRAP_TARGET: '{{.TARGET}}'
       ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
-      TF_DATA_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/.terraform'
+      TF_DATA_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/state/.terraform'
     requires:
       vars:
         - name: TARGET
@@ -284,12 +285,12 @@ tasks:
     preconditions:
       - sh: test "${BOOTSTRAP_PREPARED:-}" = 1
         msg: Use bootstrap:destroy to check reviewed inputs first.
-      - sh: test -s "$BOOTSTRAP_DIR/aws.tfstate" && test -s "$BOOTSTRAP_DIR/destroy.tfplan"
+      - sh: test -s "$BOOTSTRAP_DIR/state/aws.tfstate" && test -s "$BOOTSTRAP_DIR/state/plans/destroy.tfplan"
         msg: Use the original state and review bootstrap:destroy-plan first.
     cmds:
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-destroy.yaml --tags prepare
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-quiesce.yaml
-      - terraform -chdir=terraform/aws-vm apply -lock-timeout=30s "$BOOTSTRAP_DIR/destroy.tfplan"
+      - terraform -chdir=terraform/aws-vm apply -lock-timeout=30s "$BOOTSTRAP_DIR/state/plans/destroy.tfplan"
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-destroy.yaml --tags cleanup
 
   native-destroy-cleanup:
@@ -305,7 +306,7 @@ tasks:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
       BOOTSTRAP_TARGET: '{{.TARGET}}'
       ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
-      TF_DATA_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/.terraform'
+      TF_DATA_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/state/.terraform'
     requires:
       vars:
         - name: TARGET
@@ -313,7 +314,7 @@ tasks:
     preconditions:
       - sh: test "${BOOTSTRAP_PREPARED:-}" = 1
         msg: Use bootstrap:destroy-cleanup to prepare inputs first.
-      - sh: test -s "$BOOTSTRAP_DIR/aws.tfstate" && test -s "$BOOTSTRAP_DIR/teardown-host.yaml"
+      - sh: test -s "$BOOTSTRAP_DIR/state/aws.tfstate" && test -s "$BOOTSTRAP_DIR/state/teardown-host.yaml"
         msg: Preserve the deployment's state and teardown handoff until cleanup succeeds.
     cmds:
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-destroy.yaml --tags cleanup
@@ -323,12 +324,12 @@ tasks:
     requires: {vars: [{name: TARGET, enum: [proxmox]}]}
     env:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
-      BOOTSTRAP_INPUT_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/generated'
+      BOOTSTRAP_INPUT_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/state/generated'
       BOOTSTRAP_TARGET: proxmox
       BOOTSTRAP_DELETE_DATA: '{{default "0" .DELETE_DATA}}'
       ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
     cmds:
-      - python3 scripts/bootstrap/proxmox_destroy.py plan "$BOOTSTRAP_DIR"
+      - python3 scripts/bootstrap/proxmox_destroy.py plan "$BOOTSTRAP_DIR/state"
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-proxmox-destroy-dns.yaml --extra-vars bootstrap_destroy_phase=plan
 
   native-destroy-proxmox:
@@ -336,11 +337,11 @@ tasks:
     requires: {vars: [{name: TARGET, enum: [proxmox]}]}
     env:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
-      BOOTSTRAP_INPUT_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/generated'
+      BOOTSTRAP_INPUT_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/state/generated'
       BOOTSTRAP_TARGET: proxmox
       ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
     cmds:
-      - python3 scripts/bootstrap/proxmox_destroy.py destroy "$BOOTSTRAP_DIR"
+      - python3 scripts/bootstrap/proxmox_destroy.py destroy "$BOOTSTRAP_DIR/state"
       - task: native-destroy-cleanup-proxmox
 
   native-destroy-cleanup-proxmox:
@@ -348,11 +349,11 @@ tasks:
     requires: {vars: [{name: TARGET, enum: [proxmox]}]}
     env:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
-      BOOTSTRAP_INPUT_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/generated'
+      BOOTSTRAP_INPUT_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/state/generated'
       BOOTSTRAP_TARGET: proxmox
       ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
     cmds:
-      - python3 scripts/bootstrap/proxmox_destroy.py cleanup "$BOOTSTRAP_DIR"
+      - python3 scripts/bootstrap/proxmox_destroy.py cleanup "$BOOTSTRAP_DIR/state"
       - ansible-playbook -i localhost, -c local ansible/playbooks/bootstrap-proxmox-destroy-dns.yaml --extra-vars bootstrap_destroy_phase=cleanup
 
   native-vm-provision:
@@ -364,7 +365,7 @@ tasks:
       BOOTSTRAP_TARGET: proxmox
       ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
     dotenv:
-      - '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/generated/ubuntu-cloud.env'
+      - '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/state/generated/ubuntu-cloud.env'
     preconditions:
       - sh: test "${BOOTSTRAP_PREPARED:-}" = 1
         msg: Use bootstrap:vm-provision to prepare inputs first.
@@ -390,7 +391,7 @@ tasks:
     env:
       BOOTSTRAP_DIR: '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}'
     dotenv:
-      - '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/generated/ubuntu-cloud.env'
+      - '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/state/generated/ubuntu-cloud.env'
     preconditions:
       - sh: test "${BOOTSTRAP_PREPARED:-}" = 1
         msg: Use bootstrap:vm-wait to prepare inputs first.
@@ -411,7 +412,7 @@ tasks:
       BOOTSTRAP_TARGET: proxmox
       ANSIBLE_CONFIG: '{{.ROOT_DIR}}/ansible/ansible.cfg'
     dotenv:
-      - '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/generated/ubuntu-cloud.env'
+      - '{{.ROOT_DIR}}/{{.BOOTSTRAP_CONFIG_DIR}}/state/generated/ubuntu-cloud.env'
     preconditions:
       - sh: test "${BOOTSTRAP_PREPARED:-}" = 1
         msg: Use bootstrap:vm-preflight to prepare inputs first.
