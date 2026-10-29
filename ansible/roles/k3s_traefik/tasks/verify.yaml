@@ -37,6 +37,7 @@
         that:
           - (k3s_traefik_deployment.stdout | from_json).spec.replicas == 1
           - (k3s_traefik_deployment.stdout | from_json).spec.strategy.type == 'Recreate'
+          - (k3s_traefik_deployment.stdout | from_json).spec.template.spec.securityContext.fsGroupChangePolicy | default('') == 'OnRootMismatch'
           - (k3s_traefik_deployment.stdout | from_json).spec.template.spec.volumes | selectattr('name', 'equalto', 'data') | map(attribute='persistentVolumeClaim.claimName') | list == ['bootstrap-traefik-acme']
         fail_msg: Controller replica/rollout/storage behavior differs from the managed single-writer profile.
       no_log: true
