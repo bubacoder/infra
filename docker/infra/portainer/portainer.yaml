@@ -1,7 +1,7 @@
 name: portainer
 services:
   portainer:
-    image: portainer/portainer-ce:2.45.3
+    image: portainer/portainer-ce:2.45.3@sha256:3609c307943bca8e5c492f69ddd6965df177208b50678a4cff28391c8dd4e96e
     container_name: portainer
     restart: unless-stopped
     # kics-scan ignore-block
