@@ -1,7 +1,7 @@
 name: gitlab
 services:
   gitlab:
-    image: gitlab/gitlab-ce:18.11.13-ce.0
+    image: gitlab/gitlab-ce:18.11.13-ce.0@sha256:a1c10a9a1e46a7b22260c350088476f87f012359725786e095d42899cf261681
     container_name: gitlab
     restart: unless-stopped
     # Do not use 'gitlab.${MYDOMAIN}', because the runner would use it and skip Traefik, resulting certificate error
