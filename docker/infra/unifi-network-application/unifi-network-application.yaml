@@ -31,6 +31,8 @@ services:
     networks:
       - proxy
     labels:
+      konverter.connect.mongodb.service: "mongodb/mongodb"
+      konverter.connect.mongodb.ports: "27017/tcp"
       traefik.enable: true
       # Explicit rule needed: Traefik's defaultRule derives the host from the compose service name
       # (unifi-network-application), but the external hostname is unifi.${MYDOMAIN}.

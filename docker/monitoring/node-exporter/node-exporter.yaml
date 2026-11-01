@@ -1,8 +1,8 @@
-name: node_exporter
+name: node-exporter
 services:
-  node_exporter:
+  node-exporter:
     image: quay.io/prometheus/node-exporter:v1.12.1
-    container_name: node_exporter
+    container_name: node-exporter
     restart: unless-stopped
     pid: host
     ports:

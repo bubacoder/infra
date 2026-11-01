@@ -18,7 +18,7 @@ scrape_configs:
   - job_name: "node_exporter"
     static_configs:
       - targets:
-          - "node_exporter:9100" # Main node
+          - "node-exporter:9100" # Main node
           - "192.168.1.10:9100"  # NAS node
 
   - job_name: "cadvisor"
