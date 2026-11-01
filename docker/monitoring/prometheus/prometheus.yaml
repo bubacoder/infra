@@ -14,6 +14,8 @@ services:
     networks:
       - proxy
     labels:
+      konverter.connect.endlessh.service: "endlessh/endlessh"
+      konverter.connect.endlessh.ports: "2112/tcp"
       traefik.enable: true
       traefik.http.routers.prometheus.middlewares: localaccess@file
       traefik.http.services.prometheus.loadbalancer.server.port: 9090
@@ -23,9 +25,11 @@ services:
       homepage.href: https://prometheus.${MYDOMAIN}/
       homepage.description: "Exporters: node-exporter, cadvisor"
 
-  node_exporter:
+  node-exporter:
     image: quay.io/prometheus/node-exporter:v1.12.1@sha256:1b4e4438faca4dd7e001dd445d161a4a2091b0fededa84093b3a8dfeae1f1be0
-    container_name: node_exporter
+    container_name: node-exporter
+    expose:
+      - "9100"
     restart: unless-stopped
     pid: host
     command:
@@ -40,6 +44,8 @@ services:
     image: gcr.io/cadvisor/cadvisor:v0.55.1@sha256:3de2bd5203120b866d74a9b283b2ffb8ec382fbf9dc321814700c6ea6f44ec57
     restart: unless-stopped
     container_name: cadvisor
+    expose:
+      - "8080"
     # kics-scan ignore-line
     privileged: true
     # kics-scan ignore-block
