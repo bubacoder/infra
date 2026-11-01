@@ -3,6 +3,8 @@ services:
   scrutiny-influxdb:
     image: influxdb:2.9@sha256:cdd3dbdea45c2f43513abd06ee9644b6e05d2354a2b93ca829c9f07d716eaaac
     container_name: scrutiny-influxdb
+    expose:
+      - "8086"
     restart: unless-stopped
     networks:
       - proxy

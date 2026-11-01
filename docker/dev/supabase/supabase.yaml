@@ -3,6 +3,8 @@ services:
 
   studio:
     container_name: supabase-studio
+    expose:
+      - "3000"
     image: supabase/studio:2025.11.10-sha-5291fe3@sha256:db1fb41e13ebd8666116486a9741bf1a1cb1cba36b4d0e44f45d95fca70576ac
     restart: unless-stopped
     healthcheck:
@@ -91,6 +93,8 @@ services:
 
   auth:
     container_name: supabase-auth
+    expose:
+      - "9999"
     image: supabase/gotrue:v2.197.0@sha256:1736a63078f5922b198c4cbe50f80ab9a2d3b54fe8b7b6cfb2e9dc5dbbc12c6b
     restart: unless-stopped
     healthcheck:
@@ -176,6 +180,8 @@ services:
 
   rest:
     container_name: supabase-rest
+    expose:
+      - "3000"
     image: postgrest/postgrest:v13.0.8@sha256:d09618df2b7b9547c80a076c2f4045b326be8d7ac06060d263caefec1334e3c9
     restart: unless-stopped
     depends_on:
@@ -201,6 +207,8 @@ services:
   realtime:
     # This container name looks inconsistent but is correct because realtime constructs tenant id by parsing the subdomain
     container_name: realtime-dev.supabase-realtime
+    expose:
+      - "4000"
     image: supabase/realtime:v2.149.2@sha256:7136416a697dc60cd36d78d070f91b591b8f6d2174dc598bd6490ff21341f717
     restart: unless-stopped
     depends_on:
@@ -247,6 +255,8 @@ services:
 
   storage:
     container_name: supabase-storage
+    expose:
+      - "5000"
     image: supabase/storage-api:v1.85.0@sha256:020b6e3253df19cd4d6c9da4095fc1bc11c944412fdd29966309800b8328d6b7
     restart: unless-stopped
     volumes:
@@ -293,6 +303,8 @@ services:
 
   imgproxy:
     container_name: supabase-imgproxy
+    expose:
+      - "5001"
     image: darthsim/imgproxy:v3.31.4@sha256:73c5dda13199745b0d2d00e4149d4a589c5b2e205dbf335ca05eca8276b54712
     restart: unless-stopped
     volumes:
@@ -317,6 +329,8 @@ services:
 
   meta:
     container_name: supabase-meta
+    expose:
+      - "8080"
     image: supabase/postgres-meta:v0.100.0@sha256:145325b7e39f8ef4931d6e8cfd3f6f4d655de09d72a2ccc96d9513542c2202bd
     restart: unless-stopped
     depends_on:
@@ -338,6 +352,8 @@ services:
 
   functions:
     container_name: supabase-edge-functions
+    expose:
+      - "9000"
     image: supabase/edge-runtime:v1.77.9@sha256:6b850a2ccf0bf50ecac9accff8098095cd191c389c2a53c59b857aa0f53a8343
     restart: unless-stopped
     volumes:
@@ -364,6 +380,8 @@ services:
 
   analytics:
     container_name: supabase-analytics
+    expose:
+      - "4000"
     image: supabase/logflare:1.54.2@sha256:afac914b0606f2f1c71b6b2a96c449b5fff29e6f02aa55dd551b4708cdef36f1
     restart: unless-stopped
     # Uncomment to use Big Query backend for analytics
@@ -421,6 +439,8 @@ services:
 
   db:
     container_name: supabase-db
+    expose:
+      - "${SUPABASE_POSTGRES_PORT}"
     image: supabase/postgres:15.19.0.008@sha256:4cd8bf30eb3168eae9a4d91602cc97606210752ac3fd974308cbd88593986f7f
     restart: unless-stopped
     volumes:
@@ -482,6 +502,8 @@ services:
 
   vector:
     container_name: supabase-vector
+    expose:
+      - "9001"
     image: timberio/vector:0.60.0-alpine@sha256:1c6a6c4c5c9de08df357fa8adbe72e5a7abcea458b0bd82de0b14ac9b79d5b31
     restart: unless-stopped
     volumes:

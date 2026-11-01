@@ -28,6 +28,8 @@ services:
     networks:
       - proxy
     labels:
+      konverter.connect.postgresql.service: "postgresql/postgresql"
+      konverter.connect.postgresql.ports: "5432/tcp"
       traefik.enable: true
       traefik.http.routers.mattermost.rule: Host(`mattermost.${MYDOMAIN}`)
       traefik.http.routers.mattermost.middlewares: localaccess@file
