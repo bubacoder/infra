@@ -10,7 +10,7 @@ services:
       - ./config:/etc/prometheus
       - ${DOCKER_VOLUMES}/prometheus:/prometheus
     command:
-      - "--config.file=/etc/prometheus/prometheus.yaml"
+      - "--config.file=/etc/prometheus/${PROMETHEUS_CONFIG_FILE:-prometheus.yaml}"
     networks:
       - proxy
     labels:

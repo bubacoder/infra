@@ -19,6 +19,8 @@ services:
     ports:
       - 2222:2222
     # For Prometheus metrics scraping (port 2112)
+    expose:
+      - "2112"
     networks:
       - proxy
     labels:
