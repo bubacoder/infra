@@ -55,6 +55,16 @@ The optional [`k3s_traefik` role](roles/k3s_traefik/README.md) configures bundle
 ingress with shared file middleware and persistent ACME, without duplicating
 application Compose definitions or installing a second Traefik.
 
+## Host resolver handling
+
+`debian_base` sets `DNSStubListener=no` in the `[Resolve]` section when
+`/etc/systemd/resolved.conf` exists. The section-aware INI task inserts a missing
+option and notifies a resolver restart independently of `/etc/resolv.conf`
+changes. Existing unrelated resolver settings are preserved. Hosts without that
+main configuration file are skipped; systemd drop-in overrides still require
+review. This host configuration is separate from Kubernetes ServiceLB DNS
+publication; loopback port-53 listeners alone do not establish a LAN-IP conflict.
+
 ## Bootstrapping hosts with authentication
 
 1. Copy public SSH key, e.g.:
