@@ -22,12 +22,15 @@
 
 # https://www.linuxuprising.com/2020/07/ubuntu-how-to-free-up-port-53-used-by.html
 - name: Disable DNSStubListener
-  ansible.builtin.lineinfile:
+  community.general.ini_file:
     path: /etc/systemd/resolved.conf
-    regexp: '^(.*)DNSStubListener(.*)$'
-    line: 'DNSStubListener=no'
-    backrefs: true
+    section: Resolve
+    option: DNSStubListener
+    value: 'no'
+    no_extra_spaces: true
+    create: false
   when: debian_base_systemd_resolved_conf.stat.exists
+  notify: Restart service systemd-resolved
 
 - name: Create symbolic link to resolv.conf
   ansible.builtin.file:
