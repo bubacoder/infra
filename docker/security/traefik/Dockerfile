@@ -1,4 +1,4 @@
-FROM alpine:3.24 AS crowdsec_plugin
+FROM alpine:3.24@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS crowdsec_plugin
 
 # renovate: datasource=git-tags depName=maxlerebourg/crowdsec-bouncer-traefik-plugin
 ARG CROWDSEC_PLUGIN_REF=1.8.1
@@ -13,6 +13,6 @@ RUN apk add --no-cache git \
 
 # Traefik binds privileged ports and accesses the root-owned Docker socket.
 # kics-scan ignore-line
-FROM traefik:v3.7.16
+FROM traefik:v3.7.16@sha256:1336e85aaed293bd63d005086e0dd013b04078b26aaeb1c18b26a2f928af7e65
 
 COPY --from=crowdsec_plugin /plugin /plugins-local/src/github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
