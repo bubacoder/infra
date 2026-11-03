@@ -23,6 +23,27 @@ Persistent configuration remains enabled so other saved settings are preserved.
 Setting `ENABLE_PERSISTENT_CONFIG=false` would force environment defaults for
 all persistent settings and prevent Admin UI changes from surviving restarts.
 
+## Ollama endpoint
+
+Compose uses the supported `OLLAMA_BASE_URL`, defaulting to
+`https://ollama.${MYDOMAIN}` without `/api`. Set `OPEN_WEBUI_OLLAMA_BASE_URL`
+to select another endpoint explicitly. A Kubernetes environment overlay can use
+`OPEN_WEBUI_OLLAMA_BASE_URL=http://ollama.ollama.svc:11434` for direct access;
+the caller-owned labels declare only the Ollama workload on TCP 11434.
+
+The tracked overlay example is
+`config-example/kubernetes/k3s/.env.open-webui`; the local overlay belongs at
+`config/kubernetes/k3s/.env.open-webui`. Explicitly pass
+`--env-overlay-path config/kubernetes/k3s` to Konverter alongside the normal
+`--cluster-env-path`. Paths are relative to the working directory; these examples
+assume invocation from the infra repository root. Docker does not load this
+overlay, and Konverter does not select it automatically.
+
+The deprecated `OLLAMA_API_BASE_URL` is no longer set. Correcting that variable
+may change instances that previously fell back to the image's host-gateway URL.
+Saved connection settings or `OLLAMA_BASE_URLS` may override the selected value;
+verify the effective endpoint before migration. The Docker host alias is retained.
+
 ## Authentik
 
 Open WebUI uses native OIDC for Authentik's `users` group. It redirects to
