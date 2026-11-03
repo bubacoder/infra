@@ -32,6 +32,43 @@ Must be created against `admin` (not `unifi`) to match MONGO_AUTHSOURCE=admin be
 more than just the main db (`_stat`, `_audit`, `_restore`, `clusterMonitor` too)
 The databases themselves don't need to pre-exist — Mongo creates them lazily on first write.
 
+## Kubernetes preparation
+
+Docker keeps `MONGO_HOST=mongodb` by default. For separate Konverter projects,
+explicitly supply `UNIFI_MONGO_HOST=mongodb.mongodb.svc` at the conversion input
+boundary. MongoDB declares internal `expose: ["27017"]`; its `mongodb` ClusterIP
+Service remains distinct from `mongodb-published`, which retains the existing
+published port. The caller-owned labels grant only this controller's exact
+namespace/app/workload identity TCP 27017 access in namespace `mongodb`.
+
+`UNIFI_TRAEFIK_SERVERS_TRANSPORT` selects an existing reviewed transport reference;
+its Docker default remains `insecureTransport@file`. Konverter preserves either
+`name@file` or a same-namespace ServersTransport CRD name, but never creates the
+definition or disables certificate verification. K3s Traefik bootstrap currently
+excludes insecure file transports. Prefer a reviewed trusted-CA/certificate
+configuration; providing an insecure compatibility transport requires a separate
+bootstrap/security decision. Selecting a name alone does not make it available.
+
+The published TCP/UDP ports remain unchanged alongside the HTTPS Traefik route
+in LoadBalancer mode. Direct port 8443 access bypasses Traefik middleware. A
+single-node Local traffic policy with an explicit LAN CIDR was tested with
+synthetic traffic, not UniFi devices. UDP publication does not reproduce Docker
+L2/broadcast discovery. Preserve the device-accessible inform address and port
+8080; do not point real access points at an isolated test controller.
+
+LinuxServer documents the Mongo connection variables as **first-run-only**.
+Changing the input hostname does not safely rewrite an existing `/config` state
+or migrate its database. Existing data/identity/credentials require a separate
+backup/restore and configuration review. The shared MongoDB init directory has
+only a placeholder, so the required UniFi account/roles are not provisioned by
+the tracked source; use the existing reviewed provisioning procedure above.
+Root credentials and ping readiness do not prove the UniFi account is usable.
+Real secrets must be managed privately, never copied into regression fixtures.
+
+No production stack, controller transport, Mongo user or adoption setting is
+changed by these source preparations. Fresh synthetic startup/authentication and
+database-backed readiness remain separate live checks before migration.
+
 ## References
 
 - Home: [Software Downloads - Ubiquiti](https://ui.com/download/releases/network-server)
