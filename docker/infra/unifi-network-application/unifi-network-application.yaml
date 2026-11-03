@@ -10,7 +10,7 @@ services:
       TZ: ${TIMEZONE}
       MEM_LIMIT: 1024 # optional
       MEM_STARTUP: 1024 # optional
-      MONGO_HOST: mongodb
+      MONGO_HOST: ${UNIFI_MONGO_HOST:-mongodb}
       MONGO_PORT: 27017
       MONGO_USER: ${UNIFI_MONGO_USERNAME}
       MONGO_PASS: ${UNIFI_MONGO_PASSWORD}
@@ -40,7 +40,7 @@ services:
       traefik.http.routers.unifi-network-application.middlewares: localaccess@file
       traefik.http.services.unifi-network-application.loadbalancer.server.port: 8443
       traefik.http.services.unifi-network-application.loadbalancer.server.scheme: https
-      traefik.http.services.unifi-network-application.loadbalancer.serversTransport: insecureTransport@file
+      traefik.http.services.unifi-network-application.loadbalancer.serversTransport: ${UNIFI_TRAEFIK_SERVERS_TRANSPORT:-insecureTransport@file}
       homepage.group: Infra
       homepage.name: UniFi Network Application
       homepage.icon: unifi-controller.png
