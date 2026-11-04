@@ -107,7 +107,7 @@ repos:
         always_run: false
         entry: >
           env ANSIBLE_ROLES_PATH=~/.ansible/roles:/usr/share/ansible/roles:/etc/ansible/roles:ansible/roles
-          env ANSIBLE_COLLECTIONS_PATH=/usr/lib/python3/dist-packages:/usr/share/ansible/collections:/etc/ansible/collections:/opt/pipx/venvs/ansible-core/lib/python3.12/site-packages/ansible_collections:~/.ansible/collections:collections
+          env ANSIBLE_COLLECTIONS_PATH=/usr/lib/python3/dist-packages:/usr/share/ansible/collections:/etc/ansible/collections:~/.ansible/collections:collections
           python3 -m ansiblelint --force-color ansible/
 
   # Find security vulnerabilities, compliance issues, and infrastructure misconfigurations early in the development cycle of your infrastructure-as-code with KICS by Checkmarx.

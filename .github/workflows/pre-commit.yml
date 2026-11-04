@@ -44,9 +44,10 @@ jobs:
           mv terraform-docs /usr/local/bin/terraform-docs
           rm terraform-docs.tar.gz
 
-      # Note: collections will be installed to /opt/pipx/venvs/ansible-core/lib/python3.12/site-packages/ansible_collections (why?)
+      # The runner's pipx collections are not visible inside pre-commit's virtualenv.
+      # Force installation into the shared user path even if pipx has the same versions.
       - name: Install Ansible requirements
-        run: cd ansible && ansible-galaxy install -vv -r requirements.yml
+        run: cd ansible && ansible-galaxy collection install -vv -r requirements.yml --collections-path "$HOME/.ansible/collections" --force
 
       - name: Pre-commit checks
         uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
