@@ -202,7 +202,7 @@ services:
   realtime:
     # This container name looks inconsistent but is correct because realtime constructs tenant id by parsing the subdomain
     container_name: realtime-dev.supabase-realtime
-    image: supabase/realtime:v2.147.1@sha256:b7b0ef84b69d80b9b9c2280c9e9ae0a901175d3035b6b0c3ae22fa6c48bfb272
+    image: supabase/realtime:v2.149.2@sha256:7136416a697dc60cd36d78d070f91b591b8f6d2174dc598bd6490ff21341f717
     restart: unless-stopped
     depends_on:
       db:
@@ -248,7 +248,7 @@ services:
 
   storage:
     container_name: supabase-storage
-    image: supabase/storage-api:v1.84.17@sha256:23643e8e63f87e6b7577bffdb8886d6e06471e60e0d7663cc35dd47d5d4d390c
+    image: supabase/storage-api:v1.85.0@sha256:020b6e3253df19cd4d6c9da4095fc1bc11c944412fdd29966309800b8328d6b7
     restart: unless-stopped
     volumes:
       - ${DOCKER_VOLUMES}/supabase/storage:/var/lib/storage
@@ -339,7 +339,7 @@ services:
 
   functions:
     container_name: supabase-edge-functions
-    image: supabase/edge-runtime:v1.77.8@sha256:178c041398a33ded8219344382d0672a90051d1babbf0af03425cafe20039a75
+    image: supabase/edge-runtime:v1.77.9@sha256:6b850a2ccf0bf50ecac9accff8098095cd191c389c2a53c59b857aa0f53a8343
     restart: unless-stopped
     volumes:
       - ./config/functions:/home/deno/functions:Z
@@ -365,7 +365,7 @@ services:
 
   analytics:
     container_name: supabase-analytics
-    image: supabase/logflare:1.53.1@sha256:1b9cd7d2ae3fd51851b81e807ddc2a792040050ec4d53187f333741fc8b310af
+    image: supabase/logflare:1.54.2@sha256:afac914b0606f2f1c71b6b2a96c449b5fff29e6f02aa55dd551b4708cdef36f1
     restart: unless-stopped
     # Uncomment to use Big Query backend for analytics
     # volumes:
@@ -422,7 +422,7 @@ services:
 
   db:
     container_name: supabase-db
-    image: supabase/postgres:15.19.0.007@sha256:1a2183252a053a036938196f50dc81442e2e5a75796bd4326729e4ea04cf58ea
+    image: supabase/postgres:15.19.0.008@sha256:4cd8bf30eb3168eae9a4d91602cc97606210752ac3fd974308cbd88593986f7f
     restart: unless-stopped
     volumes:
       - ./config/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
