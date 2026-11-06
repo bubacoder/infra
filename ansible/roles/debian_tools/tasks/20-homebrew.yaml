@@ -58,10 +58,24 @@
     - debian_tools_brew_install_groups.terraform | default(false) | bool
   become: false
 
+# The module queries brew info before installation can implicitly grant trust.
+- name: Trust configured third-party Homebrew formulae
+  ansible.builtin.command:
+    argv:
+      - /home/linuxbrew/.linuxbrew/bin/brew
+      - trust
+      - --formula
+      - "{{ item }}"
+  loop: "{{ debian_tools_brew_packages | default([]) | select('match', '^[^/]+/[^/]+/[^/]+$') | unique | list }}"
+  register: debian_tools_brew_trust
+  changed_when: debian_tools_brew_trust.stdout is match('^Trusted formula:')
+  become: false
+
 - name: Install Homebrew packages
   community.general.homebrew:
     name: "{{ debian_tools_brew_packages }}"
     state: latest
+    force_formula: true
   when:
     - debian_tools_brew_packages is defined
     - debian_tools_brew_packages | type_debug == 'list'
