@@ -49,14 +49,19 @@
   no_log: true
 
 - name: Bind the receipt to the exact cluster and deployment
-  ansible.builtin.assert:
-    that:
-      - k3s_traefik_cluster.stdout | length > 0
-      - k3s_traefik_receipt.cluster_uid == k3s_traefik_cluster.stdout
-      - k3s_traefik_receipt.deployment == bootstrap.name
-      - k3s_traefik_receipt.uids is mapping
-    fail_msg: Traefik ownership receipt does not match this cluster/deployment. No adoption or reset is performed.
-  no_log: true
+  block:
+    - name: Validate receipt identity privately
+      ansible.builtin.assert:
+        that:
+          - k3s_traefik_cluster.stdout | length > 0
+          - k3s_traefik_receipt.cluster_uid == k3s_traefik_cluster.stdout
+          - k3s_traefik_receipt.deployment == bootstrap.name
+          - k3s_traefik_receipt.uids is mapping
+      no_log: true
+  rescue:
+    - name: Explain receipt refusal without disclosing private state
+      ansible.builtin.fail:
+        msg: Traefik ownership receipt does not match this cluster/deployment. No adoption or reset is performed.
 
 - name: Inspect only managed resource identities, never Secret contents
   ansible.builtin.command:

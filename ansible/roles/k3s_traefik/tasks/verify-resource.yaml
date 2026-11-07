@@ -7,11 +7,16 @@
   no_log: true
 
 - name: Compare managed data without displaying private operator edits
-  ansible.builtin.assert:
-    that:
-      - >-
-        ((k3s_traefik_live_public.stdout | from_json).data == (lookup('ansible.builtin.file', hostvars.localhost.bootstrap_input_dir + '/k3s-traefik-configmap.yaml') | from_yaml).data)
-        if k3s_traefik_verify_kind == 'configmap' else
-        ((k3s_traefik_live_public.stdout | from_json).spec.valuesContent == (lookup('ansible.builtin.file', hostvars.localhost.bootstrap_input_dir + '/k3s-traefik-helmchartconfig.yaml') | from_yaml).spec.valuesContent)
-    fail_msg: Managed Traefik configuration differs from compiled input. Verify never overwrites edits.
-  no_log: true
+  block:
+    - name: Validate managed data privately
+      ansible.builtin.assert:
+        that:
+          - >-
+            ((k3s_traefik_live_public.stdout | from_json).data == (lookup('ansible.builtin.file', hostvars.localhost.bootstrap_input_dir + '/k3s-traefik-configmap.yaml') | from_yaml).data)
+            if k3s_traefik_verify_kind == 'configmap' else
+            ((k3s_traefik_live_public.stdout | from_json).spec.valuesContent == (lookup('ansible.builtin.file', hostvars.localhost.bootstrap_input_dir + '/k3s-traefik-helmchartconfig.yaml') | from_yaml).spec.valuesContent)
+      no_log: true
+  rescue:
+    - name: Explain configuration drift without disclosing operator edits
+      ansible.builtin.fail:
+        msg: Managed Traefik configuration differs from compiled input. Verify never overwrites edits.
