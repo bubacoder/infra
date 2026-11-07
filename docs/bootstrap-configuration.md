@@ -16,6 +16,9 @@ Use a separate Linux controller with Git, SSH, `ssh-keygen`, curl,
 [Task](https://taskfile.dev/docs/installation), Ansible, and Python 3.11+ with PyYAML.
 Clone the repository and run bootstrap commands from its root. See the selected
 installation guide for AWS/Proxmox-specific tools and access requirements.
+Install `netaddr>=0.10.1` in the same Python environment as Ansible; the
+`ansible.utils.ipaddr` filter uses it to validate opt-in Traefik CIDRs. This also
+applies when Ansible was already installed outside the bootstrap setup script.
 
 If Ansible is missing, `sudo ansible/bootstrap-ansible.sh` installs it on a supported
 controller. On Ubuntu, install missing YAML support with

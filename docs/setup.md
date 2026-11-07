@@ -52,7 +52,7 @@ subsequent command. Always resume using the original deployment directory.
 
 Initialization creates only private `config/bootstrap-proxmox/bootstrap.yaml`
 without overwriting existing settings. It does not connect to Proxmox or create a VM.
-Edit this one file privately, including its `secrets` section. Native tool inputs
+Edit this file privately, including required credential-file references under `dns`. Native tool inputs
 are generated automatically under `state/generated/` when commands run; never edit them.
 Follow [inputs and safety](bootstrap-configuration.md), then review:
 
