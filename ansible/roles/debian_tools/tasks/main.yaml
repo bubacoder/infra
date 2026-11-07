@@ -2,6 +2,12 @@
 - name: Install packages with apt
   ansible.builtin.import_tasks: 10-apt.yaml
 
+- name: Install packages from configured APT repositories
+  ansible.builtin.include_role:
+    name: apt_repositories
+  vars:
+    apt_repositories_items: "{{ debian_tools_apt_repositories }}"
+
 # https://brew.sh/
 # https://docs.brew.sh/Homebrew-on-Linux
 - name: Install packages with Homebrew

@@ -34,11 +34,13 @@ debian:
       # packagecloud.io does not yet have CrowdSec packages for Ubuntu 25.10 "resolute"
       debian_base_crowdsec_suite: noble
 
+      debian_tools_apt_repositories:
+        - "{{ debian_tools_apt_repository_catalog.azure_cli }}"
+
       # Enable all brew package groups
       debian_tools_brew_install_groups:
         dev: true
         aws: true
-        azure: true
         terraform: true
         kubernetes: true
 
@@ -57,11 +59,13 @@ debian:
         - INPUT
         - DOCKER-USER
 
+      debian_tools_apt_repositories:
+        - "{{ debian_tools_apt_repository_catalog.azure_cli }}"
+
       # Enable all brew package groups
       debian_tools_brew_install_groups:
         dev: true
         aws: true
-        azure: true
         terraform: true
         kubernetes: true
 
@@ -74,10 +78,11 @@ debian:
     # Ad-hoc local target; excluded by apply-homelab.sh.
     local-debian:
       ansible_connection: local
+      debian_tools_apt_repositories:
+        - "{{ debian_tools_apt_repository_catalog.azure_cli }}"
       debian_tools_brew_install_groups:
         dev: true
         aws: true
-        azure: true
         terraform: true
         kubernetes: true
 

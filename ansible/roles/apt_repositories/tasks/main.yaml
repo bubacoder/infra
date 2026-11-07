@@ -1,0 +1,14 @@
+---
+- name: Validate repository list
+  ansible.builtin.assert:
+    that:
+      - apt_repositories_items | type_debug == 'list'
+    fail_msg: apt_repositories_items must be a list of repository/package definitions.
+
+- name: Configure enabled repositories and install their packages
+  ansible.builtin.include_tasks: repository.yaml
+  loop: "{{ apt_repositories_items }}"
+  loop_control:
+    loop_var: apt_repositories_entry
+    label: "{{ apt_repositories_entry.name | default('unnamed') }}"
+  when: apt_repositories_entry.enabled | default(true) | bool

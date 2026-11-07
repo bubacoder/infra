@@ -1,0 +1,44 @@
+---
+- name: Validate repository definition
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == 'Debian'
+      - apt_repositories_entry.name is match('^[a-zA-Z0-9][a-zA-Z0-9_-]*$')
+      - apt_repositories_entry.uri is match('^https://')
+      - apt_repositories_entry.signing_key_url is match('^https://')
+      - apt_repositories_entry.suites | length > 0
+      - apt_repositories_entry.components | length > 0
+      - apt_repositories_entry.packages | type_debug == 'list'
+      - apt_repositories_entry.packages | length > 0
+      - apt_repositories_entry.package_state | default('present') in ['present', 'latest']
+    fail_msg: Supply a safe repository name, HTTPS repository/key URLs, suites, components and a nonempty package list.
+
+- name: Manage repository packages
+  become: true
+  block:
+    - name: Install repository prerequisites
+      ansible.builtin.apt:
+        name: [ca-certificates, python3-debian]
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Configure signed APT repository
+      ansible.builtin.deb822_repository:
+        name: "{{ apt_repositories_entry.name }}"
+        types: deb
+        uris: "{{ apt_repositories_entry.uri }}"
+        suites: "{{ apt_repositories_entry.suites }}"
+        components: "{{ apt_repositories_entry.components }}"
+        architectures: "{{ apt_repositories_entry.architectures | default(omit) }}"
+        signed_by: "{{ apt_repositories_entry.signing_key_url }}"
+        state: present
+      register: apt_repositories_source
+
+    - name: Install repository packages
+      ansible.builtin.apt:
+        name: "{{ apt_repositories_entry.packages }}"
+        state: "{{ apt_repositories_entry.package_state | default('present') }}"
+        update_cache: true
+        cache_valid_time: "{{ 0 if apt_repositories_source.changed else 3600 }}"
+        allow_downgrade: "{{ apt_repositories_entry.allow_downgrade | default(false) }}"
