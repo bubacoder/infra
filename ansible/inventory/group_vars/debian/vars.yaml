@@ -108,8 +108,10 @@ debian_tools_brew_packages_terraform:
   - terraform-docs               # https://github.com/terraform-docs/terraform-docs
   - terragrunt                   # https://terragrunt.gruntwork.io/docs/getting-started/install/
   - tfsec                        # https://github.com/aquasecurity/tfsec
-  - terraform-linters/tap/tflint # https://github.com/terraform-linters/tflint
   - opentofu                     # https://opentofu.org/
+
+debian_tools_brew_cask_packages_terraform:
+  - terraform-linters/tap/tflint # https://github.com/terraform-linters/tflint (Linux and macOS cask)
 
 ## Kubernetes Tools
 debian_tools_brew_packages_kubernetes:

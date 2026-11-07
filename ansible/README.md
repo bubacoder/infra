@@ -73,6 +73,19 @@ specialized installation path because it must suppress package-triggered service
 startup until credentials and firewall prerequisites are ready. The Ansible
 bootstrap script runs before roles are available and is intentionally separate.
 
+## Homebrew package types and trust
+
+Formulae and casks have separate package lists and installation tasks. TFLint is
+a third-party cask with Linux and macOS artifacts; on Linux it is selected by the
+Terraform tools group through `debian_tools_brew_cask_packages_terraform`. Other
+explicit Linux-compatible casks can be set in `debian_tools_brew_cask_packages`.
+macOS uses `mac_base_brew_cask_packages`, including Azure CLI and TFLint.
+
+Both roles derive taps and item-level trust from fully qualified names in their
+configured lists. Formulae receive formula trust and casks receive cask trust;
+no entire third-party tap is implicitly trusted. Trust is established before
+Ansible's package metadata queries.
+
 ## Useful options
 
 The following parameters can be applied to `ansible-playbook` and the "apply..." scripts.

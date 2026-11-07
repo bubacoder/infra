@@ -41,6 +41,13 @@
       }}
   when: debian_tools_brew_install_groups is defined
 
+- name: Build Homebrew cask list based on enabled groups
+  ansible.builtin.set_fact:
+    debian_tools_brew_effective_cask_packages: >-
+      {{ debian_tools_brew_cask_packages | default([]) +
+         ((debian_tools_brew_install_groups.terraform | default(false) | bool)
+          | ternary(debian_tools_brew_cask_packages_terraform | default([]), [])) }}
+
 - name: Display packages to be installed
   ansible.builtin.debug:
     msg: "Will install {{ debian_tools_brew_packages | length }} Homebrew packages: {{ debian_tools_brew_packages | join(', ') }}"
@@ -48,27 +55,12 @@
     - debian_tools_brew_packages is defined
     - debian_tools_brew_packages | length > 0
 
-- name: Add required Homebrew taps
-  community.general.homebrew_tap:
-    name:
-      - terraform-linters/tap
-    state: present
-  when:
-    - debian_tools_brew_install_groups.terraform | default(false) | bool
-  become: false
-
-# The module queries brew info before installation can implicitly grant trust.
-- name: Trust configured third-party Homebrew formulae
-  ansible.builtin.command:
-    argv:
-      - /home/linuxbrew/.linuxbrew/bin/brew
-      - trust
-      - --formula
-      - "{{ item }}"
-  loop: "{{ debian_tools_brew_packages | default([]) | select('match', '^[^/]+/[^/]+/[^/]+$') | unique | list }}"
-  register: debian_tools_brew_trust
-  changed_when: debian_tools_brew_trust.stdout is match('^Trusted formula:')
-  become: false
+- name: Prepare Homebrew taps and item trust
+  ansible.builtin.include_tasks: ../../common/tasks/homebrew-trust.yaml
+  vars:
+    common_homebrew_formulae: "{{ debian_tools_brew_packages | default([]) }}"
+    common_homebrew_casks: "{{ debian_tools_brew_effective_cask_packages }}"
+    common_homebrew_path: /home/linuxbrew/.linuxbrew/bin
 
 - name: Install Homebrew packages
   community.general.homebrew:
@@ -81,13 +73,11 @@
     - debian_tools_brew_packages | length > 0
   become: false
 
-- name: Install Homebrew Cask packages (only on Darwin)
+- name: Install Homebrew cask packages
   community.general.homebrew_cask:
-    name: "{{ debian_tools_brew_cask_packages }}"
+    name: "{{ debian_tools_brew_effective_cask_packages }}"
+    path: /home/linuxbrew/.linuxbrew/bin
     state: latest
   when:
-    - ansible_facts["system"] == "Darwin"
-    - debian_tools_brew_cask_packages is defined
-    - debian_tools_brew_cask_packages | type_debug == 'list'
-    - debian_tools_brew_cask_packages | length > 0
+    - debian_tools_brew_effective_cask_packages | length > 0
   become: false

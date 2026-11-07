@@ -25,10 +25,18 @@
   when: mac_base_homebrew_check.stat.exists
   become: false
 
+- name: Prepare Homebrew taps and item trust
+  ansible.builtin.include_tasks: ../../common/tasks/homebrew-trust.yaml
+  vars:
+    common_homebrew_formulae: "{{ mac_base_brew_base_tools + mac_base_brew_cloud_tools + mac_base_brew_terraform_tools + mac_base_brew_kubernetes_tools }}"
+    common_homebrew_casks: "{{ mac_base_brew_cask_packages }}"
+    common_homebrew_path: /opt/homebrew/bin:/usr/local/bin:/home/linuxbrew/.linuxbrew/bin
+
 - name: Install Homebrew packages
   community.general.homebrew:
     name: "{{ mac_base_brew_base_tools + mac_base_brew_cloud_tools + mac_base_brew_terraform_tools + mac_base_brew_kubernetes_tools }}"
     state: latest
+    force_formula: true
   become: false
 
 - name: Install Homebrew Cask packages

@@ -36,7 +36,6 @@ mac_base_brew_terraform_tools:
   - terraform-docs               # https://github.com/terraform-docs/terraform-docs
   - terragrunt                   # https://terragrunt.gruntwork.io/docs/getting-started/install/
   - tfsec                        # https://github.com/aquasecurity/tfsec
-  - terraform-linters/tap/tflint # https://github.com/terraform-linters/tflint
 
 mac_base_brew_kubernetes_tools:
   - docker                # https://www.docker.com/
@@ -48,6 +47,7 @@ mac_base_brew_kubernetes_tools:
   - eksctl                # https://eksctl.io/
 
 mac_base_brew_cask_packages:
+  - terraform-linters/tap/tflint # https://github.com/terraform-linters/tflint
   - azure-cli              # https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-macos
   - visual-studio-code     # https://code.visualstudio.com/
   - macpass                # https://macpassapp.org/
