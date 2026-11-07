@@ -76,7 +76,7 @@ or billable AWS resources running. There is no automatic rollback or hosts-file 
 Read-only provider checks reject conflicting addresses, duplicates, aliases,
 delegations and proxied Cloudflare records. Exactly matching pre-existing records
 are left unchanged and are **not** claimed for deletion. The small non-secret
-`dns-state.yaml` receipt in the selected target's directory records only
+`state/dns-state.yaml` receipt in the selected target's directory records only
 deployment-created names, addresses, AdGuard endpoint URLs and Cloudflare IDs, not
 credentials. Ownership is separate for each AdGuard endpoint: a matching record
 copied by another tool is left unchanged and is not adopted.
