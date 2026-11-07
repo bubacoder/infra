@@ -30,6 +30,9 @@ VM_CONFIG = "name: docker-proxmox\nciuser: admin\nscsi0: local-lvm:vm-999-disk-0
 
 class BootstrapStatusTests(unittest.TestCase):
     def setUp(self):
+        executable = patch("scripts.bootstrap.status.executable", side_effect=lambda name: name)
+        executable.start()
+        self.addCleanup(executable.stop)
         temp = tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT if TEST_TEMP_ROOT.is_dir() else None)
         self.addCleanup(temp.cleanup)
         self.root = Path(temp.name)
