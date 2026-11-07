@@ -16,24 +16,29 @@
   no_log: true
 
 - name: Require the validated bundled chart and no conflicting base inputs
-  ansible.builtin.assert:
-    that:
-      - k3s_traefik_chart.chart.endswith('/' + k3s_traefik_supported_chart)
-      - k3s_traefik_chart.valuesSecrets | default([]) | length == 0
-      - k3s_traefik_chart.set | default({}) | list | select('match', '^(additionalArguments|volumes|env|persistence|deployment|updateStrategy|podSecurityContext|certificatesResolvers|providers)($|\.|\[)') | list | length == 0
-      - k3s_traefik_base_values.additionalArguments | default([]) | length == 0
-      - k3s_traefik_base_values.volumes | default([]) | length == 0
-      - k3s_traefik_base_values.env | default([]) | length == 0
-      - k3s_traefik_base_values.certificatesResolvers | default({}) | length == 0
-      - not k3s_traefik_base_values.providers.file.enabled | default(false)
-      - not k3s_traefik_base_values.persistence.enabled | default(false)
-      - k3s_traefik_base_values.persistence.existingClaim | default('') == ''
-      - k3s_traefik_base_values.deployment.replicas | default(1) == 1
-      - k3s_traefik_base_values.updateStrategy | default({}) | length == 0
-      - k3s_traefik_base_values.podSecurityContext | default({}) | length == 0
-      - not k3s_traefik_base_values.providers.kubernetesCRD.allowCrossNamespace | default(false)
-    fail_msg: Bundled chart/version or base values conflict with the reviewed Traefik adapter. Inspect privately and plan a migration; no overrides are discarded.
-  no_log: true
+  block:
+    - name: Validate chart and base values privately
+      ansible.builtin.assert:
+        that:
+          - k3s_traefik_chart.chart.endswith('/' + k3s_traefik_supported_chart)
+          - k3s_traefik_chart.valuesSecrets | default([]) | length == 0
+          - k3s_traefik_chart.set | default({}) | list | select('match', '^(additionalArguments|volumes|env|persistence|deployment|updateStrategy|podSecurityContext|certificatesResolvers|providers)($|\.|\[)') | list | length == 0
+          - k3s_traefik_base_values.additionalArguments | default([]) | length == 0
+          - k3s_traefik_base_values.volumes | default([]) | length == 0
+          - k3s_traefik_base_values.env | default([]) | length == 0
+          - k3s_traefik_base_values.certificatesResolvers | default({}) | length == 0
+          - not k3s_traefik_base_values.providers.file.enabled | default(false)
+          - not k3s_traefik_base_values.persistence.enabled | default(false)
+          - k3s_traefik_base_values.persistence.existingClaim | default('') == ''
+          - k3s_traefik_base_values.deployment.replicas | default(1) == 1
+          - k3s_traefik_base_values.updateStrategy | default({}) | length == 0
+          - k3s_traefik_base_values.podSecurityContext | default({}) | length == 0
+          - not k3s_traefik_base_values.providers.kubernetesCRD.allowCrossNamespace | default(false)
+      no_log: true
+  rescue:
+    - name: Explain chart refusal without disclosing private values
+      ansible.builtin.fail:
+        msg: Bundled chart/version or base values conflict with the reviewed Traefik adapter. Inspect privately and plan a migration; no overrides are discarded.
 
 - name: Check the explicitly selected storage class exists
   ansible.builtin.command:

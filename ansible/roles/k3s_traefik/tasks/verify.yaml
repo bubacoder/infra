@@ -33,14 +33,19 @@
       no_log: true
 
     - name: Require single-writer deployment and the owned persistent claim
-      ansible.builtin.assert:
-        that:
-          - (k3s_traefik_deployment.stdout | from_json).spec.replicas == 1
-          - (k3s_traefik_deployment.stdout | from_json).spec.strategy.type == 'Recreate'
-          - (k3s_traefik_deployment.stdout | from_json).spec.template.spec.securityContext.fsGroupChangePolicy | default('') == 'OnRootMismatch'
-          - (k3s_traefik_deployment.stdout | from_json).spec.template.spec.volumes | selectattr('name', 'equalto', 'data') | map(attribute='persistentVolumeClaim.claimName') | list == ['bootstrap-traefik-acme']
-        fail_msg: Controller replica/rollout/storage behavior differs from the managed single-writer profile.
-      no_log: true
+      block:
+        - name: Validate controller and storage privately
+          ansible.builtin.assert:
+            that:
+              - (k3s_traefik_deployment.stdout | from_json).spec.replicas == 1
+              - (k3s_traefik_deployment.stdout | from_json).spec.strategy.type == 'Recreate'
+              - (k3s_traefik_deployment.stdout | from_json).spec.template.spec.securityContext.fsGroupChangePolicy | default('') == 'OnRootMismatch'
+              - (k3s_traefik_deployment.stdout | from_json).spec.template.spec.volumes | selectattr('name', 'equalto', 'data') | map(attribute='persistentVolumeClaim.claimName') | list == ['bootstrap-traefik-acme']
+          no_log: true
+      rescue:
+        - name: Explain controller refusal without disclosing private values
+          ansible.builtin.fail:
+            msg: Controller replica/rollout/storage behavior differs from the managed single-writer profile.
 
     - name: Wait for the reconciled Traefik rollout
       ansible.builtin.command:

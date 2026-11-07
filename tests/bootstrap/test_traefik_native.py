@@ -115,6 +115,21 @@ class NativeTraefikTests(unittest.TestCase):
             with self.subTest(option=option):
                 result = self.inspect(owned=True, **{option: True})
                 self.assertNotEqual(result.returncode, 0)
+        guard = next(
+            task
+            for task in yaml.safe_load((ROLE / "tasks/inspect.yaml").read_text())
+            if task["name"] == "Bind the receipt to the exact cluster and deployment"
+        )
+        result = self.run_tasks(
+            [guard],
+            {
+                "k3s_traefik_cluster": {"stdout": "SYNTHETIC_PRIVATE_VALUE"},
+                "k3s_traefik_receipt": {"cluster_uid": "expected", "deployment": "synthetic-vm", "uids": {}},
+            },
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("receipt does not match this cluster/deployment", result.stdout)
+        self.assertNotIn("SYNTHETIC_PRIVATE_VALUE", result.stdout + result.stderr)
 
     def test_update_serialization_preserves_go_templates_and_sets_api_preconditions(self):
         desired = {

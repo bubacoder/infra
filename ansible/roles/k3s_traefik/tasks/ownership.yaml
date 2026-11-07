@@ -18,14 +18,19 @@
   no_log: true
 
 - name: Bind any ownership handover to the exact receipt and cluster
-  ansible.builtin.assert:
-    that:
-      - k3s_traefik_handover_cluster.stdout == k3s_traefik_receipt.cluster_uid
-      - k3s_traefik_handover_before.uid == k3s_traefik_receipt.uids[k3s_traefik_resource.kind]
-      - k3s_traefik_handover_before.labels['app.kubernetes.io/managed-by'] == k3s_traefik_manager
-      - k3s_traefik_handover_before.labels['infra.bootstrap/deployment'] == bootstrap.name
-    fail_msg: Resource identity changed; no ownership is transferred or adopted.
-  no_log: true
+  block:
+    - name: Validate handover identity privately
+      ansible.builtin.assert:
+        that:
+          - k3s_traefik_handover_cluster.stdout == k3s_traefik_receipt.cluster_uid
+          - k3s_traefik_handover_before.uid == k3s_traefik_receipt.uids[k3s_traefik_resource.kind]
+          - k3s_traefik_handover_before.labels['app.kubernetes.io/managed-by'] == k3s_traefik_manager
+          - k3s_traefik_handover_before.labels['infra.bootstrap/deployment'] == bootstrap.name
+      no_log: true
+  rescue:
+    - name: Explain identity refusal without disclosing private state
+      ansible.builtin.fail:
+        msg: Resource identity changed; no ownership is transferred or adopted.
 
 - name: Select only this bootstrap manager's field ownership entries
   ansible.builtin.set_fact:
@@ -36,16 +41,21 @@
   when: k3s_traefik_handover_entries | selectattr('operation', 'equalto', 'Update') | list | length > 0
   block:
     - name: Require one unambiguous bootstrap create entry in the expected API version
-      ansible.builtin.assert:
-        that:
-          - k3s_traefik_handover_entries | length == 1
-          - k3s_traefik_handover_entries[0].operation == 'Update'
-          - k3s_traefik_handover_entries[0].apiVersion == ('helm.cattle.io/v1' if k3s_traefik_resource.kind == 'helmchartconfig' else 'v1')
-          - k3s_traefik_handover_entries[0].subresource | default('') == ''
-          - k3s_traefik_handover_entries[0].fieldsType == 'FieldsV1'
-          - k3s_traefik_handover_entries[0].fieldsV1 is mapping
-        fail_msg: Ambiguous bootstrap field ownership requires explicit recovery; foreign entries are never reset or merged.
-      no_log: true
+      block:
+        - name: Validate create ownership privately
+          ansible.builtin.assert:
+            that:
+              - k3s_traefik_handover_entries | length == 1
+              - k3s_traefik_handover_entries[0].operation == 'Update'
+              - k3s_traefik_handover_entries[0].apiVersion == ('helm.cattle.io/v1' if k3s_traefik_resource.kind == 'helmchartconfig' else 'v1')
+              - k3s_traefik_handover_entries[0].subresource | default('') == ''
+              - k3s_traefik_handover_entries[0].fieldsType == 'FieldsV1'
+              - k3s_traefik_handover_entries[0].fieldsV1 is mapping
+          no_log: true
+      rescue:
+        - name: Explain ambiguous ownership without disclosing metadata
+          ansible.builtin.fail:
+            msg: Ambiguous bootstrap field ownership requires explicit recovery; foreign entries are never reset or merged.
 
     - name: Locate the exact create entry without changing its owned field set
       ansible.builtin.set_fact:
@@ -104,12 +114,17 @@
       no_log: true
 
     - name: Require the original field set and all foreign entries to be preserved
-      ansible.builtin.assert:
-        that:
-          - (k3s_traefik_handover_readback.stdout | from_json).uid == k3s_traefik_handover_before.uid
-          - >-
-            (k3s_traefik_handover_readback.stdout | from_json).managedFields | selectattr('manager', 'equalto', k3s_traefik_manager) | list ==
-            [k3s_traefik_handover_entries[0] | combine({'operation': 'Apply'})]
-          - (k3s_traefik_handover_readback.stdout | from_json).managedFields | rejectattr('manager', 'equalto', k3s_traefik_manager) | list == k3s_traefik_handover_before.managedFields | rejectattr('manager', 'equalto', k3s_traefik_manager) | list
-        fail_msg: Ownership handover readback differs; preserve the private metadata backup and inspect before continuing.
-      no_log: true
+      block:
+        - name: Validate ownership readback privately
+          ansible.builtin.assert:
+            that:
+              - (k3s_traefik_handover_readback.stdout | from_json).uid == k3s_traefik_handover_before.uid
+              - >-
+                (k3s_traefik_handover_readback.stdout | from_json).managedFields | selectattr('manager', 'equalto', k3s_traefik_manager) | list ==
+                [k3s_traefik_handover_entries[0] | combine({'operation': 'Apply'})]
+              - (k3s_traefik_handover_readback.stdout | from_json).managedFields | rejectattr('manager', 'equalto', k3s_traefik_manager) | list == k3s_traefik_handover_before.managedFields | rejectattr('manager', 'equalto', k3s_traefik_manager) | list
+          no_log: true
+      rescue:
+        - name: Explain readback refusal without disclosing metadata
+          ansible.builtin.fail:
+            msg: Ownership handover readback differs; preserve the private metadata backup and inspect before continuing.
