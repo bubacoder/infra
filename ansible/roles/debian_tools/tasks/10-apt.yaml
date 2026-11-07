@@ -3,4 +3,7 @@
   ansible.builtin.apt:
     pkg: "{{ debian_tools_apt_packages }}"
     state: present
+    # BuildKit may restore a cached image layer without restoring its cache mounts.
+    update_cache: true
+    cache_valid_time: 3600
   become: true

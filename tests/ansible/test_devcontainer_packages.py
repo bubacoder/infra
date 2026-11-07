@@ -4,6 +4,7 @@
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -17,6 +18,17 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def load_tasks(role, filename="20-homebrew.yaml"):
     return yaml.safe_load((ROOT / f"ansible/roles/{role}/tasks/{filename}").read_text())
+
+
+class DevcontainerPackageTests(unittest.TestCase):
+    def test_apt_cache_ids_include_distribution_and_architecture(self):
+        dockerfile = (ROOT / ".devcontainer/Dockerfile").read_text()
+        mounts = re.findall(r"--mount=([^\s]+)", dockerfile)
+        apt_mounts = [mount for mount in mounts if "target=/var/cache/apt" in mount or "target=/var/lib/apt" in mount]
+        self.assertTrue(apt_mounts)
+        for mount in apt_mounts:
+            self.assertRegex(mount, r"id=[^,]*\$\{BASE_IMAGE\}[^,]*\$\{TARGETARCH\}")
+            self.assertIn("sharing=locked", mount)
 
 
 @unittest.skipUnless(shutil.which("ansible-playbook"), "Ansible is not installed")

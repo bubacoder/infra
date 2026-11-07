@@ -4,14 +4,18 @@ ARG BASE_IMAGE=debian:trixie-slim
 # hadolint ignore=DL3006
 FROM ${BASE_IMAGE} AS dev-ansible
 
+# Cache IDs must distinguish distributions and architectures, not only mount paths.
+ARG BASE_IMAGE
+ARG TARGETARCH
+
 WORKDIR /tmp/ansible-bootstrap-container
 
 COPY bootstrap-ansible.sh ansible.cfg requirements.yml ./
 
 # Set cache for APT packages - https://docs.docker.com/reference/dockerfile/#run---mounttypecache
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,id=infra-apt-archives-${BASE_IMAGE}-${TARGETARCH},target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=infra-apt-lists-${BASE_IMAGE}-${TARGETARCH},target=/var/lib/apt,sharing=locked \
     --mount=type=cache,target=/root/.cache,sharing=locked \
     ./bootstrap-ansible.sh
 
@@ -24,8 +28,8 @@ FROM dev-ansible AS dev-base
 
 ARG ADMIN_USER=admin
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,id=infra-apt-archives-${BASE_IMAGE}-${TARGETARCH},target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=infra-apt-lists-${BASE_IMAGE}-${TARGETARCH},target=/var/lib/apt,sharing=locked \
     --mount=type=cache,target=/root/.cache,sharing=locked \
     mkdir -p inventory/host_vars/local-debian/ && \
     LOCAL_CONFIG=inventory/host_vars/local-debian/local.yaml && \
@@ -45,8 +49,8 @@ ARG ADMIN_USER=admin
 
 USER ${ADMIN_USER}
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+RUN --mount=type=cache,id=infra-apt-archives-${BASE_IMAGE}-${TARGETARCH},target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,id=infra-apt-lists-${BASE_IMAGE}-${TARGETARCH},target=/var/lib/apt,sharing=locked \
     ./apply-adhoc.sh local-debian debian_tools
 
 WORKDIR /home/${ADMIN_USER}
