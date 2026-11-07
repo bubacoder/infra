@@ -26,6 +26,8 @@ if __package__:
     from . import traefik
     from .paths import BootstrapPathError, BootstrapPaths
 else:
+    # Direct-script helpers must import this instance, including its ConfigError.
+    sys.modules.setdefault("config", sys.modules[__name__])
     import traefik
     from paths import BootstrapPathError, BootstrapPaths
 
@@ -524,7 +526,11 @@ class Configuration:
             if profile and ("k3s" in existing["roles"]) != (profile == "k3s"):
                 raise ConfigError("PROFILE differs from the existing deployment. Initialization never changes selected roles.")
             access = existing.get("k3s", {}).get("access", {})
-            if api_host and (access.get("host", existing["host"].get("domain")) != api_host or (context and access.get("context") != context)):
+            if api_host and (
+                not access.get("enabled")
+                or access.get("host", existing["host"].get("domain")) != api_host
+                or (context and access.get("context") != context)
+            ):
                 raise ConfigError("K3s access differs from the existing deployment. Edit the original source privately; init never overwrites it.")
             if self.target == "aws":
                 self.detect_aws()
@@ -711,10 +717,10 @@ class Configuration:
                         or record.get("directory") != str(self.directory)
                         or record.get("node") != self.load()["vm"]["name"]
                     ):
-                        raise ConfigError("K3s access ownership receipt differs from this deployment; preserve it.")
+                        raise ConfigError("K3s access ownership receipt differs from this deployment; preserve it.")  # noqa: TRY301 -- use the same safe cleanup handler
                     checked_context(record.get("context"))
                     remove(self.directory, record["context"], record["node"], Path.home())
-            except (AccessError, ValueError, TypeError):
+            except (AccessError, ConfigError, ValueError, TypeError):
                 raise ConfigError("Owned local K3s credentials changed; preserve them and retry guarded cleanup.") from None
         if result.returncode and self.target == "proxmox" and action in ("apply", "vm-provision", "vm-wait", "configure"):
             print(

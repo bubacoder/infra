@@ -66,7 +66,7 @@ def existing(path: Path) -> bytes | None:
     return path.read_bytes()
 
 
-def parse(raw: bytes) -> dict:
+def parse(raw: bytes, *, allow_empty: bool = False) -> dict:
     try:
         value = yaml.safe_load(raw)
     except (yaml.YAMLError, UnicodeError) as error:
@@ -74,6 +74,8 @@ def parse(raw: bytes) -> dict:
     if not isinstance(value, dict):
         raise AccessError("Kubeconfig must be a mapping.")
     for key in ("clusters", "users", "contexts"):
+        if allow_empty and value.get(key) is None:
+            value[key] = []
         if not isinstance(value.get(key), list):
             raise AccessError("Kubeconfig requires clusters, users and contexts lists.")
         if any(not isinstance(entry, dict) or not isinstance(entry.get("name"), str) for entry in value[key]):
@@ -184,7 +186,7 @@ def install(source: bytes, directory: Path, context: str, host: str, node: str, 
     if dedicated_raw is not None and not owned:
         raise AccessError("An unowned dedicated kubeconfig already exists; choose a different context.")
     current = (
-        parse(current_raw)
+        parse(current_raw, allow_empty=True)
         if current_raw is not None
         else {"apiVersion": "v1", "kind": "Config", "preferences": {}, "clusters": [], "users": [], "contexts": []}
     )
@@ -231,23 +233,25 @@ def install(source: bytes, directory: Path, context: str, host: str, node: str, 
     return True
 
 
-def verify(directory: Path, context: str, node: str, home: Path) -> None:
+def verify(directory: Path, context: str, node: str, home: Path, *, host: str) -> None:
     if not read_receipt(directory, identity(directory, context, node)):
         raise AccessError("No deployment-owned K3s context has been installed on this controller.")
     dedicated = home / ".kube" / f"{context}.yaml"
     raw = existing(dedicated)
-    if raw is None or not isinstance(parse(raw), dict):
+    if raw is None:
         raise AccessError("Deployment-owned kubeconfig is missing.")
-    check_node(dedicated, context, node)
+    source = parse(raw)
+    if source != renamed(raw, context, host):
+        raise AccessError("Deployment-owned kubeconfig differs from the configured API endpoint or context identity.")
     merged = home / ".kube" / "config"
     main_raw = existing(merged)
     if main_raw is None:
         raise AccessError("Merged kubeconfig is missing.")
-    source = parse(raw)
-    main = parse(main_raw)
+    main = parse(main_raw, allow_empty=True)
     for key in ("clusters", "users", "contexts"):
         if [entry for entry in main[key] if entry["name"] == context] != source[key]:
             raise AccessError("Merged K3s context differs from the deployment-owned copy.")
+    check_node(dedicated, context, node)
     check_node(merged, context, node)
 
 
@@ -266,7 +270,7 @@ def remove(directory: Path, context: str, node: str, home: Path) -> bool:
     merged_raw = existing(merged_path)
     if source_raw is None and merged_raw is None:
         return False
-    merged = parse(merged_raw) if merged_raw is not None else None
+    merged = parse(merged_raw, allow_empty=True) if merged_raw is not None else None
     if (
         source_raw is None
         and merged is not None
@@ -332,7 +336,7 @@ def main() -> int:
             source = admin_source()
             print("updated" if install(source, directory, args.context, args.host, args.node, Path.home()) else "unchanged")
         else:
-            verify(directory, args.context, args.node, Path.home())
+            verify(directory, args.context, args.node, Path.home(), host=args.host)
             print("ready")
     except (AccessError, ConfigError, OSError, UnicodeError, ValueError, KeyError, TypeError, yaml.YAMLError):
         print(

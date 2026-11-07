@@ -56,8 +56,25 @@ class BootstrapAccessTests(unittest.TestCase):
             self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
         self.assertEqual(json.loads((self.directory / "state/k3s-access-receipt.json").read_text())["context"], self.context)
         self.assertEqual(check.call_count, 1)
-        verify(self.directory, self.context, "k3s-host", self.home)
+        verify(self.directory, self.context, "k3s-host", self.home, host="k3s.example.com")
         self.assertEqual(check.call_count, 3)
+        with self.assertRaisesRegex(AccessError, "configured"):
+            verify(self.directory, self.context, "k3s-host", self.home, host="different.example.com")
+        self.assertEqual(check.call_count, 3)
+
+    @patch("scripts.bootstrap.access.check_node")
+    def test_empty_existing_sections_are_normalized_but_admin_source_stays_strict(self, check):
+        kube = self.home / ".kube"
+        kube.mkdir(mode=0o700)
+        target = kube / "config"
+        for empty in ({"apiVersion": "v1", "kind": "Config"}, {"clusters": None, "users": None, "contexts": None}):
+            with self.subTest(empty=empty):
+                target.write_text(yaml.safe_dump(empty))
+                target.chmod(0o600)
+                self.assertTrue(self.install())
+                self.assertTrue(remove(self.directory, self.context, "k3s-host", self.home))
+        with self.assertRaises(AccessError):
+            self.install(yaml.safe_dump({"clusters": None, "users": None, "contexts": None}).encode())
 
     @patch("scripts.bootstrap.access.check_node")
     def test_repeat_is_idempotent_and_refresh_preserves_existing_context(self, check):
@@ -114,7 +131,7 @@ class BootstrapAccessTests(unittest.TestCase):
         self.assertEqual(merged.read_text(), text)
         self.assertEqual(check.call_count, 1)
         with self.assertRaisesRegex(AccessError, "differs"):
-            verify(self.directory, self.context, "k3s-host", self.home)
+            verify(self.directory, self.context, "k3s-host", self.home, host="k3s.example.com")
 
     @patch("scripts.bootstrap.access.check_node")
     def test_failed_tls_or_credentials_validation_leaves_no_receipt(self, check):

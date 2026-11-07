@@ -316,7 +316,7 @@ def status(configuration: Configuration) -> None:
     access = config.get("k3s", {}).get("access", {})
     if access.get("enabled"):
         try:
-            verify(configuration.directory, access["context"], config["vm"]["name"], Path.home())
+            verify(configuration.directory, access["context"], config["vm"]["name"], Path.home(), host=access["host"])
         except (AccessError, ConfigError, OSError):
             print("K3s controller access: not ready or not yet installed")
         else:
