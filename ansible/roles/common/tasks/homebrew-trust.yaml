@@ -1,0 +1,34 @@
+---
+# Homebrew metadata queries run before install can implicitly grant item trust.
+- name: Add configured third-party Homebrew taps
+  community.general.homebrew_tap:
+    name: >-
+      {{ (common_homebrew_formulae + common_homebrew_casks)
+         | select('match', '^[^/]+/[^/]+/[^/]+$')
+         | map('regex_replace', '/[^/]+$', '') | unique | list }}
+    path: "{{ common_homebrew_path }}"
+    state: present
+  when: >-
+    (common_homebrew_formulae + common_homebrew_casks)
+    | select('match', '^[^/]+/[^/]+/[^/]+$') | list | length > 0
+  become: false
+
+- name: Trust configured third-party Homebrew formulae
+  ansible.builtin.command:
+    argv: [brew, trust, --formula, "{{ item }}"]
+  environment:
+    PATH: "{{ common_homebrew_path }}:{{ ansible_facts['env']['PATH'] }}"
+  loop: "{{ common_homebrew_formulae | select('match', '^[^/]+/[^/]+/[^/]+$') | unique | list }}"
+  register: common_homebrew_formula_trust
+  changed_when: common_homebrew_formula_trust.stdout is match('^Trusted formula:')
+  become: false
+
+- name: Trust configured third-party Homebrew casks
+  ansible.builtin.command:
+    argv: [brew, trust, --cask, "{{ item }}"]
+  environment:
+    PATH: "{{ common_homebrew_path }}:{{ ansible_facts['env']['PATH'] }}"
+  loop: "{{ common_homebrew_casks | select('match', '^[^/]+/[^/]+/[^/]+$') | unique | list }}"
+  register: common_homebrew_cask_trust
+  changed_when: common_homebrew_cask_trust.stdout is match('^Trusted cask:')
+  become: false
