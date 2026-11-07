@@ -63,7 +63,6 @@ debian_tools_apt_packages:
 debian_tools_brew_install_groups:
   dev: false
   aws: false
-  azure: false
   terraform: false
   kubernetes: false
 
@@ -81,9 +80,16 @@ debian_tools_brew_packages_aws:
   - awscli              # https://github.com/aws/aws-cli
   - eksctl              # https://eksctl.io/
 
-## Azure Cloud Tools
-debian_tools_brew_packages_azure:
-  - azure-cli           # https://learn.microsoft.com/en-us/cli/azure/
+# Reusable definitions; select entries with debian_tools_apt_repositories per host.
+debian_tools_apt_repository_catalog:
+  azure_cli:
+    name: azure-cli
+    uri: https://packages.microsoft.com/repos/azure-cli/
+    # Microsoft has no Trixie suite; use its documented Bookworm fallback.
+    suites: "{{ 'bookworm' if ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_major_version'] == '13' else ansible_facts['distribution_release'] }}"
+    components: [main]
+    signing_key_url: https://packages.microsoft.com/keys/microsoft.asc
+    packages: [azure-cli]
 
 ## asdf - https://asdf-vm.com/
 # renovate: datasource=github-releases depName=asdf-vm/asdf

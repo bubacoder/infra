@@ -13,25 +13,21 @@
       - python3-setuptools
     state: present
 
-- name: Add Docker apt repository (on Ubuntu)
-  ansible.builtin.deb822_repository:
-    name: docker
-    types: deb
-    uris: https://download.docker.com/linux/ubuntu
-    suites: "{{ ansible_facts['distribution_release'] }}"
-    components: stable
-    signed_by: https://download.docker.com/linux/ubuntu/gpg
-    state: present
-
-- name: Update apt and install Docker packages
-  ansible.builtin.apt:
-    name:
-      - "{{ 'docker-ce=' + debian_docker_host_docker_ce_version if debian_docker_host_docker_ce_version != 'latest' else 'docker-ce' }}"
-      - "{{ 'docker-ce-cli=' + debian_docker_host_docker_ce_cli_version if debian_docker_host_docker_ce_cli_version != 'latest' else 'docker-ce-cli' }}"
-      - "{{ 'containerd.io=' + debian_docker_host_containerd_io_version if debian_docker_host_containerd_io_version != 'latest' else 'containerd.io' }}"
-    state: present
-    update_cache: true
-    allow_downgrade: true
+- name: Install Docker from its signed APT repository
+  ansible.builtin.include_role:
+    name: apt_repositories
+  vars:
+    apt_repositories_items:
+      - name: docker
+        uri: https://download.docker.com/linux/ubuntu
+        suites: "{{ ansible_facts['distribution_release'] }}"
+        components: [stable]
+        signing_key_url: https://download.docker.com/linux/ubuntu/gpg
+        allow_downgrade: true
+        packages:
+          - "{{ 'docker-ce=' + debian_docker_host_docker_ce_version if debian_docker_host_docker_ce_version != 'latest' else 'docker-ce' }}"
+          - "{{ 'docker-ce-cli=' + debian_docker_host_docker_ce_cli_version if debian_docker_host_docker_ce_cli_version != 'latest' else 'docker-ce-cli' }}"
+          - "{{ 'containerd.io=' + debian_docker_host_containerd_io_version if debian_docker_host_containerd_io_version != 'latest' else 'containerd.io' }}"
 
 - name: Enable and start docker service
   ansible.builtin.service:

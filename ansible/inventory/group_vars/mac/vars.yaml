@@ -20,8 +20,6 @@ mac_base_brew_cloud_tools:
   # AWS
   - awscli              # https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
   - cfn-lint            # https://github.com/aws-cloudformation/cfn-lint
-  # Azure
-  - azure-cli           # https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-macos
   # Generic
   - vaulted             # https://github.com/miquella/vaulted
 
@@ -50,6 +48,7 @@ mac_base_brew_kubernetes_tools:
   - eksctl                # https://eksctl.io/
 
 mac_base_brew_cask_packages:
+  - azure-cli              # https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-macos
   - visual-studio-code     # https://code.visualstudio.com/
   - macpass                # https://macpassapp.org/
   - session-manager-plugin # https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html

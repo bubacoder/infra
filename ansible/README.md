@@ -63,6 +63,16 @@ application Compose definitions or installing a second Traefik.
 3. From the repository root, verify one host with both inventory sources:
    `ansible <host> -m ping -i ansible/inventory/inventory.yaml -i config/ansible/inventory/inventory.yaml`
 
+## Third-party APT packages
+
+Use `debian_tools_apt_repositories` to opt hosts into signed repository/package
+combinations. See the [APT repository role](roles/apt_repositories/README.md) for
+the schema, Azure CLI selection and disable semantics. Docker also reuses this
+role, retaining its own version pins, holds and service setup. CrowdSec keeps its
+specialized installation path because it must suppress package-triggered service
+startup until credentials and firewall prerequisites are ready. The Ansible
+bootstrap script runs before roles are available and is intentionally separate.
+
 ## Useful options
 
 The following parameters can be applied to `ansible-playbook` and the "apply..." scripts.
