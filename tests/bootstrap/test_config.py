@@ -195,7 +195,10 @@ class ConfigurationTests(unittest.TestCase):
         trace = self.root / "trace"
         for name, code in (
             ("systemctl", 'echo agent >> "$TRACE"; exit "${AGENT_RC:-0}"'),
-            ("apt-get", 'echo upgrade >> "$TRACE"; exit "${UPGRADE_RC:-0}"'),
+            (
+                "apt-get",
+                'case " $* " in *" --option DPkg::Lock::Timeout=300 "*) ;; *) exit 42 ;; esac; echo upgrade >> "$TRACE"; exit "${UPGRADE_RC:-0}"',
+            ),
         ):
             executable = binaries / name
             executable.write_text("#!/bin/sh\n" + code + "\n")
