@@ -12,7 +12,8 @@ from scripts.bootstrap.paths import BootstrapPathError, BootstrapPaths
 
 class BootstrapPathsTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.temp = tempfile.TemporaryDirectory(dir="/tmp/opencode")
+        preferred = Path("/tmp/opencode")  # noqa: S108 -- optional harness directory
+        self.temp = tempfile.TemporaryDirectory(dir=preferred if preferred.is_dir() else None)
         self.addCleanup(self.temp.cleanup)
         self.deployment = Path(self.temp.name)
         self.paths = BootstrapPaths(self.deployment)

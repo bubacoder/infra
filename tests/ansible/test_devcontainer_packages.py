@@ -34,7 +34,8 @@ class DevcontainerPackageTests(unittest.TestCase):
 @unittest.skipUnless(shutil.which("ansible-playbook"), "Ansible is not installed")
 class NativeHomebrewTrustTests(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(dir="/tmp/opencode")  # noqa: S108 -- approved harness directory
+        preferred = Path("/tmp/opencode")  # noqa: S108 -- optional harness directory
+        self.temporary = tempfile.TemporaryDirectory(dir=preferred if preferred.is_dir() else None)
         self.addCleanup(self.temporary.cleanup)
         self.directory = Path(self.temporary.name)
         self.binary_dir = self.directory / "bin"

@@ -20,7 +20,7 @@ TEST_TEMP_ROOT = Path("/tmp/opencode")  # noqa: S108 -- approved harness directo
 @unittest.skipUnless(shutil.which("ansible-playbook"), "Ansible is not installed")
 class NativeRepositoryTests(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT)
+        self.temporary = tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT if TEST_TEMP_ROOT.is_dir() else None)
         self.addCleanup(self.temporary.cleanup)
         self.directory = Path(self.temporary.name)
         role = self.directory / "roles/apt_repositories"

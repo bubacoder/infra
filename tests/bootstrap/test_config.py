@@ -24,6 +24,9 @@ TEST_TEMP_ROOT = Path("/tmp/opencode")  # noqa: S108 -- optional harness directo
 
 class ConfigurationTests(unittest.TestCase):
     def setUp(self):
+        executable = patch("scripts.bootstrap.config.executable", side_effect=lambda name: name)
+        executable.start()
+        self.addCleanup(executable.stop)
         self.temp = tempfile.TemporaryDirectory(dir=TEST_TEMP_ROOT if TEST_TEMP_ROOT.is_dir() else None)
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
