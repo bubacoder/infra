@@ -128,7 +128,7 @@ runcmd:
     set -eu
     systemctl start qemu-guest-agent
     export DEBIAN_FRONTEND=noninteractive
-    apt-get --assume-yes --option Dpkg::Options::=--force-confdef --option Dpkg::Options::=--force-confold dist-upgrade
+    apt-get --assume-yes --option DPkg::Lock::Timeout=300 --option Dpkg::Options::=--force-confdef --option Dpkg::Options::=--force-confold dist-upgrade
 
 final_message: "Cloud-init completed after \$UPTIME seconds"
 EOF
