@@ -102,6 +102,8 @@ class TraefikTests(unittest.TestCase):
         cases = [
             ("domain", "Bad Domain"),
             ("admin_cidr", "0.0.0.0/0"),
+            ("admin_cidr", "192.0.2.10"),
+            ("admin_cidr", "192.0.2.10/255.255.255.255"),
             ("storage_class", ""),
             ("storage_size", "0Gi"),
             ("acme_environment", "automatic"),

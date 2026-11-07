@@ -9,6 +9,7 @@ import os
 import shutil
 import stat
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -97,6 +98,13 @@ class ConfigurationTests(unittest.TestCase):
         deployment = Configuration(self.root, self.root / "config/k3s", "proxmox")
         deployment.init("k3s")
         self.assertEqual(deployment.show()["k3s_access"], {"enabled": False})
+        value = yaml.safe_load(deployment.source.read_text())
+        value["host"]["domain"] = "api.example.com"
+        deployment.source.write_text(yaml.safe_dump(value))
+        before = deployment.source.read_bytes()
+        with self.assertRaisesRegex(ConfigError, "access differs"):
+            deployment.init("k3s", api_host="api.example.com")
+        self.assertEqual(deployment.source.read_bytes(), before)
         for kwargs in (
             {"profile": "bad"},
             {"profile": "docker", "api_host": "api.example.com"},
@@ -154,6 +162,24 @@ class ConfigurationTests(unittest.TestCase):
         self.assertIn("Do not retry VM creation", stream.getvalue())
         self.assertIn("bootstrap:status TARGET=proxmox BOOTSTRAP_CONFIG_DIR=config/deployment", stream.getvalue())
         self.assertIn("bootstrap:vm-wait", stream.getvalue())
+
+    def test_direct_script_helpers_share_the_entrypoint_exception_class(self):
+        result = subprocess.run(  # noqa: S603 -- isolated interpreter, repository source only
+            [
+                sys.executable,
+                "-c",
+                "import runpy, sys; sys.path.insert(0, 'scripts/bootstrap'); "
+                "entry = runpy.run_path('scripts/bootstrap/config.py', run_name='bootstrap_entrypoint'); "
+                "import access, config; assert entry['ConfigError'] is config.ConfigError; "
+                "assert access.ConfigError is config.ConfigError",
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
     def test_cloud_init_starts_agent_before_upgrade_and_propagates_errors(self):
         user_data = self.root / "cloud.yaml"
@@ -714,6 +740,9 @@ class ConfigurationTests(unittest.TestCase):
             with patch("scripts.bootstrap.access.remove") as remove:
                 self.config.run("destroy-cleanup")
                 remove.assert_called_once_with(self.directory, "k3s-old", self.config.load()["vm"]["name"], Path.home())
+                remove.side_effect = ConfigError("synthetic unsafe credential file")
+                with self.assertRaisesRegex(ConfigError, "preserve them and retry guarded cleanup"):
+                    self.config.run("destroy-cleanup")
 
     def test_cli_parse_errors_never_echo_private_values(self):
         self.config.source.write_text("secrets: [SENTINEL_PRIVATE\n")

@@ -114,7 +114,7 @@ def validate_profile(config, root):
         network = ipaddress.ip_network(settings["admin_cidr"], strict=True)
     except (ValueError, TypeError):
         network = None
-    if not isinstance(settings["admin_cidr"], str) or network is None or network.prefixlen == 0:
+    if not isinstance(settings["admin_cidr"], str) or network is None or network.prefixlen == 0 or settings["admin_cidr"] != str(network):
         raise TraefikError("k3s.traefik.admin_cidr requires an explicit canonical CIDR, never an all-addresses range.")
     if settings["acme_environment"] not in ("staging", "production"):
         raise TraefikError("Select k3s.traefik.acme_environment explicitly: staging or production.")
