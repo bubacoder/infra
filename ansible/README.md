@@ -86,6 +86,12 @@ configured lists. Formulae receive formula trust and casks receive cask trust;
 no entire third-party tap is implicitly trusted. Trust is established before
 Ansible's package metadata queries.
 
+Devcontainer APT cache IDs include the base image and target architecture.
+`sharing=locked` serializes access, but cannot by itself prevent one
+distribution's `apt-get update` from replacing another's package metadata.
+The tools role also refreshes missing or stale metadata before installing base
+packages: restoring an image layer does not necessarily restore its cache mounts.
+
 ## Useful options
 
 The following parameters can be applied to `ansible-playbook` and the "apply..." scripts.
