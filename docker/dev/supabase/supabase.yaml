@@ -202,7 +202,7 @@ services:
   realtime:
     # This container name looks inconsistent but is correct because realtime constructs tenant id by parsing the subdomain
     container_name: realtime-dev.supabase-realtime
-    image: supabase/realtime:v2.149.2@sha256:7136416a697dc60cd36d78d070f91b591b8f6d2174dc598bd6490ff21341f717
+    image: supabase/realtime:v2.151.1@sha256:c0e8782e7d4ca45effda331214cd3507a4604484832ad382e3c92bb1ffabd171
     restart: unless-stopped
     depends_on:
       db:
@@ -248,7 +248,7 @@ services:
 
   storage:
     container_name: supabase-storage
-    image: supabase/storage-api:v1.85.0@sha256:020b6e3253df19cd4d6c9da4095fc1bc11c944412fdd29966309800b8328d6b7
+    image: supabase/storage-api:v1.87.2@sha256:0194c53a03977e8ca0194636a27172158b39e3ae7a5e12da1dca5717086dd849
     restart: unless-stopped
     volumes:
       - ${DOCKER_VOLUMES}/supabase/storage:/var/lib/storage
@@ -422,7 +422,7 @@ services:
 
   db:
     container_name: supabase-db
-    image: supabase/postgres:15.19.0.008@sha256:4cd8bf30eb3168eae9a4d91602cc97606210752ac3fd974308cbd88593986f7f
+    image: supabase/postgres:15.19.0.016@sha256:d70612c2e5d240926ca7c10384912da6e348108dfbf82c6ceb1abded7c3efb12
     restart: unless-stopped
     volumes:
       - ./config/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
@@ -483,7 +483,7 @@ services:
 
   vector:
     container_name: supabase-vector
-    image: timberio/vector:0.60.0-alpine@sha256:1c6a6c4c5c9de08df357fa8adbe72e5a7abcea458b0bd82de0b14ac9b79d5b31
+    image: timberio/vector:0.61.0-alpine@sha256:3bb7ed5152910ed51729e256937b1d8a4bf67ff624e9d565e8e5877bffd015c7
     restart: unless-stopped
     volumes:
       - ./config/logs/vector.yml:/etc/vector/vector.yml:ro
