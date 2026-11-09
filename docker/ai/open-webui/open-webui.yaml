@@ -27,14 +27,21 @@ services:
       OPENID_PROVIDER_URL: "https://sso.${MYDOMAIN}/application/o/open-webui/.well-known/openid-configuration"
       OPENID_REDIRECT_URI: "https://open-webui.${MYDOMAIN}/oauth/oidc/callback"
       OAUTH_SCOPES: "openid email profile"
-      OLLAMA_API_BASE_URL: "https://ollama.${MYDOMAIN}/api"
+
+      # Ollama
+      OLLAMA_BASE_URL: "https://ollama.${MYDOMAIN}"
+
+      # OpenAI-compatible gateway (LiteLLM)
+      ENABLE_OPENAI_API: "true"
+      OPENAI_API_BASE_URL: "https://litellm.${MYDOMAIN}/v1"
+      OPENAI_API_KEY: ${LITELLM_MASTER_KEY:?Set LITELLM_MASTER_KEY in the service environment file}
 
       # Web search using SearXNG
-      # Details: https://github.com/open-webui/docs/blob/main/docs/tutorials/integrations/web_search.md
-      ENABLE_RAG_WEB_SEARCH: true
-      RAG_WEB_SEARCH_ENGINE: "searxng"
-      RAG_WEB_SEARCH_RESULT_COUNT: 5
-      RAG_WEB_SEARCH_CONCURRENT_REQUESTS: 10
+      # Details: https://docs.openwebui.com/reference/env-configuration/
+      ENABLE_WEB_SEARCH: "true"
+      WEB_SEARCH_ENGINE: "searxng"
+      WEB_SEARCH_RESULT_COUNT: "5"
+      WEB_SEARCH_CONCURRENT_REQUESTS: "10"
       SEARXNG_QUERY_URL: "https://searxng.${MYDOMAIN}/search?q=<query>&format=json"
 
       # Image models

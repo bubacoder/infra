@@ -13,8 +13,6 @@ services:
       - -geoip_supplier=ip-api
       - -healthcheck_enabled
     environment:
-      PUID: ${PUID}
-      PGID: ${PGID}
       TZ: ${TIMEZONE}
     volumes:
       - ${DOCKER_VOLUMES}/endlessh:/config

@@ -5,9 +5,7 @@ services:
     container_name: stirling-pdf
     restart: unless-stopped
     environment:
-      DOCKER_ENABLE_SECURITY: false
-      INSTALL_BOOK_AND_ADVANCED_HTML_OPS: false
-      LANGS: en_GB
+      SECURITY_ENABLELOGIN: "false"
     volumes:
       - ${DOCKER_VOLUMES}/stirling-pdf/trainingData:/usr/share/tessdata # Required for extra OCR languages
       - ${DOCKER_VOLUMES}/stirling-pdf/extraConfigs:/configs

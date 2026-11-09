@@ -14,8 +14,6 @@ services:
       # Database configuration - connects to existing PostgreSQL service
       MM_SQLSETTINGS_DRIVERNAME: postgres
       MM_SQLSETTINGS_DATASOURCE: postgres://${MATTERMOST_POSTGRES_USER}:${MATTERMOST_POSTGRES_PASSWORD}@postgresql:5432/${MATTERMOST_POSTGRES_DB}?sslmode=disable&connect_timeout=10
-      # Search index configuration
-      MM_BLEVESETTINGS_INDEXDIR: /mattermost/bleve-indexes
       # Site URL configuration
       MM_SERVICESETTINGS_SITEURL: https://mattermost.${MYDOMAIN}
     volumes:
