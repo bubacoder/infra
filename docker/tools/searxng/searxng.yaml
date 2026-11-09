@@ -39,10 +39,8 @@ services:
       SEARXNG_BASE_URL: https://searxng.${MYDOMAIN}/
       # https://docs.searxng.org/admin/settings/settings_server.html
       SEARXNG_SECRET: ${SEARXNG_SECRET}
-      # https://docs.searxng.org/admin/settings/settings_redis.html
-      SEARXNG_REDIS_URL: "redis://searxng-redis:6379/0"
-      UWSGI_WORKERS: ${SEARXNG_UWSGI_WORKERS:-4}
-      UWSGI_THREADS: ${SEARXNG_UWSGI_THREADS:-4}
+      # https://docs.searxng.org/admin/settings/settings_valkey.html
+      SEARXNG_VALKEY_URL: "valkey://searxng-redis:6379/0"
     logging:
       driver: "json-file"
       options:

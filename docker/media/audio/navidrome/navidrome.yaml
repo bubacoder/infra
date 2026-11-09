@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     environment:
       # Put your config options customization here
-      ND_SCANSCHEDULE: 8h
+      ND_SCANNER_SCHEDULE: "@every 8h"
       ND_LOGLEVEL: info
       ND_SESSIONTIMEOUT: 24h
       ND_MUSICFOLDER: /media/music

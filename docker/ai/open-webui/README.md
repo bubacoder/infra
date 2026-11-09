@@ -8,6 +8,21 @@ Open WebUI is an extensible, feature-rich, and user-friendly self-hosted WebUI f
 
 Compose file based on: [open-webui/docker-compose.yaml at main · open-webui/open-webui](https://github.com/open-webui/open-webui/blob/main/docker-compose.yaml)
 
+## LiteLLM connection
+
+The OpenAI-compatible connection defaults to `https://litellm.<domain>/v1`.
+Set `LITELLM_MASTER_KEY` in the ignored
+`config/docker/<hostname>/.env.open-webui` to the same value used by LiteLLM,
+without a `Bearer ` prefix. Restrict the file permissions to `0600` and never
+commit the key. Open WebUI does not load `.env.litellm` automatically.
+Recreate `ai/open-webui` after changing its environment.
+
+Existing connections saved in Open WebUI take precedence over environment
+defaults; update those through **Admin Panel → Settings → Connections**.
+Persistent configuration remains enabled so other saved settings are preserved.
+Setting `ENABLE_PERSISTENT_CONFIG=false` would force environment defaults for
+all persistent settings and prevent Admin UI changes from surviving restarts.
+
 ## Authentik
 
 Open WebUI uses native OIDC for Authentik's `users` group. It redirects to

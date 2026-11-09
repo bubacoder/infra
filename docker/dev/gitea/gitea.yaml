@@ -6,8 +6,6 @@ services:
     restart: unless-stopped
     environment:
       TZ: ${TIMEZONE}
-      PUID: ${PUID}
-      PGID: ${PGID}
       USER_UID: ${PUID}
       USER_GID: ${PGID}
       # Server configuration
