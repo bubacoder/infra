@@ -25,7 +25,6 @@ before starting them.
 
 Fallback (when Traefik reverse proxy is not yet configured):
 - Proxmox direct access: `https://<proxmox_host>:8006/`
-- Portainer direct access: `http://<docker_host>:9000/`
 
 ## External access
 
