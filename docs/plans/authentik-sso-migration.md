@@ -95,7 +95,6 @@ setup, recovery, and verification instructions live with their Compose files.
 |---|---|---|
 | Vaultwarden | Native OIDC after a client matrix | Test browser extension, desktop, mobile, CLI, WebSocket sync, account linking, and emergency local access. Do not enable `SSO_ONLY` until all clients pass. |
 | LiteLLM | Native JWT/OIDC plus API keys | Interactive redirects break OpenAI-compatible API consumers. Configure audience validation, role mapping, and API/master or virtual keys first. |
-| Portainer | Native OAuth2 where Authentik topology is available | Keep an initial local administrator and separately restrict direct port `9000` and agent access. |
 
 For a native OIDC application, create a distinct client, use exact redirect URIs,
 request only required scopes, retain one local administrator until recovery is
@@ -135,9 +134,13 @@ identity headers, and only trusted proxy networks may reach the application.
 | AdGuard Home and UniFi | Retain native accounts because API, device, and mobile endpoints need direct authentication. |
 | Mosquitto | Configure native users, ACLs, and TLS/mTLS; ForwardAuth cannot authenticate MQTT traffic. |
 | MongoDB and PostgreSQL | Retain database users and restrict network exposure; enable TLS where remote access is required. |
-| Ollama, Qdrant, and Portainer Agent | Restrict networks and use API tokens, keys, or agent secrets where supported. |
+| Ollama and Qdrant | Restrict networks and use API tokens or keys where supported. |
 
 ## Security Prerequisites
+
+The [security-hardening roadmap](security-hardening.md) owns exposure and network
+boundaries on Docker and Kubernetes. Keep administrative services private even
+when SSO is available; authentication does not justify public management access.
 
 Before disabling a service's own browser login or trusting proxy identity
 headers:
@@ -152,7 +155,7 @@ headers:
 - Review Cloudflare Tunnel ingress and external access policies separately.
 
 Known categories requiring independent review include host-networked services,
-database ports, broker ports, node-exporter, Portainer Agent, and device
+database ports, broker ports, node-exporter, and device
 protocols. A listening port alone does not establish Internet exposure, but it
 can bypass Traefik from reachable networks.
 
@@ -165,6 +168,10 @@ can bypass Traefik from reachable networks.
   service-specific recovery procedure has been tested.
 - Use shorter sessions and stronger reauthentication for administrative services
   than for ordinary media services.
+- Enforce phishing-resistant MFA for administrators where supported, including
+  their upstream Google accounts. Enrolling a device is not proof that a flow
+  requires MFA: test that an administrator without the required factor is denied,
+  while independently protected local recovery still works.
 - Do not use interactive SSO for Git over SSH, MQTT, SMB, database connections,
   WireGuard, API clients, or other non-browser protocols.
 
@@ -176,12 +183,19 @@ Apply relevant checks before declaring a new application migration complete:
 |---|---|
 | Authorized user | Login succeeds with the intended application role. |
 | Unauthorized user | Access is denied before application access. |
+| Administrator MFA | Missing required factors deny access; approved recovery remains usable. |
 | Group removal | Access or elevated role is removed at the designed refresh boundary. |
 | Local recovery | A retained administrator can recover without Google. |
 | Direct access | Direct container or host paths are blocked or retain native authentication. |
 | Logout and expiry | Sessions end and reauthenticate without redirect loops. |
 | Client compatibility | WebSockets, mobile, desktop, API, and CLI clients use the appropriate protocol. |
 | Identity outage | The application failure mode and local recovery path are understood. |
+
+Repeat the matrix after Kubernetes migration using the real ingress middleware,
+trusted TLS and proxy path, not only backend Services. Verify that direct
+Pod/Service, NodePort and tunnel paths cannot bypass the intended gate. Preserve
+OIDC issuer/callback names where possible, and check spoofed identity-header
+rejection and group removal at both identity-provider and application sessions.
 
 ## Operational Requirements
 
