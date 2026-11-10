@@ -23,8 +23,6 @@ services:
         state: up
 
   - infra:
-      - name: portainer
-        state: down
       - name: adguardhome
         state: up
       - name: adguardhome-sync
