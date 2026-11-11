@@ -27,6 +27,7 @@ def main() -> None:
     args = parser.parse_args()
     if bool(args.service) == bool(args.run_all or args.prune_all):
         parser.error("Choose one service or --run-all/--prune-all")
+    args.service = config.EXPORT_ALIASES.get(args.service, args.service)
     try:
         volumes = config.docker_volumes(args.host)
         export_root = config.backup_root(args.host, volumes)

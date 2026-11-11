@@ -16,7 +16,14 @@ TODO: Use the dind-rootless flavour for production deployments requiring job iso
 TODO: Configure a shared external cache server across multiple runners to avoid rebuilding on each runner
 TODO: Mount runner images from a local registry or mirror to avoid rate limits on Docker Hub
 TODO: Configure container.valid_volumes to restrict which host paths job containers can mount
-TODO: Join Traefik to the dev-act-runner network in docker/security/traefik/traefik.yaml if a web UI is added
+TODO: Join Traefik to the dev-act-runner network in docker/core/traefik/traefik.yaml if a web UI is added
+
+## Deployment identity
+
+Manage this stack as `dev/gitea-act-runner`, using `gitea-act-runner.yaml` and
+`.env.gitea-act-runner` configuration files. Its Compose project, service and
+container remain `act-runner`; retain `${DOCKER_VOLUMES}/act-runner` and the
+`dev-act-runner` network to preserve its registration and job environment.
 
 ## References
 

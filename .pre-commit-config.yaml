@@ -24,7 +24,7 @@ repos:
         args: ["--allow-multiple-documents"]
         # Authentik blueprints use application-specific !Find/!KeyOf YAML tags
         # and are validated by Authentik's blueprint importer.
-        exclude: ^docker/security/authentik/config/blueprints/.*\.ya?ml$
+        exclude: ^docker/core/authentik/config/blueprints/.*\.ya?ml$
       - id: check-added-large-files
         args: ["--maxkb=512"]
       - id: detect-aws-credentials

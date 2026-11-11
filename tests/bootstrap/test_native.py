@@ -595,15 +595,25 @@ class NativeBootstrapTests(unittest.TestCase):
             {"roles": ["missing_role"]},
             {"roles": ["debian_base"]},
             {"roles": ["debian_base", "debian_docker_host", "k3s"]},
-            {"services": ["dashboard/homepage"]},
+            {"services": ["core/homepage"]},
             {"services": ["unknown/service"]},
         ):
             host = {**original, **updates}
             (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
             self.assertNotEqual(self.run_play("bootstrap-check.yaml", check=False).returncode, 0)
-        host = {**original, "services": ["security/traefik"]}
+        host = {**original, "services": ["core/traefik"]}
         (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
         self.run_play("bootstrap-check.yaml")
+
+    def test_native_legacy_service_names_and_alias_duplicates(self) -> None:
+        self.initialize()
+        host = self.valid_host()
+        host["services"] = ["security/traefik", "dashboard/homepage"]
+        (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
+        self.run_play("bootstrap-check.yaml")
+        host["services"] = ["security/traefik", "core/traefik"]
+        (self.directory / "host.yaml").write_text(yaml.safe_dump(host))
+        self.assertNotEqual(self.run_play("bootstrap-check.yaml", check=False).returncode, 0)
 
     def test_native_dns_validation_matches_offline_hostname_cases(self) -> None:
         self.initialize()
@@ -961,7 +971,7 @@ class NativeBootstrapTests(unittest.TestCase):
         docker.chmod(0o700)
         profile = self.root / "selected-services.yaml"
         for homepage in (False, True):
-            services = ["security/traefik"] + (["dashboard/homepage"] if homepage else [])
+            services = ["core/traefik"] + (["core/homepage"] if homepage else [])
             containers = ["traefik", "logrotate"] + (["homepage", "dockerproxy"] if homepage else [])
             play = [
                 {
@@ -1327,7 +1337,7 @@ class NativeBootstrapTests(unittest.TestCase):
                         "target": "proxmox",
                         "name": "guest",
                         "domain": "test.example.com",
-                        "services": ["security/traefik", "dashboard/homepage"],
+                        "services": ["core/traefik", "core/homepage"],
                         "dns": {"enabled": True, "adguard_urls": endpoints},
                     },
                     "bootstrap_dir": str(self.directory),
@@ -1538,7 +1548,7 @@ class NativeBootstrapTests(unittest.TestCase):
                         "target": "aws",
                         "name": "guest",
                         "domain": domain,
-                        "services": ["security/traefik", "dashboard/homepage"],
+                        "services": ["core/traefik", "core/homepage"],
                         "dns": {"enabled": False, "cloudflare_zone": "example.com"},
                     },
                     "bootstrap_dir": str(self.directory),

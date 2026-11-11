@@ -2,7 +2,7 @@ name: kopia-b2
 services:
   kopia-b2:
     image: kopia/kopia:0.23.1@sha256:89fd95ee2942880ca00eae964266958a394421ddbdf69bca62e38afc55f5900e
-    container_name: kopia-b2
+    container_name: kopia
     restart: "unless-stopped"
     user: "0:0"
     # kics-scan ignore-line
@@ -55,7 +55,7 @@ services:
       traefik.http.routers.kopia-b2.middlewares: localaccess-authentik@file
       traefik.http.services.kopia-b2.loadbalancer.server.port: 80
       homepage.group: Storage
-      homepage.name: Kopia - Backblaze B2
+      homepage.name: Kopia
       homepage.icon: kopia.png
       homepage.href: https://kopia-b2.${MYDOMAIN}/
       homepage.description: "[SSO] Backups Using the Cloud Storage You Pick"

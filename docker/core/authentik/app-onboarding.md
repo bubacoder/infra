@@ -22,7 +22,7 @@ and recovery have been tested.
 
 ## Automation Boundary
 
-`docker/security/authentik/config/apps.yaml` is the tracked application
+`docker/core/authentik/config/apps.yaml` is the tracked application
 manifest. `scripts/authentik-apps.py` partially automates onboarding:
 
 - Creates missing Authentik providers and applications.
@@ -137,7 +137,7 @@ Onboarding sequence:
    non-browser clients.
 2. Add the proxy entry to `config/apps.yaml` and run plan, apply, then plan as
    shown above. Apply also adds a create-only callback router to
-   `docker/security/traefik/config/dynamic/authentik-outposts.yml`; Traefik
+   `docker/core/traefik/config/dynamic/authentik-outposts.yml`; Traefik
    reloads this watched file without restarting Authentik.
 3. After the second plan reports `NO-CHANGE`, switch only the application's
    router middleware:

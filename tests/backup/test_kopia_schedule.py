@@ -17,10 +17,11 @@ class KopiaScheduleTests(BackupTestCase):
             with (
                 patch.object(sys, "argv", ["kopia_schedule.py", *flags]),
                 patch.object(kopia_schedule, "load_settings", return_value=[]),
-                patch.object(kopia_schedule, "container_command", return_value=["kopia"]),
+                patch.object(kopia_schedule, "container_command", return_value=["kopia"]) as container,
                 patch.object(kopia_schedule, "kopia_command") as command,
             ):
                 kopia_schedule.main()
+            container.assert_called_once_with("kopia", DEFAULT_KOPIA_VOLUMES_SOURCE)
             if flags:
                 command.assert_called_once_with(["kopia"], "server", "refresh", "--address=http://127.0.0.1:80")
             else:

@@ -4,7 +4,7 @@ Application name: Mattermost
 Homepage: https://mattermost.com
 GitHub page: https://github.com/mattermost/docker
 Install instructions URL: https://docs.mattermost.com/deployment-guide/server/deploy-containers.html
-Category: communication
+Category: tools
 Dashboard Icon: mattermost.png
 Dashboard Group: Connections
 Short description: Secure collaboration platform for mission-critical work

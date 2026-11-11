@@ -24,8 +24,8 @@ import requests
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_MANIFEST = ROOT / "docker/security/authentik/config/apps.yaml"
-DEFAULT_OUTPOST_ROUTES = ROOT / "docker/security/traefik/config/dynamic/authentik-outposts.yml"
+DEFAULT_MANIFEST = ROOT / "docker/core/authentik/config/apps.yaml"
+DEFAULT_OUTPOST_ROUTES = ROOT / "docker/core/traefik/config/dynamic/authentik-outposts.yml"
 ENV_PATTERN = re.compile(r"\$\{([A-Z][A-Z0-9_]*)\}")
 OIDC_MAPPINGS = (
     "goauthentik.io/providers/oauth2/scope-openid",

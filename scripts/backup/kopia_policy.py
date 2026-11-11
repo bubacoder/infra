@@ -10,7 +10,7 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts.backup.common import DEFAULT_KOPIA_VOLUMES_SOURCE, ROOT, BackupError  # noqa: E402
+from scripts.backup.common import DEFAULT_KOPIA_CONTAINER, DEFAULT_KOPIA_VOLUMES_SOURCE, ROOT, BackupError  # noqa: E402
 from scripts.backup.config import load_definition  # noqa: E402
 
 
@@ -105,7 +105,7 @@ def container_command(container: str, source: str) -> list[str]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--container", default="kopia-b2", help="Running Kopia container")
+    parser.add_argument("--container", default=DEFAULT_KOPIA_CONTAINER, help="Running Kopia container")
     parser.add_argument("--source", default=DEFAULT_KOPIA_VOLUMES_SOURCE, help="Whole-volume source path inside Kopia")
     parser.add_argument("--policy-user", default="root", help="Kopia source owner")
     parser.add_argument("--policy-host", default="nest", help="Kopia source host (not the host config directory)")

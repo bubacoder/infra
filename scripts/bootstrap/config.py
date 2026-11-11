@@ -37,7 +37,8 @@ HOST_KEYS = {"domain", "acme_email", "timezone", "docker_volumes", "repository_u
 SECRET_KEYS = {"cloudflare_token", "adguard_username", "adguard_password"}
 DNS_KEYS = {"enabled", "cloudflare_zone", "adguard_url", "adguard_urls"} | SECRET_KEYS
 MAX_SECRET_BYTES = 1024 * 1024
-SERVICE_KEYS = {"security/traefik", "dashboard/homepage"}
+SERVICE_KEYS = {"core/traefik", "core/homepage"}
+SERVICE_ALIASES = {"security/traefik": "core/traefik", "dashboard/homepage": "core/homepage"}
 K3S_ACCESS_KEYS = {"enabled", "host", "context", "install_context"}
 PVE_ENV = {
     "host": "PROXMOX_HOST",
@@ -263,15 +264,18 @@ def validate_selection(config: dict, root: Path) -> None:
             (directory / f"tasks/main.{suffix}").is_file() for suffix in ("yaml", "yml")
         ):
             raise ConfigError("A selected role is not available under ansible/roles. Add it before selecting it.")
-    services = config["services"]
+    services = [SERVICE_ALIASES.get(service, service) for service in config["services"]]
+    if len(set(services)) != len(services):
+        raise ConfigError("services must be unique after resolving legacy service names.")
+    config["services"] = services
     if set(services) - SERVICE_KEYS:
-        raise ConfigError("Unsupported bootstrap service; currently supported: security/traefik, dashboard/homepage.")
+        raise ConfigError("Unsupported bootstrap service; currently supported: core/traefik, core/homepage.")
     if services and "debian_docker_host" not in config["roles"]:
         raise ConfigError("Docker services require the debian_docker_host role.")
     if services and "k3s" in config["roles"]:
         raise ConfigError("The default k3s role requires services: []; bundled Traefik uses ports 80/443.")
-    if "dashboard/homepage" in services and "security/traefik" not in services:
-        raise ConfigError("The bootstrap Homepage profile requires security/traefik.")
+    if "core/homepage" in services and "core/traefik" not in services:
+        raise ConfigError("The bootstrap Homepage profile requires core/traefik.")
 
 
 def validate_platform(config: dict, target: str) -> None:

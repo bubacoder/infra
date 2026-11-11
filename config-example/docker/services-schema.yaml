@@ -35,12 +35,11 @@ properties:
 
 examples:
   - services:
-      - security:
+      - core:
           - name: crowdsec
             state: up
           - name: traefik
             state: up
-      - dashboard:
           - name: homepage
             state: up
       - media/video:

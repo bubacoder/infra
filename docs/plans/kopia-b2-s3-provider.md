@@ -1,7 +1,7 @@
 # Kopia B2 provider migration
 
 Status: **read-only reconnection and restore verified; live migration not applied**. The current
-`kopia-b2` container still uses Kopia's deprecated native `b2` storage
+`kopia` container still uses Kopia's deprecated native `b2` storage
 provider. Its scheduled backups continue to work with the pinned Kopia
 image. This change addresses a future provider-removal/upgrade problem;
 it does **not** provide backups during an Internet outage. Restoring the

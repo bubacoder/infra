@@ -16,6 +16,8 @@ services:
       MM_SQLSETTINGS_DATASOURCE: postgres://${MATTERMOST_POSTGRES_USER}:${MATTERMOST_POSTGRES_PASSWORD}@postgresql:5432/${MATTERMOST_POSTGRES_DB}?sslmode=disable&connect_timeout=10
       # Site URL configuration
       MM_SERVICESETTINGS_SITEURL: https://mattermost.${MYDOMAIN}
+      # Preserve the existing runtime setting and mounted index directory.
+      MM_BLEVESETTINGS_INDEXDIR: /mattermost/bleve-indexes
     volumes:
       - ${DOCKER_VOLUMES}/mattermost/config:/mattermost/config
       - ${DOCKER_VOLUMES}/mattermost/data:/mattermost/data

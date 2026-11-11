@@ -12,7 +12,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from .apps import open_webui
-from .common import DEFAULT_KOPIA_SOURCE, DEFAULT_KOPIA_VOLUMES_SOURCE, BackupError, private_directory
+from .common import DEFAULT_KOPIA_CONTAINER, DEFAULT_KOPIA_SOURCE, DEFAULT_KOPIA_VOLUMES_SOURCE, BackupError, private_directory
 from .runner import completed_exports
 
 
@@ -35,7 +35,7 @@ def kopia_has_export(
         raise BackupError("Docker executable not found")
     if source == paired_source or any(not path.startswith("/sources/") or ".." in Path(path).parts for path in (source, paired_source)):
         raise BackupError("Invalid Kopia source path")
-    prefix = [docker, "exec", "kopia-b2", "kopia", "--config-file=/app/config/repository.config"]
+    prefix = [docker, "exec", DEFAULT_KOPIA_CONTAINER, "kopia", "--config-file=/app/config/repository.config"]
     manifest = json.loads((export / "manifest.json").read_text())
     created_at = datetime.fromisoformat(manifest["created_at"])
     not_before = max(created_at, recent_since) if recent_since is not None else created_at

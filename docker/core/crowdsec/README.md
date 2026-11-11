@@ -10,7 +10,7 @@ Traefik connects directly to `crowdsec:8080` over the Docker network.
 ## Enforcement
 
 - Set `CROWDSEC_ENABLED=true` in the host's ignored Traefik environment file and
-  recreate only `security/traefik` to enable the `publicaccess` middleware bouncer.
+  recreate only `core/traefik` to enable the `publicaccess` middleware bouncer.
   Keep its API key private. Private-only routes retain their IP allowlist policy.
 - Enable `debian_base_install_crowdsec_bouncer` in the target host's inventory.
   Use a dedicated registered bouncer key, not the Traefik key. Supply it using
@@ -67,6 +67,9 @@ consumers' credentials and private recovery backups. Never delete database rows
 directly to bypass the CLI's parent/child safety checks.
 
 ## Reliability and detection checks
+
+`PGID` preserves the host group used for shared application-log access. Keep it
+consistent with the other services' log permissions.
 
 `USE_WAL=true` enables SQLite write-ahead logging for the local database. Keep
 the data volume on local storage that supports SQLite shared-memory locking;

@@ -2,9 +2,8 @@
 # yaml-language-server: $schema=../services-schema.yaml
 ---
 services:
-  - security:
+  - core:
       - name: traefik
         state: up
-  - dashboard:
       - name: homepage
         state: up

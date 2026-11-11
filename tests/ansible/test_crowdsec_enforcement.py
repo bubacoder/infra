@@ -10,12 +10,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class CrowdSecEnforcementTests(unittest.TestCase):
     def test_database_uses_wal(self):
-        compose = yaml.safe_load((ROOT / "docker/security/crowdsec/crowdsec.yaml").read_text())
+        compose = yaml.safe_load((ROOT / "docker/core/crowdsec/crowdsec.yaml").read_text())
         if compose["services"]["crowdsec"]["environment"].get("USE_WAL") != "true":
             self.fail("The local SQLite database should use WAL")
 
     def test_stream_mode_has_explicit_fail_closed_settings(self):
-        middleware = yaml.safe_load((ROOT / "docker/security/traefik/config/dynamic/middlewares.yml").read_text())
+        middleware = yaml.safe_load((ROOT / "docker/core/traefik/config/dynamic/middlewares.yml").read_text())
         plugin = middleware["http"]["middlewares"]["crowdsec-bouncer"]["plugin"]["crowdsec-bouncer-traefik-plugin"]
         expected = {"CrowdsecMode": "stream", "UpdateIntervalSeconds": 60, "UpdateMaxFailure": 0, "StreamStartupBlock": True}
         for key, value in expected.items():
@@ -23,7 +23,7 @@ class CrowdSecEnforcementTests(unittest.TestCase):
                 self.fail(f"Unexpected CrowdSec stream setting: {key}")
 
     def test_local_api_host_port_is_loopback_only(self):
-        compose = yaml.safe_load((ROOT / "docker/security/crowdsec/crowdsec.yaml").read_text())
+        compose = yaml.safe_load((ROOT / "docker/core/crowdsec/crowdsec.yaml").read_text())
         if compose["services"]["crowdsec"]["ports"] != ["127.0.0.1:7080:8080/tcp"]:
             self.fail("Only the local firewall bouncer needs the published LAPI port")
 

@@ -24,6 +24,10 @@ BACKUP_SERVICES = (
     "ai/qdrant",
 )
 
+# Export IDs are persistent storage identities, not Compose directory paths.
+DEFINITION_PATHS = {"security/authentik": "core/authentik"}
+EXPORT_ALIASES = {path: service for service, path in DEFINITION_PATHS.items()}
+
 
 def load_definition(path: Path) -> dict:
     """Read the version-1 sectioned schema; legacy flat definitions are unsupported."""
@@ -91,7 +95,7 @@ def load_target(service: str, docker_dir: Path = ROOT / "docker") -> dict:
     parts = service.split("/")
     if not 2 <= len(parts) <= 3 or any(not SERVICE_PART.fullmatch(part) for part in parts):
         raise BackupError("Service must be a category/service name (or category/subcategory/service)")
-    path = docker_dir.joinpath(*parts) / "backup.yaml"
+    path = docker_dir / DEFINITION_PATHS.get(service, service) / "backup.yaml"
     definition = load_definition(path)
     if "databases" not in definition:
         raise BackupError(f"No database/native export configured in {path}")

@@ -214,8 +214,8 @@ roles:
   - debian_base
   - debian_docker_host
 services:
-  - security/traefik
-  - dashboard/homepage
+  - core/traefik
+  - core/homepage
 ```
 
 Roles execute in list order using native Ansible role inclusion. Names must be
@@ -291,7 +291,10 @@ configuration. `debian_base` is not silently inserted. Removing a role or servic
 from the lists does **not** uninstall software, stop existing containers, or delete
 data/DNS. Such lifecycle changes require separately reviewed operations.
 
-Currently supported services are `security/traefik` and `dashboard/homepage`.
+Currently supported services are `core/traefik` and `core/homepage`.
+The legacy names `security/traefik` and `dashboard/homepage` are accepted and
+normalized in memory; existing operator inputs need not be rewritten. Selecting
+both names for the same service is rejected as a duplicate.
 Any nonempty service list requires `debian_docker_host`; Homepage also requires
 Traefik for its bootstrap routing/widget profile. Traefik alone is supported.
 The guest's generated service-management profile contains only selected services.

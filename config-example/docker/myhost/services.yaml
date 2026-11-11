@@ -2,13 +2,23 @@
 # yaml-language-server: $schema=../services-schema.yaml
 ---
 services:
-  - security:
+  - core:
       - name: crowdsec
         state: up
       - name: traefik
         state: up
       - name: authentik
         state: up
+      - name: homepage
+        state: up
+      - name: adguardhome
+        state: up
+      - name: adguardhome-sync
+        state: up
+      - name: kopia
+        state: up
+
+  - security:
       - name: wg-easy
         state: up
       - name: cloudflared
@@ -18,15 +28,7 @@ services:
       - name: frigate
         state: up
 
-  - dashboard:
-      - name: homepage
-        state: up
-
   - infra:
-      - name: adguardhome
-        state: up
-      - name: adguardhome-sync
-        state: up
       - name: unifi-network-application
         state: up
       - name: ddclient
@@ -75,6 +77,8 @@ services:
         state: up
 
   - storage:
+      - name: qbittorrent
+        state: up
       - name: samba
         state: up
   #     - name: syncthing
@@ -96,16 +100,12 @@ services:
       - name: mssql-server
         state: down
 
-  - backup:
-      - name: kopia-b2
-        state: up
-
   - dev:
       - name: code-server
         state: up
       - name: gitea
         state: up
-      - name: act-runner
+      - name: gitea-act-runner
         state: up
       - name: gitlab
         state: down
@@ -119,6 +119,8 @@ services:
         state: up
 
   - tools:
+      - name: mattermost
+        state: up
       - name: homelab-docs
         state: up
       - name: vaultwarden
@@ -152,14 +154,6 @@ services:
       - name: sillytavern
         state: down
       - name: qdrant
-        state: up
-
-  - communication:
-      - name: mattermost
-        state: up
-
-  - fileshare:
-      - name: qbittorrent
         state: up
 
   # - arr:
