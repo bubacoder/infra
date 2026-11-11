@@ -222,7 +222,7 @@ The active DB source is also manual-only, with managed retention and ignores. It
 The application policy combines all service `files.ignore` lists, including
 disabled services with remaining volumes. YAML is authoritative: removing a
 pattern removes its explicit policy rule on the next apply. Shared/legacy rules
-live in [`docker/backup/backup.yaml`](../docker/backup/backup.yaml).
+live in [`docker/backup.yaml`](../docker/backup.yaml).
 
 Live database files replaced by exports, disposable logs/caches and generated
 media are excluded. Immich's native SQL archives stay local but are excluded from
