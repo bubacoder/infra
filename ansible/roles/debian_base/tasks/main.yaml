@@ -23,7 +23,7 @@
     msg: >-
       Docker-host CrowdSec enforcement is configured separately after Docker and
       the CrowdSec container are ready. Run ansible/playbooks/crowdsec.yaml for
-      this host; see docker/security/crowdsec/README.md.
+      this host; see docker/core/crowdsec/README.md.
   when:
     - debian_base_install_crowdsec_bouncer | default(false) | ansible.builtin.bool
     - "'DOCKER-USER' in debian_base_crowdsec_iptables_chains | default(['INPUT'])"

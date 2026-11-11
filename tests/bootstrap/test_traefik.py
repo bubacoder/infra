@@ -62,7 +62,7 @@ class TraefikTests(unittest.TestCase):
         rendered = outputs(profile())
         cm = yaml.safe_load(rendered["k3s-traefik-configmap.yaml"])
         dynamic = yaml.safe_load(cm["data"]["middlewares.yaml"])
-        canonical = yaml.safe_load((ROOT / "docker/security/traefik/config/dynamic/middlewares.yml").read_text())
+        canonical = yaml.safe_load((ROOT / "docker/core/traefik/config/dynamic/middlewares.yml").read_text())
         selected = dynamic["http"]["middlewares"]
         self.assertEqual(set(selected), {"localaccess", "local-ip-allowlist", "https-only", "security-headers"})
         for name, definition in selected.items():
@@ -70,7 +70,7 @@ class TraefikTests(unittest.TestCase):
         self.assertEqual(dynamic["tls"], canonical["tls"])
         self.assertNotIn("serversTransports", dynamic["http"])
         self.assertIn('{{env "LOCAL_ACCESS_ADMIN_CIDR"}}', cm["data"]["middlewares.yaml"])
-        self.assertEqual(cm["data"]["tls.yaml"], (ROOT / "docker/security/traefik/config/dynamic/tls.yml").read_text())
+        self.assertEqual(cm["data"]["tls.yaml"], (ROOT / "docker/core/traefik/config/dynamic/tls.yml").read_text())
 
     def test_helm_values_are_single_writer_persistent_and_secret_referenced(self):
         rendered = outputs(profile())
@@ -93,7 +93,7 @@ class TraefikTests(unittest.TestCase):
         rendered = outputs(profile())
         values = yaml.safe_load(yaml.safe_load(rendered["k3s-traefik-helmchartconfig.yaml"])["spec"]["valuesContent"])
         challenge = values["certificatesResolvers"]["letsencrypt"]["acme"]["dnsChallenge"]
-        canonical = yaml.safe_load((ROOT / "docker/security/traefik/config/traefik.yml").read_text())
+        canonical = yaml.safe_load((ROOT / "docker/core/traefik/config/traefik.yml").read_text())
         expected = canonical["certificatesResolvers"]["letsencrypt"]["acme"]["dnsChallenge"]["resolvers"]
         self.assertEqual(expected, ["1.1.1.1:53", "8.8.8.8:53"])
         self.assertEqual(challenge["resolvers"], expected)
@@ -152,7 +152,7 @@ class TraefikTests(unittest.TestCase):
             self.assertEqual(claim["spec"]["resources"]["requests"]["storage"], canonical)
 
     def test_broken_dependency_graphs_fail_without_echoing_names_or_values(self):
-        source_path = ROOT / "docker/security/traefik/config/dynamic/middlewares.yml"
+        source_path = ROOT / "docker/core/traefik/config/dynamic/middlewares.yml"
         original = yaml.safe_load(source_path.read_text())
         read_text = Path.read_text
         for dependencies in (["localaccess"], ["SENTINEL_DO_NOT_LOG"]):

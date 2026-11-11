@@ -17,7 +17,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from scripts.backup import config, runner  # noqa: E402
-from scripts.backup.common import DEFAULT_KOPIA_SOURCE, BackupError, private_directory  # noqa: E402
+from scripts.backup.common import DEFAULT_KOPIA_CONTAINER, DEFAULT_KOPIA_SOURCE, BackupError, private_directory  # noqa: E402
 from scripts.backup.kopia_policy import container_command  # noqa: E402
 
 SERVICE_ERRORS = (BackupError, OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError)
@@ -180,7 +180,7 @@ def snapshot_latest(host: str, *, source: str = DEFAULT_KOPIA_SOURCE, prepare_on
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         prefix = None
         if not prepare_only:
-            prefix = container_command("kopia-b2", source)
+            prefix = container_command(DEFAULT_KOPIA_CONTAINER, source)
             check_mount(prefix, export_root / "latest", source)
         view = prepare_view(host, volumes, export_root)
         if prefix is not None:

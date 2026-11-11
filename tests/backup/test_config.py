@@ -76,10 +76,12 @@ class BackupConfigTests(BackupTestCase):
 
     def test_target_rejects_unknown_fields_and_path_traversal(self) -> None:
         path = self.definition(
-            "security/authentik",
+            "core/authentik",
             "version: 1\ndatabases:\n  engine: postgresql\n  container: authentik-postgresql\n  database: authentik\n  user: authentik\n",
         )
         self.assertEqual(config.load_target("security/authentik", self.root)["database"], "authentik")
+        self.assertIn("security/authentik", config.BACKUP_SERVICES)
+        self.assertNotIn("core/authentik", config.BACKUP_SERVICES)
         with self.assertRaises(BackupError):
             config.load_target("security/../authentik", self.root)
         path.write_text(path.read_text() + "password: exposed\n")

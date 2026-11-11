@@ -6,7 +6,7 @@ that are not yet migrated and general identity-platform hardening.
 For Authentik deployment, backup, recovery, and Google federation, see
 [`docs/authentik.md`](../authentik.md). For the Authentik-side application
 onboarding workflow, see
-[`docker/security/authentik/app-onboarding.md`](../../docker/security/authentik/app-onboarding.md).
+[`docker/core/authentik/app-onboarding.md`](../../docker/core/authentik/app-onboarding.md).
 
 ## Goals
 
@@ -48,7 +48,7 @@ break callbacks and non-browser clients.
 
 ## Authentik Configuration
 
-`docker/security/authentik/config/apps.yaml` is the tracked, declarative source
+`docker/core/authentik/config/apps.yaml` is the tracked, declarative source
 of Authentik application definitions. It contains non-secret provider settings,
 redirect URIs, and group bindings. Host-specific client secrets and API tokens
 remain in ignored `config/docker/<host>/` files.
@@ -78,10 +78,10 @@ setup, recovery, and verification instructions live with their Compose files.
 | Grafana | Native OIDC | [`docker/monitoring/grafana/README.md`](../../docker/monitoring/grafana/README.md) |
 | wg-easy | Native OIDC | [`docker/security/wg-easy/README.md`](../../docker/security/wg-easy/README.md) |
 | Guacamole | Native OIDC | [`docker/tools/guacamole/README.md`](../../docker/tools/guacamole/README.md) |
-| Kopia B2 | ForwardAuth | [`docker/backup/kopia-b2/README.md`](../../docker/backup/kopia-b2/README.md) |
+| Kopia B2 | ForwardAuth | [`docker/core/kopia/README.md`](../../docker/core/kopia/README.md) |
 | Adminer | ForwardAuth | [`docker/database/adminer/README.md`](../../docker/database/adminer/README.md) |
 | code-server | ForwardAuth | [`docker/dev/code-server/README.md`](../../docker/dev/code-server/README.md) |
-| qBittorrent | ForwardAuth | [`docker/fileshare/qbittorrent/README.md`](../../docker/fileshare/qbittorrent/README.md) |
+| qBittorrent | ForwardAuth | [`docker/storage/qbittorrent/README.md`](../../docker/storage/qbittorrent/README.md) |
 | MeTube | ForwardAuth | [`docker/media/video/metube/README.md`](../../docker/media/video/metube/README.md) |
 | Scrutiny | ForwardAuth | [`docker/monitoring/scrutiny/README.md`](../../docker/monitoring/scrutiny/README.md) |
 | Uptime Kuma | ForwardAuth | [`docker/monitoring/uptime-kuma/README.md`](../../docker/monitoring/uptime-kuma/README.md) |

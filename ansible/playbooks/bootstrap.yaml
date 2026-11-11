@@ -38,10 +38,10 @@
     bootstrap_checkout: "/home/{{ ansible_user }}/repos/infra"
     bootstrap_host_dir: "{{ bootstrap_checkout }}/config/docker/{{ bootstrap.name }}"
     bootstrap_service_catalog:
-      security/traefik: {directory: security/traefik, file: traefik.yaml}
-      dashboard/homepage: {directory: dashboard/homepage, file: homepage.yaml}
+      core/traefik: {directory: core/traefik, file: traefik.yaml}
+      core/homepage: {directory: core/homepage, file: homepage.yaml}
     bootstrap_services: "{{ bootstrap.services | map('extract', bootstrap_service_catalog) | list }}"
-    bootstrap_containers: "{{ (['traefik', 'logrotate'] if 'security/traefik' in bootstrap.services else []) + (['homepage', 'dockerproxy'] if 'dashboard/homepage' in bootstrap.services else []) }}"
+    bootstrap_containers: "{{ (['traefik', 'logrotate'] if 'core/traefik' in bootstrap.services else []) + (['homepage', 'dockerproxy'] if 'core/homepage' in bootstrap.services else []) }}"
     debian_docker_host_volumes_path: "{{ bootstrap.docker_volumes | default('/srv/docker-volumes') }}"
     debian_base_ssh_key_file: "{{ bootstrap.ssh_public_key | expanduser }}"
   pre_tasks:

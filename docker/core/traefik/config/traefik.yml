@@ -95,6 +95,6 @@ experimental:
   localPlugins:
     # Crowdsec Bouncer Traefik Plugin
     # Vendored during the image build because the Traefik plugin registry can be
-    # unavailable at startup; see docker/security/traefik/Dockerfile.
+    # unavailable at startup; see docker/core/traefik/Dockerfile.
     crowdsec-bouncer-traefik-plugin:
       moduleName: "github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin"

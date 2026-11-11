@@ -58,7 +58,7 @@
     {
       "description": "Update the vendored CrowdSec Traefik plugin tag and tag-object SHA together",
       "customType": "regex",
-      "managerFilePatterns": ["/^docker/security/traefik/Dockerfile$/"],
+      "managerFilePatterns": ["/^docker/core/traefik/Dockerfile$/"],
       "matchStrings": [
         "# renovate: datasource=(?<datasource>[a-z-]+?) depName=(?<depName>[^\\s]+?)\\s+ARG CROWDSEC_PLUGIN_REF=(?<currentValue>[^\\s]+)\\s+ARG CROWDSEC_PLUGIN_TAG_SHA=(?<currentDigest>[a-f0-9]{40})"
       ],

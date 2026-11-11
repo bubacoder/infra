@@ -84,7 +84,7 @@ Deploy Mattermost using the standard workflow:
 task docker:apply
 
 # Or use labctl.py directly
-scripts/labctl.py service up communication/mattermost
+scripts/labctl.py service up tools/mattermost
 ```
 
 ### Initial Setup
@@ -159,7 +159,7 @@ docker ps | grep mattermost
 #### View Logs
 
 ```bash
-scripts/labctl.py service logs communication/mattermost
+scripts/labctl.py service logs tools/mattermost
 ```
 
 #### Prometheus Metrics
@@ -197,12 +197,12 @@ sudo chown -R 2000:2000 ${DOCKER_VOLUMES}/mattermost
 To upgrade Mattermost:
 
 1. Check release notes: https://docs.mattermost.com/about/mattermost-release-notes.html
-2. Update image tag in `docker/communication/mattermost/mattermost.yaml`
+2. Update image tag in `docker/tools/mattermost/mattermost.yaml`
 3. Pull new image and recreate container:
 
 ```bash
-scripts/labctl.py service pull communication/mattermost
-scripts/labctl.py service recreate communication/mattermost
+scripts/labctl.py service pull tools/mattermost
+scripts/labctl.py service recreate tools/mattermost
 ```
 
 ## Backup

@@ -42,6 +42,21 @@ class BackupCliTests(BackupTestCase):
         prune.assert_not_called()
         self.assertIn("db-backups/security-wg-easy", output.getvalue())
 
+    def test_relocated_authentik_keeps_existing_export_history(self) -> None:
+        target = {"engine": "postgresql", "container": "authentik-postgresql", "database": "authentik"}
+        for service in ("security/authentik", "core/authentik"):
+            with (
+                patch.object(sys, "argv", ["run.py", service]),
+                patch.object(run.config, "docker_volumes", return_value=self.root),
+                patch.object(run.config, "backup_root", return_value=self.export_root),
+                patch.object(run.config, "load_target", return_value=target) as load,
+                patch.object(run.runner, "perform_export") as export,
+                contextlib.redirect_stdout(io.StringIO()),
+            ):
+                run.main()
+            load.assert_called_once_with("security/authentik")
+            export.assert_called_once_with("security/authentik", target, self.root, self.export_root, "localhost")
+
     def test_invalid_action_combination_fails_before_host_access(self) -> None:
         with (
             patch.object(sys, "argv", ["run.py", "security/authentik", "--run-all"]),

@@ -34,7 +34,7 @@ direct UI route; BitTorrent peer ports are separate protocol exposure.
 
 ```bash
 scripts/authentik-apps.py --application qbittorrent --apply
-scripts/labctl.py service recreate fileshare/qbittorrent
+scripts/labctl.py service recreate storage/qbittorrent
 ```
 
 For proxy-only browser access, enable qBittorrent's whitelist bypass only for

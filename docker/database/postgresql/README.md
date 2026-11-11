@@ -32,7 +32,7 @@ See the [backup guide](../../../docs/backup.md) for commands, retention and snap
    version). Restore required roles first, recreate the selected databases with
    original ownership, then apply their matching custom archives using `pg_restore`.
 3. Restore each application's paired files and original credentials before
-   allowing it to connect. Follow [Mattermost recovery](../../communication/mattermost/README.md#recovery)
+   allowing it to connect. Follow [Mattermost recovery](../../tools/mattermost/README.md#recovery)
    for its configuration, uploads and plugins, then check database access and app health.
 
 Separate database dumps are not one cross-database transaction. `productsearch`

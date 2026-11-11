@@ -63,7 +63,7 @@ Every new service must include `README.md` beside its base Compose file. Use thi
 
 Examples: [HTTPBin](tools/httpbin/README.md) for a simple service,
 [Jellyfin](media/video/jellyfin/README.md) and [Ollama](ai/ollama/README.md) for GPU
-instructions, and [Authentik](security/authentik/README.md) for secrets, SSO, and recovery.
+instructions, and [Authentik](core/authentik/README.md) for secrets, SSO, and recovery.
 The documentation exporter includes the service README alongside its Compose configuration.
 
 ## Core Infrastructure Components
@@ -176,7 +176,7 @@ traefik.http.routers.service-name.middlewares: localaccess@file
 ```
 
 Onboard SSO separately using
-`docker/security/authentik/app-onboarding.md`. Authentik-protected browser routes use
+`docker/core/authentik/app-onboarding.md`. Authentik-protected browser routes use
 `localaccess-authentik@file`.
 
 #### Access Control Patterns
@@ -274,10 +274,36 @@ scripts/labctl.py service <operation> <category>/<service-name>
 Operations: `up`, `down`, `restart`, `recreate`, `pull`, `config` (render the resolved compose config), `logs`.
 
 ```bash
-scripts/labctl.py service up security/traefik
+scripts/labctl.py service up core/traefik
 scripts/labctl.py service restart ai/ollama
 scripts/labctl.py service pull media/video/jellyfin
 ```
+
+### Relocating Services
+
+Moving a service directory is a deployment change, not just a file operation:
+
+1. Move the entire directory, including tracked configuration, build context and
+   overrides. Update references in scripts, Ansible, bootstrap catalogs, tests,
+   documentation, lint exclusions and Renovate rules.
+2. Update affected hosts' `config/docker/<host>/services.yaml` registrations and
+   the tracked examples. Keep the existing enabled/disabled states.
+3. `labctl.py` derives the Compose filename and `.env.<service-name>` filenames
+   from the final directory component. If renaming that component, rename those
+   files too, including common and host-specific environment files when present.
+4. Preserve the top-level Compose `name:`, service keys, container names, external
+   network names and persistent storage paths. They need not match the category
+   or directory name. Backup export IDs are persistent identities too: Authentik
+   retains `security/authentik` for exports although its definition is in `core`.
+5. Compare privately resolved Compose configurations before and after the move;
+   only expected source paths should change. Never print resolved credentials.
+6. On each intended host, record the running images and mounts, retain rollback
+   copies, and reconcile just the moved stacks. Recreate containers as needed to
+   update bind sources and Compose path labels; a restart alone does not update
+   them. Avoid pulling images, rebuilding or deleting volumes during relocation.
+7. Verify container health and application behavior, including DNS, routing, SSO
+   and security enforcement as applicable. A local migration does not redeploy
+   other Docker hosts.
 
 ## GPU Acceleration Overrides
 
@@ -317,7 +343,8 @@ See the working examples and their adjacent READMEs:
 
 Services are organized into logical categories:
 
-- **Security**: Traefik, Authentik, Cloudflared, CrowdSec, ...
+- **Core**: Traefik, Homepage, CrowdSec, Authentik, AdGuard Home and its sync service
+- **Security**: Cloudflared, wg-easy, Endlessh, Frigate, ...
 - **Monitoring**: Prometheus, Grafana, Node-exporter, Uptime-kuma, ...
 - **Media**: Jellyfin, Metube, Navidrome, Calibre, ...
 - **Storage**: MinIO, Syncthing, FileSharing, ...

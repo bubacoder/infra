@@ -8,7 +8,7 @@ services:
       - proxy
     # If running on a separate host (not the Traefik host), remove the networks section above,
     # add "- 8080:8080" to the ports section below so the WebUI is reachable on the host,
-    # and add a router+service entry in docker/security/traefik/config/dynamic/external-services.yml:
+    # and add a router+service entry in docker/core/traefik/config/dynamic/external-services.yml:
     #   routers:
     #     qbittorrent:
     #       rule: 'Host(`qbittorrent.${MYDOMAIN}`)'

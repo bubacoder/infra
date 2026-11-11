@@ -33,7 +33,7 @@ web interface only through Traefik.
 ## Deploy the Stack
 
 1. Ensure the Authentik service definition exists at
-   `docker/security/authentik/authentik.yaml`.
+   `docker/core/authentik/authentik.yaml`.
 2. Copy the example configuration tree to the ignored `config/` directory.
 3. Create the host secret directory, for example
    `config/docker/<host>/authentik/`.
@@ -63,12 +63,12 @@ docker network connect security-authentik traefik
 ```
 
 8. Add `security-authentik` to Traefik's networks in
-   `docker/security/traefik/traefik.yaml` so the connection persists after a
+   `docker/core/traefik/traefik.yaml` so the connection persists after a
    Traefik recreation.
 9. Start Authentik:
 
 ```bash
-scripts/labctl.py service up security/authentik
+scripts/labctl.py service up core/authentik
 ```
 
 10. Verify the three containers are healthy:
@@ -134,7 +134,7 @@ python3 scripts/backup/run.py security/authentik --verify-latest
 ```
 
 See [Backup and recovery](backup.md) for snapshot selection and
-[Authentik recovery](../docker/security/authentik/README.md#recovery) for database,
+[Authentik recovery](../docker/core/authentik/README.md#recovery) for database,
 files and original-secret restore order. Use a separate destination for a test.
 
 ## Create Groups
@@ -202,7 +202,7 @@ includes a `verified_email` boolean. Require that current value alongside the
 approved-email list for both first enrollment and repeat authentication. The
 checks fail closed when the value is absent or is not the boolean `true`.
 
-`docker/security/authentik/config/blueprints/google-email-verification.yaml`
+`docker/core/authentik/config/blueprints/google-email-verification.yaml`
 manages the non-secret implementation:
 
 - Expression policy `google-email-verified`.
@@ -331,13 +331,13 @@ login path, not the emergency recovery path.
 ## Add Applications Safely
 
 The canonical end-to-end onboarding procedure is
-`docker/security/authentik/app-onboarding.md`. This section provides deployment
+`docker/core/authentik/app-onboarding.md`. This section provides deployment
 history and additional Authentik-specific context; keep operational steps
 aligned with the canonical application onboarding guide.
 
 ### Managed Application Manifest
 
-`docker/security/authentik/config/apps.yaml` declares Grafana OIDC and the
+`docker/core/authentik/config/apps.yaml` declares Grafana OIDC and the
 Uptime Kuma and Adminer Traefik ForwardAuth applications. Use
 `scripts/authentik-apps.py` to create only missing resources. It is a
 self-contained `uv` script, so no manually activated Python environment is
@@ -358,7 +358,7 @@ AUTHENTIK_URL=https://sso.example.com
 ### Create the Application Helper API Token
 
 Use a dedicated service account instead of an administrator's personal token.
-`docker/security/authentik/config/blueprints/authentik-apps-operator.yaml`
+`docker/core/authentik/config/blueprints/authentik-apps-operator.yaml`
 declaratively maintains the `authentik-apps-operator` role, its least-privilege
 permissions, and membership for the `authentik-apps` service account. Do not
 edit those permissions manually; deploy the Authentik stack after changing the
@@ -416,7 +416,7 @@ it reads the token or makes an API request. Plan mode then uses read-only API
 requests to report the actual create/no-change actions.
 
 For each ForwardAuth application, the helper plans and, with `--apply`, adds its
-callback hostname to `docker/security/traefik/config/dynamic/authentik-outposts.yml`.
+callback hostname to `docker/core/traefik/config/dynamic/authentik-outposts.yml`.
 Traefik watches that file-provider directory and applies the route without
 restarting Authentik. The helper never deletes or rewrites existing callback
 routes.

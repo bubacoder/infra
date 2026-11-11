@@ -94,16 +94,21 @@ share the lock. The Kopia UI or a direct snapshot command bypasses that coordina
 | `dev/gitea` | `database.sqlite3` | [Gitea](../docker/dev/gitea/README.md#recovery) |
 | `ai/open-webui` | `database.sqlite3`, `database-chroma.sqlite3` | [Open WebUI](../docker/ai/open-webui/README.md#recovery) |
 | `automation/n8n` | `database.dump`, `globals.sql` | [n8n](../docker/automation/n8n/README.md#recovery) |
-| `database/postgresql` | `database-<name>.dump`, `globals.sql` | [PostgreSQL](../docker/database/postgresql/README.md#recovery), [Mattermost](../docker/communication/mattermost/README.md#recovery) |
+| `database/postgresql` | `database-<name>.dump`, `globals.sql` | [PostgreSQL](../docker/database/postgresql/README.md#recovery), [Mattermost](../docker/tools/mattermost/README.md#recovery) |
 | `database/mongodb` | `database.archive.gz` | [MongoDB](../docker/database/mongodb/README.md#recovery), [UniFi](../docker/infra/unifi-network-application/README.md#recovery) |
 | `database/couchdb` | Staged `couchdb/data/` and `couchdb/etc/` | [CouchDB](../docker/database/couchdb/README.md#recovery), [Obsidian](../docker/tools/obsidian/README.md#recovery) |
-| `security/authentik` | `database.dump`, `globals.sql` | [Authentik](../docker/security/authentik/README.md#recovery) |
+| `security/authentik` | `database.dump`, `globals.sql` | [Authentik](../docker/core/authentik/README.md#recovery) |
 | `media/photo/immich` | `database.dump`, `globals.sql` | [Immich](../docker/media/photo/immich/README.md#recovery) |
 | `security/wg-easy` | `database.sqlite3` | [wg-easy](../docker/security/wg-easy/README.md#recovery) |
 | `automation/homeassistant` | `homeassistant.tar`, `database.sqlite3` | [Home Assistant](../docker/automation/homeassistant/README.md#recovery) |
 | `ai/qdrant` | `full.snapshot`, `inventory.json` | [Qdrant](../docker/ai/qdrant/README.md#recovery-and-post-restore-check) |
 
 Every export includes `manifest.json` with artifact sizes and SHA-256 hashes.
+Export IDs are independent of Compose directory categories. In particular,
+`security/authentik` remains the backup target and export-history ID; its
+definition is loaded from `docker/core/authentik/backup.yaml`.
+The backup CLI also accepts `core/authentik` and resolves it to that existing ID,
+so either spelling uses the same export history.
 Home Assistant is enabled by its administrator token or an existing export
 directory; missing credentials then report failure rather than silently dropping it.
 
@@ -175,7 +180,7 @@ host backup commands when needed.
    populate the private view: `python3 scripts/backup/latest.py --prepare-only`.
    Do this before recreating Kopia so Docker does not create a root-owned directory.
 3. Recreate Kopia with the updated bind mount:
-   `python3 scripts/labctl.py service recreate backup/kopia-b2`.
+   `python3 scripts/labctl.py service recreate core/kopia`.
 4. Run `python3 scripts/backup/latest.py`. The command checks that the running
    container actually mounts `DB_BACKUP_ROOT/latest` read-only at the DB source,
    refusing an old whole-history mount. Inspect the new snapshot: it should contain
@@ -195,7 +200,7 @@ make that reduced freshness explicit.
 ### Snapshot policies and exclusions
 
 Kopia-managed schedules and retention are declared in
-[`snapshots.yaml`](../docker/backup/kopia-b2/snapshots.yaml):
+[`snapshots.yaml`](../docker/core/kopia/snapshots.yaml):
 
 ```bash
 python3 scripts/backup/kopia_schedule.py

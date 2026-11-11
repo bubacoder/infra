@@ -12,10 +12,10 @@ import yaml
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from scripts.backup.common import DEFAULT_KOPIA_VOLUMES_SOURCE, ROOT, BackupError  # noqa: E402
+from scripts.backup.common import DEFAULT_KOPIA_CONTAINER, DEFAULT_KOPIA_VOLUMES_SOURCE, ROOT, BackupError  # noqa: E402
 from scripts.backup.kopia_policy import collect_ignores, container_command, kopia_command  # noqa: E402
 
-SETTINGS = ROOT / "docker/backup/kopia-b2/snapshots.yaml"
+SETTINGS = ROOT / "docker/core/kopia/snapshots.yaml"
 RETENTION = {name: "keep" + name.title() for name in ("latest", "hourly", "daily", "weekly", "monthly", "annual")}
 
 
@@ -154,7 +154,7 @@ def sync_policy(prefix: list[str], target: str, item: dict, *, apply: bool = Fal
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--settings", type=Path, default=SETTINGS)
-    parser.add_argument("--container", default="kopia-b2")
+    parser.add_argument("--container", default=DEFAULT_KOPIA_CONTAINER)
     parser.add_argument("--policy-user", default="root")
     parser.add_argument("--policy-host", default="nest")
     parser.add_argument("--server-address", default="http://127.0.0.1:80", help="Kopia server address inside the container")

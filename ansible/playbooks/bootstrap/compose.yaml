@@ -12,7 +12,7 @@
   community.docker.docker_compose_v2:
     project_src: "{{ bootstrap_checkout }}/docker/{{ bootstrap_service.directory }}"
     files: ["{{ bootstrap_service.file }}"]
-    env_files: "{{ [bootstrap_host_dir + '/.env'] + ([bootstrap_host_dir + '/.env.traefik'] if bootstrap_service.directory == 'security/traefik' else []) }}"
+    env_files: "{{ [bootstrap_host_dir + '/.env'] + ([bootstrap_host_dir + '/.env.traefik'] if bootstrap_service.directory == 'core/traefik' else []) }}"
     state: present
     build: policy
     wait: true

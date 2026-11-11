@@ -17,7 +17,7 @@ class KopiaPolicyTests(BackupTestCase):
         app = self.root / "media/jellyfin"
         app.mkdir(parents=True)
         (app / "backup.yaml").write_text('version: 1\nfiles:\n  ignore: ["**/log/nginx/**", jellyfin/cache]\n')
-        database = self.root / "security/authentik"
+        database = self.root / "core/authentik"
         database.mkdir(parents=True)
         (database / "backup.yaml").write_text(
             "version: 1\ndatabases:\n  engine: postgresql\n  container: authentik-postgresql\n  database: authentik\n  user: authentik\n"

@@ -39,7 +39,7 @@ def storage_quantity(value):
 
 
 def selected_policy(root, names):
-    directory = root / "docker/security/traefik/config/dynamic"
+    directory = root / "docker/core/traefik/config/dynamic"
     try:
         policy = yaml.safe_load((directory / "middlewares.yml").read_text())
         tls_text = (directory / "tls.yml").read_text()

@@ -17,7 +17,7 @@ Work through the steps below in order. **Stop as soon as the problem is resolved
 
 Make sure you have:
 - The error message or symptom (ask the user if not provided)
-- The service name in `category/service-name` format (e.g. `ai/open-webui`, `security/traefik`, `media/video/jellyfin`)
+- The service name in `category/service-name` format (e.g. `ai/open-webui`, `core/traefik`, `media/video/jellyfin`)
 
 The compose file is at `docker/<category>/<service>/<service>.yaml`. If the user mentions an error but not the service name, ask. If the service is obvious from context, proceed.
 

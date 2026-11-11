@@ -329,9 +329,9 @@ class ConfigurationTests(unittest.TestCase):
             {"roles": ["../debian_base"]},
             {"roles": ["missing_role"]},
             {"roles": ["debian_base"]},
-            {"services": ["dashboard/homepage"]},
+            {"services": ["core/homepage"]},
             {"services": ["unknown/service"]},
-            {"services": ["security/traefik", "security/traefik"]},
+            {"services": ["core/traefik", "core/traefik"]},
         ):
             self.config.source.write_text(original)
             self.edit(lambda v, update=fields: v.update(update))
@@ -342,6 +342,18 @@ class ConfigurationTests(unittest.TestCase):
         self.config.prepare()
         host = yaml.safe_load((self.config.generated / "host.yaml").read_text())
         self.assertEqual(host["roles"], ["debian_tools", "debian_base", "debian_docker_host"])
+
+    def test_legacy_service_names_normalize_without_rewriting_source(self):
+        self.edit(lambda v: v.update(services=["security/traefik", "dashboard/homepage"]))
+        original = self.config.source.read_bytes()
+        self.assertEqual(self.config.load()["services"], ["core/traefik", "core/homepage"])
+        self.assertEqual(self.config.source.read_bytes(), original)
+        self.config.prepare()
+        host = yaml.safe_load((self.config.generated / "host.yaml").read_text())
+        self.assertEqual(host["services"], ["core/traefik", "core/homepage"])
+        self.edit(lambda v: v.update(services=["security/traefik", "core/traefik"]))
+        with self.assertRaisesRegex(ConfigError, "unique"):
+            self.config.load()
 
     def test_host_only_needs_no_docker_tls_repository_or_dns_credentials(self):
         self.edit(lambda v: v.update(roles=["debian_base"], services=[], host={}, dns={"enabled": False}))

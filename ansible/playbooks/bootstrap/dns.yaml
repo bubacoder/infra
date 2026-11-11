@@ -3,7 +3,7 @@
   ansible.builtin.set_fact:
     bootstrap_dns_action: "{{ bootstrap_dns_action | default('preview' if bootstrap_verify_only | default(false) else 'present') }}"
     bootstrap_dns_domain: "{{ bootstrap.domain | default('') }}"
-    bootstrap_dns_names: "{{ ([bootstrap.domain] + (['home.' + bootstrap.domain] if 'dashboard/homepage' in bootstrap.services | default([]) else []) + (['traefik.' + bootstrap.domain] if 'security/traefik' in bootstrap.services | default([]) else []) + ['bootstrap-check.' + bootstrap.domain]) if (bootstrap.domain | default('') | length > 0 and (bootstrap.dns.enabled or bootstrap.services | default([]) | length > 0)) else [] }}"
+    bootstrap_dns_names: "{{ ([bootstrap.domain] + (['home.' + bootstrap.domain] if 'core/homepage' in bootstrap.services | default([]) else []) + (['traefik.' + bootstrap.domain] if 'core/traefik' in bootstrap.services | default([]) else []) + ['bootstrap-check.' + bootstrap.domain]) if (bootstrap.domain | default('') | length > 0 and (bootstrap.dns.enabled or bootstrap.services | default([]) | length > 0)) else [] }}"
     bootstrap_dns_records: []
     bootstrap_adguard_urls: "{{ bootstrap.dns.adguard_urls | default([bootstrap.dns.adguard_url] if bootstrap.dns.adguard_url is defined else []) }}"
 - name: Locate native DNS ownership receipt

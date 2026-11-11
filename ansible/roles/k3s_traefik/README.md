@@ -49,9 +49,9 @@ nor restarted by this role. Cilium is independent and is not reconfigured here.
 
 The existing files remain canonical:
 
-- `docker/security/traefik/config/dynamic/middlewares.yml`: explicitly selected
+- `docker/core/traefik/config/dynamic/middlewares.yml`: explicitly selected
   middleware, complete transitive chain dependencies and shared TLS options.
-- `docker/security/traefik/config/dynamic/tls.yml`: copied verbatim, including
+- `docker/core/traefik/config/dynamic/tls.yml`: copied verbatim, including
   the default generated certificate policy. Currently this requests the apex,
   `*.<domain>` and `*.dev.<domain>`; the adapter does not reduce its SAN list.
 

@@ -24,6 +24,9 @@
   ansible.builtin.validate_argument_spec:
     argument_spec: "{{ lookup('file', playbook_dir + '/bootstrap/spec.yaml') | from_yaml }}"
     provided_arguments: "{{ bootstrap }}"
+- name: Resolve legacy bootstrap service names without changing operator inputs
+  ansible.builtin.set_fact:
+    bootstrap: "{{ bootstrap | combine({'services': bootstrap.services | map('regex_replace', '^security/traefik$', 'core/traefik') | map('regex_replace', '^dashboard/homepage$', 'core/homepage') | list}) }}"
 - name: Bind public host settings to the explicit target
   ansible.builtin.assert:
     that: bootstrap.target == lookup('env', 'BOOTSTRAP_TARGET')
@@ -63,10 +66,10 @@
     that:
       - bootstrap.roles | unique | length == bootstrap.roles | length
       - bootstrap.services | unique | length == bootstrap.services | length
-      - bootstrap.services | difference(['security/traefik', 'dashboard/homepage']) | length == 0
+      - bootstrap.services | difference(['core/traefik', 'core/homepage']) | length == 0
       - "bootstrap.services | length == 0 or 'debian_docker_host' in bootstrap.roles"
       - "'k3s' not in bootstrap.roles or bootstrap.services | length == 0"
-      - "'dashboard/homepage' not in bootstrap.services or 'security/traefik' in bootstrap.services"
+      - "'core/homepage' not in bootstrap.services or 'core/traefik' in bootstrap.services"
     fail_msg: >-
       Select unique local roles and supported services. Docker services require
       debian_docker_host; Homepage requires Traefik. Default K3s requires services: []

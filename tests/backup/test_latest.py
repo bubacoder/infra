@@ -164,12 +164,13 @@ class LatestExportTests(BackupTestCase):
         with (
             patch.object(latest.config, "docker_volumes", return_value=self.root),
             patch.object(latest.config, "backup_root", return_value=self.export_root),
-            patch.object(latest, "container_command", return_value=["docker", "exec", "kopia-b2", "kopia"]),
+            patch.object(latest, "container_command", return_value=["docker", "exec", "kopia", "kopia"]) as container,
             patch.object(latest, "check_mount"),
             patch.object(latest, "prepare_view", return_value=prepared),
             patch.object(latest.subprocess, "run", side_effect=upload),
         ):
             self.assertEqual(latest.snapshot_latest("localhost"), prepared)
+        container.assert_called_once_with("kopia", DEFAULT_KOPIA_SOURCE)
 
     def test_cli_reports_degraded_exit_only_after_snapshot_job_returns(self) -> None:
         result = latest.PreparedView(self.export_root / "latest", 12, ("automation/n8n: omitted",))
@@ -212,7 +213,7 @@ class LatestExportTests(BackupTestCase):
             patch.object(latest.config, "backup_root", return_value=self.export_root),
             patch.object(latest.config, "configured_services", return_value=tuple(targets)),
             patch.object(latest.config, "load_target", side_effect=targets.__getitem__),
-            patch.object(latest, "container_command", return_value=["docker", "exec", "kopia-b2", "kopia"]),
+            patch.object(latest, "container_command", return_value=["docker", "exec", "kopia", "kopia"]),
             patch.object(latest, "check_mount"),
             patch.object(latest.subprocess, "run", side_effect=upload) as snapshot,
             self.assertRaises(SystemExit) as raised,
@@ -235,7 +236,7 @@ class LatestExportTests(BackupTestCase):
             )
             with patch.object(latest.subprocess, "run", return_value=result):
                 if source == view and not writable:
-                    latest.check_mount(["docker", "exec", "kopia-b2"], view, DEFAULT_KOPIA_SOURCE)
+                    latest.check_mount(["docker", "exec", "kopia"], view, DEFAULT_KOPIA_SOURCE)
                 else:
                     with self.assertRaisesRegex(BackupError, "recreate"):
-                        latest.check_mount(["docker", "exec", "kopia-b2"], view, DEFAULT_KOPIA_SOURCE)
+                        latest.check_mount(["docker", "exec", "kopia"], view, DEFAULT_KOPIA_SOURCE)

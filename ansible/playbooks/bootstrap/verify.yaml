@@ -7,7 +7,7 @@
     timeout: 15
     status_code: 200
   delegate_to: localhost
-  loop: "{{ (['traefik'] if 'security/traefik' in bootstrap.services else []) + (['home'] if 'dashboard/homepage' in bootstrap.services else []) }}"
+  loop: "{{ (['traefik'] if 'core/traefik' in bootstrap.services else []) + (['home'] if 'core/homepage' in bootstrap.services else []) }}"
   register: bootstrap_https
   until: bootstrap_https.status | default(0) == 200
   retries: 36
@@ -24,11 +24,11 @@
   until: bootstrap_widget.json.http | default(none) is mapping and bootstrap_widget.json.error is not defined
   retries: 12
   delay: 5
-  when: "'dashboard/homepage' in bootstrap.services"
+  when: "'core/homepage' in bootstrap.services"
 - name: Check persistent certificate and log locations without reading their contents
   ansible.builtin.stat:
     path: "{{ bootstrap.docker_volumes }}/{{ item }}"
-  loop: "{{ ['traefik/letsencrypt/acme.json', 'traefik/logs'] + (['homepage/logs'] if 'dashboard/homepage' in bootstrap.services else []) }}"
+  loop: "{{ ['traefik/letsencrypt/acme.json', 'traefik/logs'] + (['homepage/logs'] if 'core/homepage' in bootstrap.services else []) }}"
   register: bootstrap_persistence
   become: true
 - name: Require persisted service data
@@ -36,7 +36,7 @@
     that:
       - bootstrap_persistence.results[0].stat.size | default(0) > 0
       - bootstrap_persistence.results[1].stat.isdir | default(false)
-      - "'dashboard/homepage' not in bootstrap.services or bootstrap_persistence.results[2].stat.isdir | default(false)"
+      - "'core/homepage' not in bootstrap.services or bootstrap_persistence.results[2].stat.isdir | default(false)"
 - name: Capture native container identities and restart counters
   ansible.builtin.command:
     argv: "{{ ['docker', 'inspect', '--format', '{{.Id}}:{{.RestartCount}}:{{.State.Running}}'] + bootstrap_containers }}"

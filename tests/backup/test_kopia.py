@@ -104,6 +104,7 @@ class KopiaBackupTests(BackupTestCase):
         with patch.object(kopia.subprocess, "run", side_effect=responses) as command:
             self.assertTrue(kopia.kopia_has_export("security/authentik", export))
         self.assertEqual(command.call_count, 2)
+        self.assertEqual(command.call_args.args[0][1:3], ["exec", "kopia"])
         self.assertEqual(command.call_args.args[0][-1], f"ka123/security-authentik/{export.name}")
         with patch.object(kopia.subprocess, "run", return_value=responses[0]) as command:
             self.assertFalse(kopia.kopia_has_export("security/authentik", export, recent_since=datetime.fromisoformat("2026-10-01T00:00:00+00:00")))

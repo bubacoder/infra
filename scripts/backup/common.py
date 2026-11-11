@@ -18,6 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 SERVICE_PART = re.compile(r"[a-z0-9][a-z0-9-]*\Z")
 DB_IDENTIFIER = re.compile(r"[a-zA-Z_][a-zA-Z0-9_-]*\Z")
+DEFAULT_KOPIA_CONTAINER = "kopia"
 DEFAULT_KOPIA_SOURCE = "/sources/local/db-backups"
 DEFAULT_KOPIA_VOLUMES_SOURCE = "/sources/local/docker-volumes"
 
