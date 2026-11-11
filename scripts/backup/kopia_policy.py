@@ -15,7 +15,7 @@ from scripts.backup.config import load_definition  # noqa: E402
 
 
 def collect_ignores(docker_dir: Path = ROOT / "docker") -> list[str]:
-    """Preserve pattern spelling and ordering; remove duplicates across manifests."""
+    """Collect root/shared and service manifests, preserving order and deduplicating."""
     paths = sorted(docker_dir.rglob("backup.yaml"))
     if not paths:
         raise BackupError(f"No backup manifests found under {docker_dir}")

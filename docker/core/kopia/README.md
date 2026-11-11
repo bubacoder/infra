@@ -40,7 +40,7 @@ against the same repository or create a new repository to fix a connection issue
 - [`snapshots.yaml`](snapshots.yaml) declares managed schedules and retention.
   [`backup.yaml`](backup.yaml) excludes this instance's disposable cache/logs.
   Cross-application rules remain in
-  [`docker/backup/backup.yaml`](../../backup/backup.yaml).
+  [`docker/backup.yaml`](../../backup.yaml).
 
 The host backup scripts use the shared `DEFAULT_KOPIA_CONTAINER` setting in
 `scripts/backup/common.py`; changing the container name must update that setting

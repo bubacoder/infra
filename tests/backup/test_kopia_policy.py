@@ -14,6 +14,7 @@ TARGET = "root@nest:/sources/nest/docker-volumes"
 
 class KopiaPolicyTests(BackupTestCase):
     def test_collection_preserves_globs_and_deduplicates_policy_only_and_export_manifests(self) -> None:
+        (self.root / "backup.yaml").write_text('version: 1\nfiles:\n  ignore: ["/shared/cache", "**/log/nginx/**"]\n')
         app = self.root / "media/jellyfin"
         app.mkdir(parents=True)
         (app / "backup.yaml").write_text('version: 1\nfiles:\n  ignore: ["**/log/nginx/**", jellyfin/cache]\n')
@@ -23,7 +24,7 @@ class KopiaPolicyTests(BackupTestCase):
             "version: 1\ndatabases:\n  engine: postgresql\n  container: authentik-postgresql\n  database: authentik\n  user: authentik\n"
             'files:\n  ignore: ["**/log/nginx/**"]\n'
         )
-        self.assertEqual(kopia_policy.collect_ignores(self.root), ["**/log/nginx/**", "jellyfin/cache"])
+        self.assertEqual(kopia_policy.collect_ignores(self.root), ["/shared/cache", "**/log/nginx/**", "jellyfin/cache"])
         self.assertEqual(config.load_target("security/authentik", self.root)["engine"], "postgresql")
         with self.assertRaises(BackupError):
             config.load_target("media/jellyfin", self.root)
