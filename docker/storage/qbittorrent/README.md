@@ -15,7 +15,12 @@ Recommended setup steps:
     network.
   - Direct host exposure (see "separate host" note below) must retain WebUI
     authentication because the browser connects to qBittorrent directly.
-- The image is build locally (see: `Dockerfile`) and includes the VueTorrent ([GitHub - VueTorrent/VueTorrent: The sleekest looking WEBUI for qBittorrent made with Vuejs!](https://github.com/WDaan/VueTorrent)) web interface. To enable it, point your alternate WebUI location to '/usr/vuetorrent' folder in qBittorrent settings.
+- The digest-pinned upstream LinuxServer image uses qBittorrent's standard Web
+  UI. VueTorrent is not installed because it is not in use.
+- Before recreating an existing qBittorrent container, clear the alternate WebUI
+  location in qBittorrent settings if it is set to `/usr/vuetorrent`. That
+  setting is stored in the persistent `/config` volume and is not changed by the
+  Compose update.
 - Configure categories (Settings menu) to specify default download locations
 - Setup forwarding of port 6881 (TCP, UDP) in the router, check open port: [Open Port Check Tool - Test Port Forwarding on Your Router](https://www.yougetsignal.com/tools/open-ports/)
 
