@@ -61,7 +61,7 @@ Every new service must include `README.md` beside its base Compose file. Use thi
    `Home`, `Source`, `Docs`, `Image`, and `Docker Compose`. Include verified links
    collected during research; omit unavailable links instead of inventing them.
 
-Examples: [HTTPBin](tools/httpbin/README.md) for a simple service,
+Examples: [HTTPBin](dev/httpbin/README.md) for a simple service,
 [Jellyfin](media/video/jellyfin/README.md) and [Ollama](ai/ollama/README.md) for GPU
 instructions, and [Authentik](core/authentik/README.md) for secrets, SSO, and recovery.
 The documentation exporter includes the service README alongside its Compose configuration.
