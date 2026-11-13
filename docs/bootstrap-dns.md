@@ -5,6 +5,8 @@ DNS is managed through Ansible modules:
 - AWS: `community.general.cloudflare_dns` creates DNS-only base/wildcard A records.
 - Either target: optional `community.dns.adguardhome_rewrite` manages exact local
   base and `bootstrap-check` rewrites, plus `home`/`traefik` for selected services.
+  For Proxmox with the `k3s_traefik` role, it also manages
+  `*.<k3s.traefik.domain>` on every selected AdGuard endpoint.
 - Proxmox never changes public address records; existing DDNS remains responsible.
 
 For shared input formats, inspection and safety rules, see
