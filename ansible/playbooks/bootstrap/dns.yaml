@@ -3,9 +3,14 @@
   ansible.builtin.set_fact:
     bootstrap_dns_action: "{{ bootstrap_dns_action | default('preview' if bootstrap_verify_only | default(false) else 'present') }}"
     bootstrap_dns_domain: "{{ bootstrap.domain | default('') }}"
-    bootstrap_dns_names: "{{ ([bootstrap.domain] + (['home.' + bootstrap.domain] if 'core/homepage' in bootstrap.services | default([]) else []) + (['traefik.' + bootstrap.domain] if 'core/traefik' in bootstrap.services | default([]) else []) + ['bootstrap-check.' + bootstrap.domain]) if (bootstrap.domain | default('') | length > 0 and (bootstrap.dns.enabled or bootstrap.services | default([]) | length > 0)) else [] }}"
+    bootstrap_dns_explicit_names: "{{ ([bootstrap.domain] + (['home.' + bootstrap.domain] if 'core/homepage' in bootstrap.services | default([]) else []) + (['traefik.' + bootstrap.domain] if 'core/traefik' in bootstrap.services | default([]) else []) + ['bootstrap-check.' + bootstrap.domain]) if (bootstrap.domain | default('') | length > 0 and (bootstrap.dns.enabled or bootstrap.services | default([]) | length > 0)) else [] }}"
+    bootstrap_dns_wildcard_names: "{{ (['*.' + bootstrap.k3s.traefik.domain] if bootstrap.target == 'proxmox' and bootstrap.dns.enabled and bootstrap.k3s.traefik.enabled | default(false) else []) }}"
     bootstrap_dns_records: []
     bootstrap_adguard_urls: "{{ bootstrap.dns.adguard_urls | default([bootstrap.dns.adguard_url] if bootstrap.dns.adguard_url is defined else []) }}"
+- name: Combine DNS records and concrete resolver checks
+  ansible.builtin.set_fact:
+    bootstrap_dns_names: "{{ (bootstrap_dns_explicit_names + bootstrap_dns_wildcard_names) | unique }}"
+    bootstrap_dns_resolution_names: "{{ (bootstrap_dns_explicit_names + (['bootstrap-check.' + bootstrap.k3s.traefik.domain] if bootstrap_dns_wildcard_names | length > 0 else [])) | unique }}"
 - name: Locate native DNS ownership receipt
   ansible.builtin.stat:
     path: "{{ bootstrap_dir }}/dns-state.yaml"
@@ -73,7 +78,7 @@
   when: bootstrap.target == 'aws' and bootstrap.dns.cloudflare_zone is defined and (bootstrap.dns.enabled or bootstrap_dns_action == 'absent')
 - name: Check explicit service records cannot defeat the wildcard (never create or adopt them)
   ansible.builtin.include_tasks: dns-record.yaml
-  loop: "{{ bootstrap_dns_names[1:] }}"
+  loop: "{{ bootstrap_dns_explicit_names[1:] }}"
   loop_control: {loop_var: bootstrap_dns_name}
   vars:
     bootstrap_dns_provider: cloudflare
@@ -96,7 +101,7 @@
 - name: Verify the administrative host's real resolver, not only provider API results
   ansible.builtin.command:
     argv: [getent, ahostsv4, "{{ item }}"]
-  loop: "{{ bootstrap_dns_names }}"
+  loop: "{{ bootstrap_dns_resolution_names }}"
   register: bootstrap_dns_answer
   changed_when: false
   until: bootstrap_dns_answer.rc == 0 and (bootstrap_dns_answer.stdout | regex_findall('(?m)^([0-9.]+)\s') | unique | list) == [bootstrap_address]
