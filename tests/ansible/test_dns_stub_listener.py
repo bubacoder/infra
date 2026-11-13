@@ -26,27 +26,27 @@ class DNSStubListenerTests(unittest.TestCase):
         tasks = yaml.safe_load((ROOT / "ansible/roles/debian_base/tasks/40-network.yaml").read_text())
         probe = next(task for task in tasks if task.get("register") == "debian_base_systemd_resolved_conf")
         setting = next(task for task in tasks if "community.general.ini_file" in task)
+        handlers = yaml.safe_load((ROOT / "ansible/roles/debian_base/handlers/main.yaml").read_text())
+        restart_handler = next(handler for handler in handlers if handler["name"] == "Restart service systemd-resolved")
+        restart_handler["ansible.builtin.copy"] = {
+            "dest": str(self.restart),
+            "content": "restart requested",
+            "mode": "0600",
+        }
+        del restart_handler["ansible.builtin.service"]
         probe["ansible.builtin.stat"]["path"] = str(self.config)
         setting["community.general.ini_file"]["path"] = str(self.config)
-        play = [
+        self.play = [
             {
                 "hosts": "all",
                 "gather_facts": False,
+                "vars": {"ansible_facts": {"service_mgr": "systemd"}},
                 "tasks": [probe, setting],
-                "handlers": [
-                    {
-                        "name": "Restart service systemd-resolved",
-                        "ansible.builtin.copy": {
-                            "dest": str(self.restart),
-                            "content": "restart requested",
-                            "mode": "0600",
-                        },
-                    }
-                ],
+                "handlers": [restart_handler],
             }
         ]
         self.playbook = self.directory / "test.yaml"
-        self.playbook.write_text(yaml.safe_dump(play, sort_keys=False))
+        self.playbook.write_text(yaml.safe_dump(self.play, sort_keys=False))
         self.ansible_config = self.directory / "ansible.cfg"
         self.ansible_config.write_text("[defaults]\nretry_files_enabled=False\n")
 
@@ -81,6 +81,13 @@ class DNSStubListenerTests(unittest.TestCase):
     def test_absent_configuration_is_not_created_or_restarted(self):
         self.run_tasks()
         self.assertFalse(self.config.exists())
+        self.assertFalse(self.restart.exists())
+
+    def test_skips_restart_when_systemd_is_not_running(self):
+        self.config.write_text("[Resolve]\n")
+        self.play[0]["vars"]["ansible_facts"]["service_mgr"] = "python"
+        self.playbook.write_text(yaml.safe_dump(self.play, sort_keys=False))
+        self.run_tasks()
         self.assertFalse(self.restart.exists())
 
 

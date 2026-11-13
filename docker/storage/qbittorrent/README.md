@@ -17,10 +17,10 @@ Recommended setup steps:
     authentication because the browser connects to qBittorrent directly.
 - The digest-pinned upstream LinuxServer image uses qBittorrent's standard Web
   UI. VueTorrent is not installed because it is not in use.
-- Before recreating an existing qBittorrent container, clear the alternate WebUI
-  location in qBittorrent settings if it is set to `/usr/vuetorrent`. That
-  setting is stored in the persistent `/config` volume and is not changed by the
-  Compose update.
+- Before recreating an existing qBittorrent container, disable **Use alternative
+  WebUI** and clear its location if it is set to `/usr/vuetorrent`. Those
+  settings are stored in the persistent `/config` volume and are not changed by
+  the Compose update.
 - Configure categories (Settings menu) to specify default download locations
 - Setup forwarding of port 6881 (TCP, UDP) in the router, check open port: [Open Port Check Tool - Test Port Forwarding on Your Router](https://www.yougetsignal.com/tools/open-ports/)
 
