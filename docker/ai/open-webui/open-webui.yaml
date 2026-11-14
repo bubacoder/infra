@@ -29,7 +29,7 @@ services:
       OAUTH_SCOPES: "openid email profile"
 
       # Ollama
-      OLLAMA_BASE_URL: "https://ollama.${MYDOMAIN}"
+      OLLAMA_BASE_URL: "${OPEN_WEBUI_OLLAMA_BASE_URL:-https://ollama.${MYDOMAIN}}"
 
       # OpenAI-compatible gateway (LiteLLM)
       ENABLE_OPENAI_API: "true"
@@ -55,6 +55,8 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
     labels:
+      konverter.connect.ollama.service: "ollama/ollama"
+      konverter.connect.ollama.ports: "11434/tcp"
       traefik.enable: true
       traefik.http.routers.open-webui.middlewares: localaccess@file
       traefik.http.services.open-webui.loadbalancer.server.port: 8080

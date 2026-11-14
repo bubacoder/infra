@@ -3,6 +3,22 @@ The purpose is to put your real SSH server on another port and then let the scri
 
 endlessh-go is a golang implementation of endlessh exporting Prometheus metrics, visualized by a Grafana dashboard.
 
+## Metrics and Kubernetes discovery
+
+Prometheus metrics are enabled explicitly on TCP 2112 and declared with Compose
+`expose`; only the tarpit port 2222 is published. Konverter's LoadBalancer mode
+therefore produces internal Service `endlessh:2112` and a separate published
+Service for 2222. A configured LAN grant covers the tarpit backend, not metrics.
+
+Prometheus in another namespace uses `endlessh.endlessh.svc:2112` and its own
+caller-owned connection labels. The matching namespaces/workload identities and
+metrics Service must exist; a repeated Compose network name does not grant
+cross-namespace access. Do not publish metrics merely to bypass a missing policy.
+
+The production command/storage/GeoIP settings are unchanged. Synthetic tests can
+disable GeoIP and use stderr logging without persistent volumes, but those
+choices do not migrate or validate the real application's configuration.
+
 ## Grafana dashboard
 
 - [GitHub - shizunge/endlessh-go: A golang implementation of endlessh (SSH tarpit) exporting Prometheus metrics, visualized by a Grafana dashboard.](https://github.com/shizunge/endlessh-go/?tab=readme-ov-file#dashboard)

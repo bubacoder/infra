@@ -1354,6 +1354,27 @@ class NativeBootstrapTests(unittest.TestCase):
         (self.root / "ansible/playbooks/test-adguard-dns.yaml").write_text(yaml.safe_dump(play))
         return self.directory / "dns-state.yaml"
 
+    def test_adguard_owns_traefik_domain_wildcard(self) -> None:
+        receipt_path = self.prepare_adguard_dns_fixture()
+        play_path = self.root / "ansible/playbooks/test-adguard-dns.yaml"
+        play = yaml.safe_load(play_path.read_text())
+        play[0]["vars"]["bootstrap"]["k3s"] = {"traefik": {"enabled": True, "domain": "apps.test.example.com"}}
+        play_path.write_text(yaml.safe_dump(play))
+        self.run_play("test-adguard-dns.yaml")
+        receipt = yaml.safe_load(receipt_path.read_text())
+        names = {record["name"] for record in receipt["records"]}
+        self.assertEqual(
+            names,
+            {
+                "test.example.com",
+                "home.test.example.com",
+                "traefik.test.example.com",
+                "bootstrap-check.test.example.com",
+                "*.apps.test.example.com",
+            },
+        )
+        self.assertEqual(len(receipt["records"]), 10)
+
     def test_adguard_multiple_endpoints_have_separate_ownership_and_repeat_safely(self) -> None:
         receipt_path = self.prepare_adguard_dns_fixture()
         self.run_play("test-adguard-dns.yaml")

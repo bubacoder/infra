@@ -20,6 +20,8 @@ services:
       - ./config/initdb:/docker-entrypoint-initdb.d
     ports:
       - 27017:27017
+    expose:
+      - "27017"
     networks:
       - proxy
     depends_on:
