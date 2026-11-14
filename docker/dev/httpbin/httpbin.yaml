@@ -7,6 +7,7 @@ services:
     networks:
       - proxy
     labels:
+      konverter.rollout.strategy: rolling
       traefik.enable: true
       traefik.http.routers.httpbin.middlewares: localaccess@file
       traefik.http.services.httpbin.loadbalancer.server.port: 8080
