@@ -1,7 +1,7 @@
 FROM alpine:3.24@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a AS crowdsec_plugin
 
 # renovate: datasource=git-tags depName=maxlerebourg/crowdsec-bouncer-traefik-plugin
-ARG CROWDSEC_PLUGIN_REF=1.8.2
+ARG CROWDSEC_PLUGIN_REF=v1.8.2
 ARG CROWDSEC_PLUGIN_TAG_SHA=b0431e2e530cadd629583288909b462c8a6e9669
 
 # hadolint ignore=DL3018
