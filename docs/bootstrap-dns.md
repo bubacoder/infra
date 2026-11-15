@@ -9,6 +9,13 @@ DNS is managed through Ansible modules:
   `*.<k3s.traefik.domain>` on every selected AdGuard endpoint.
 - Proxmox never changes public address records; existing DDNS remains responsible.
 
+For a one-node K3s ServiceLB deployment, reserve the VM's LAN address before
+bootstrap. The local exact deployment name and application wildcard can both
+resolve to that address: K3s serves the API on 6443 and ServiceLB binds Traefik
+on 80/443. After a DHCP address change, update every selected AdGuard endpoint,
+restart K3s to refresh its Node address, recreate the `svclb-traefik-*` Pod,
+then run bootstrap `configure` and `verify`.
+
 For shared input formats, inspection and safety rules, see
 [Bootstrap inputs and safety](bootstrap-configuration.md).
 
