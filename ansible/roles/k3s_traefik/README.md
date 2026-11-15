@@ -31,9 +31,19 @@ dns:
 
 The sample values are placeholders. Use a domain in an operator-controlled
 Cloudflare zone, a real ACME contact and an explicit admin CIDR. No ingress IP
-is detected automatically. The application `domain` is separate from the API
-hostname in `k3s.access.host`. All feature fields are required when enabled;
-omitting both feature and role preserves default K3s behavior.
+is detected automatically. The application `domain` can be separate from the
+API hostname in `k3s.access.host`; a one-node ServiceLB deployment may instead
+use one reserved VM address for both. All feature fields are required when
+enabled; omitting both feature and role preserves default K3s behavior.
+
+### One-node address changes
+
+Reserve the VM's LAN address before configuring DNS. On a one-node deployment,
+K3s ServiceLB binds Traefik's 80/443 host ports on that address, so local DNS
+can map both the API hostname and `*.<domain>` to it. If DHCP addressing changes
+after installation, restart K3s to refresh the Node address, then recreate the
+controller-owned `svclb-traefik-*` Pod and verify the API, HTTPS, and DNS before
+changing application routes. This can briefly interrupt ingress.
 
 Use `bootstrap:show-config` for safe inspection, then the existing target-specific
 plan/apply or configure/verify workflow. Follow
