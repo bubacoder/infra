@@ -65,7 +65,7 @@
       "datasourceTemplate": "git-tags",
       "packageNameTemplate": "https://github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin.git",
       "extractVersionTemplate": "^v?(?<version>.+)$",
-      "autoReplaceStringTemplate": "# renovate: datasource=git-tags depName=maxlerebourg/crowdsec-bouncer-traefik-plugin\nARG CROWDSEC_PLUGIN_REF={{{newValue}}}\nARG CROWDSEC_PLUGIN_TAG_SHA={{{newDigest}}}"
+      "autoReplaceStringTemplate": "# renovate: datasource=git-tags depName=maxlerebourg/crowdsec-bouncer-traefik-plugin\nARG CROWDSEC_PLUGIN_REF=v{{{newValue}}}\nARG CROWDSEC_PLUGIN_TAG_SHA={{{newDigest}}}"
     }
   ],
   "packageRules": [
