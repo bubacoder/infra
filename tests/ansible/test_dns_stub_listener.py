@@ -34,6 +34,7 @@ class DNSStubListenerTests(unittest.TestCase):
             "mode": "0600",
         }
         del restart_handler["ansible.builtin.service"]
+        restart_handler["become"] = False
         probe["ansible.builtin.stat"]["path"] = str(self.config)
         setting["community.general.ini_file"]["path"] = str(self.config)
         self.play = [
