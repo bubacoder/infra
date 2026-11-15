@@ -1,7 +1,7 @@
 name: open-webui
 services:
   open-webui:
-    image: openwebui/open-webui:0.12.5@sha256:03443b8de6b617da9d900edd09b4bf1cb0ddbfdcba6afb42c548336a0b821ded
+    image: openwebui/open-webui:0.13.2@sha256:4f1dd4d81ef1445d4e4bfb4a7a55838dfb1de38a834a0fbe7615d92990333a71
     container_name: open-webui
     restart: unless-stopped
     volumes:
