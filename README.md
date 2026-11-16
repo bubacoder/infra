@@ -99,6 +99,7 @@ supports standalone use.
 | [`vm/`](vm/) | VM provisioning scripts and hypervisor documentation |
 | [`scripts/`](scripts/) | Service-management and maintenance utilities |
 | [`tests/`](tests/) | Offline regression tests |
+| [`tools/`](tools/) | Self-contained developer and operator tools |
 | `config/` | Ignored, host-specific inputs and private configuration |
 | [`config-example/`](config-example/) | Configuration templates with placeholder values |
 
@@ -112,7 +113,10 @@ Run commands from the repository root:
 | --- | --- |
 | `task --list-all` | Discover the available tasks |
 | `task ui` | Open the TaskUI task selector |
-| `task test` | Run the Python unit tests |
+| `task test` | Run the Go and Python unit tests |
+| `task test:labctl` | Run focused labctl and Compose-rendering checks |
+| `task test:compose` | Run Docker Compose and service integration tests |
+| `task test:backup` | Run backup tooling tests |
 | `task bootstrap:test` | Run only bootstrap Python and Proxmox shell tests |
 | `task lint` | Run all pre-commit checks |
 | `task build` | Run tests/lint, regenerate Docker examples and build the documentation image |
@@ -125,7 +129,7 @@ host-specific inputs. For focused changes, run the relevant tests and
 
 For a single bootstrap check, use
 `uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.bootstrap.test_native.<Class>.<test_method>`.
-`task test` runs all Python tests; `task build` runs those plus the Proxmox shell
+`task test` runs all Go and Python tests; `task build` runs those plus the Proxmox shell
 tests before linting and build steps.
 
 [Pre-commit](https://pre-commit.com) checks shell scripts, YAML, Python, Ansible,

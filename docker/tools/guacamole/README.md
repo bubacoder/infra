@@ -31,7 +31,7 @@ then recreate the service:
 ```bash
 scripts/authentik-apps.py --application guacamole --apply
 docker/tools/guacamole/guacamole-oidc.py --host <host> --apply
-scripts/labctl.py service recreate tools/guacamole
+scripts/labctl service recreate tools/guacamole
 ```
 
 The public implicit provider callback is exactly `https://guacamole.<domain>`

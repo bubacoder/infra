@@ -22,7 +22,7 @@ It is only an outer access gate: database-native credentials remain required.
 
 ```bash
 scripts/authentik-apps.py --application adminer --apply
-scripts/labctl.py service recreate database/adminer
+scripts/labctl service recreate database/adminer
 ```
 
 Keep the router middleware set to `localaccess-authentik@file` and do not

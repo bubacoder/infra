@@ -35,7 +35,7 @@ Before analysing logs, confirm the container is actually deployed and running �
 docker ps -a --filter "name=<container_name>" --format '{{.Names}}\t{{.Status}}'
 ```
 
-- **Not listed at all** → the service was never started. Check it is registered in `config/docker/<hostname>/services.yaml` with `state: up`, then bring it up (`scripts/labctl.py service up category/service-name`).
+- **Not listed at all** → the service was never started. Check it is registered in `config/docker/<hostname>/services.yaml` with `state: up`, then bring it up (`scripts/labctl service up category/service-name`).
 - **`Restarting` / `Exited`** → it is crash-looping. The logs (Step 2) will contain the startup error; this is expected, proceed.
 - **`Up`** → inspect `.State.Health` when the image defines a health check
   before changing routing or dependencies. A service may be running but
@@ -88,10 +88,10 @@ docker logs <container_name> --tail 200 2>&1 | grep -i "error\|exception\|warn\|
 
 Or use the labctl wrapper (handles env var substitution):
 ```bash
-scripts/labctl.py service logs category/service-name --tail 200
-scripts/labctl.py service logs category/service-name --follow
-scripts/labctl.py service logs category/service-name --since 30m
-scripts/labctl.py service logs category/service-name --timestamps
+scripts/labctl service logs category/service-name --tail 200
+scripts/labctl service logs category/service-name --follow
+scripts/labctl service logs category/service-name --since 30m
+scripts/labctl service logs category/service-name --timestamps
 ```
 
 **Key insight from logs:** Pay attention to the source location (e.g. `module.file:function:line`). An error in `process_chat` vs `images_endpoint` are different code paths that may require completely different fixes, even if the symptom looks the same.
@@ -176,7 +176,7 @@ gh api repos/<org>/<repo>/releases --jq '.[0:5] | .[] | {tag: .tag_name, body: .
 
 **Downgrading:** If a recent update introduced the regression, note the last known-good version, set the image tag in the service YAML back to it, and recreate the container:
 ```bash
-scripts/labctl.py service recreate category/service-name
+scripts/labctl service recreate category/service-name
 ```
 Then re-check the logs (Step 2) and tell the user the version was pinned, so the regression can be reported upstream.
 
@@ -208,7 +208,7 @@ Choose the least invasive fix, in this order:
 
 After applying any fix, recreate the container to pick up changes:
 ```bash
-scripts/labctl.py service recreate category/service-name
+scripts/labctl service recreate category/service-name
 # or
 mcp__infra-mcp__container-service-recreate(service_name="category/service-name")
 ```

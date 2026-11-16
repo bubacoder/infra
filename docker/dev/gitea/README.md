@@ -42,7 +42,7 @@ authentication source:
 
 ```bash
 scripts/authentik-apps.py --application gitea --apply
-scripts/labctl.py service recreate dev/gitea
+scripts/labctl service recreate dev/gitea
 docker/dev/gitea/gitea-auth.py --host <host> --apply
 ```
 

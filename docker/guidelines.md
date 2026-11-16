@@ -239,7 +239,7 @@ For data-heavy applications, like database servers, use named volumes instead of
 For host-wide deploy, update, pull and stop commands, see
 [Service operations](README.md#service-operations).
 
-Under the hood, `labctl.py` passes each existing file in the documented order to
+Under the hood, `labctl` passes each existing file in the documented order to
 `docker compose`; later files override earlier values:
 
 ```bash
@@ -252,7 +252,7 @@ docker compose -f "$yaml_file" \
 
 ### Service Registration
 
-A compose file is not deployed until the service is registered in the host's `config/docker/<hostname>/services.yaml`, listed under its `<category>` with `state: up` (or `down`). `task docker:apply` / `labctl.py` only act on registered services.
+A compose file is not deployed until the service is registered in the host's `config/docker/<hostname>/services.yaml`, listed under its `<category>` with `state: up` (or `down`). `task docker:apply` / `labctl` only act on registered services.
 
 When adding or modifying a service:
 
@@ -260,23 +260,23 @@ When adding or modifying a service:
 2. Register it in the intended host's `services.yaml`.
 3. Document required variables and put operator-supplied values in the appropriate
    ignored `.env` files, following [environment-variable precedence](#environment-variables-management).
-4. After authorization, deploy that service with `scripts/labctl.py service up <category>/<service-name>`, or apply
+4. After authorization, deploy that service with `scripts/labctl service up <category>/<service-name>`, or apply
    the full host configuration with `task docker:apply`.
 
-### Managing Individual Services (`labctl.py`)
+### Managing Individual Services (`labctl`)
 
 Services are addressed as `<category>/<service-name>` (e.g. `ai/ollama`, `media/video/jellyfin`). Manage a single service with:
 
 ```bash
-scripts/labctl.py service <operation> <category>/<service-name>
+scripts/labctl service <operation> <category>/<service-name>
 ```
 
 Operations: `up`, `down`, `restart`, `recreate`, `pull`, `config` (render the resolved compose config), `logs`.
 
 ```bash
-scripts/labctl.py service up core/traefik
-scripts/labctl.py service restart ai/ollama
-scripts/labctl.py service pull media/video/jellyfin
+scripts/labctl service up core/traefik
+scripts/labctl service restart ai/ollama
+scripts/labctl service pull media/video/jellyfin
 ```
 
 ### Relocating Services
@@ -288,7 +288,7 @@ Moving a service directory is a deployment change, not just a file operation:
    documentation, lint exclusions and Renovate rules.
 2. Update affected hosts' `config/docker/<host>/services.yaml` registrations and
    the tracked examples. Keep the existing enabled/disabled states.
-3. `labctl.py` derives the Compose filename and `.env.<service-name>` filenames
+3. `labctl` derives the Compose filename and `.env.<service-name>` filenames
    from the final directory component. If renaming that component, rename those
    files too, including common and host-specific environment files when present.
 4. Preserve the top-level Compose `name:`, service keys, container names, external
@@ -309,7 +309,7 @@ Moving a service directory is a deployment change, not just a file operation:
 
 Services that support hardware acceleration keep the GPU configuration in a **separate Docker Compose override file** — never in the base compose file, so hosts without a GPU run the base file unchanged.
 
-- The override file is named `docker/<category>/<service>/<service>-<suffix>.yaml` (e.g. `-amdgpu`). `labctl.py` merges it automatically when the host sets `GPU_COMPOSE_SUFFIX=<suffix>` in `config/docker/<hostname>/.env`.
+- The override file is named `docker/<category>/<service>/<service>-<suffix>.yaml` (e.g. `-amdgpu`). `labctl` merges it automatically when the host sets `GPU_COMPOSE_SUFFIX=<suffix>` in `config/docker/<hostname>/.env`.
 - Because it is a merge override, it repeats the same `name:` and service key as the base file and includes **only the fields that change**.
 
 ```yaml

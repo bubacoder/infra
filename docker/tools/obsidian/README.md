@@ -21,7 +21,7 @@ and container privileges; it is not a multi-user authorization boundary.
 
 ```bash
 scripts/authentik-apps.py --application obsidian --apply
-scripts/labctl.py service recreate tools/obsidian
+scripts/labctl service recreate tools/obsidian
 ```
 
 Keep `localaccess-authentik@file` on the router and the UI port private to

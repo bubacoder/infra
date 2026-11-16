@@ -11,9 +11,9 @@
       "WebFetch(domain:raw.githubusercontent.com)",
       "WebFetch(domain:hub.docker.com)",
       "WebFetch(domain:docs.linuxserver.io)",
-      "Bash(scripts/labctl.py service config:*)",
-      "Bash(scripts/labctl.py service pull:*)",
-      "Bash(scripts/labctl.py service logs:*)",
+      "Bash(scripts/labctl service config:*)",
+      "Bash(scripts/labctl service pull:*)",
+      "Bash(scripts/labctl service logs:*)",
       "Bash(pre-commit run:*)",
       "Bash(task lint-app)",
       "Bash(task lint)"

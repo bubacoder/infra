@@ -1,13 +1,12 @@
 """
 Container service tools for FastMCP server.
-Provides functions to interact with Docker container services via labctl.py.
+Provides functions to interact with Docker container services via labctl.
 """
 
 import logging
 import os
 import re
 import subprocess
-import sys
 from collections.abc import Callable
 from pathlib import Path
 
@@ -65,8 +64,7 @@ def execute_container_operation(operation: str, service_name: str, repository_ro
 
     repository_root_str = str(repository_root_path)
     cmd = [
-        sys.executable,  # Use the current Python interpreter
-        os.path.join(repository_root_str, "scripts", "labctl.py"),
+        os.path.join(repository_root_str, "scripts", "labctl"),
         "service",
         operation,
         service_name,

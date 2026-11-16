@@ -150,8 +150,8 @@ Onboarding sequence:
 
    ```bash
    pre-commit run --files docker/<category>/<service>/<service>.yaml
-   scripts/labctl.py service config <category>/<service>
-   scripts/labctl.py service recreate <category>/<service>
+   scripts/labctl service config <category>/<service>
+   scripts/labctl service recreate <category>/<service>
    ```
 
 5. An unauthenticated request should redirect through Authentik and return to

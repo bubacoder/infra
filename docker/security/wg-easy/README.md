@@ -25,7 +25,7 @@ application:
 
 ```bash
 scripts/authentik-apps.py --application wg-easy --apply
-scripts/labctl.py service recreate security/wg-easy
+scripts/labctl service recreate security/wg-easy
 ```
 
 Password authentication remains disabled. Before starting wg-easy, ensure an

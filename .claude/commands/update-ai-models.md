@@ -82,8 +82,8 @@ Also update `router_settings.fallbacks` in `config.yaml`:
 1. Lint the changed files: `pre-commit run --files docker/ai/litellm/config/config.yaml Taskfile.yaml` and fix any issues (the repo lints YAML with yamllint).
 2. Restart LiteLLM so it re-reads and **parses** the new config, then confirm it came up cleanly (a YAML or unknown-model error surfaces here, not from re-reading the file):
    ```bash
-   scripts/labctl.py service restart ai/litellm
-   if ! logs="$(scripts/labctl.py service logs ai/litellm --tail 50 2>&1)"; then
+   scripts/labctl service restart ai/litellm
+   if ! logs="$(scripts/labctl service logs ai/litellm --tail 50 2>&1)"; then
      printf '%s\n' "$logs" >&2
      echo "failed to read LiteLLM logs" >&2
      exit 1

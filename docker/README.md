@@ -76,9 +76,11 @@ must preserve image content/platforms, not just similar names or tags. An image
 signature or a passing vulnerability scan does not guarantee a release is clean.
 For a security emergency, explicitly review any exception to the waiting period.
 
-For a single service, use [`labctl.py`](guidelines.md#managing-individual-services-labctlpy)
+For a single service, use [`labctl`](guidelines.md#managing-individual-services-labctl)
 rather than applying every configured service. Rendered Compose configuration may
 contain credentials; do not print or share it without redaction.
+See the [labctl design](../docs/labctl-design.md) for its Compose contract and
+the planned Kubernetes boundary.
 
 ## Tips
 

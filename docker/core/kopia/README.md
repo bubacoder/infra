@@ -16,8 +16,8 @@ remain in each application's README.
 Manage this stack as `core/kopia`:
 
 ```bash
-scripts/labctl.py service logs core/kopia --tail 100
-scripts/labctl.py service recreate core/kopia
+scripts/labctl service logs core/kopia --tail 100
+scripts/labctl service recreate core/kopia
 docker exec kopia kopia server status --address=http://127.0.0.1:80
 ```
 

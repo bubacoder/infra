@@ -134,13 +134,13 @@ Follow the templates in `docker/guidelines.md`; do not restate a competing layou
    for unrelated changes and secrets; preserve existing user work.
 2. Run `pre-commit run --files <all-changed-files>` with actual paths and resolve
    relevant failures.
-3. Check Compose with `scripts/labctl.py service config <category>/<application>`
+3. Check Compose with `scripts/labctl service config <category>/<application>`
    when local prerequisites/configuration are available. It uses `--no-interpolate`:
    this is structural validation, not proof that host values or secrets resolve.
    Do not print interpolated secret values. Missing host configuration is a
    reported validation limitation, not permission to edit ignored files.
 4. Pull images only when requested/approved, using
-   `scripts/labctl.py service pull <category>/<application> --quiet` with a
+   `scripts/labctl service pull <category>/<application> --quiet` with a
    15-minute timeout. Pulling is not proof the service runs.
 5. Stop after a couple of failed attempts at any check; report the exact failure,
    impact, and missing input rather than guessing or declaring success.

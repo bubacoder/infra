@@ -1955,7 +1955,7 @@ class BootstrapStructureTests(unittest.TestCase):
             )
             binaries = root / "bin"
             binaries.mkdir()
-            for command in ("uv", "bash"):
+            for command in ("go", "uv", "bash"):
                 wrapper = binaries / command
                 wrapper.write_text(f'#!/bin/sh\nprintf "{command}: %s\\n" "$*"\n')
                 wrapper.chmod(0o700)
@@ -1979,6 +1979,7 @@ class BootstrapStructureTests(unittest.TestCase):
                         self.assertIn("bash: vm/test-lib-common.sh", result.stdout)
                         self.assertIn("bash: vm/test-wait-for-cloud-init.sh", result.stdout)
                     else:
+                        self.assertIn("go: test ./...", result.stdout)
                         self.assertIn("unittest discover --start-directory tests", result.stdout)
 
     @unittest.skipUnless(shutil.which("task"), "Task is not installed")
