@@ -68,7 +68,7 @@ docker network connect security-authentik traefik
 9. Start Authentik:
 
 ```bash
-scripts/labctl.py service up core/authentik
+scripts/labctl service up core/authentik
 ```
 
 10. Verify the three containers are healthy:
@@ -308,7 +308,7 @@ Grafana host:
 3. Recreate only Grafana:
 
    ```bash
-   scripts/labctl.py service recreate monitoring/grafana
+   scripts/labctl service recreate monitoring/grafana
    ```
 
 Grafana uses the Authorization Code flow with PKCE, keeps its local login form

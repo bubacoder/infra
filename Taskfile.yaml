@@ -52,9 +52,44 @@ tasks:
       - pre-commit run --all-files
 
   test:
-    desc: Run Python unit tests
+    desc: Run Go and Python unit tests
     cmds:
+      - go -C tools/labctl test ./...
       - uv run --with-requirements scripts/requirements.txt python3 -m unittest discover --start-directory tests --top-level-directory .
+
+  test:go:
+    desc: Run all labctl Go tests
+    cmds:
+      - go -C tools/labctl test ./...
+
+  test:labctl:
+    desc: Run labctl Go tests and Compose configuration rendering
+    cmds:
+      - go -C tools/labctl test ./cmd/labctl ./internal/labctl
+      - uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.test_split_compose_env
+
+  test:compose:
+    desc: Run Docker Compose and service integration tests
+    cmds:
+      - uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.test_split_compose_env tests.docker
+
+  test:backup:
+    desc: Run backup tooling tests
+    cmds:
+      - uv run --with-requirements scripts/requirements.txt python3 -m unittest tests.backup
+
+  labctl:build:
+    desc: Build the labctl Go binary
+    sources:
+      - tools/labctl/cmd/labctl/**/*.go
+      - tools/labctl/internal/labctl/**/*.go
+      - tools/labctl/go.mod
+      - tools/labctl/go.sum
+    generates:
+      - tools/labctl/bin/labctl
+    cmds:
+      - mkdir -p tools/labctl/bin
+      - go -C tools/labctl build -o bin/labctl ./cmd/labctl
 
   git-rebase-fixup:
     desc: Interactively rebase current branch to origin/main (stash, rebase, pop)
@@ -145,7 +180,7 @@ tasks:
   docker-command:
     internal: true
     cmds:
-      - scripts/labctl.py service {{.COMMAND}} {{.SERVICE}}
+      - scripts/labctl service {{.COMMAND}} {{.SERVICE}}
 
   get-public-ip:
     desc: Display the public IP of the server (using ipinfo.io)

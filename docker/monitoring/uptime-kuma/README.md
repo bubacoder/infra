@@ -21,7 +21,7 @@ Create the Authentik application and provider, then deploy the service:
 
 ```bash
 scripts/authentik-apps.py --application uptime-kuma --apply
-scripts/labctl.py service recreate monitoring/uptime-kuma
+scripts/labctl service recreate monitoring/uptime-kuma
 ```
 
 The service label must use `localaccess-authentik@file`; the shared Traefik

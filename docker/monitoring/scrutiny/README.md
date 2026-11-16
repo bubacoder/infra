@@ -17,7 +17,7 @@ browser requests.
 
 ```bash
 scripts/authentik-apps.py --application scrutiny --apply
-scripts/labctl.py service recreate monitoring/scrutiny
+scripts/labctl service recreate monitoring/scrutiny
 ```
 
 Keep `localaccess-authentik@file` on the `scrutiny` router and do not expose the

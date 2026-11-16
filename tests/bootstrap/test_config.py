@@ -780,7 +780,7 @@ class ConfigurationTests(unittest.TestCase):
         binary = self.root / "bin"
         binary.mkdir()
         ssh = binary / "ssh"
-        ssh.write_text("#!/bin/sh\ncat >/dev/null\nexit 0\n")
+        ssh.write_text("#!/bin/sh\nexit 0\n")
         ssh.chmod(0o700)
         rsync = binary / "rsync"
         rsync.write_text("#!/bin/sh\nexit 0\n")

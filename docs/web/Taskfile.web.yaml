@@ -4,7 +4,7 @@ tasks:
   docker-command:
     internal: true
     cmds:
-      - scripts/labctl.py service {{.COMMAND}} {{.SERVICE}}
+      - scripts/labctl service {{.COMMAND}} {{.SERVICE}}
 
   collect:
     desc: Collect markdown and yaml files for the documentation site, copy them to docs/web/public/content

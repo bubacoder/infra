@@ -26,12 +26,12 @@ tasks:
   stop-obsidian:
     desc: Stop Obsidian service
     cmds:
-      - scripts/labctl.py service down tools/obsidian
+      - scripts/labctl service down tools/obsidian
 
   start-obsidian:
     desc: Start Obsidian service
     cmds:
-      - scripts/labctl.py service up tools/obsidian
+      - scripts/labctl service up tools/obsidian
 
   backup-vault-repo:
     desc: Stop Obsidian, commit and push changes to git, then start the service

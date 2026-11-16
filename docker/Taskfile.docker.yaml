@@ -47,22 +47,22 @@ tasks:
   command:
     internal: true
     cmds:
-      - scripts/labctl.py service {{.COMMAND}} {{.SERVICE}}
+      - scripts/labctl service {{.COMMAND}} {{.SERVICE}}
 
   apply:
     desc: Deploy configured containers
     cmds:
-      - scripts/labctl.py config apply
+      - scripts/labctl config apply
 
   pull-all:
     desc: Pull all (even not enabled) container images
     cmds:
-      - scripts/labctl.py config apply --mode=pull
+      - scripts/labctl config apply --mode=pull
 
   update:
     desc: Update containers (pull before start)
     cmds:
-      - scripts/labctl.py config apply --pull-before-start
+      - scripts/labctl config apply --pull-before-start
 
   apply-update:
     desc: Update containers (pull before start), then prune old images and show restart events
@@ -74,7 +74,7 @@ tasks:
   stop:
     desc: Stop configured containers
     cmds:
-      - scripts/labctl.py config apply --mode=down
+      - scripts/labctl config apply --mode=down
 
   stop-all:
     desc: Stop all running containers

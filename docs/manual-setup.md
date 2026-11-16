@@ -220,7 +220,7 @@ overwrite an existing host configuration.
 
 ### Configure Environment Files
 
-Docker Compose variables use four scopes. `labctl.py` loads each existing file
+Docker Compose variables use four scopes. `labctl` loads each existing file
 in this order, so later files override earlier values:
 
 | File | Purpose |

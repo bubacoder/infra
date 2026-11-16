@@ -61,7 +61,7 @@ is an asymmetric Authentik certificate/key UUID used for ID-token validation.
 
 ```bash
 scripts/authentik-apps.py --application open-webui --apply
-scripts/labctl.py service recreate ai/open-webui
+scripts/labctl service recreate ai/open-webui
 ```
 
 Keep the callback URI exact:

@@ -22,7 +22,7 @@ authorization boundary.
 
 ```bash
 scripts/authentik-apps.py --application code-server --apply
-scripts/labctl.py service recreate dev/code-server
+scripts/labctl service recreate dev/code-server
 ```
 
 Keep `localaccess-authentik@file` on the router and keep the service reachable

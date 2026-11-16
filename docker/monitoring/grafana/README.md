@@ -37,7 +37,7 @@ recreate Grafana:
 
 ```bash
 scripts/authentik-apps.py --application grafana --apply
-scripts/labctl.py service recreate monitoring/grafana
+scripts/labctl service recreate monitoring/grafana
 ```
 
 The Compose configuration supplies the issuer endpoints, PKCE, refresh-token

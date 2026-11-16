@@ -17,3 +17,6 @@ WIP/
 
 # Local container vulnerability reports
 /reports/trivy/
+
+# Go binaries
+/tools/labctl/bin/

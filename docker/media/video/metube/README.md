@@ -16,7 +16,7 @@ cookie file is a host credential and must remain in ignored host configuration.
 
 ```bash
 scripts/authentik-apps.py --application metube --apply
-scripts/labctl.py service recreate media/video/metube
+scripts/labctl service recreate media/video/metube
 ```
 
 Keep `localaccess-authentik@file` on the router and do not publish MeTube's UI
