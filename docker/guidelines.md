@@ -252,7 +252,7 @@ docker compose -f "$yaml_file" \
 
 ### Service Registration
 
-A compose file is not deployed until the service is registered in the host's `config/docker/<hostname>/services.yaml`, listed under its `<category>` with `state: up` (or `down`). `task docker:apply` / `labctl` only act on registered services.
+For host-wide `task docker:apply`, register the service in `config/docker/<hostname>/services.yaml` under its `<category>` with `state: up` (or `down`). Direct `labctl service` commands can also operate on unregistered Compose files.
 
 When adding or modifying a service:
 

@@ -180,7 +180,7 @@ host backup commands when needed.
    populate the private view: `python3 scripts/backup/latest.py --prepare-only`.
    Do this before recreating Kopia so Docker does not create a root-owned directory.
 3. Recreate Kopia with the updated bind mount:
-   `python3 scripts/labctl service recreate core/kopia`.
+   `scripts/labctl service recreate core/kopia`.
 4. Run `python3 scripts/backup/latest.py`. The command checks that the running
    container actually mounts `DB_BACKUP_ROOT/latest` read-only at the DB source,
    refusing an old whole-history mount. Inspect the new snapshot: it should contain

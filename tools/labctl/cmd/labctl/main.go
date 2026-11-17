@@ -19,10 +19,14 @@ func main() {
 }
 
 func run(ctx context.Context, args []string, stdout, stderr io.Writer) int {
-	root, err := os.Getwd()
-	if err != nil {
-		fmt.Fprintln(stderr, "Error:", err)
-		return 1
+	root := os.Getenv("LABCTL_ROOT")
+	if root == "" {
+		var err error
+		root, err = os.Getwd()
+		if err != nil {
+			fmt.Fprintln(stderr, "Error:", err)
+			return 1
+		}
 	}
 	hostname, err := os.Hostname()
 	if err != nil {

@@ -4,9 +4,10 @@ set -eu
 repository_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 binary="$repository_root/tools/labctl/bin/labctl"
 
-if [ ! -x "$binary" ]; then
-  echo "Error: labctl is not built; run 'task labctl:build' first." >&2
-  exit 2
+if [ ! -x "$binary" ] || [ -n "$(find "$repository_root/tools/labctl/cmd" "$repository_root/tools/labctl/internal" "$repository_root/tools/labctl/go.mod" "$repository_root/tools/labctl/go.sum" -type f -newer "$binary" -print -quit)" ]; then
+  echo "Building labctl..." >&2
+  (cd "$repository_root/tools/labctl" && mkdir -p bin && go build -o bin/labctl ./cmd/labctl)
 fi
 
+export LABCTL_ROOT="$repository_root"
 exec "$binary" "$@"

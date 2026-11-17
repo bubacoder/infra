@@ -1979,7 +1979,7 @@ class BootstrapStructureTests(unittest.TestCase):
                         self.assertIn("bash: vm/test-lib-common.sh", result.stdout)
                         self.assertIn("bash: vm/test-wait-for-cloud-init.sh", result.stdout)
                     else:
-                        self.assertIn("go: test ./...", result.stdout)
+                        self.assertIn("go: -C tools/labctl test ./...", result.stdout)
                         self.assertIn("unittest discover --start-directory tests", result.stdout)
 
     @unittest.skipUnless(shutil.which("task"), "Task is not installed")

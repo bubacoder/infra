@@ -16,10 +16,15 @@ type recordedDocker struct {
 	invocations  []Invocation
 	inspectError bool
 	runError     error
+	configOutput string
 }
 
 func (d *recordedDocker) Run(_ context.Context, invocation Invocation) error {
 	d.invocations = append(d.invocations, invocation)
+	if d.configOutput != "" && len(invocation.Args) > 0 &&
+		strings.Contains(strings.Join(invocation.Args, " "), "config --format json") {
+		_, _ = io.WriteString(invocation.Stdout, d.configOutput)
+	}
 	if d.inspectError && len(invocation.Args) >= 2 &&
 		invocation.Args[0] == "network" && invocation.Args[1] == "inspect" {
 		return os.ErrNotExist
@@ -167,7 +172,7 @@ func TestServiceOperationsForwardComposeArguments(t *testing.T) {
 		{"down", "down", DockerOptions{}, []string{"down"}},
 		{"restart", "restart", DockerOptions{}, []string{"restart"}},
 		{"recreate", "recreate", DockerOptions{}, []string{"up", "--detach", "--force-recreate"}},
-		{"config", "config", DockerOptions{}, []string{"config", "--no-interpolate"}},
+		{"config", "config", DockerOptions{}, []string{"config", "--no-interpolate", "--no-env-resolution"}},
 		{
 			"logs",
 			"logs",
@@ -211,8 +216,8 @@ func TestPullBuildUsesBakeAndQuiet(t *testing.T) {
 		DockerOptions{Quiet: true}); err != nil {
 		t.Fatal(err)
 	}
-	if len(docker.invocations) != 1 {
-		t.Fatalf("invocations = %d, want 1", len(docker.invocations))
+	if len(docker.invocations) != 2 {
+		t.Fatalf("invocations = %d, want 2", len(docker.invocations))
 	}
 	invocation := docker.invocations[0]
 	want := []string{"compose", "-f", composeFile, "build", "--pull", "--quiet"}
@@ -221,6 +226,43 @@ func TestPullBuildUsesBakeAndQuiet(t *testing.T) {
 	}
 	if !reflect.DeepEqual(invocation.Env, map[string]string{"COMPOSE_BAKE": "true"}) {
 		t.Errorf("environment = %#v", invocation.Env)
+	}
+	wantPull := []string{"compose", "-f", composeFile, "pull", "--ignore-buildable", "--quiet"}
+	if !reflect.DeepEqual(docker.invocations[1].Args, wantPull) {
+		t.Errorf("pull arguments = %#v, want %#v", docker.invocations[1].Args, wantPull)
+	}
+}
+
+func TestMissingServiceReturnsError(t *testing.T) {
+	controller := New(t.TempDir(), "host", &recordedDocker{}, io.Discard, io.Discard)
+	if err := controller.Service(context.Background(), "up", "core/missing", DockerOptions{}); err == nil {
+		t.Fatal("expected missing Compose file error")
+	}
+}
+
+func TestInterpolatedExternalNetworkUsesResolvedCompose(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "docker", "core", "app", "app.yaml"), "networks:\n  shared:\n    external: true\n    name: ${NETWORK_ID}\n")
+	docker := &recordedDocker{configOutput: `{"networks":{"shared":{"external":true,"name":"resolved"}}}`}
+	controller := New(root, "host", docker, io.Discard, io.Discard)
+	if err := controller.Service(context.Background(), "up", "core/app", DockerOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	if len(docker.invocations) != 3 || !reflect.DeepEqual(docker.invocations[1].Args, []string{"network", "inspect", "resolved"}) {
+		t.Fatalf("unexpected invocations: %#v", docker.invocations)
+	}
+}
+
+func TestGPUSuffixDotenvSyntax(t *testing.T) {
+	for input, want := range map[string]string{
+		"GPU_COMPOSE_SUFFIX = amdgpu # comment\n":    "amdgpu",
+		"GPU_COMPOSE_SUFFIX='amd # gpu' # comment\n": "amd # gpu",
+	} {
+		dir := t.TempDir()
+		writeFile(t, filepath.Join(dir, ".env"), input)
+		if got := gpuSuffix(dir); got != want {
+			t.Errorf("gpuSuffix(%q) = %q, want %q", input, got, want)
+		}
 	}
 }
 
