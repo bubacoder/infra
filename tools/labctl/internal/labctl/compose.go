@@ -16,16 +16,9 @@ func (c *Controller) service(
 ) error {
 	composeFile := filepath.Join(c.DockerStacks, category, service, service+".yaml")
 	if _, err := os.Stat(composeFile); errors.Is(err, os.ErrNotExist) {
-		fmt.Fprintf(c.Err, "Error: Compose file not found: %s\n", composeFile)
-		return nil
+		return fmt.Errorf("Compose file not found: %s", composeFile)
 	} else if err != nil {
 		return err
-	}
-
-	if operation == "up" || operation == "recreate" {
-		if err := c.createServiceNetworks(ctx, composeFile); err != nil {
-			return err
-		}
 	}
 
 	composeFiles := []string{composeFile}
@@ -43,6 +36,11 @@ func (c *Controller) service(
 	fileArgs := composeFileArgs(composeFiles)
 	baseArgs := append([]string{"compose"}, fileArgs...)
 	baseArgs = append(baseArgs, envArgs...)
+	if operation == "up" || operation == "recreate" {
+		if err := c.createServiceNetworks(ctx, composeFile, baseArgs); err != nil {
+			return err
+		}
+	}
 
 	switch operation {
 	case "pull":
@@ -72,7 +70,7 @@ func (c *Controller) service(
 			nil, false)
 	case "config":
 		fmt.Fprintf(c.Out, ">>> Checking %s/%s\n", category, service)
-		return c.docker(ctx, append(baseArgs, "config", "--no-interpolate"), nil, false)
+		return c.docker(ctx, append(baseArgs, "config", "--no-interpolate", "--no-env-resolution"), nil, false)
 	case "logs":
 		fmt.Fprintf(c.Out, ">>> Showing logs for %s/%s\n", category, service)
 		logArgs := append([]string{"logs"}, logFlags(options)...)
@@ -96,12 +94,17 @@ func (c *Controller) pull(
 		if quiet {
 			args = append(args, "--quiet")
 		}
-		return c.docker(ctx, args, map[string]string{"COMPOSE_BAKE": "true"}, false)
+		if err := c.docker(ctx, args, map[string]string{"COMPOSE_BAKE": "true"}, false); err != nil {
+			return err
+		}
 	}
 	fmt.Fprintf(c.Out, ">>> Pulling %s\n", composeFiles[0])
 	args := append([]string{"compose"}, fileArgs...)
 	args = append(args, envArgs...)
 	args = append(args, "pull")
+	if hasBuildDirective(composeFiles[0]) {
+		args = append(args, "--ignore-buildable")
+	}
 	if quiet {
 		args = append(args, "--quiet")
 	}

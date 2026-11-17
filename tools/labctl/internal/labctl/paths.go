@@ -76,8 +76,18 @@ func gpuSuffix(hostConfigDir string) string {
 	}
 	for _, line := range strings.Split(string(content), "\n") {
 		line = strings.TrimSpace(line)
-		if value, ok := strings.CutPrefix(line, "GPU_COMPOSE_SUFFIX="); ok {
-			return strings.Trim(strings.TrimSpace(value), `"'`)
+		key, value, ok := strings.Cut(line, "=")
+		if ok && strings.TrimSpace(key) == "GPU_COMPOSE_SUFFIX" {
+			value = strings.TrimSpace(value)
+			if len(value) > 0 && (value[0] == '\'' || value[0] == '"') {
+				if end := strings.IndexByte(value[1:], value[0]); end >= 0 {
+					return value[1 : end+1]
+				}
+			}
+			if index := strings.Index(value, " #"); index >= 0 {
+				value = value[:index]
+			}
+			return strings.TrimSpace(value)
 		}
 	}
 	return ""

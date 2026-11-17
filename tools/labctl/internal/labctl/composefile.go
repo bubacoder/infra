@@ -32,6 +32,10 @@ func composeDocument(filename string) (map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
+	return parseComposeDocument(content)
+}
+
+func parseComposeDocument(content []byte) (map[string]any, error) {
 	var document map[string]any
 	if err := yaml.Unmarshal(content, &document); err != nil {
 		return nil, err

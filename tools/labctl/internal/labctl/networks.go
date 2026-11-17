@@ -1,16 +1,33 @@
 package labctl
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"slices"
+	"strings"
 )
 
-func (c *Controller) createServiceNetworks(ctx context.Context, composeFile string) error {
+func (c *Controller) createServiceNetworks(ctx context.Context, composeFile string, baseArgs []string) error {
 	networks, err := externalNetworks(composeFile)
 	if err != nil {
 		fmt.Fprintf(c.Err, "Warning: extract networks from %s: %v\n", composeFile, err)
 		return nil
+	}
+	for _, network := range networks {
+		if strings.Contains(network, "$") {
+			var output bytes.Buffer
+			args := append(append([]string{}, baseArgs...), "config", "--format", "json", "--no-env-resolution")
+			if err := c.Docker.Run(ctx, Invocation{Args: args, Stdout: &output, Stderr: c.Err}); err != nil {
+				return fmt.Errorf("resolve external networks: %w", err)
+			}
+			document, err := parseComposeDocument(output.Bytes())
+			if err != nil {
+				return fmt.Errorf("parse resolved Compose configuration: %w", err)
+			}
+			networks = networkNames(document)
+			break
+		}
 	}
 	for _, network := range networks {
 		err := c.docker(ctx, []string{"network", "inspect", network}, nil, true)
@@ -31,9 +48,13 @@ func externalNetworks(filename string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	return networkNames(document), nil
+}
+
+func networkNames(document map[string]any) []string {
 	networks, ok := document["networks"].(map[string]any)
 	if !ok {
-		return nil, nil
+		return nil
 	}
 	var names []string
 	for key, value := range networks {
@@ -61,5 +82,5 @@ func externalNetworks(filename string) ([]string, error) {
 		}
 	}
 	slices.Sort(names)
-	return slices.Compact(names), nil
+	return slices.Compact(names)
 }

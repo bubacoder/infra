@@ -46,14 +46,16 @@ services:
 
 The supported Compose operations are `pull`, `up`, `down`, `restart`,
 `recreate`, `config`, and `logs`. `config` uses
-`docker compose config --no-interpolate` so it does not render environment
-values into command output.
+`docker compose config --no-interpolate --no-env-resolution` to avoid
+interpolating variables or resolving service environment files. The output
+can still contain values written directly in Compose files; treat it as sensitive.
 
 ## Phase one: Go Compose implementation
 
 The isolated Go module is `tools/labctl`, with `scripts/labctl` as the
-repository-root launcher. Build the binary once after a checkout or source
-change:
+repository-root launcher. The launcher builds the binary when it is missing or
+older than its Go sources, so Go is required on the host. It can also be built
+explicitly:
 
 ```sh
 task labctl:build
@@ -61,9 +63,11 @@ scripts/labctl config apply
 scripts/labctl service recreate ai/ollama
 ```
 
-The launcher executes only `tools/labctl/bin/labctl`; it never compiles on an
-operational path. Docker hosts therefore need the built binary, not a Go
-toolchain.
+The launcher anchors stack and configuration paths to its repository, regardless
+of the caller's working directory.
+When `config apply --config FILE` selects an alternate manifest, its parent
+directory also selects the host-specific environment files and GPU override,
+as in the previous Python CLI.
 
 The command has a backend-neutral controller for stack identifiers and
 configuration iteration, and a Compose backend that invokes Docker explicitly.
