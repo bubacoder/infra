@@ -1,33 +1,31 @@
 package labctl
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"slices"
 	"strings"
 )
 
-func (c *Controller) createServiceNetworks(ctx context.Context, composeFile string, baseArgs []string) error {
-	networks, err := externalNetworks(composeFile)
+func (c *Controller) createServiceNetworks(ctx context.Context, composeFiles, baseArgs []string) error {
+	networks, err := externalNetworks(composeFiles[0])
 	if err != nil {
-		fmt.Fprintf(c.Err, "Warning: extract networks from %s: %v\n", composeFile, err)
+		fmt.Fprintf(c.Err, "Warning: extract networks from %s: %v\n", composeFiles[0], err)
 		return nil
 	}
+	resolve := len(composeFiles) > 1
 	for _, network := range networks {
 		if strings.Contains(network, "$") {
-			var output bytes.Buffer
-			args := append(append([]string{}, baseArgs...), "config", "--format", "json", "--no-env-resolution")
-			if err := c.Docker.Run(ctx, Invocation{Args: args, Stdout: &output, Stderr: c.Err}); err != nil {
-				return fmt.Errorf("resolve external networks: %w", err)
-			}
-			document, err := parseComposeDocument(output.Bytes())
-			if err != nil {
-				return fmt.Errorf("parse resolved Compose configuration: %w", err)
-			}
-			networks = networkNames(document)
+			resolve = true
 			break
 		}
+	}
+	if resolve {
+		document, err := c.resolvedCompose(ctx, baseArgs)
+		if err != nil {
+			return fmt.Errorf("resolve external networks: %w", err)
+		}
+		networks = networkNames(document)
 	}
 	for _, network := range networks {
 		err := c.docker(ctx, []string{"network", "inspect", network}, nil, true)

@@ -54,7 +54,7 @@ services:
 	writeFile(t, filepath.Join(root, "config", "docker", ".env.ollama"), "SERVICE=1\n")
 	writeFile(t, filepath.Join(hostConfig, ".env.ollama"), "HOST_SERVICE=1\n")
 
-	docker := &recordedDocker{}
+	docker := &recordedDocker{configOutput: `{}`}
 	controller := New(root, "host", docker, io.Discard, io.Discard)
 	if err := controller.Service(context.Background(), "up", "ai/ollama", DockerOptions{}); err != nil {
 		t.Fatal(err)
@@ -70,11 +70,49 @@ services:
 		"--env-file", filepath.Join(hostConfig, ".env.ollama"),
 		"up", "--detach",
 	}
-	if len(docker.invocations) != 1 {
-		t.Fatalf("invocations = %d, want 1", len(docker.invocations))
+	if len(docker.invocations) != 2 {
+		t.Fatalf("invocations = %d, want 2", len(docker.invocations))
 	}
-	if !reflect.DeepEqual(docker.invocations[0].Args, want) {
-		t.Errorf("arguments = %#v, want %#v", docker.invocations[0].Args, want)
+	if !reflect.DeepEqual(docker.invocations[1].Args, want) {
+		t.Errorf("arguments = %#v, want %#v", docker.invocations[1].Args, want)
+	}
+}
+
+func TestGPUOverrideAddsBuildAndExternalNetwork(t *testing.T) {
+	root := t.TempDir()
+	stackDir := filepath.Join(root, "docker", "ai", "app")
+	base := filepath.Join(stackDir, "app.yaml")
+	override := filepath.Join(stackDir, "app-gpu.yaml")
+	hostEnv := filepath.Join(root, "config", "docker", "host", ".env")
+	writeFile(t, base, "services:\n  app:\n    image: example.invalid/app\n")
+	writeFile(t, override, "services:\n  app:\n    build: .\nnetworks:\n  gpu:\n    external: true\n    name: ${GPU_NETWORK}\n")
+	writeFile(t, hostEnv, "GPU_COMPOSE_SUFFIX=gpu\nGPU_NETWORK=gpu-shared\n")
+	docker := &recordedDocker{
+		inspectError: true,
+		configOutput: `{"services":{"app":{"image":"example.invalid/app","build":{"context":"."}}},"networks":{"gpu":{"external":true,"name":"gpu-shared"}}}`,
+	}
+	controller := New(root, "host", docker, io.Discard, io.Discard)
+
+	if err := controller.Service(context.Background(), "up", "ai/app", DockerOptions{PullBeforeStart: true}); err != nil {
+		t.Fatal(err)
+	}
+	baseArgs := []string{"compose", "-f", base, "-f", override, "--env-file", hostEnv}
+	configArgs := append(append([]string{}, baseArgs...), "config", "--format", "json", "--no-env-resolution")
+	want := [][]string{
+		configArgs,
+		{"network", "inspect", "gpu-shared"},
+		{"network", "create", "--driver", "bridge", "gpu-shared"},
+		configArgs,
+		append(append([]string{}, baseArgs...), "build", "--pull"),
+		append(append([]string{}, baseArgs...), "pull", "--ignore-buildable"),
+		append(append([]string{}, baseArgs...), "up", "--detach"),
+	}
+	var got [][]string
+	for _, invocation := range docker.invocations {
+		got = append(got, invocation.Args)
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("invocations = %#v, want %#v", got, want)
 	}
 }
 
