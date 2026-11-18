@@ -37,7 +37,7 @@ func (c *Controller) service(
 	baseArgs := append([]string{"compose"}, fileArgs...)
 	baseArgs = append(baseArgs, envArgs...)
 	if operation == "up" || operation == "recreate" {
-		if err := c.createServiceNetworks(ctx, composeFile, baseArgs); err != nil {
+		if err := c.createServiceNetworks(ctx, composeFiles, baseArgs); err != nil {
 			return err
 		}
 	}
@@ -86,7 +86,17 @@ func (c *Controller) pull(
 	quiet bool,
 ) error {
 	fileArgs := composeFileArgs(composeFiles)
-	if hasBuildDirective(composeFiles[0]) {
+	hasBuild := hasBuildDirective(composeFiles[0])
+	if len(composeFiles) > 1 {
+		baseArgs := append([]string{"compose"}, fileArgs...)
+		baseArgs = append(baseArgs, envArgs...)
+		document, err := c.resolvedCompose(ctx, baseArgs)
+		if err != nil {
+			return err
+		}
+		hasBuild = documentHasBuild(document)
+	}
+	if hasBuild {
 		fmt.Fprintf(c.Out, ">>> Pulling %s\n", composeFiles[0])
 		args := append([]string{"compose"}, fileArgs...)
 		args = append(args, envArgs...)
@@ -102,7 +112,7 @@ func (c *Controller) pull(
 	args := append([]string{"compose"}, fileArgs...)
 	args = append(args, envArgs...)
 	args = append(args, "pull")
-	if hasBuildDirective(composeFiles[0]) {
+	if hasBuild {
 		args = append(args, "--ignore-buildable")
 	}
 	if quiet {
