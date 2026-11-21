@@ -209,7 +209,7 @@ services:
     container_name: realtime-dev.supabase-realtime
     expose:
       - "4000"
-    image: supabase/realtime:v2.153.5@sha256:4966dd33d9c124ce02665a2d2cc9293caf9632e0dc011874c8c9d87992928ba3
+    image: supabase/realtime:v2.161.0@sha256:f5c0e0f330b8eb4d0d74b2f795d1f8e4bc9523fc9dc7ceb684a1968fc57cf414
     restart: unless-stopped
     depends_on:
       db:
@@ -257,7 +257,7 @@ services:
     container_name: supabase-storage
     expose:
       - "5000"
-    image: supabase/storage-api:v1.90.0@sha256:b93ea65dad8eee7af34ab57d062915fcf085d4eb1a647f38f3bcea25d99850b1
+    image: supabase/storage-api:v1.95.0@sha256:833558845aafcfd493c33a4258cc8def1a7c6b3c20dd3b35aacfd2d89aa79558
     restart: unless-stopped
     volumes:
       - ${DOCKER_VOLUMES}/supabase/storage:/var/lib/storage
@@ -354,7 +354,7 @@ services:
     container_name: supabase-edge-functions
     expose:
       - "9000"
-    image: supabase/edge-runtime:v1.78.1@sha256:362e9177660ae4d3affb6978480cc6161a8ea0764f1c2c7f738348eda1c3fbf2
+    image: supabase/edge-runtime:v1.79.1@sha256:185b4039d8e8ffe0a3a41b425bd299a51100a590d04e05aa4c2be1d66d09cb5d
     restart: unless-stopped
     volumes:
       - ./config/functions:/home/deno/functions:Z
@@ -382,7 +382,7 @@ services:
     container_name: supabase-analytics
     expose:
       - "4000"
-    image: supabase/logflare:1.54.5@sha256:9ca7958b63631fadf971a1ebeec5e00529c8bcd4d0b57a36330891ed9b3eb796
+    image: supabase/logflare:1.54.8@sha256:93e338e9ccb38c822a9538cdc960a92d0c1b597ba4ca92c4295caa0ae24e5357
     restart: unless-stopped
     # Uncomment to use Big Query backend for analytics
     # volumes:
@@ -441,7 +441,7 @@ services:
     container_name: supabase-db
     expose:
       - "${SUPABASE_POSTGRES_PORT}"
-    image: supabase/postgres:15.19.0.018@sha256:eea4d56296834cd235f712dd0e7096c9ec354d81362bf4375950ab17d81a1d71
+    image: supabase/postgres:15.20.0.000@sha256:9debca2b2f24e0b06693d610e30ba7e7e5117ec6dc95ea7ccfe70975e67f14b1
     restart: unless-stopped
     volumes:
       - ./config/db/realtime.sql:/docker-entrypoint-initdb.d/migrations/99-realtime.sql:Z
@@ -538,7 +538,7 @@ services:
   # Update the DATABASE_URL if you are using an external Postgres database
   supavisor:
     container_name: supabase-pooler
-    image: supabase/supavisor:2.10.0@sha256:df3a6acf3b81f261d6e861c5c7ec38767bb2564a47adc6a050286910ea325158
+    image: supabase/supavisor:2.10.1@sha256:b3bc49a23daa3556084a03bda62cb211cd5f62250f70f0295be12930a65073b6
     restart: unless-stopped
     ports:
       - ${SUPABASE_POSTGRES_PORT}:5432

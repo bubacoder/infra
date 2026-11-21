@@ -13,6 +13,6 @@ RUN apk add --no-cache git \
 
 # Traefik binds privileged ports and accesses the root-owned Docker socket.
 # kics-scan ignore-line
-FROM traefik:v3.7.17@sha256:f4bb143d1135a579b630ed491e17ec50f6f7c9c6a30585ff3d385471d2a86f5a
+FROM traefik:v3.7.18@sha256:9c437ac4f09ce6f4980a8544902d3475fdf70a1a7c578729581d2535dfa7d635
 
 COPY --from=crowdsec_plugin /plugin /plugins-local/src/github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
