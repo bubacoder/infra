@@ -6,7 +6,7 @@ services:
     command: "*.zim"
     restart: unless-stopped
     volumes:
-      - ${STORAGE_KIWIX}:/data
+      - ${STORAGE_KIWIX}:/data:ro
     networks:
       - proxy
     labels:
