@@ -1,0 +1,6 @@
+---
+- name: Configure explicitly selected NFS servers
+  hosts: nfs_servers
+  gather_facts: true
+  roles:
+    - nfs_server

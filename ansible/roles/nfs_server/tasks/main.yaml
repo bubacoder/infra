@@ -1,0 +1,317 @@
+---
+- name: Validate selected NFS inventory on the controller
+  ansible.builtin.command:
+    argv:
+      - python3
+      - "{{ role_path }}/files/validate_inventory.py"
+      - "{{ nfs_server_inventory_file | mandatory }}"
+  delegate_to: localhost
+  become: false
+  changed_when: false
+  check_mode: false
+  register: nfs_server_inventory_check
+  no_log: true
+
+- name: Snapshot validated NFS inventory
+  ansible.builtin.set_fact:
+    nfs_server_inventory: "{{ nfs_server_inventory_check.stdout | from_json }}"
+  no_log: true
+
+- name: Pre-render selected NFS export configuration
+  ansible.builtin.set_fact:
+    nfs_server_rendered_exports: "{{ lookup('template', 'exports.j2') }}"
+  no_log: true
+
+- name: Verify rendered exports before touching the server
+  ansible.builtin.command:
+    argv: [python3, "{{ role_path }}/files/verify_active.py"]
+    stdin: "{{ {'inventory': nfs_server_inventory, 'configuration': nfs_server_rendered_exports} | to_json }}"
+  delegate_to: localhost
+  become: false
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Configure NFS server for explicit exports
+  become: true
+  block:
+    - name: Require a supported systemd host
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.os_family == 'Debian'
+          - ansible_facts.service_mgr == 'systemd'
+          - >-
+            nfs_server_inventory.server in
+            ([ansible_facts.hostname, ansible_facts.fqdn]
+            + (ansible_facts.all_ipv4_addresses | default([]))
+            + (ansible_facts.all_ipv6_addresses | default([])))
+        fail_msg: The selected host must match the NFS inventory server identity.
+
+    - name: Check each required backing filesystem is mounted
+      ansible.builtin.command:
+        argv: [mountpoint, -q, "{{ item }}"]
+      loop: "{{ nfs_server_inventory.backingMounts }}"
+      changed_when: false
+      check_mode: false
+      no_log: true
+
+    - name: Resolve backing filesystem paths without following unchecked aliases
+      ansible.builtin.command:
+        argv: [realpath, -e, --, "{{ item }}"]
+      loop: "{{ nfs_server_inventory.backingMounts }}"
+      register: nfs_server_resolved_mounts
+      changed_when: false
+      check_mode: false
+      no_log: true
+
+    - name: Reject backing filesystem symlink aliases
+      ansible.builtin.assert:
+        that:
+          - item.stdout == item.item
+      loop: "{{ nfs_server_resolved_mounts.results }}"
+      no_log: true
+
+    - name: Check export directories exist
+      ansible.builtin.stat:
+        path: "{{ item.value.serverPath }}"
+      loop: "{{ nfs_server_inventory.exports | dict2items }}"
+      register: nfs_server_export_directories
+      no_log: true
+
+    - name: Require real export directories
+      ansible.builtin.assert:
+        that:
+          - item.stat.exists
+          - item.stat.isdir
+          - not item.stat.islnk
+      loop: "{{ nfs_server_export_directories.results }}"
+      loop_control:
+        label: "{{ item.item.key }}"
+      no_log: true
+
+    - name: Resolve export paths
+      ansible.builtin.command:
+        argv: [realpath, -e, --, "{{ item.value.serverPath }}"]
+      loop: "{{ nfs_server_inventory.exports | dict2items }}"
+      register: nfs_server_resolved_exports
+      changed_when: false
+      check_mode: false
+      no_log: true
+
+    - name: Reject export symlink aliases
+      ansible.builtin.assert:
+        that:
+          - item.stdout == item.item.value.serverPath
+      loop: "{{ nfs_server_resolved_exports.results }}"
+      no_log: true
+
+    - name: Inspect existing export directory
+      ansible.builtin.stat:
+        path: /etc/exports.d
+      register: nfs_server_exports_dir
+
+    - name: Reject unsafe export directory
+      ansible.builtin.assert:
+        that:
+          - not (nfs_server_exports_dir.stat.islnk | default(false))
+          - not nfs_server_exports_dir.stat.exists or nfs_server_exports_dir.stat.isdir
+
+    - name: Find unmanaged export files
+      ansible.builtin.find:
+        paths: /etc/exports.d
+        patterns: '*.exports'
+        file_type: any
+      register: nfs_server_export_files
+      when: nfs_server_exports_dir.stat.isdir | default(false)
+
+    - name: Refuse to alter or overlap unmanaged export files
+      ansible.builtin.assert:
+        that:
+          - >-
+            (nfs_server_export_files.files | default([])
+            | rejectattr('path', 'equalto', '/etc/exports.d/konverter-managed.exports')
+            | list | length) == 0
+        fail_msg: >-
+          Unmanaged export files exist. Review and migrate them explicitly;
+          this role will not remove or adopt them.
+
+    - name: Inspect main exports file
+      ansible.builtin.stat:
+        path: /etc/exports
+      register: nfs_server_main_exports
+
+    - name: Reject symlinked main exports file
+      ansible.builtin.assert:
+        that:
+          - not (nfs_server_main_exports.stat.islnk | default(false))
+
+    - name: Read existing main exports file
+      ansible.builtin.slurp:
+        src: /etc/exports
+      register: nfs_server_main_exports_content
+      when: nfs_server_main_exports.stat.exists
+      no_log: true
+
+    - name: Refuse active unmanaged main exports
+      ansible.builtin.assert:
+        that:
+          - >-
+            (nfs_server_main_exports_content.content | default('') | b64decode
+            | regex_findall('(?m)^\\s*[^\\s#]') | length) == 0
+        fail_msg: Review existing active /etc/exports entries before managing NFS.
+
+    - name: Inspect role-managed export file
+      ansible.builtin.stat:
+        path: /etc/exports.d/konverter-managed.exports
+      register: nfs_server_managed_file
+
+    - name: Reject symlinked managed export file
+      ansible.builtin.assert:
+        that:
+          - not (nfs_server_managed_file.stat.islnk | default(false))
+
+    - name: Read role-managed export file
+      ansible.builtin.slurp:
+        src: /etc/exports.d/konverter-managed.exports
+      register: nfs_server_managed_content
+      when: nfs_server_managed_file.stat.exists
+      no_log: true
+
+    - name: Refuse to overwrite an unowned or symlinked export file
+      ansible.builtin.assert:
+        that:
+          - >-
+            not nfs_server_managed_file.stat.exists or
+            (nfs_server_managed_content.content | default('') | b64decode).startswith(
+            '# Managed by infra nfs_server role\n')
+
+    - name: Inspect NFS service drop-in directory
+      ansible.builtin.stat:
+        path: /etc/systemd/system/nfs-server.service.d
+      register: nfs_server_guard_directory
+
+    - name: Reject unsafe service drop-in directory
+      ansible.builtin.assert:
+        that:
+          - not (nfs_server_guard_directory.stat.islnk | default(false))
+          - not nfs_server_guard_directory.stat.exists or nfs_server_guard_directory.stat.isdir
+
+    - name: Inspect role-managed service guard
+      ansible.builtin.stat:
+        path: /etc/systemd/system/nfs-server.service.d/konverter-inventory.conf
+      register: nfs_server_guard_file
+
+    - name: Reject symlinked managed service guard
+      ansible.builtin.assert:
+        that:
+          - not (nfs_server_guard_file.stat.islnk | default(false))
+
+    - name: Read role-managed service guard
+      ansible.builtin.slurp:
+        src: /etc/systemd/system/nfs-server.service.d/konverter-inventory.conf
+      register: nfs_server_guard_content
+      when: nfs_server_guard_file.stat.exists
+      no_log: true
+
+    - name: Refuse to overwrite an unowned or symlinked guard
+      ansible.builtin.assert:
+        that:
+          - >-
+            not nfs_server_guard_file.stat.exists or
+            (nfs_server_guard_content.content | default('') | b64decode).startswith(
+            '# Managed by infra nfs_server role\n')
+
+    - name: Install NFS server packages
+      ansible.builtin.apt:
+        name: nfs-kernel-server
+        state: present
+
+    - name: Create managed export and service directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      loop:
+        - /etc/exports.d
+        - /etc/systemd/system/nfs-server.service.d
+
+    - name: Install backing mount startup guard
+      ansible.builtin.template:
+        src: backing-mounts.conf.j2
+        dest: /etc/systemd/system/nfs-server.service.d/konverter-inventory.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart managed NFS server
+      no_log: true
+
+    - name: Render managed NFS exports
+      ansible.builtin.template:
+        src: exports.j2
+        dest: /etc/exports.d/konverter-managed.exports
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart managed NFS server
+      no_log: true
+
+    - name: Enable NFS service
+      ansible.builtin.systemd_service:
+        name: nfs-server
+        enabled: true
+        state: started
+        daemon_reload: true
+
+    - name: Inspect active exports before reconciliation
+      ansible.builtin.command:
+        argv: [exportfs, -s]
+      register: nfs_server_before_exports
+      changed_when: false
+      check_mode: false
+      no_log: true
+      when: not ansible_check_mode
+
+    - name: Compare active exports with validated inventory
+      ansible.builtin.command:
+        argv: [python3, "{{ role_path }}/files/verify_active.py"]
+        stdin: "{{ {'inventory': nfs_server_inventory, 'active': nfs_server_before_exports.stdout} | to_json }}"
+      delegate_to: localhost
+      become: false
+      register: nfs_server_before_check
+      changed_when: false
+      failed_when: false
+      no_log: true
+      when: not ansible_check_mode
+
+    - name: Queue reconciliation for drifted active exports
+      ansible.builtin.command:
+        argv: [/bin/true]
+      changed_when: true
+      notify: Restart managed NFS server
+      when:
+        - not ansible_check_mode
+        - nfs_server_before_check.rc != 0
+
+    - name: Apply pending NFS handler before verifying exports
+      ansible.builtin.meta: flush_handlers
+
+    - name: Inspect active NFS exports
+      ansible.builtin.command:
+        argv: [exportfs, -s]
+      register: nfs_server_active_exports
+      changed_when: false
+      check_mode: false
+      no_log: true
+      when: not ansible_check_mode
+
+    - name: Verify active exports match the inventory
+      ansible.builtin.command:
+        argv: [python3, "{{ role_path }}/files/verify_active.py"]
+        stdin: "{{ {'inventory': nfs_server_inventory, 'active': nfs_server_active_exports.stdout} | to_json }}"
+      delegate_to: localhost
+      become: false
+      changed_when: false
+      no_log: true
+      when: not ansible_check_mode
