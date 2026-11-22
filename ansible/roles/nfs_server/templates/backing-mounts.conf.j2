@@ -1,0 +1,6 @@
+# Managed by infra nfs_server role
+[Unit]
+{% for mount in nfs_server_inventory.backingMounts | sort %}
+RequiresMountsFor={{ mount }}
+ConditionPathIsMountPoint={{ mount }}
+{% endfor %}

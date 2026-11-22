@@ -1,0 +1,14 @@
+---
+- name: Install NFS client support
+  become: true
+  block:
+    - name: Require a Debian-family host
+      ansible.builtin.assert:
+        that:
+          - ansible_facts.os_family == 'Debian'
+        fail_msg: The NFS client role supports Debian-family hosts only.
+
+    - name: Install NFS client utilities
+      ansible.builtin.apt:
+        name: nfs-common
+        state: present

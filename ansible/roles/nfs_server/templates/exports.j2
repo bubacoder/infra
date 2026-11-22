@@ -1,0 +1,4 @@
+# Managed by infra nfs_server role
+{% for item in nfs_server_inventory.exports | dict2items | sort(attribute='key') %}
+{{ item.value.serverPath }}{% for client in nfs_server_inventory.clients | sort %} {{ client }}({{ 'ro' if item.value.access == 'read-only' else 'rw' }},sync,root_squash,no_subtree_check){% endfor %}{{ '\n' -}}
+{% endfor %}
