@@ -94,6 +94,7 @@ supports standalone use.
 | --- | --- |
 | [`ansible/`](ansible/README.md) | Host playbooks, roles and public inventory defaults |
 | [`docker/`](docker/README.md) | Service Compose files, organized by category |
+| [`kubernetes/`](kubernetes/README.md) | Kubernetes platform and runtime assets |
 | [`docs/`](docs/) | Installation, configuration and operations guides |
 | [`terraform/`](terraform/) | Standalone AWS and Azure provisioning templates |
 | [`vm/`](vm/) | VM provisioning scripts and hypervisor documentation |

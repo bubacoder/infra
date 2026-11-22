@@ -25,6 +25,7 @@ class NativeBootstrapTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         shutil.copytree(ROOT / "ansible/playbooks", self.root / "ansible/playbooks")
         shutil.copytree(ROOT / "ansible/roles", self.root / "ansible/roles")
+        shutil.copytree(ROOT / "kubernetes", self.root / "kubernetes")
         shutil.copytree(ROOT / "config-example", self.root / "config-example")
         self.env = {
             **{key: value for key, value in os.environ.items() if not key.startswith("BOOTSTRAP_")},
@@ -756,6 +757,8 @@ class NativeBootstrapTests(unittest.TestCase):
         run(True, False)
         network = self.root / "settings/config.yaml.d/20-bootstrap-cilium.yaml"
         chart = self.root / "runtime/server/manifests/bootstrap-cilium.yaml"
+        self.assertEqual(network.read_bytes(), (self.root / "kubernetes/cilium/cilium-network.yaml").read_bytes())
+        self.assertEqual(chart.read_bytes(), (self.root / "kubernetes/cilium/cilium-chart.yaml").read_bytes())
         self.assertEqual(yaml.safe_load(network.read_text()), {"flannel-backend": "none", "disable-network-policy": True})
         manifest = yaml.safe_load(chart.read_text())
         self.assertTrue(manifest["spec"]["bootstrap"])
@@ -842,7 +845,8 @@ class NativeBootstrapTests(unittest.TestCase):
         self.assertEqual(main["block"][0]["register"], "k3s_cilium_service")
         self.assertEqual(main["block"][1]["ansible.builtin.include_tasks"], "configure.yaml")
         for filename in ("cilium-network.yaml", "cilium-chart.yaml"):
-            self.assertTrue((cilium / "files" / filename).is_file())
+            self.assertTrue((ROOT / "kubernetes/cilium" / filename).is_file())
+            self.assertFalse((cilium / "files" / filename).exists())
             self.assertFalse((ROOT / "ansible/roles/k3s/files" / filename).exists())
         for filename in ("main.yaml", "verify.yaml"):
             self.assertNotIn("cilium", (ROOT / "ansible/roles/k3s/tasks" / filename).read_text().lower())
