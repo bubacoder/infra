@@ -39,6 +39,11 @@ Owned files remain:
 - `/etc/rancher/k3s/config.yaml.d/20-bootstrap-cilium.yaml`
 - `/var/lib/rancher/k3s/server/manifests/bootstrap-cilium.yaml`
 
+Their canonical source files live in
+[`kubernetes/cilium/`](../../../kubernetes/cilium/). The role owns their
+installation and verification; relocation of repository assets does not change
+the on-host paths, contents or network configuration.
+
 Repeat configuration requires exact matching contents; operator edits and implicit
 chart upgrades are refused. Existing servers missing these files are rejected;
 automatic Flannel migration or adoption of external Cilium is unsupported.
