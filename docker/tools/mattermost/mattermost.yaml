@@ -28,8 +28,6 @@ services:
     networks:
       - proxy
     labels:
-      konverter.connect.postgresql.service: "postgresql/postgresql"
-      konverter.connect.postgresql.ports: "5432/tcp"
       traefik.enable: true
       traefik.http.routers.mattermost.rule: Host(`mattermost.${MYDOMAIN}`)
       traefik.http.routers.mattermost.middlewares: localaccess@file
@@ -39,6 +37,8 @@ services:
       homepage.icon: mattermost.png
       homepage.href: https://mattermost.${MYDOMAIN}/
       homepage.description: "Secure collaboration platform for mission-critical work"
+      konverter.connect.postgresql.service: "postgresql/postgresql"
+      konverter.connect.postgresql.ports: "5432/tcp"
 
 networks:
   proxy:

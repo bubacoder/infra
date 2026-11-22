@@ -7,7 +7,6 @@ services:
     networks:
       - proxy
     labels:
-      konverter.rollout.strategy: rolling
       traefik.enable: true
       traefik.http.routers.httpbin.middlewares: localaccess@file
       traefik.http.services.httpbin.loadbalancer.server.port: 8080
@@ -16,6 +15,7 @@ services:
       homepage.icon: https://httpbin.org/static/favicon.ico
       homepage.href: https://httpbin.${MYDOMAIN}/
       homepage.description: HTTP request & response testing service
+      konverter.rollout.strategy: rolling
 
 networks:
   proxy:

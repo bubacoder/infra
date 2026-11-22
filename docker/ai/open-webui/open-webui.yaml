@@ -55,8 +55,6 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
     labels:
-      konverter.connect.ollama.service: "ollama/ollama"
-      konverter.connect.ollama.ports: "11434/tcp"
       traefik.enable: true
       traefik.http.routers.open-webui.middlewares: localaccess@file
       traefik.http.services.open-webui.loadbalancer.server.port: 8080
@@ -65,6 +63,8 @@ services:
       homepage.icon: open-webui.png
       homepage.href: https://open-webui.${MYDOMAIN}/
       homepage.description: "[SSO] User-friendly WebUI for LLMs"
+      konverter.connect.ollama.service: "ollama/ollama"
+      konverter.connect.ollama.ports: "11434/tcp"
 
 networks:
   proxy:

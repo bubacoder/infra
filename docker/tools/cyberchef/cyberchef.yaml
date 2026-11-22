@@ -7,7 +7,6 @@ services:
     networks:
       - proxy
     labels:
-      konverter.rollout.strategy: rolling
       traefik.enable: true
       traefik.http.routers.cyberchef.middlewares: localaccess@file
       traefik.http.services.cyberchef.loadbalancer.server.port: 8000
@@ -16,6 +15,7 @@ services:
       homepage.icon: cyberchef.png
       homepage.href: https://cyberchef.${MYDOMAIN}/
       homepage.description: Swiss Army Knife web app for data analysis
+      konverter.rollout.strategy: rolling
     healthcheck:
       test: [CMD-SHELL, "curl -sf -o /dev/null http://localhost:8000 || exit 1"]
       interval: 30s

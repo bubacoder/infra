@@ -7,7 +7,6 @@ services:
     networks:
       - proxy
     labels:
-      konverter.rollout.strategy: rolling
       traefik.enable: true
       traefik.http.routers.openspeedtest.middlewares: publicaccess@file
       traefik.http.routers.openspeedtest.rule: Host(`speedtest.${MYDOMAIN}`)
@@ -17,6 +16,7 @@ services:
       homepage.icon: librespeed.png # 404: openspeedtest.png
       homepage.href: https://speedtest.${MYDOMAIN}/
       homepage.description: "Network Performance Estimation"
+      konverter.rollout.strategy: rolling
 
 networks:
   proxy:
