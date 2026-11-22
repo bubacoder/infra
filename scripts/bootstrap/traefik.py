@@ -38,7 +38,7 @@ def storage_quantity(value):
     raise TraefikError("storage_size cannot be represented exactly.")
 
 
-def selected_policy(root, names):
+def selected_policy(root, names, crowdsec_settings=None):
     directory = root / "docker/core/traefik/config/dynamic"
     try:
         policy = yaml.safe_load((directory / "middlewares.yml").read_text())
@@ -57,6 +57,15 @@ def selected_policy(root, names):
         if name in selected:
             return
         definition = catalog[name]
+        if isinstance(definition, dict) and "plugin" in definition and crowdsec_settings and crowdsec_settings.get("enabled"):
+            if __package__:
+                from .crowdsec import plugin_definition  # noqa: PLC0415 -- adapter shares validation helpers with this module
+            else:
+                from crowdsec import plugin_definition  # noqa: PLC0415 -- direct-script equivalent, avoids circular import
+            if name != "crowdsec-bouncer":
+                raise TraefikError("Only the explicitly reviewed CrowdSec plugin is supported.")
+            selected[name] = plugin_definition(definition, crowdsec_settings)
+            return
         if not isinstance(definition, dict) or len(definition) != 1 or set(definition) - {"chain", "headers", "redirectScheme", "ipAllowList"}:
             raise TraefikError("Selected middleware requires unsupported auth/plugin configuration; dependencies are never silently omitted.")
         active.add(name)
@@ -127,7 +136,7 @@ def validate_profile(config, root):
     names = settings["middlewares"]
     if not isinstance(names, list) or not names or any(not isinstance(name, str) for name in names) or len(set(names)) != len(names):
         raise TraefikError("Select a nonempty list of unique shared middleware names.")
-    selected_policy(root, names)
+    selected_policy(root, names, config.get("k3s", {}).get("crowdsec"))
 
 
 def manifests(config, root):
@@ -179,8 +188,15 @@ def manifests(config, root):
             }
         },
     }
+    crowdsec_settings = config.get("k3s", {}).get("crowdsec", {})
+    if crowdsec_settings.get("enabled"):
+        if __package__:
+            from .crowdsec import add_plugin_values  # noqa: PLC0415 -- adapter shares validation helpers with this module
+        else:
+            from crowdsec import add_plugin_values  # noqa: PLC0415 -- direct-script equivalent, avoids circular import
+        add_plugin_values(values, crowdsec_settings)
     objects = {
-        "configmap": resource("ConfigMap", CONFIGMAP, data=selected_policy(root, settings["middlewares"])),
+        "configmap": resource("ConfigMap", CONFIGMAP, data=selected_policy(root, settings["middlewares"], crowdsec_settings)),
         "pvc": resource(
             "PersistentVolumeClaim",
             PVC,

@@ -84,6 +84,11 @@
       vars:
         k3s_traefik: "{{ bootstrap.k3s.traefik | default({'enabled': false}) }}"
       when: "'k3s_traefik' in bootstrap.roles"
+    - name: Independently verify CrowdSec without applying its role
+      ansible.builtin.include_role:
+        name: k3s_crowdsec
+        tasks_from: verify
+      when: "'k3s_crowdsec' in bootstrap.roles"
     - name: Install or independently verify controller access to the K3s API
       ansible.builtin.include_tasks: bootstrap/k3s-access.yaml
       when: bootstrap.k3s.access.enabled | default(false)

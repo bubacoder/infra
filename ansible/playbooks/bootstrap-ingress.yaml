@@ -1,0 +1,69 @@
+---
+# Bounded configuration of existing ingress, never provider/DNS/OS provisioning.
+- name: Validate prepared inputs and select the already trusted ingress host
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Validate the same public inputs as the full bootstrap workflow
+      ansible.builtin.import_tasks: bootstrap/inputs.yaml
+    - name: Load credentials only through the existing redacted native boundary
+      ansible.builtin.import_tasks: bootstrap/secrets.yaml
+    - name: Require an explicit existing target and managed ingress profile
+      ansible.builtin.assert:
+        that:
+          - bootstrap.target == 'proxmox'
+          - (bootstrap_ingress_address | default('') | ansible.utils.ipaddr('address')) != false
+          - bootstrap_ingress_cluster_uid | default('') is match('^[a-f0-9-]{36}$')
+          - bootstrap.k3s.traefik.enabled | default(false)
+          - "'k3s_traefik' in bootstrap.roles"
+        fail_msg: Supply the verified existing host address and cluster UID; ingress-only configuration never discovers or provisions a VM.
+    - name: Check existing pinned guest trust without changing it
+      ansible.builtin.stat:
+        path: "{{ bootstrap_dir }}/known_hosts"
+        follow: false
+        get_checksum: false
+      register: bootstrap_ingress_trust
+    - name: Require existing private regular pinned guest trust
+      ansible.builtin.assert:
+        that:
+          - bootstrap_ingress_trust.stat.isreg | default(false)
+          - not bootstrap_ingress_trust.stat.islnk | default(false)
+          - bootstrap_ingress_trust.stat.mode == '0600'
+        fail_msg: Restore the deployment's existing trusted guest access; no trust is learned automatically.
+    - name: Select only the explicitly identified existing guest
+      ansible.builtin.add_host:
+        name: "{{ bootstrap.name }}"
+        groups: bootstrap_ingress_guest
+        ansible_host: "{{ bootstrap_ingress_address }}"
+        ansible_connection: ssh
+        ansible_user: "{{ bootstrap.proxmox_username }}"
+        ansible_ssh_private_key_file: "{{ bootstrap.ssh_private_key | expanduser }}"
+        ansible_ssh_common_args: "-o StrictHostKeyChecking=yes -o {{ ('UserKnownHostsFile=' + bootstrap_dir + '/known_hosts') | quote }}"
+        bootstrap: "{{ bootstrap }}"
+        bootstrap_ingress_expected_cluster: "{{ bootstrap_ingress_cluster_uid }}"
+
+- name: Configure only native CrowdSec and the existing Ansible-owned Traefik
+  hosts: bootstrap_ingress_guest
+  gather_facts: true
+  become: true
+  tasks:
+    - name: Verify the live cluster identity before any role can mutate resources
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, get, namespace, kube-system, '-o=jsonpath={.metadata.uid}']
+      register: bootstrap_ingress_live_cluster
+      changed_when: false
+    - name: Bind this bounded operation to the exact approved guest and cluster
+      ansible.builtin.assert:
+        that:
+          - bootstrap_ingress_live_cluster.stdout == bootstrap_ingress_expected_cluster
+          - ansible_facts.hostname == bootstrap.name
+        fail_msg: Guest/cluster identity differs; no role is applied.
+    - name: Configure the explicitly selected native CrowdSec LAPI
+      ansible.builtin.include_role:
+        name: k3s_crowdsec
+      when: bootstrap.k3s.crowdsec.enabled | default(false)
+    - name: Configure the existing Traefik controller without changing application routes # noqa: var-naming[no-role-prefix] -- compiler profile interface
+      ansible.builtin.include_role:
+        name: k3s_traefik
+      vars:
+        k3s_traefik: "{{ bootstrap.k3s.traefik }}"

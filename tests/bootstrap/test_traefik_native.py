@@ -142,7 +142,7 @@ class NativeTraefikTests(unittest.TestCase):
         captured = self.directory / "captured.json"
         tasks = yaml.safe_load((ROLE / "tasks/resource.yaml").read_text())
         for task in tasks:
-            if task.get("ansible.builtin.include_tasks") == "ownership.yaml":
+            if str(task.get("ansible.builtin.include_tasks", "")).endswith("ownership.yaml"):
                 task.clear()
                 task.update({"name": "Ownership handover is exercised separately", "ansible.builtin.set_fact": {"test_handover_included": True}})
             if "ansible.builtin.copy" in task:
@@ -155,7 +155,7 @@ class NativeTraefikTests(unittest.TestCase):
             register = task.pop("register", None)
             if register == "k3s_traefik_current_cluster":
                 task["ansible.builtin.set_fact"] = {register: {"stdout": "synthetic-cluster"}}
-            elif command["argv"][2] == "--namespace=kube-system":
+            elif command["argv"][2].startswith("--namespace="):
                 task["ansible.builtin.set_fact"] = {register: {"stdout": "owned-configmap|42|infra-bootstrap-traefik|synthetic-vm"}}
             elif "apply" in command["argv"]:
                 task["block"] = [
@@ -198,11 +198,21 @@ class NativeTraefikTests(unittest.TestCase):
         resource = (ROLE / "tasks/resource.yaml").read_text()
         self.assertLess(resource.index("Atomically persist"), resource.index("ownership.yaml"))
 
-    def handover_fixture(self, *, operation="Update", uid="owned-configmap", cluster="synthetic-cluster", ambiguous=False, conflict=False):
+    def handover_fixture(  # noqa: PLR0913 -- independent identity/API conflict cases in the same guard fixture
+        self,
+        *,
+        operation="Update",
+        uid="owned-configmap",
+        cluster="synthetic-cluster",
+        ambiguous=False,
+        conflict=False,
+        resource_kind="configmap",
+        api_version="v1",
+    ):
         own = {
             "manager": "infra-bootstrap-traefik",
             "operation": operation,
-            "apiVersion": "v1",
+            "apiVersion": api_version,
             "fieldsType": "FieldsV1",
             "fieldsV1": {"f:data": {"f:test.yaml": {}}},
         }
@@ -254,8 +264,9 @@ class NativeTraefikTests(unittest.TestCase):
                     task["ansible.builtin.copy"] = {"content": command["stdin"], "dest": str(captured), "mode": "0600"}
 
         mock_probes(tasks)
-        receipt = {"cluster_uid": "synthetic-cluster", "deployment": "synthetic-vm", "uids": {"configmap": "owned-configmap"}}
-        result = self.run_tasks(tasks, {"k3s_traefik_resource": self.resources[1], "k3s_traefik_receipt": receipt})
+        receipt = {"cluster_uid": "synthetic-cluster", "deployment": "synthetic-vm", "uids": {resource_kind: "owned-configmap"}}
+        resource = {**self.resources[1], "kind": resource_kind, "api_version": api_version}
+        result = self.run_tasks(tasks, {"k3s_traefik_resource": resource, "k3s_traefik_receipt": receipt})
         return result, captured, metadata
 
     def test_handover_preserves_foreign_ownership_and_original_metadata_for_recovery(self):
@@ -288,7 +299,11 @@ class NativeTraefikTests(unittest.TestCase):
 
     def test_real_native_profile_validation_matches_compiler_inputs(self):
         public = yaml.safe_load(outputs(profile())["host.yaml"])
-        validation = yaml.safe_load((ROOT / "ansible/playbooks/bootstrap/inputs.yaml").read_text())[-1]
+        validation = next(
+            task
+            for task in yaml.safe_load((ROOT / "ansible/playbooks/bootstrap/inputs.yaml").read_text())
+            if task["name"] == "Validate opt-in Traefik requirements before provider access"
+        )
         tasks = [
             {
                 "name": "Validate the real public argument schema",

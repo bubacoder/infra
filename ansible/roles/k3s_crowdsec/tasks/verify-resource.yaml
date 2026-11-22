@@ -1,0 +1,17 @@
+---
+- name: Read only the applied public resource
+  ansible.builtin.command:
+    argv: [/usr/local/bin/k3s, kubectl, "--namespace={{ k3s_crowdsec.namespace }}", get, "{{ k3s_crowdsec_verify_resource.kind }}", "{{ k3s_crowdsec_verify_resource.name }}", -o=json]
+  register: k3s_crowdsec_live_resource
+  changed_when: false
+  no_log: true
+
+- name: Validate every desired field while tolerating API-added defaults
+  ansible.builtin.assert:
+    that:
+      - k3s_crowdsec_expected | bootstrap_resource_subset(k3s_crowdsec_actual)
+  vars:
+    k3s_crowdsec_desired: "{{ lookup('ansible.builtin.file', hostvars.localhost.bootstrap_input_dir + '/k3s-crowdsec-' + k3s_crowdsec_verify_resource.file) | from_yaml }}"
+    k3s_crowdsec_expected: "{{ {'data': k3s_crowdsec_desired.data} if k3s_crowdsec_verify_resource.kind == 'configmap' else {'spec': k3s_crowdsec_desired.spec} }}"
+    k3s_crowdsec_actual: "{{ k3s_crowdsec_live_resource.stdout | from_json }}"
+  no_log: true

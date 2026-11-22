@@ -7,7 +7,7 @@
 
 - name: Read managed metadata only, never Secret data, before handover
   ansible.builtin.command:
-    argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, get, '{{ k3s_traefik_resource.kind }}', '{{ k3s_traefik_resource.name }}', --show-managed-fields, '-o=jsonpath={.metadata}']
+    argv: [/usr/local/bin/k3s, kubectl, "--namespace={{ k3s_traefik_namespace | default('kube-system') }}", get, '{{ k3s_traefik_resource.kind }}', '{{ k3s_traefik_resource.name }}', --show-managed-fields, '-o=jsonpath={.metadata}']
   register: k3s_traefik_handover_metadata
   changed_when: false
   no_log: true
@@ -47,7 +47,7 @@
             that:
               - k3s_traefik_handover_entries | length == 1
               - k3s_traefik_handover_entries[0].operation == 'Update'
-              - k3s_traefik_handover_entries[0].apiVersion == ('helm.cattle.io/v1' if k3s_traefik_resource.kind == 'helmchartconfig' else 'v1')
+              - k3s_traefik_handover_entries[0].apiVersion == (k3s_traefik_resource.api_version | default('helm.cattle.io/v1' if k3s_traefik_resource.kind == 'helmchartconfig' else 'v1'))
               - k3s_traefik_handover_entries[0].subresource | default('') == ''
               - k3s_traefik_handover_entries[0].fieldsType == 'FieldsV1'
               - k3s_traefik_handover_entries[0].fieldsV1 is mapping
@@ -73,7 +73,7 @@
 
     - name: Validate the ownership-only handover on the server before any mutation
       ansible.builtin.command:
-        argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, patch, '{{ k3s_traefik_resource.kind }}', '{{ k3s_traefik_resource.name }}', --type=json, --patch-file=/dev/stdin, --dry-run=server, -o=name]
+        argv: [/usr/local/bin/k3s, kubectl, "--namespace={{ k3s_traefik_namespace | default('kube-system') }}", patch, '{{ k3s_traefik_resource.kind }}', '{{ k3s_traefik_resource.name }}', --type=json, --patch-file=/dev/stdin, --dry-run=server, -o=name]
         stdin: '{{ k3s_traefik_handover_patch | to_json }}'
         stdin_add_newline: false
       changed_when: false
@@ -100,7 +100,7 @@
     # Never clear managedFields, force conflicts, or change resource data here.
     - name: Convert only our initial create entry to Apply with UID and version tests
       ansible.builtin.command:
-        argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, patch, '{{ k3s_traefik_resource.kind }}', '{{ k3s_traefik_resource.name }}', --type=json, --patch-file=/dev/stdin, -o=name]
+        argv: [/usr/local/bin/k3s, kubectl, "--namespace={{ k3s_traefik_namespace | default('kube-system') }}", patch, '{{ k3s_traefik_resource.kind }}', '{{ k3s_traefik_resource.name }}', --type=json, --patch-file=/dev/stdin, -o=name]
         stdin: '{{ k3s_traefik_handover_patch | to_json }}'
         stdin_add_newline: false
       changed_when: true
@@ -108,7 +108,7 @@
 
     - name: Read back ownership metadata without exposing Secret data
       ansible.builtin.command:
-        argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, get, '{{ k3s_traefik_resource.kind }}', '{{ k3s_traefik_resource.name }}', --show-managed-fields, '-o=jsonpath={.metadata}']
+        argv: [/usr/local/bin/k3s, kubectl, "--namespace={{ k3s_traefik_namespace | default('kube-system') }}", get, '{{ k3s_traefik_resource.kind }}', '{{ k3s_traefik_resource.name }}', --show-managed-fields, '-o=jsonpath={.metadata}']
       register: k3s_traefik_handover_readback
       changed_when: false
       no_log: true

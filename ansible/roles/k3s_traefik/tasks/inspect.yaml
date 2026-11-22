@@ -4,13 +4,7 @@
     path: "{{ item }}"
     get_checksum: false
     get_mime: false
-  loop:
-    - "{{ k3s_traefik_directory }}"
-    - "{{ k3s_traefik_directory }}/receipt.yaml"
-    - "{{ k3s_traefik_directory }}/secret.yaml"
-    - "{{ k3s_traefik_directory }}/configmap.yaml"
-    - "{{ k3s_traefik_directory }}/pvc.yaml"
-    - "{{ k3s_traefik_directory }}/helmchartconfig.yaml"
+  loop: "{{ [k3s_traefik_directory, k3s_traefik_directory + '/receipt.yaml'] + (k3s_traefik_resources | map(attribute='file') | map('regex_replace', '^', k3s_traefik_directory + '/') | list) }}"
   register: k3s_traefik_paths
 
 - name: Refuse unsafe ownership receipt paths
@@ -68,7 +62,7 @@
     argv:
       - /usr/local/bin/k3s
       - kubectl
-      - --namespace=kube-system
+      - "--namespace={{ k3s_traefik_namespace | default('kube-system') }}"
       - get
       - "{{ item.kind }}"
       - "{{ item.name }}"

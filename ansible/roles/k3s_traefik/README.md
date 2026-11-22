@@ -76,12 +76,13 @@ controller-wide, so configuration writers are a trust boundary. Cross-namespace
 Middleware CRD references remain disabled. Application ports, Cilium grants and
 public routes are not inferred.
 
-The supported initial subset is `chain`, `ipAllowList`, `headers` and
-`redirectScheme`. Missing dependencies, cycles, unknown templates and selected
-unsupported types fail before provisioning. `localaccess-authentik` and
-`publicaccess` therefore fail until authentication/plugin integration is added;
-they never become weakened substitutes. Docker external services and insecure
-server transports are not imported.
+The ordinary subset is `chain`, `ipAllowList`, `headers` and `redirectScheme`.
+The optional [CrowdSec role](../k3s_crowdsec/README.md) adds the exact reviewed
+CrowdSec plugin and `publicaccess@file` chain with explicit endpoint/key-file
+adaptation. Other plugins, authentication, missing dependencies, cycles and
+unknown templates still fail before provisioning. No chain becomes a weakened
+substitute. Docker external services and insecure server transports are not
+imported.
 
 The canonical allowlist preserves its private-network/loopback rules plus the
 supplied admin CIDR. A narrow admin CIDR does **not** make this policy admin-only.

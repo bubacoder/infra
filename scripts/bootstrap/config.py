@@ -23,11 +23,12 @@ from urllib.parse import urlsplit
 import yaml
 
 if __package__:
-    from . import traefik
+    from . import crowdsec, traefik
     from .paths import BootstrapPathError, BootstrapPaths
 else:
     # Direct-script helpers must import this instance, including its ConfigError.
     sys.modules.setdefault("config", sys.modules[__name__])
+    import crowdsec
     import traefik
     from paths import BootstrapPathError, BootstrapPaths
 
@@ -136,7 +137,7 @@ def section(config: dict, name: str, allowed: set, required: set | None = None) 
 
 
 def validate_k3s_access(config: dict, host: dict) -> None:
-    k3s = section(config, "k3s", {"access", "traefik"}, set()) if "k3s" in config else {}
+    k3s = section(config, "k3s", {"access", "traefik", "crowdsec"}, set()) if "k3s" in config else {}
     if "k3s_cilium" in config["roles"] and ("k3s" not in config["roles"] or config["roles"].index("k3s_cilium") > config["roles"].index("k3s")):
         raise ConfigError("Cilium requires the k3s role after k3s_cilium; prepare networking before K3s starts.")
     if "access" not in k3s:
@@ -190,6 +191,7 @@ def validate(config: dict, target: str, root: Path = ROOT) -> None:
     host = section(config, "host", HOST_KEYS, host_required)
     validate_k3s_access(config, host)
     try:
+        crowdsec.validate_profile(config)
         traefik.validate_profile(config, root)
     except traefik.TraefikError as error:
         raise ConfigError(str(error)) from None
@@ -401,6 +403,7 @@ def outputs(config: dict, root: Path = ROOT, source_directory: Path | None = Non
     key = public_key(config["vm"]["ssh_public_key"]) if config["target"] == "aws" else None
     try:
         manifests = traefik.manifests(config, root)
+        manifests.update(crowdsec.manifests(config, root))
     except traefik.TraefikError as error:
         raise ConfigError(str(error)) from None
     return render_outputs(config, secrets, key, manifests)
@@ -635,6 +638,7 @@ class Configuration:
             "k3s_access": config.get("k3s", {}).get("access", {"enabled": False}),
             "k3s_cilium": "k3s_cilium" in config["roles"],
             "k3s_traefik": config.get("k3s", {}).get("traefik", {"enabled": False}),
+            "k3s_crowdsec": config.get("k3s", {}).get("crowdsec", {"enabled": False}),
             "proxmox_host": config.get("proxmox", {}).get("host"),
             "proxmox_vmid": config.get("proxmox", {}).get("vmid"),
             "proxmox_timeouts": {key: config.get("proxmox", {}).get(key, default) for key, default in PVE_TIMEOUTS.items()}

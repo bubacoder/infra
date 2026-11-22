@@ -1,0 +1,118 @@
+---
+- name: Configure the explicitly selected native CrowdSec LAPI
+  become: true
+  vars:
+    # Reuse the existing receipt/UID/SSA guards, not a second implementation.
+    k3s_traefik_directory: "{{ k3s_crowdsec_directory }}"
+    k3s_traefik_namespace: "{{ k3s_crowdsec.namespace }}"
+    k3s_traefik_manager: infra-bootstrap-crowdsec
+    k3s_traefik_resources: "{{ k3s_crowdsec_resources }}"
+  block:
+    - name: Validate explicit bootstrap scope before inspecting or changing resources
+      ansible.builtin.assert:
+        that:
+          - k3s_crowdsec.enabled | default(false)
+          - bootstrap.k3s.traefik.enabled | default(false)
+          - bootstrap.roles.index('k3s') < bootstrap.roles.index('k3s_crowdsec')
+          - bootstrap.roles.index('k3s_crowdsec') < bootstrap.roles.index('k3s_traefik')
+          - k3s_crowdsec.transport == 'http-cluster'
+          - k3s_crowdsec.online_api is boolean
+          - k3s_crowdsec.namespace is match('^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$')
+          - not k3s_crowdsec.namespace.startswith('kube-')
+          - k3s_crowdsec.namespace != 'default'
+        fail_msg: Select the compiler-validated CrowdSec profile and ordered roles.
+    - name: Inspect exact resource identities and private recovery paths
+      ansible.builtin.include_tasks: "{{ role_path }}/../k3s_traefik/tasks/inspect.yaml"
+    - name: Require the configured storage class
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, get, storageclass, "{{ k3s_crowdsec.storage_class }}", -o=name]
+      changed_when: false
+    - name: Read the existing owned claim without changing storage
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, "--namespace={{ k3s_crowdsec.namespace }}", get, pvc, bootstrap-crowdsec, -o=json]
+      register: k3s_crowdsec_claim
+      changed_when: false
+      when: "'persistentvolumeclaim' in k3s_traefik_receipt.uids"
+    - name: Refuse automatic storage migration or resizing
+      ansible.builtin.assert:
+        that:
+          - (k3s_crowdsec_claim.stdout | from_json).spec.storageClassName == k3s_crowdsec.storage_class
+          - (k3s_crowdsec_claim.stdout | from_json).spec.resources.requests.storage == (lookup('ansible.builtin.file', hostvars.localhost.bootstrap_input_dir + '/k3s-crowdsec-pvc.yaml') | from_yaml).spec.resources.requests.storage
+        fail_msg: Preserve existing CrowdSec storage; resizing/migration requires separate approval.
+      when: "'persistentvolumeclaim' in k3s_traefik_receipt.uids"
+    - name: Create the private CrowdSec management directory
+      ansible.builtin.file:
+        path: "{{ k3s_crowdsec_directory }}"
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'
+    - name: Save the ownership receipt before staging resources
+      ansible.builtin.copy:
+        content: "{{ k3s_traefik_receipt | to_nice_yaml }}"
+        dest: "{{ k3s_crowdsec_directory }}/receipt.yaml"
+        owner: root
+        group: root
+        mode: '0600'
+      no_log: true
+    - name: Stage compiler-generated native manifests verbatim
+      ansible.builtin.copy:
+        src: "{{ hostvars.localhost.bootstrap_input_dir }}/k3s-crowdsec-{{ item.file }}"
+        dest: "{{ k3s_crowdsec_directory }}/{{ item.file }}"
+        owner: root
+        group: root
+        mode: '0600'
+      loop: "{{ k3s_crowdsec_resources }}"
+      loop_control:
+        label: "{{ item.kind }}"
+    - name: Hand over only receipt-owned create writers before validating changed values
+      ansible.builtin.include_tasks: "{{ role_path }}/../k3s_traefik/tasks/ownership.yaml"
+      loop: "{{ k3s_crowdsec_resources }}"
+      loop_control:
+        loop_var: k3s_traefik_resource
+        label: "{{ k3s_traefik_resource.kind }}"
+      when: k3s_traefik_resource.kind in k3s_traefik_receipt.uids
+    # A new namespace must exist for server dry-run of namespaced resources.
+    # Its UID is recorded before continuing; failures never delete it.
+    - name: Validate the namespace before creating or updating it
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, apply, --server-side, --field-manager=infra-bootstrap-crowdsec, --dry-run=server, --validate=strict, "-f={{ k3s_crowdsec_directory }}/namespace.yaml"]
+      changed_when: false
+    - name: Create or update only the receipt-owned namespace
+      ansible.builtin.include_tasks: "{{ role_path }}/../k3s_traefik/tasks/resource.yaml"
+      vars:
+        k3s_traefik_resource: "{{ k3s_crowdsec_resources[0] }}"
+    - name: Validate every namespaced resource before applying any of them
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, apply, --server-side, --field-manager=infra-bootstrap-crowdsec, --dry-run=server, --validate=strict, "-f={{ k3s_crowdsec_directory }}/{{ item.file }}"]
+      loop: "{{ k3s_crowdsec_resources[1:] }}"
+      loop_control:
+        label: "{{ item.kind }}"
+      changed_when: false
+    - name: Apply dependencies before the LAPI deployment and record each UID
+      ansible.builtin.include_tasks: "{{ role_path }}/../k3s_traefik/tasks/resource.yaml"
+      loop: "{{ k3s_crowdsec_resources[1:] }}"
+      loop_control:
+        loop_var: k3s_traefik_resource
+        label: "{{ k3s_traefik_resource.kind }}"
+    - name: Wait for the intended LAPI rollout before delivering its credential
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, "--namespace={{ k3s_crowdsec.namespace }}", rollout, status, deployment/bootstrap-crowdsec, --timeout=300s]
+      changed_when: false
+    - name: Transfer the generated bouncer credential privately within Ansible
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, "--namespace={{ k3s_crowdsec.namespace }}", exec, deployment/bootstrap-crowdsec, --, cat, /data/bouncer-key]
+      register: k3s_crowdsec_key_result
+      changed_when: false
+      no_log: true
+    - name: Retain the credential only as a redacted in-memory fact for Traefik
+      ansible.builtin.set_fact:
+        k3s_crowdsec_bouncer_key: "{{ k3s_crowdsec_key_result.stdout }}"
+      no_log: true
+    - name: Validate the generated key without exposing it
+      ansible.builtin.assert:
+        that:
+          - k3s_crowdsec_bouncer_key is match('^[A-Za-z0-9+/]{32,}={0,2}$')
+      no_log: true
+    - name: Independently verify owned configuration and readiness
+      ansible.builtin.include_tasks: verify.yaml

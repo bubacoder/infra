@@ -1,0 +1,36 @@
+---
+- name: Verify CrowdSec without creating resources or reading credential values
+  become: true
+  vars:
+    k3s_traefik_directory: "{{ k3s_crowdsec_directory }}"
+    k3s_traefik_namespace: "{{ k3s_crowdsec.namespace }}"
+    k3s_traefik_manager: infra-bootstrap-crowdsec
+    k3s_traefik_resources: "{{ k3s_crowdsec_resources }}"
+  block:
+    - name: Inspect the cluster-bound resource ownership
+      ansible.builtin.include_tasks: "{{ role_path }}/../k3s_traefik/tasks/inspect.yaml"
+    - name: Require a complete installation receipt
+      ansible.builtin.assert:
+        that:
+          - k3s_traefik_paths.results[1].stat.exists
+          - k3s_traefik_receipt.uids | length == k3s_crowdsec_resources | length
+    - name: Check the applied public resources without reading Secret values
+      ansible.builtin.include_tasks: verify-resource.yaml
+      loop: "{{ k3s_crowdsec_resources[1:] }}"
+      loop_control:
+        loop_var: k3s_crowdsec_verify_resource
+        label: "{{ k3s_crowdsec_verify_resource.kind }}"
+    - name: Require a ready LAPI deployment
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, "--namespace={{ k3s_crowdsec.namespace }}", rollout, status, deployment/bootstrap-crowdsec, --timeout=180s]
+      changed_when: false
+    - name: Require bound persistent storage
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, "--namespace={{ k3s_crowdsec.namespace }}", wait, '--for=jsonpath={.status.phase}=Bound', pvc/bootstrap-crowdsec, --timeout=60s]
+      changed_when: false
+    - name: Check key file ownership and size only
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, "--namespace={{ k3s_crowdsec.namespace }}", exec, deployment/bootstrap-crowdsec, --, stat, '-c', '%u:%a:%s', /data/bouncer-key]
+      register: k3s_crowdsec_key_stat
+      changed_when: false
+      failed_when: k3s_crowdsec_key_stat.stdout is not match('^65532:600:[1-9][0-9]*$')
