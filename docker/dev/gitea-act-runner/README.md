@@ -21,9 +21,10 @@ TODO: Join Traefik to the dev-act-runner network in docker/core/traefik/traefik.
 ## Deployment identity
 
 Manage this stack as `dev/gitea-act-runner`, using `gitea-act-runner.yaml` and
-`.env.gitea-act-runner` configuration files. Its Compose project, service and
-container remain `act-runner`; retain `${DOCKER_VOLUMES}/act-runner` and the
-`dev-act-runner` network to preserve its registration and job environment.
+`.env.gitea-act-runner` configuration files. Its Compose project is
+`gitea-act-runner`; its service and container remain `act-runner`. Retain
+`${DOCKER_VOLUMES}/act-runner` and the `dev-act-runner` network to preserve its
+registration and job environment.
 
 ## References
 

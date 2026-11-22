@@ -32,8 +32,9 @@ against the same repository or create a new repository to fix a connection issue
   `config/docker/<host>/.env.kopia`, when present, after the common/host `.env`.
 - Repository password variable: `KOPIA_B2_REPOSITORY_PASSWORD`; never print its
   resolved value or the credential-bearing `repository.config` file.
-- Compose project/service, URL and Authentik application retain `kopia-b2` for
-  compatibility. The UI remains `https://kopia-b2.${MYDOMAIN}/`.
+- Compose project: `kopia`. The service, URL and Authentik application retain
+  `kopia-b2` for compatibility. The UI remains
+  `https://kopia-b2.${MYDOMAIN}/`.
 - Data remains under `${DOCKER_VOLUMES}/kopia-b2/{config,cache,logs}`. Preserve the
   original repository connection, password and Kopia client hostname/username;
   snapshot source identities and schedules depend on them.
