@@ -25,6 +25,7 @@ services:
       homepage.icon: navidrome.png
       homepage.href: https://navidrome.${MYDOMAIN}/
       homepage.description: Music collection
+      konverter.rollout.strategy: recreate
 
 networks:
   proxy:

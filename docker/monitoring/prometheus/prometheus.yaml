@@ -14,8 +14,6 @@ services:
     networks:
       - proxy
     labels:
-      konverter.connect.endlessh.service: "endlessh/endlessh"
-      konverter.connect.endlessh.ports: "2112/tcp"
       traefik.enable: true
       traefik.http.routers.prometheus.middlewares: localaccess@file
       traefik.http.services.prometheus.loadbalancer.server.port: 9090
@@ -24,6 +22,8 @@ services:
       homepage.icon: prometheus.png
       homepage.href: https://prometheus.${MYDOMAIN}/
       homepage.description: "Exporters: node-exporter, cadvisor"
+      konverter.connect.endlessh.service: "endlessh/endlessh"
+      konverter.connect.endlessh.ports: "2112/tcp"
 
   node-exporter:
     image: quay.io/prometheus/node-exporter:v1.12.1@sha256:1b4e4438faca4dd7e001dd445d161a4a2091b0fededa84093b3a8dfeae1f1be0
