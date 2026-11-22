@@ -274,6 +274,13 @@ dependencies fail closed. Existing manually managed Traefik objects are never
 automatically adopted. Omitting this role/feature preserves the default K3s
 profile and does not require TLS credentials.
 
+For optional native CrowdSec LAPI and the complete `publicaccess@file` chain,
+select `k3s_crowdsec` between `k3s` and `k3s_traefik` and use the explicit
+[CrowdSec profile](../ansible/roles/k3s_crowdsec/README.md). Its plugin-image
+initializer does not download source at startup. Plugin/LAPI failures deny
+protected routes without intentionally taking local routes offline. Application
+log acquisition remains deferred to the broader logging design.
+
 For a host without Docker or bootstrap-managed applications, retain the VM/provider
 sections and replace these configuration sections:
 

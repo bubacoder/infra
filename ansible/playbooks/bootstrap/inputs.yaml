@@ -104,3 +104,12 @@
       - not bootstrap.k3s.traefik.enabled | default(false) or bootstrap.k3s.traefik.storage_class | default('') is match('^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$')
       - not bootstrap.k3s.traefik.enabled | default(false) or bootstrap.k3s.traefik.storage_size | default('') is match('^[1-9][0-9]*(Mi|Gi)$')
     fail_msg: Select the documented ordered Traefik role, explicit domain/admin CIDR, ACME environment, middleware list and storage; email and Cloudflare credentials are feature-scoped requirements.
+
+- name: Validate opt-in CrowdSec requirements before provider access
+  ansible.builtin.assert:
+    that:
+      - "('k3s_crowdsec' in bootstrap.roles) == (bootstrap.k3s.crowdsec.enabled | default(false))"
+      - not bootstrap.k3s.crowdsec.enabled | default(false) or ('k3s' in bootstrap.roles and 'k3s_traefik' in bootstrap.roles and bootstrap.roles.index('k3s') < bootstrap.roles.index('k3s_crowdsec') and bootstrap.roles.index('k3s_crowdsec') < bootstrap.roles.index('k3s_traefik'))
+      - not bootstrap.k3s.crowdsec.enabled | default(false) or bootstrap.k3s.crowdsec.transport == 'http-cluster'
+      - not bootstrap.k3s.crowdsec.enabled | default(false) or bootstrap.k3s.crowdsec.online_api is boolean
+    fail_msg: Select the compiler-validated CrowdSec profile after k3s and before k3s_traefik.

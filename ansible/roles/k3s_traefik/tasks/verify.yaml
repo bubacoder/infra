@@ -28,6 +28,15 @@
         - "('--certificatesresolvers.letsencrypt.acme.storage=/data/' + ('acme-staging.json' if k3s_traefik.acme_environment == 'staging' else 'acme.json')) in (k3s_traefik_deployment.stdout | from_json).spec.template.spec.containers[0].args"
         - (k3s_traefik_deployment.stdout | from_json).spec.template.spec.containers[0].env | selectattr('name', 'equalto', 'MYDOMAIN') | map(attribute='value') | first | default('') == k3s_traefik.domain
         - (k3s_traefik_deployment.stdout | from_json).spec.template.spec.containers[0].env | selectattr('name', 'equalto', 'LOCAL_ACCESS_ADMIN_CIDR') | map(attribute='value') | first | default('') == k3s_traefik.admin_cidr
+        - >-
+          not (bootstrap.k3s.crowdsec.enabled | default(false)) or
+          ((k3s_traefik_deployment.stdout | from_json).spec.template.spec.initContainers | default([]) |
+          selectattr('name', 'equalto', 'crowdsec-plugin') | map(attribute='image') | list ==
+          [bootstrap.k3s.crowdsec.plugin_image])
+        - >-
+          not (bootstrap.k3s.crowdsec.enabled | default(false)) or
+          '--experimental.abortonpluginfailure=false' in
+          (k3s_traefik_deployment.stdout | from_json).spec.template.spec.containers[0].args
       retries: 60
       delay: 5
       no_log: true
@@ -51,6 +60,27 @@
       ansible.builtin.command:
         argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, rollout, status, deployment/traefik, --timeout=180s]
       changed_when: false
+
+    - name: Require the intended optional plugin initializer and failure-isolation setting
+      ansible.builtin.assert:
+        that:
+          - (k3s_traefik_deployment.stdout | from_json).spec.template.spec.initContainers | selectattr('name', 'equalto', 'crowdsec-plugin') | map(attribute='image') | list == [bootstrap.k3s.crowdsec.plugin_image]
+          - "'--experimental.abortonpluginfailure=false' in (k3s_traefik_deployment.stdout | from_json).spec.template.spec.containers[0].args"
+        fail_msg: Traefik does not have the intended CrowdSec initializer/failure-isolation configuration.
+      when: bootstrap.k3s.crowdsec.enabled | default(false)
+      no_log: true
+
+    - name: Report degraded plugin staging without restarting or stopping Traefik
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, exec, deployment/traefik, --, test, -s, /plugins-local/src/github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin/.traefik.yml]
+      changed_when: false
+      when: bootstrap.k3s.crowdsec.enabled | default(false)
+
+    - name: Check mounted bouncer-key presence without reading its contents
+      ansible.builtin.command:
+        argv: [/usr/local/bin/k3s, kubectl, --namespace=kube-system, exec, deployment/traefik, --, test, -s, /etc/traefik/crowdsec/bouncer-key]
+      changed_when: false
+      when: bootstrap.k3s.crowdsec.enabled | default(false)
 
     - name: Require bound ACME storage
       ansible.builtin.command:

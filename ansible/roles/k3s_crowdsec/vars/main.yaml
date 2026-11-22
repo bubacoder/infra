@@ -1,0 +1,10 @@
+---
+k3s_crowdsec: "{{ bootstrap.k3s.crowdsec | default({'enabled': false}) }}" # noqa: var-naming[no-role-prefix] -- compiler profile interface
+k3s_crowdsec_directory: /var/lib/rancher/k3s/bootstrap-crowdsec
+k3s_crowdsec_resources:
+  - {kind: namespace, name: "{{ k3s_crowdsec.namespace }}", file: namespace.yaml}
+  - {kind: configmap, name: bootstrap-crowdsec, file: configmap.yaml}
+  - {kind: persistentvolumeclaim, name: bootstrap-crowdsec, file: pvc.yaml}
+  - {kind: service, name: bootstrap-crowdsec, file: service.yaml}
+  - {kind: networkpolicy, name: bootstrap-crowdsec, file: networkpolicy.yaml, api_version: networking.k8s.io/v1}
+  - {kind: deployment, name: bootstrap-crowdsec, file: deployment.yaml, api_version: apps/v1}
