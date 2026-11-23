@@ -159,6 +159,17 @@
         "dockerfile"
       ],
       "matchPackageNames": [
+        "lscr.io/linuxserver/qbittorrent"
+      ],
+      "allowedVersions": "<6"
+    },
+    {
+      "description": "Disable invalid version tags",
+      "matchManagers": [
+        "docker-compose",
+        "dockerfile"
+      ],
+      "matchPackageNames": [
         "lscr.io/linuxserver/kasm"
       ],
       "allowedVersions": "<1.120"
