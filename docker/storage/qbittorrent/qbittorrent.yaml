@@ -1,7 +1,7 @@
 name: qbittorrent
 services:
   qbittorrent:
-    image: lscr.io/linuxserver/qbittorrent:5.3.0@sha256:3d4c4545d51a690a0df15a2ff99038823a88a9822df8e794526447b9afbd7384
+    image: lscr.io/linuxserver/qbittorrent:20.04.1@sha256:fc98c8af048936d0070dc5e5992feab08664f8a61a860d91be02f782f8721485
     container_name: qbittorrent
     restart: unless-stopped
     networks:
