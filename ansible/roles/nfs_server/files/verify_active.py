@@ -27,6 +27,10 @@ def verify(inventory, output):
             options = set(flags.split(","))
             if key in actual or not {"sync", "root_squash", "no_subtree_check"} <= options:
                 raise ValueError("invalid active export")
+            if "crossmnt" in options or any(
+                option.startswith(("anonuid=", "anongid=")) and option not in {"anonuid=65534", "anongid=65534"} for option in options
+            ):
+                raise ValueError("unsafe active export options")
             if ("ro" in options) == ("rw" in options):
                 raise ValueError("invalid active access mode")
             actual[key] = "ro" if "ro" in options else "rw"

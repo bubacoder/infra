@@ -82,9 +82,14 @@ class TestInventory(unittest.TestCase):
             good.splitlines()[0],
             good.replace("(sync,ro,", "(sync,rw,", 1),
             good.replace("root_squash", "no_root_squash", 1),
+            good.replace("root_squash", "root_squash,crossmnt", 1),
+            good.replace("root_squash", "root_squash,anonuid=0", 1),
+            good.replace("root_squash", "root_squash,anongid=0", 1),
+            good.replace("root_squash", "root_squash,anonuid=1234", 1),
         ):
             with self.assertRaises(ValueError):  # noqa: PT027
                 VERIFY.verify(data, bad)
+        VERIFY.verify(data, good.replace("root_squash", "root_squash,anonuid=65534,anongid=65534"))
 
     @unittest.skipIf(jinja2 is None, "Jinja2 is required for template rendering")
     def test_multiple_exports_render_as_separate_lines(self):
