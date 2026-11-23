@@ -107,11 +107,7 @@ services:
         state: up
       - name: gitea-act-runner
         state: up
-      - name: gitlab
-        state: down
       - name: jupyter-notebook
-        state: down
-      - name: supabase
         state: down
       - name: httpbin
         state: up
