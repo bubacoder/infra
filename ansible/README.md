@@ -55,6 +55,12 @@ The optional [`k3s_traefik` role](roles/k3s_traefik/README.md) configures bundle
 ingress with shared file middleware and persistent ACME, without duplicating
 application Compose definitions or installing a second Traefik.
 
+The additive [`k3s_observability` role](roles/k3s_observability/README.md)
+manages native monitoring/logging through a pinned local Helm chart. Its
+separate localhost playbook requires explicit cluster identity and private
+ownership state; it does not replace existing Docker monitoring or application
+routes.
+
 ## Host resolver handling
 
 `debian_base` sets `DNSStubListener=no` in the `[Resolve]` section when

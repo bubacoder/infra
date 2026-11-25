@@ -1,0 +1,70 @@
+---
+- name: Verify only the new loopback-forwarded Grafana without exposing credentials
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  tasks:
+    - name: Require the explicit loopback tunnel and private credential directory
+      ansible.builtin.assert:
+        that:
+          - k3s_observability_grafana_url | default('') is match('^http://127[.]0[.]0[.]1:[0-9]+$')
+          - k3s_observability_state_dir | default('') is match('^/')
+    - name: Refuse symlinked private credential ancestors
+      ansible.builtin.command:
+        argv:
+          - python3
+          - -c
+          - "import pathlib, sys; p = pathlib.Path(sys.argv[1]); sys.exit(1 if any(x.is_symlink() for x in [p, *p.parents]) else 0)"
+          - "{{ k3s_observability_state_dir }}/grafana-admin"
+      changed_when: false
+    - name: Inspect credential file metadata only
+      ansible.builtin.stat:
+        path: "{{ k3s_observability_state_dir }}/grafana-admin"
+        follow: false
+        get_checksum: false
+      register: grafana_check_file
+    - name: Require an owned private regular credential
+      ansible.builtin.assert:
+        that:
+          - grafana_check_file.stat.isreg | default(false)
+          - not grafana_check_file.stat.islnk | default(false)
+          - grafana_check_file.stat.mode == '0600'
+          - grafana_check_file.stat.uid == ansible_facts.user_uid
+    - name: Check authenticated native resources within the redacted boundary
+      no_log: true
+      block:
+        - name: Verify Prometheus and Loki datasource health through Grafana
+          ansible.builtin.uri:
+            url: "{{ k3s_observability_grafana_url }}/api/datasources/uid/{{ item }}/health"
+            url_username: admin
+            url_password: "{{ lookup('ansible.builtin.file', k3s_observability_state_dir + '/grafana-admin', rstrip=true) }}"
+            force_basic_auth: true
+            use_proxy: false
+            return_content: true
+            timeout: 30
+          register: grafana_check_datasource
+          until: grafana_check_datasource.status | default(0) == 200
+          retries: 5
+          delay: 2
+          loop: [native-prometheus, native-loki]
+        - name: Require both datasource health responses
+          ansible.builtin.assert:
+            that:
+              - item.json.status == 'OK'
+          loop: "{{ grafana_check_datasource.results }}"
+        - name: Verify the provisioned overview dashboard with the recovery login
+          ansible.builtin.uri:
+            url: "{{ k3s_observability_grafana_url }}/api/dashboards/uid/native-overview"
+            url_username: admin
+            url_password: "{{ lookup('ansible.builtin.file', k3s_observability_state_dir + '/grafana-admin', rstrip=true) }}"
+            force_basic_auth: true
+            use_proxy: false
+            return_content: true
+          register: grafana_check_dashboard
+        - name: Require the intended provisioned dashboard
+          ansible.builtin.assert:
+            that:
+              - grafana_check_dashboard.json.dashboard.uid == 'native-overview'
+    - name: Report only the acceptance result
+      ansible.builtin.debug:
+        msg: Recovery API login, native Prometheus/Loki datasource health and provisioned overview passed.

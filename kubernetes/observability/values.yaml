@@ -1,0 +1,47 @@
+# Private endpoints only. No ingress, external address or credential values.
+cluster: homelab
+images:
+  loki: grafana/loki:3.7.10@sha256:b43c257ccfc925d4a50b8717cac61a3b51df8c48d01847936057e5c4075a24a7
+  fluentBit: fluent/fluent-bit:5.2.0@sha256:e2718c47aaab7d99587fdffe78818549bdd09dee5e30a9199d2ff3da6e2c7628
+  prometheus: prom/prometheus:v3.16.0@sha256:e04987641b57704f408e31f6373ba4138ecf27cb4a165d24aabb6c38fddd0f06
+  grafana: grafana/grafana-oss:13.0.2@sha256:5dad0df181cb644a14e13617b913b261a54f7d4fd4510721dba420929f35bea2
+  nodeExporter: quay.io/prometheus/node-exporter:v1.12.1@sha256:1b4e4438faca4dd7e001dd445d161a4a2091b0fededa84093b3a8dfeae1f1be0
+  query: nginxinc/nginx-unprivileged:1.28.2-alpine@sha256:7377697a821c131a924a7105fafbe7414db4e9fcc77a6f08f776f33f141ec3f8
+loki:
+  retention: 720h
+  storage: {class: local-path, size: 20Gi}
+  resources:
+    requests: {cpu: 200m, memory: 512Mi}
+    limits: {cpu: "2", memory: 2Gi}
+prometheus:
+  retention: 15d
+  retentionSize: 8GB
+  storage: {class: local-path, size: 10Gi}
+  extraScrapeConfigs: []
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {cpu: "1", memory: 1Gi}
+grafana:
+  adminSecret: observability-grafana-admin
+  storage: {class: local-path, size: 1Gi}
+  # Optional OIDC secret must contain client_id and client_secret.
+  # No public route is added even when OIDC is enabled.
+  oidc: {enabled: false, secret: "", host: "", authBaseUrl: "", logoutUrl: "", rootUrl: ""}
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {cpu: 500m, memory: 512Mi}
+collector:
+  # Deliberately collect only disposable synthetic sources until opted in.
+  namespaces: [observability-smoke]
+  statePath: /var/lib/infra-observability/fluent-bit
+  resources:
+    requests: {cpu: 50m, memory: 64Mi}
+    limits: {cpu: 500m, memory: 256Mi}
+nodeExporter:
+  resources:
+    requests: {cpu: 10m, memory: 32Mi}
+    limits: {cpu: 200m, memory: 128Mi}
+query:
+  resources:
+    requests: {cpu: 10m, memory: 16Mi}
+    limits: {cpu: 200m, memory: 64Mi}

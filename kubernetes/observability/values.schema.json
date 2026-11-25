@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["cluster", "images", "loki", "prometheus", "grafana", "collector"],
+  "properties": {
+    "cluster": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,62}$"},
+    "images": {
+      "type": "object",
+      "required": ["loki", "fluentBit", "prometheus", "grafana", "nodeExporter", "query"],
+      "additionalProperties": false,
+      "properties": {
+        "loki": {"$ref": "#/definitions/image"},
+        "fluentBit": {"$ref": "#/definitions/image"},
+        "prometheus": {"$ref": "#/definitions/image"},
+        "grafana": {"$ref": "#/definitions/image"},
+        "nodeExporter": {"$ref": "#/definitions/image"},
+        "query": {"$ref": "#/definitions/image"}
+      }
+    },
+    "loki": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "retention": {"type": "string", "pattern": "^(2[4-9]|[3-9][0-9]|[1-9][0-9]{2,})h$"},
+        "storage": {"$ref": "#/definitions/storage"},
+        "resources": {"$ref": "#/definitions/resources"}
+      }
+    },
+    "prometheus": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "retention": {"type": "string", "pattern": "^[1-9][0-9]*d$"},
+        "retentionSize": {"type": "string", "pattern": "^[1-9][0-9]*(MB|GB)$"},
+        "storage": {"$ref": "#/definitions/storage"},
+        "resources": {"$ref": "#/definitions/resources"},
+        "extraScrapeConfigs": {"type": "array", "items": {"type": "object"}}
+      }
+    },
+    "grafana": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "adminSecret": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,62}$"},
+        "storage": {"$ref": "#/definitions/storage"},
+        "resources": {"$ref": "#/definitions/resources"},
+        "oidc": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enabled"],
+          "properties": {
+            "enabled": {"type": "boolean"},
+            "secret": {"type": "string"},
+            "host": {"type": "string"},
+            "authBaseUrl": {"type": "string"},
+            "logoutUrl": {"type": "string"},
+            "rootUrl": {"type": "string"}
+          }
+        }
+      }
+    },
+    "collector": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "namespaces": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,62}$", "not": {"enum": ["kube-system", "kube-public", "kube-node-lease", "security-crowdsec", "default"]}}
+        },
+        "statePath": {"const": "/var/lib/infra-observability/fluent-bit"},
+        "resources": {"$ref": "#/definitions/resources"}
+      }
+    },
+    "nodeExporter": {"$ref": "#/definitions/resourceComponent"},
+    "query": {"$ref": "#/definitions/resourceComponent"}
+  },
+  "definitions": {
+    "image": {"type": "string", "pattern": "^[^\\s]+@sha256:[a-f0-9]{64}$"},
+    "resourceComponent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resources"],
+      "properties": {"resources": {"$ref": "#/definitions/resources"}}
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requests", "limits"],
+      "properties": {
+        "requests": {"$ref": "#/definitions/quantities"},
+        "limits": {"$ref": "#/definitions/quantities"}
+      }
+    },
+    "quantities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cpu", "memory"],
+      "properties": {
+        "cpu": {"type": "string", "pattern": "^[1-9][0-9]*m?$"},
+        "memory": {"type": "string", "pattern": "^[1-9][0-9]*(Mi|Gi)$"}
+      }
+    },
+    "storage": {
+      "type": "object", "required": ["class", "size"],
+      "properties": {
+        "class": {"type": "string", "pattern": "^[a-z0-9][a-z0-9.-]{0,252}$"},
+        "size": {"type": "string", "pattern": "^[1-9][0-9]*(Gi|Mi)$"}
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,6 @@
+# Public deployment profile; no credential values or private host addresses.
+# Pass its absolute path to ansible/playbooks/observability.yaml.
+cluster: homelab
+# Existing services remain intact; opt application namespaces in after smoke.
+collector:
+  namespaces: [observability-smoke]

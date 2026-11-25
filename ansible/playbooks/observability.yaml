@@ -1,0 +1,7 @@
+---
+- name: Manage the additive native monitoring and logging stack
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  roles:
+    - role: k3s_observability

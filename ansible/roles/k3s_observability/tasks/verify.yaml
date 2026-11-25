@@ -1,0 +1,42 @@
+---
+- name: Check the recovery Secret identity without reading credentials
+  ansible.builtin.command:
+    argv: [kubectl, "--context={{ k3s_observability_context }}", "--namespace={{ k3s_observability_namespace }}", get, secret, "{{ k3s_observability_settings.grafana.adminSecret }}", --ignore-not-found, "-o=jsonpath={.metadata.uid}"]
+  register: k3s_observability_verified_admin
+  changed_when: false
+  failed_when: k3s_observability_receipt.admin_uid == '' or k3s_observability_verified_admin.stdout != k3s_observability_receipt.admin_uid
+
+- name: Verify each rollout without restarting workloads
+  ansible.builtin.command:
+    argv: [kubectl, "--context={{ k3s_observability_context }}", "--namespace={{ k3s_observability_namespace }}", rollout, status, "{{ item.kind | lower }}/{{ item.metadata.name }}", --timeout=120s]
+  changed_when: false
+  loop: "{{ k3s_observability_objects | selectattr('kind', 'in', ['Deployment', 'DaemonSet']) | list }}"
+  loop_control:
+    label: "{{ item.metadata.name }}"
+
+- name: Read applied public resources only
+  ansible.builtin.command:
+    argv: [kubectl, "--context={{ k3s_observability_context }}", "--namespace={{ k3s_observability_namespace }}", get, "{{ item.kind }}", "{{ item.metadata.name }}", -o=json]
+  register: k3s_observability_public
+  changed_when: false
+  loop: "{{ k3s_observability_objects }}"
+  loop_control:
+    label: "{{ item.kind }}/{{ item.metadata.name }}"
+
+- name: Compare desired fields while tolerating API-added defaults
+  ansible.builtin.assert:
+    that:
+      - item.item | bootstrap_resource_subset(item.stdout | from_json)
+      - (item.stdout | from_json).metadata.uid == k3s_observability_receipt.uids[item.item.kind + '/' + item.item.metadata.name]
+    fail_msg: Applied public configuration differs from the rendered desired state.
+  loop: "{{ k3s_observability_public.results }}"
+  loop_control:
+    label: "{{ item.item.kind }}/{{ item.item.metadata.name }}"
+
+- name: Require bound backend claims
+  ansible.builtin.command:
+    argv: [kubectl, "--context={{ k3s_observability_context }}", "--namespace={{ k3s_observability_namespace }}", wait, "--for=jsonpath={.status.phase}=Bound", "pvc/{{ item.metadata.name }}", --timeout=60s]
+  changed_when: false
+  loop: "{{ k3s_observability_objects | selectattr('kind', 'equalto', 'PersistentVolumeClaim') | list }}"
+  loop_control:
+    label: "{{ item.metadata.name }}"

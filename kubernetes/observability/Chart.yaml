@@ -1,0 +1,7 @@
+apiVersion: v2
+name: infra-observability
+description: Additive single-node monitoring and logging, without an Operator
+type: application
+version: 0.1.0
+appVersion: "2026.11"
+kubeVersion: ">=1.30.0-0"

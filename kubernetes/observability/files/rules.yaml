@@ -1,0 +1,22 @@
+groups:
+  - name: observability
+    rules:
+      - alert: ObservabilityScrapeFailed
+        expr: up{job="observability"} == 0
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: "An observability metrics target is unavailable"}
+      - alert: LogDeliveryFailed
+        expr: sum(rate(fluentbit_output_errors_total[5m])) > 0
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: "Fluent Bit cannot deliver logs"}
+      - alert: LogRecordsDropped
+        expr: sum(increase(fluentbit_output_dropped_records_total[10m])) > 0
+        labels: {severity: warning}
+        annotations: {summary: "Fluent Bit dropped log records"}
+      - alert: NodeDiskPressure
+        expr: node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"} / node_filesystem_size_bytes < 0.15
+        for: 10m
+        labels: {severity: warning}
+        annotations: {summary: "Less than 15 percent node filesystem space available"}
