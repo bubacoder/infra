@@ -1,0 +1,118 @@
+---
+- name: Require explicit cluster identity and private controller state
+  ansible.builtin.assert:
+    that:
+      - k3s_observability_context | default('') | length > 0
+      - k3s_observability_cluster_uid | default('') is match('^[a-f0-9-]{36}$')
+      - k3s_observability_state_dir | default('') is match('^/')
+      - k3s_observability_values | default('') is match('^/')
+      - k3s_observability_namespace == 'observability'
+      - k3s_observability_release == 'observability'
+    fail_msg: Supply the verified context/cluster UID, absolute private state directory and public values file.
+
+- name: Refuse symlinked private state ancestors before any credential operation
+  ansible.builtin.command:
+    argv:
+      - python3
+      - -c
+      - "import pathlib, sys; p = pathlib.Path(sys.argv[1]); sys.exit(1 if any(x.is_symlink() for x in [p, *p.parents]) else 0)"
+      - "{{ k3s_observability_state_dir }}"
+  changed_when: false
+
+- name: Inspect controller state paths without reading credentials
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    follow: false
+    get_checksum: false
+  loop:
+    - "{{ k3s_observability_state_dir }}"
+    - "{{ k3s_observability_state_dir }}/receipt.yaml"
+    - "{{ k3s_observability_state_dir }}/grafana-admin"
+  register: k3s_observability_paths
+
+- name: Refuse unsafe private state or credential paths
+  ansible.builtin.assert:
+    that:
+      - not item.stat.exists or not item.stat.islnk | default(false)
+      - not item.stat.exists or item.stat.uid == ansible_facts.user_uid
+      - not item.stat.exists or item.stat.mode == ('0700' if item.item == k3s_observability_state_dir else '0600')
+      - not item.stat.exists or (item.stat.isdir | default(false) if item.item == k3s_observability_state_dir else item.stat.isreg | default(false))
+    fail_msg: Preserve existing controller state; only owned private regular files/directories are accepted.
+  loop: "{{ k3s_observability_paths.results }}"
+  loop_control:
+    label: "{{ item.item | basename }}"
+
+- name: Check live identity before any mutation
+  ansible.builtin.command:
+    argv: [kubectl, "--context={{ k3s_observability_context }}", get, namespace, kube-system, "-o=jsonpath={.metadata.uid}"]
+  register: k3s_observability_identity
+  changed_when: false
+
+- name: Refuse a different cluster
+  ansible.builtin.assert:
+    that:
+      - k3s_observability_identity.stdout == k3s_observability_cluster_uid
+    fail_msg: Cluster identity differs; no resources are changed.
+
+- name: Read the existing non-secret ownership receipt
+  ansible.builtin.slurp:
+    src: "{{ k3s_observability_state_dir }}/receipt.yaml"
+  register: k3s_observability_receipt_file
+  when: k3s_observability_paths.results[1].stat.exists
+
+- name: Decode existing receipt or start an empty installation intent
+  ansible.builtin.set_fact:
+    k3s_observability_receipt: "{{ (k3s_observability_receipt_file.content | b64decode | from_yaml) if k3s_observability_paths.results[1].stat.exists else {'cluster_uid': k3s_observability_cluster_uid, 'namespace_uid': '', 'admin_uid': '', 'release_intent': false} }}"
+
+- name: Validate receipt identity
+  ansible.builtin.assert:
+    that:
+      - k3s_observability_receipt.cluster_uid == k3s_observability_cluster_uid
+      - k3s_observability_receipt.namespace_uid is string
+      - k3s_observability_receipt.admin_uid is string
+      - k3s_observability_receipt.release_intent is boolean
+
+- name: Inspect the namespace identity without reading any workload data
+  ansible.builtin.command:
+    argv: [kubectl, "--context={{ k3s_observability_context }}", get, namespace, "{{ k3s_observability_namespace }}", --ignore-not-found, '-o=jsonpath={.metadata.uid}{"|"}{.metadata.labels.app\.kubernetes\.io/managed-by}']
+  register: k3s_observability_namespace_state
+  changed_when: false
+
+- name: Refuse namespace adoption, disappearance or replacement
+  ansible.builtin.assert:
+    that:
+      - >-
+        (k3s_observability_receipt.namespace_uid == '' and k3s_observability_namespace_state.stdout == '') or
+        (k3s_observability_receipt.namespace_uid != '' and
+        k3s_observability_namespace_state.stdout == k3s_observability_receipt.namespace_uid + '|infra-observability')
+      - not k3s_observability_verify_only or k3s_observability_receipt.namespace_uid != ''
+    fail_msg: Namespace is unowned, missing or replaced; preserve it for explicit recovery.
+
+- name: Lint the pinned local chart and supplied public settings
+  ansible.builtin.command:
+    argv: [helm, lint, "{{ k3s_observability_chart }}", "--values={{ k3s_observability_values }}", --strict]
+  changed_when: false
+
+- name: Render the complete public resource set before touching the cluster
+  ansible.builtin.command:
+    argv: [helm, template, "{{ k3s_observability_release }}", "{{ k3s_observability_chart }}", "--namespace={{ k3s_observability_namespace }}", "--values={{ k3s_observability_values }}"]
+  register: k3s_observability_render
+  changed_when: false
+
+- name: Decode public desired resources
+  ansible.builtin.set_fact:
+    k3s_observability_objects: "{{ k3s_observability_render.stdout | from_yaml_all | select('mapping') | list }}"
+    k3s_observability_settings: "{{ lookup('ansible.builtin.file', k3s_observability_chart + '/values.yaml') | from_yaml | combine(lookup('ansible.builtin.file', k3s_observability_values) | from_yaml, recursive=true) }}"
+
+- name: Require an existing storage class for every backend
+  ansible.builtin.command:
+    argv: [kubectl, "--context={{ k3s_observability_context }}", get, storageclass, "{{ item }}", -o=name]
+  changed_when: false
+  loop: "{{ [k3s_observability_settings.loki.storage['class'], k3s_observability_settings.prometheus.storage['class'], k3s_observability_settings.grafana.storage['class']] | unique }}"
+
+- name: Install only after validation and identity checks
+  ansible.builtin.include_tasks: install.yaml
+  when: not k3s_observability_verify_only
+
+- name: Independently verify readiness and desired public resource fields
+  ansible.builtin.include_tasks: verify.yaml

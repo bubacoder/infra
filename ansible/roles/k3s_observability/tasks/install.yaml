@@ -1,0 +1,193 @@
+---
+- name: Create the private controller state directory
+  ansible.builtin.file:
+    path: "{{ k3s_observability_state_dir }}"
+    state: directory
+    mode: '0700'
+
+- name: Create a new namespace rather than adopting an existing one
+  ansible.builtin.command:
+    argv: [kubectl, "--context={{ k3s_observability_context }}", create, -f=-, "-o=jsonpath={.metadata.uid}"]
+    stdin: "{{ {'apiVersion': 'v1', 'kind': 'Namespace', 'metadata': {'name': k3s_observability_namespace, 'labels': {'app.kubernetes.io/managed-by': 'infra-observability'}}} | to_json }}"
+  register: k3s_observability_namespace_create
+  when: k3s_observability_receipt.namespace_uid == ''
+  changed_when: true
+
+- name: Record the exact namespace before installing dependencies
+  ansible.builtin.set_fact:
+    k3s_observability_receipt: "{{ k3s_observability_receipt | combine({'namespace_uid': k3s_observability_namespace_create.stdout}) }}"
+  when: k3s_observability_receipt.namespace_uid == ''
+
+- name: Persist ownership intent atomically before proceeding
+  ansible.builtin.copy:
+    content: "{{ k3s_observability_receipt | to_nice_yaml }}"
+    dest: "{{ k3s_observability_state_dir }}/receipt.yaml"
+    mode: '0600'
+
+- name: Inspect only the admin Secret identity
+  ansible.builtin.command:
+    argv: [kubectl, "--context={{ k3s_observability_context }}", "--namespace={{ k3s_observability_namespace }}", get, secret, "{{ k3s_observability_settings.grafana.adminSecret }}", --ignore-not-found, "-o=jsonpath={.metadata.uid}"]
+  register: k3s_observability_admin_state
+  changed_when: false
+
+- name: Recover an explicitly approved interrupted credential receipt
+  when: k3s_observability_recover_admin_uid | length > 0
+  no_log: true
+  block:
+    - name: Require the exact approved UID and an intact retained credential
+      ansible.builtin.assert:
+        that:
+          - k3s_observability_receipt.admin_uid == ''
+          - k3s_observability_admin_state.stdout == k3s_observability_recover_admin_uid
+          - k3s_observability_paths.results[2].stat.exists
+    - name: Verify Secret ownership and contents only inside the private Ansible boundary
+      ansible.builtin.command:
+        argv: [kubectl, "--context={{ k3s_observability_context }}", "--namespace={{ k3s_observability_namespace }}", get, secret, "{{ k3s_observability_settings.grafana.adminSecret }}", -o=json]
+      register: k3s_observability_recovery_secret
+      changed_when: false
+    - name: Require ownership and credential equality without displaying either value
+      ansible.builtin.assert:
+        that:
+          - (k3s_observability_recovery_secret.stdout | from_json).metadata.uid == k3s_observability_recover_admin_uid
+          - (k3s_observability_recovery_secret.stdout | from_json).metadata.labels['app.kubernetes.io/managed-by'] == 'infra-observability'
+          - (k3s_observability_recovery_secret.stdout | from_json).data.password | b64decode == lookup('ansible.builtin.file', k3s_observability_state_dir + '/grafana-admin', rstrip=true)
+    - name: Persist the verified credential identity before changing in-memory state
+      ansible.builtin.copy:
+        content: "{{ k3s_observability_receipt | combine({'admin_uid': k3s_observability_recover_admin_uid}) | to_nice_yaml }}"
+        dest: "{{ k3s_observability_state_dir }}/receipt.yaml"
+        mode: '0600'
+    - name: Retain the verified identity for subsequent guards
+      ansible.builtin.set_fact:
+        k3s_observability_receipt: "{{ k3s_observability_receipt | combine({'admin_uid': k3s_observability_recover_admin_uid}) }}"
+
+- name: Refuse credential adoption or regeneration after loss
+  ansible.builtin.assert:
+    that:
+      - k3s_observability_admin_state.stdout == k3s_observability_receipt.admin_uid
+      - k3s_observability_receipt.admin_uid == '' or k3s_observability_paths.results[2].stat.exists
+    fail_msg: Admin Secret identity or retained credential is missing/different; preserve data for private recovery.
+
+- name: Generate and transfer a private local-recovery credential without logging it
+  when: k3s_observability_receipt.admin_uid == ''
+  no_log: true
+  block:
+    - name: Create a persistent random credential through the private Ansible boundary
+      ansible.builtin.set_fact:
+        k3s_observability_admin_password: "{{ lookup('ansible.builtin.password', k3s_observability_state_dir + '/grafana-admin', length=48, chars=['ascii_letters', 'digits']) }}"
+    - name: Create the credential once without storing it in Helm values or arguments
+      ansible.builtin.command:
+        argv: [kubectl, "--context={{ k3s_observability_context }}", "--namespace={{ k3s_observability_namespace }}", create, -f=-, "-o=jsonpath={.metadata.uid}"]
+        stdin: "{{ {'apiVersion': 'v1', 'kind': 'Secret', 'metadata': {'name': k3s_observability_settings.grafana.adminSecret, 'labels': {'app.kubernetes.io/managed-by': 'infra-observability'}}, 'type': 'Opaque', 'stringData': {'password': k3s_observability_admin_password}} | to_json }}"
+      register: k3s_observability_admin_create
+      changed_when: true
+    - name: Persist the credential identity without its contents
+      ansible.builtin.copy:
+        content: "{{ k3s_observability_receipt | combine({'admin_uid': k3s_observability_admin_create.stdout}) | to_nice_yaml }}"
+        dest: "{{ k3s_observability_state_dir }}/receipt.yaml"
+        mode: '0600'
+    - name: Retain the created Secret identity after persisting it
+      ansible.builtin.set_fact:
+        k3s_observability_receipt: "{{ k3s_observability_receipt | combine({'admin_uid': k3s_observability_admin_create.stdout}) }}"
+
+- name: Inspect the named Helm release without reading release Secret contents
+  ansible.builtin.command:
+    argv: [helm, list, "--kube-context={{ k3s_observability_context }}", "--namespace={{ k3s_observability_namespace }}", --deployed, --failed, --pending, --uninstalling, --uninstalled, "--filter=^{{ k3s_observability_release }}$", -o=json]
+  register: k3s_observability_releases
+  changed_when: false
+
+- name: Require an owned release or an empty namespace installation slot
+  ansible.builtin.assert:
+    that:
+      - k3s_observability_releases.stdout | from_json | length == 0 or k3s_observability_receipt.release_intent
+      - k3s_observability_releases.stdout | from_json | length == 0 or (k3s_observability_releases.stdout | from_json)[0].chart is match('^infra-observability-')
+    fail_msg: An existing Helm release is not owned by this installation intent.
+
+- name: Inspect desired object identities without reading Secret data
+  ansible.builtin.command:
+    argv: [kubectl, "--context={{ k3s_observability_context }}", "--namespace={{ k3s_observability_namespace }}", get, -f=-, --ignore-not-found, -o=json]
+    stdin: "{{ k3s_observability_render.stdout }}"
+  register: k3s_observability_before
+  changed_when: false
+
+- name: Normalize the empty result from an entirely new resource set
+  ansible.builtin.set_fact:
+    k3s_observability_existing_objects: "{{ (k3s_observability_before.stdout | default('{\"kind\":\"List\",\"items\":[]}', true) | from_json)['items'] }}"
+
+- name: Refuse replacement or disappearance of previously recorded objects
+  ansible.builtin.assert:
+    that:
+      - >-
+        k3s_observability_receipt.uids | default({}) | length == 0 or
+        k3s_observability_existing_objects |
+        selectattr('kind', 'equalto', item.key.split('/')[0]) |
+        selectattr('metadata.name', 'equalto', item.key.split('/')[1]) |
+        map(attribute='metadata.uid') | list == [item.value]
+    fail_msg: A managed resource disappeared or changed identity; do not recreate or adopt it automatically.
+  loop: "{{ k3s_observability_receipt.uids | default({}) | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Refuse implicit backend storage changes
+  ansible.builtin.assert:
+    that:
+      - item.spec.storageClassName == (k3s_observability_objects | selectattr('kind', 'equalto', 'PersistentVolumeClaim') | selectattr('metadata.name', 'equalto', item.metadata.name) | first).spec.storageClassName
+      - item.spec.resources.requests.storage == (k3s_observability_objects | selectattr('kind', 'equalto', 'PersistentVolumeClaim') | selectattr('metadata.name', 'equalto', item.metadata.name) | first).spec.resources.requests.storage
+    fail_msg: Storage migration or resizing needs a separate approved operation.
+  loop: "{{ k3s_observability_existing_objects | selectattr('kind', 'equalto', 'PersistentVolumeClaim') | list }}"
+  loop_control:
+    label: "{{ item.metadata.name }}"
+
+- name: Record the release intent so a failed rollout can be resumed safely
+  ansible.builtin.copy:
+    content: "{{ k3s_observability_receipt | combine({'release_intent': true}) | to_nice_yaml }}"
+    dest: "{{ k3s_observability_state_dir }}/receipt.yaml"
+    mode: '0600'
+
+- name: Strictly validate all public resources on the API before release installation
+  ansible.builtin.command:
+    argv: [kubectl, "--context={{ k3s_observability_context }}", "--namespace={{ k3s_observability_namespace }}", apply, --server-side, --dry-run=server, --validate=strict, --field-manager=infra-observability-validation, -f=-]
+    stdin: "{{ k3s_observability_render.stdout }}"
+  changed_when: false
+
+- name: Recheck cluster identity immediately before Helm mutation
+  ansible.builtin.command:
+    argv: [kubectl, "--context={{ k3s_observability_context }}", get, namespace, kube-system, "-o=jsonpath={.metadata.uid}"]
+  register: k3s_observability_before_helm
+  changed_when: false
+  failed_when: k3s_observability_before_helm.stdout != k3s_observability_cluster_uid
+
+- name: Install or upgrade the private stack without adoption or automatic data deletion
+  ansible.builtin.command:
+    argv:
+      - helm
+      - upgrade
+      - --install
+      - "{{ k3s_observability_release }}"
+      - "{{ k3s_observability_chart }}"
+      - "--kube-context={{ k3s_observability_context }}"
+      - "--namespace={{ k3s_observability_namespace }}"
+      - "--values={{ k3s_observability_values }}"
+      - --wait
+      - --timeout=5m
+      - --history-max=5
+  changed_when: true
+
+- name: Read the applied public object identities for recovery
+  ansible.builtin.command:
+    argv: [kubectl, "--context={{ k3s_observability_context }}", "--namespace={{ k3s_observability_namespace }}", get, -f=-, -o=json]
+    stdin: "{{ k3s_observability_render.stdout }}"
+  register: k3s_observability_applied
+  changed_when: false
+
+- name: Record each created object identity
+  ansible.builtin.set_fact:
+    k3s_observability_receipt: "{{ k3s_observability_receipt | combine({'release_intent': true, 'uids': (k3s_observability_receipt.uids | default({})) | combine({item.kind + '/' + item.metadata.name: item.metadata.uid})}) }}"
+  loop: "{{ (k3s_observability_applied.stdout | from_json)['items'] }}"
+  loop_control:
+    label: "{{ item.kind }}/{{ item.metadata.name }}"
+
+- name: Persist public identities for subsequent preflight guards
+  ansible.builtin.copy:
+    content: "{{ k3s_observability_receipt | to_nice_yaml }}"
+    dest: "{{ k3s_observability_state_dir }}/receipt.yaml"
+    mode: '0600'

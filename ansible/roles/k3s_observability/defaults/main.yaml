@@ -1,0 +1,9 @@
+---
+# Context, cluster UID, private state directory and values file are mandatory.
+k3s_observability_namespace: observability
+k3s_observability_release: observability
+k3s_observability_verify_only: false
+# Explicit one-time recovery only: verify the exact Secret UID and credential
+# match before repairing an interrupted initial credential receipt.
+k3s_observability_recover_admin_uid: ""
+k3s_observability_chart: "{{ playbook_dir }}/../../kubernetes/observability"

@@ -14,6 +14,11 @@ kubernetes/
 ├── crowdsec/
 │   ├── profiles.yaml
 │   └── start.sh
+├── observability/
+│   ├── Chart.yaml
+│   ├── values.yaml
+│   ├── files/
+│   └── templates/
 └── traefik/
     └── crowdsec-plugin/
         ├── Dockerfile
@@ -30,6 +35,9 @@ kubernetes/
 - **`traefik/crowdsec-plugin/`**: the plugin-only image build context and
   non-fatal source-staging initializer used by the
   [Traefik role](../ansible/roles/k3s_traefik/README.md).
+- **`observability/`**: the dependency-free native Prometheus/Grafana/Loki/
+  Fluent Bit chart, installed and verified by the
+  [observability role](../ansible/roles/k3s_observability/README.md).
 
 These files are not a recursive `kubectl apply` bundle. For example,
 `cilium-network.yaml` is host-side K3s configuration, `cilium-chart.yaml`
