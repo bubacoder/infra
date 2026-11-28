@@ -1,7 +1,7 @@
 name: ollama
 services:
   ollama:
-    image: ollama/ollama:0.40.15@sha256:0e59999e0e8f9fd4e704bd788a89b7e4cad399367fb1365f8c102ac662288761
+    image: ollama/ollama:0.40.17@sha256:ccc42bcd3d5fcf7ab0d532b300382154e1a4da56fc666bdb313b78ebdd912754
     devices:
       - /dev/dri/renderD128:/dev/dri/renderD128
     environment:
