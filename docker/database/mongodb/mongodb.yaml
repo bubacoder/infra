@@ -8,7 +8,7 @@ services:
       - ${DOCKER_VOLUMES}/mongodb/data:/data/db
 
   mongodb:
-    image: mongo:7.0.45-jammy@sha256:7fba8c37d681a79f22a85d2b06bd5ed121a7973c0a6ca20ed4887bb0a1548ce0
+    image: mongo:7.0.48-jammy@sha256:e0da75c955723fb6918111a60e3249079e5ea082c70038dcbc2f5fa32e29ab8c
     container_name: mongodb
     restart: unless-stopped
     # kics-scan ignore-block
